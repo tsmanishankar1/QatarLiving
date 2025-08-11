@@ -263,56 +263,31 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                 if (slotNumbers.Distinct().Count() != MaxSlot || slotNumbers.Any(s => s < 1 || s > MaxSlot))
                     throw new InvalidDataException("Slot numbers must be unique and between 1 and 6.");
 
-                var pickIds = request.SlotAssignments
-                    .Where(sa => !string.IsNullOrWhiteSpace(sa.PickId))
-                    .Select(sa => Guid.Parse(sa.PickId))
-                    .ToList();
-
-                var today = DateOnly.FromDateTime(DateTime.UtcNow);
-
-                var seasonalPicks = await _context.SeasonalPicks
-                    .Where(p => pickIds.Contains(p.Id) &&
-                                p.Vertical == request.Vertical &&
-                                p.IsActive &&
-                                p.EndDate >= today)
+                var seasonalPicksList = await _context.SeasonalPicks
+                    .Where(p => p.Vertical == request.Vertical && p.IsActive)
                     .ToListAsync(cancellationToken);
 
-                foreach (var pick in seasonalPicks)
-                {
-                    if (pick.CreatedBy != userId)
-                        throw new UnauthorizedAccessException($"You are not authorized to update pick ID {pick.Id}.");
-                }
-
-                var currentSlottedPicks = await _context.SeasonalPicks
-                    .Where(p => p.Vertical == request.Vertical &&
-                                p.IsActive &&
-                                p.SlotOrder >= 1 &&
-                                p.SlotOrder <= MaxSlot &&
-                                p.EndDate >= today)
-                    .ToListAsync(cancellationToken);
-
-                foreach (var pick in currentSlottedPicks)
-                {
-                    pick.SlotOrder = 0;
-                    pick.UpdatedBy = userId;
-                    pick.UpdatedAt = DateTime.UtcNow;
-                    _context.SeasonalPicks.Update(pick);
-                }
+                var seasonalPicksMap = seasonalPicksList.ToDictionary(fc => fc.Id, fc => fc);
 
                 foreach (var assignment in request.SlotAssignments)
                 {
-                    if (string.IsNullOrWhiteSpace(assignment.PickId)) continue;
+                    if (string.IsNullOrWhiteSpace(assignment.PickId))
+                        continue;
 
-                    var pickId = Guid.Parse(assignment.PickId);
-                    var pick = seasonalPicks.FirstOrDefault(p => p.Id == pickId);
+                    if (!Guid.TryParse(assignment.PickId, out var pickId))
+                        continue;
 
-                    if (pick == null)
-                        throw new KeyNotFoundException($"Pick with ID '{assignment.PickId}' not found.");
+                    if (!seasonalPicksMap.TryGetValue(pickId, out var seasonalPicks))
+                        throw new InvalidDataException($"Seasonal Pick with ID '{assignment.PickId}' not found or inactive.");
 
-                    pick.SlotOrder = assignment.SlotOrder;
-                    pick.UpdatedBy = userId;
-                    pick.UpdatedAt = DateTime.UtcNow;
-                    _context.SeasonalPicks.Update(pick);
+                    if (seasonalPicks.CreatedBy != userId)
+                        throw new UnauthorizedAccessException("You are not authorized to update this Seasonal Pick.");
+
+                    seasonalPicks.SlotOrder = assignment.SlotOrder;
+                    seasonalPicks.UpdatedBy = userId;
+                    seasonalPicks.UpdatedAt = DateTime.UtcNow;
+
+                    _context.SeasonalPicks.Update(seasonalPicks);
                 }
 
                 await _context.SaveChangesAsync(cancellationToken);
@@ -328,6 +303,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                 throw new Exception(ex.Message);
             }
         }
+
 
         public async Task<string> SoftDeleteSeasonalPick(string pickId, string userId, string userName, Vertical vertical, CancellationToken cancellationToken = default)
         {
@@ -1492,7 +1468,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
 
             return "Action completed successfully";
         }
-
+   
         private string GetAdKey(long id) => $"ad-{id}";
         public async Task<TransactionListResponseDto> GetTransactionsAsync(
      TransactionFilterRequestDto request,
@@ -1654,9 +1630,6 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
             }
         }
 
-
-
-
         private DateTime ParseDate(string dateString)
         {
             try
@@ -1668,9 +1641,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                 return DateTime.MinValue;
             }
         }
-
-     
-
+    
         private static decimal GetAmountByType(string type, Random random) => type switch
         {
             "Pay To Publish" => random.Next(10, 60),
@@ -1897,203 +1868,264 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
             }
         }
 
-        public async Task<PaginatedResult<DealsAdSummaryDto>> GetAllDeals(int? pageNumber = 1, int? pageSize = 12, string? search = null,
-    string? sortBy = null, CancellationToken cancellationToken = default)
+        public async Task<PaginatedResult<DealsAdSummaryDto>> GetAllDeals(
+            int? pageNumber = 1,
+            int? pageSize = 12,
+            string? subscriptionType = null,
+            DateOnly? startDate = null,
+            DateOnly? endDate = null,
+            string? search = null,
+            string? sortBy = null,
+            CancellationToken cancellationToken = default)
         {
             try
             {
-                var result = new List<DealsAdSummaryDto>();
+                _logger.LogInformation("Starting GetAllDeals with params: Page={Page}, Size={Size}, Subscription={SubType}, Start={Start}, End={End}, Search={Search}, SortBy={SortBy}",
+                    pageNumber, pageSize, subscriptionType, startDate, endDate, search, sortBy);
 
-                var keys = await _dapr.GetStateAsync<List<string>>(
-                    ConstantValues.StateStoreNames.UnifiedStore,
-                    ConstantValues.StateStoreNames.DealsIndexKey,
-                    cancellationToken: cancellationToken) ?? new();
+                var payments = await _Paymentcontext.Payments.ToListAsync(cancellationToken);
+                _logger.LogInformation("Loaded {Count} payments", payments.Count);
 
+                var subscriptions = await _subscriptioncontext.Subscriptions.ToListAsync(cancellationToken);
+                _logger.LogInformation("Loaded {Count} subscriptions", subscriptions.Count);
 
-                foreach (var key in keys)
+                var users = await _usercontext.Users.ToListAsync(cancellationToken);
+                _logger.LogInformation("Loaded {Count} users", users.Count);
+
+                var deals = await _context.Deal.ToListAsync(cancellationToken);
+                _logger.LogInformation("Loaded {Count} deals", deals.Count);
+
+                var joined = (from p in payments
+                              join s in subscriptions on p.PaymentId equals s.PaymentId
+                              join u in users on s.UserId equals u.Id.ToString() into userJoin
+                              from u in userJoin.DefaultIfEmpty()
+                              join d in deals on p.AdId equals d.Id.ToString() into dealJoin
+                              from d in dealJoin.DefaultIfEmpty()
+                              select new DealsAdSummaryDto
+                              {
+                                  AdId = d?.Id ?? 0,
+                                  ContactNumber = d?.ContactNumber,
+                                  WhatsappNumber = d?.WhatsappNumber,
+                                  createdby = d?.CreatedBy,
+                                  status = d?.IsActive.ToString(),
+                                  StartDate = d?.StartDate,
+                                  EndDate = d?.EndDate,
+                                  subscriptiontype = s.ProductCode switch
+                                  {
+                                      "QLC-SUB-1WE-001" => "1 Week",
+                                      "QLC-SUB-1MO-005" => "1 Month",
+                                      "QLC-SUB-3MO-005" => "3 Months",
+                                      "QLC-SUB-6MO-005" => "6 Months",
+                                      _ => ""
+                                  },
+                                  orderid = p.PaymentId,
+                                  WhatsAppLeads = "0",
+                                  PhoneLeads = "0",
+                                  price = p.Fee.ToString("F2"),
+                                  UserName = u?.UserName,
+                                  email = u?.Email
+                              }).AsQueryable();
+
+                if (!string.IsNullOrWhiteSpace(subscriptionType))
                 {
-                    var ad = await _dapr.GetStateAsync<ClassifiedsDeals>(
-                        ConstantValues.StateStoreNames.UnifiedStore,
-                        key,
-                        cancellationToken: cancellationToken);
-
-                    if (ad == null) continue;
-
-                    var dto = new DealsAdSummaryDto
-                    {
-                        AdId = ad.Id,
-                        subscriptiontype = "12 Months Super",
-                        createdby = ad.CreatedBy,
-                        ContactNumber = ad.ContactNumber,
-                        WhatsappNumber = ad.WhatsappNumber,
-                        price = "250",
-                        status = ad.IsActive.ToString(),
-                        WhatsAppLeads = "12",
-                        PhoneLeads = "14",
-                        StartDate = ad.UpdatedAt.ToString(),                        
-                        EndDate = ad.ExpiryDate.ToString(),
-                        orderid = ad.Id.ToString().Substring(0, 6)
-                    };
-
-                    if (string.IsNullOrWhiteSpace(search) ||
-                        dto.AdId.ToString().Contains(search, StringComparison.OrdinalIgnoreCase) == true ||
-                       dto.createdby?.Contains(search, StringComparison.OrdinalIgnoreCase) == true)
-
-                    {
-                        result.Add(dto);
-                    }
+                    joined = joined.Where(x => x.subscriptiontype == subscriptionType);
+                    _logger.LogInformation("Filtered by subscriptionType: {SubType}", subscriptionType);
                 }
-                result = sortBy?.ToLower() switch
+
+                if (startDate.HasValue)
                 {
-                    "startdate" => result.OrderBy(x => x.StartDate).ToList(),
-                    "enddate" => result.OrderBy(x => x.EndDate).ToList(),
-                    _ => result.OrderByDescending(x => x.StartDate).ToList()
+                    joined = joined.Where(x =>
+                        x.StartDate.HasValue &&
+                        DateOnly.FromDateTime(x.StartDate.Value) >= startDate.Value);
+                }
+
+                if (endDate.HasValue)
+                {
+                    joined = joined.Where(x =>
+                        x.EndDate.HasValue &&
+                        DateOnly.FromDateTime(x.EndDate.Value) <= endDate.Value);
+                }
+
+                if (!string.IsNullOrWhiteSpace(search))
+                {
+                    var s = search.ToLower();
+                    joined = joined.Where(x =>
+                        x.AdId.ToString().Contains(s) ||
+                        (x.createdby != null && x.createdby.ToLower().Contains(s)) ||
+                        (x.email != null && x.email.ToLower().Contains(s)) ||
+                        (x.UserName != null && x.UserName.ToLower().Contains(s))
+                    );
+                }
+
+                joined = sortBy?.ToLower() switch
+                {
+                    "startdate" => joined.OrderBy(x => x.StartDate),
+                    "enddate" => joined.OrderBy(x => x.EndDate),
+                    _ => joined.OrderByDescending(x => x.StartDate)
                 };
 
-                var totalCount = result.Count;
-                int currentPage = pageNumber ?? 1;
-                int currentSize = pageSize ?? 12;
+                var totalRecords = joined.Count();
+                var currentPage = pageNumber ?? 1;
+                var currentSize = pageSize ?? 12;
+                var totalPages = (int)Math.Ceiling((double)totalRecords / currentSize);
 
-                var paginatedItems = result
+                var paged = joined
                     .Skip((currentPage - 1) * currentSize)
                     .Take(currentSize)
                     .ToList();
 
                 return new PaginatedResult<DealsAdSummaryDto>
                 {
-                    TotalCount = totalCount,
+                    TotalCount = totalRecords,
                     PageNumber = currentPage,
                     PageSize = currentSize,
-                    Items = paginatedItems
+                    Items = paged
                 };
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error fetching preloved ad payment summaries.");
-                throw new InvalidOperationException("Failed to fetch preloved ad payment summaries.", ex);
+                _logger.LogError(ex, "Error fetching deals in GetAllDeals");
+                throw;
             }
         }
+
 
         public async Task<PaginatedResult<DealsViewSummaryDto>> DealsViewSummary(
             int? pageNumber = 1,
             int? pageSize = 12,
+            DateOnly? startDate = null,
+            DateOnly? endDate = null,
             string? search = null,
-            string? sortBy = null, string? status = null,
+            string? sortBy = null,
+            string? status = null,
             bool? isPromoted = null,
             bool? isFeatured = null,
             CancellationToken cancellationToken = default)
         {
             try
             {
-                var result = new List<DealsViewSummaryDto>();
+                _logger.LogInformation("Starting DealsViewSummary with params: Page={Page}, Size={Size}, Start={Start}, End={End}, Search={Search}, SortBy={SortBy}, Status={Status}, Promoted={Promoted}, Featured={Featured}",
+                    pageNumber, pageSize, startDate, endDate, search, sortBy, status, isPromoted, isFeatured);
 
-                var keys = await _dapr.GetStateAsync<List<string>>(
-                    ConstantValues.StateStoreNames.UnifiedStore,
-                    ConstantValues.StateStoreNames.DealsIndexKey,
-                    cancellationToken: cancellationToken) ?? new();
+                var payments = await _Paymentcontext.Payments.ToListAsync(cancellationToken);
+                _logger.LogInformation("Loaded {Count} payments", payments.Count);
 
-                foreach (var key in keys)
+                var subscriptions = await _subscriptioncontext.Subscriptions.ToListAsync(cancellationToken);
+                _logger.LogInformation("Loaded {Count} subscriptions", subscriptions.Count);
+
+                var users = await _usercontext.Users.ToListAsync(cancellationToken);
+                _logger.LogInformation("Loaded {Count} users", users.Count);
+
+                var deals = await _context.Deal.ToListAsync(cancellationToken);
+                _logger.LogInformation("Loaded {Count} deals", deals.Count);
+
+                var joined = (from p in payments
+                              join s in subscriptions on p.PaymentId equals s.PaymentId
+                              join u in users on s.UserId equals u.Id.ToString() into userJoin
+                              from u in userJoin.DefaultIfEmpty()
+                              join d in deals on p.AdId equals d.Id.ToString() into dealJoin
+                              from d in dealJoin.DefaultIfEmpty()
+                              where d != null && d.IsActive
+                              select new DealsViewSummaryDto
+                              {
+                                  AdId = d.Id,
+                                  Dealtitle = d.Offertitle,
+                                  subscriptiontype = s.ProductCode switch
+                                  {
+                                      "QLC-SUB-1WE-001" => "1 Week",
+                                      "QLC-SUB-1MO-005" => "1 Month",
+                                      "QLC-SUB-3MO-005" => "3 Months",
+                                      "QLC-SUB-6MO-005" => "6 Months",
+                                      _ => ""
+                                  },
+                                  DateCreated = d.CreatedAt,
+                                  createdby = d.CreatedBy,
+                                  ContactNumber = d.ContactNumber,
+                                  WhatsappNumber = d.WhatsappNumber,
+                                  StartDate = d.StartDate ?? DateTime.UtcNow,
+                                  EndDate = d.EndDate ?? DateTime.UtcNow,
+                                  WebClick = 0,
+                                  Weburl = d.WebsiteUrl,
+                                  Locations = d.Locations,
+                                  Views = 0,
+                                  Impression = 0,
+                                  Phonelead = 0,
+                                  Status = d.Status.ToString(),
+                                  IsPromoted = d.IsPromoted,
+                                  IsFeatured = d.IsFeatured
+                              }).AsQueryable();
+
+                if (isPromoted.HasValue)
                 {
-                    var ad = await _dapr.GetStateAsync<ClassifiedsDeals>(
-                        ConstantValues.StateStoreNames.UnifiedStore,
-                        key,
-                        cancellationToken: cancellationToken);
+                    joined = joined.Where(x => x.IsPromoted == isPromoted.Value);
+                }
 
-                    if (ad == null) continue;
+                if (isFeatured.HasValue)
+                {
+                    joined = joined.Where(x => x.IsFeatured == isFeatured.Value);
+                }
 
-                    if (!ad.IsActive)
+                if (!string.IsNullOrWhiteSpace(status) && int.TryParse(status, out int statusValue))
+                {
+                    if (Enum.IsDefined(typeof(AdStatus), statusValue))
                     {
-                        continue;
-                    }
-
-                    if (isPromoted.HasValue && ad.IsPromoted != isPromoted.Value)
-                    {
-                        continue;
-                    }
-
-                    if (isFeatured.HasValue && ad.IsFeatured != isFeatured.Value)
-                    {
-                        continue;
-                    }
-
-                    if (!string.IsNullOrWhiteSpace(status) && int.TryParse(status, out int statusValue))
-                    {
-                        if (!Enum.IsDefined(typeof(AdStatus), statusValue))
-                            continue;
-
                         var parsedStatus = (AdStatus)statusValue;
-                        if (ad.Status != parsedStatus)
-                            continue;
-                    }
-
-
-                    var dto = new DealsViewSummaryDto
-                    {
-                        AdId = ad.Id,
-                        Dealtitle = ad.Title,
-                        subscriptiontype = "12 Months Super",
-                        DateCreated = ad.CreatedAt,
-                        createdby = ad.CreatedBy,
-                        ContactNumber = ad.ContactNumber,
-                        WhatsappNumber = ad.WhatsappNumber,
-                        StartDate = ad.UpdatedAt ?? DateTime.UtcNow,
-                        EndDate = ad.ExpiryDate,
-                        WebClick = 2,
-                        Weburl = "linkup.com",
-                        Location = ad.Locations,
-                        Views = 3,
-                        Impression = 5,
-                        Phonelead = 4,
-                        Status = ad.Status.ToString()
-                    };
-
-
-                    if (string.IsNullOrWhiteSpace(search) ||
-
-                        dto.AdId.ToString().Contains(search, StringComparison.OrdinalIgnoreCase) == true ||
-
-                        dto.createdby?.Contains(search, StringComparison.OrdinalIgnoreCase) == true)
-                    {
-                        result.Add(dto);
+                        joined = joined.Where(x => x.Status == parsedStatus.ToString());
                     }
                 }
 
-
-                result = sortBy?.ToLower() switch
+                if (startDate.HasValue)
                 {
-                    "startdate" => result.OrderBy(x => x.StartDate).ToList(),
-                    "enddate" => result.OrderBy(x => x.EndDate).ToList(),
-                    _ => result.OrderByDescending(x => x.StartDate).ToList()
+                    joined = joined.Where(x =>
+                        DateOnly.FromDateTime(x.StartDate) >= startDate.Value);
+                }
+
+                if (endDate.HasValue)
+                {
+                    joined = joined.Where(x =>
+                        DateOnly.FromDateTime(x.EndDate) <= endDate.Value);
+                }
+
+                if (!string.IsNullOrWhiteSpace(search))
+                {
+                    var s = search.ToLower();
+                    joined = joined.Where(x =>
+                        x.AdId.ToString().Contains(s) ||
+                        (x.createdby != null && x.createdby.ToLower().Contains(s))
+                    );
+                }
+
+                joined = sortBy?.ToLower() switch
+                {
+                    "startdate" => joined.OrderBy(x => x.StartDate),
+                    "enddate" => joined.OrderBy(x => x.EndDate),
+                    _ => joined.OrderByDescending(x => x.StartDate)
                 };
 
+                var totalCount = joined.Count();
+                var currentPage = pageNumber ?? 1;
+                var currentSize = pageSize ?? 12;
 
-                var totalCount = result.Count;
-
-                int currentPage = pageNumber ?? 1;
-
-                int currentSize = pageSize ?? 12;
-
-                var paginatedItems = result
+                var paged = joined
                     .Skip((currentPage - 1) * currentSize)
                     .Take(currentSize)
                     .ToList();
+
                 return new PaginatedResult<DealsViewSummaryDto>
                 {
                     TotalCount = totalCount,
                     PageNumber = currentPage,
                     PageSize = currentSize,
-                    Items = paginatedItems
+                    Items = paged
                 };
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error fetching preloved ad payment summaries.");
-
-                throw new InvalidOperationException("Failed to fetch preloved ad payment summaries.", ex);
-
+                _logger.LogError(ex, "Error fetching deals view summary.");
+                throw new InvalidOperationException("Failed to fetch deals view summary.", ex);
             }
-
         }
+
 
         public async Task<string> SoftDeleteDeals(DealsBulkDelete dto, string userId, CancellationToken cancellationToken = default)
         {
@@ -3134,29 +3166,17 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
         {
             try
             {
-                var indexKeys = await _dapr.GetStateAsync<List<string>>(
-                    ConstantValues.StateStoreNames.UnifiedStore,
-                    ConstantValues.StateStoreNames.DealsIndexKey,
-                    cancellationToken: ct
-                ) ?? new();
+                var ads = await _context.Deal
+                    .Where(d => request.AdIds.Contains(d.Id))
+                    .ToListAsync(ct);
+
+                if (!ads.Any())
+                    throw new KeyNotFoundException("No matching ads found.");
 
                 var updated = new List<Deals>();
 
-                foreach (var id in request.AdIds)
+                foreach (var ad in ads)
                 {
-                    var adKey = GetAdKey(id);
-                    if (!indexKeys.Contains(adKey.ToString()))
-                        continue;
-
-                    var ad = await _dapr.GetStateAsync<Deals>(
-                        ConstantValues.StateStoreNames.UnifiedStore,
-                        adKey.ToString(),
-                        cancellationToken: ct
-                    );
-
-                    if (ad is null)
-                        continue;
-
                     bool shouldUpdate = false;
 
                     switch (request.Action)
@@ -3168,9 +3188,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                                 shouldUpdate = true;
                             }
                             else
-                            {
-                                throw new InvalidOperationException($"Cannot approve ad with status '{ad.Status}'. Only 'PendingApproval' is allowed.");
-                            }
+                                throw new ConflictException($"Cannot approve ad with status '{ad.Status}'. Only 'PendingApproval' is allowed.");
                             break;
 
                         case BulkActionEnum.NeedChanges:
@@ -3180,9 +3198,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                                 shouldUpdate = true;
                             }
                             else
-                            {
-                                throw new InvalidOperationException($"Cannot need changes ad with status '{ad.Status}'. Only 'PendingApproval' is allowed.");
-                            }
+                                throw new ConflictException($"Cannot need changes ad with status '{ad.Status}'. Only 'PendingApproval' is allowed.");
                             break;
 
                         case BulkActionEnum.Publish:
@@ -3192,9 +3208,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                                 shouldUpdate = true;
                             }
                             else
-                            {
-                                throw new InvalidOperationException($"Cannot publish ad with status '{ad.Status}'. Only 'Unpublished' is allowed.");
-                            }
+                                throw new ConflictException($"Cannot publish ad with status '{ad.Status}'. Only 'Unpublished' is allowed.");
                             break;
 
                         case BulkActionEnum.Unpublish:
@@ -3204,9 +3218,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                                 shouldUpdate = true;
                             }
                             else
-                            {
-                                throw new InvalidOperationException($"Cannot unpublish ad with status '{ad.Status}'. Only 'Published' is allowed.");
-                            }
+                                throw new ConflictException($"Cannot unpublish ad with status '{ad.Status}'. Only 'Published' is allowed.");
                             break;
 
                         case BulkActionEnum.UnPromote:
@@ -3216,9 +3228,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                                 shouldUpdate = true;
                             }
                             else
-                            {
-                                throw new InvalidOperationException("Cannot unpromote an ad that is not promoted.");
-                            }
+                                throw new ConflictException("Cannot unpromote an ad that is not promoted.");
                             break;
 
                         case BulkActionEnum.UnFeature:
@@ -3228,9 +3238,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                                 shouldUpdate = true;
                             }
                             else
-                            {
-                                throw new InvalidOperationException("Cannot unfeature an ad that is not featured.");
-                            }
+                                throw new ConflictException("Cannot unfeature an ad that is not featured.");
                             break;
 
                         case BulkActionEnum.Promote:
@@ -3240,9 +3248,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                                 shouldUpdate = true;
                             }
                             else
-                            {
-                                throw new InvalidOperationException("Cannot promote an ad that is already promoted.");
-                            }
+                                throw new ConflictException("Cannot promote an ad that is already promoted.");
                             break;
 
                         case BulkActionEnum.Feature:
@@ -3252,25 +3258,23 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                                 shouldUpdate = true;
                             }
                             else
-                            {
-                                throw new InvalidOperationException("Cannot feature an ad that is already featured.");
-                            }
+                                throw new ConflictException("Cannot feature an ad that is already featured.");
                             break;
 
                         case BulkActionEnum.Remove:
                             ad.Status = AdStatus.Rejected;
                             shouldUpdate = true;
                             break;
+
                         case BulkActionEnum.Hold:
-                            if (ad.Status == AdStatus.Published || ad.Status == AdStatus.Unpublished || ad.Status == AdStatus.PendingApproval || ad.Status == AdStatus.NeedsModification || ad.Status != AdStatus.Hold)
+                            if (ad.Status == AdStatus.Published || ad.Status == AdStatus.Unpublished ||
+                                ad.Status == AdStatus.PendingApproval || ad.Status == AdStatus.NeedsModification || ad.Status != AdStatus.Hold)
                             {
                                 ad.Status = AdStatus.Hold;
                                 shouldUpdate = true;
                             }
                             else
-                            {
-                                throw new InvalidOperationException("Ad is already on hold.");
-                            }
+                                throw new ConflictException("Ad is already on hold.");
                             break;
 
                         case BulkActionEnum.Onhold:
@@ -3280,11 +3284,8 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                                 shouldUpdate = true;
                             }
                             else
-                            {
-                                throw new InvalidOperationException("Ad is not on hold.");
-                            }
+                                throw new ConflictException("Ad is not on hold.");
                             break;
-
 
                         default:
                             throw new InvalidOperationException("Invalid action");
@@ -3294,25 +3295,32 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                     {
                         ad.UpdatedAt = DateTime.UtcNow;
                         ad.UpdatedBy = userId;
-
-                        await _dapr.SaveStateAsync(ConstantValues.StateStoreNames.UnifiedStore, adKey.ToString(), ad, cancellationToken: ct);
-                        await IndexDealsToAzureSearch(ad, cancellationToken: ct);
                         updated.Add(ad);
                     }
-                }
 
+                    if (updated.Any())
+                    {
+                        await _context.SaveChangesAsync(ct);
+
+                        foreach (var updatedAd in updated)
+                        {
+                            await IndexDealsToAzureSearch(updatedAd, ct);
+                        }
+                    }
+                }
                 return "Action completed successfully";
             }
-            catch (ConflictException ex)
+            catch (DbUpdateConcurrencyException ex)
             {
                 throw new ConflictException(ex.Message);
             }
-            catch (Exception)
+            catch
             {
                 throw;
             }
         }
-      
+
+
 
         //public async Task<List<SubscriptionTypes>> GetSubscriptionTypes(CancellationToken cancellationToken = default)
         //{

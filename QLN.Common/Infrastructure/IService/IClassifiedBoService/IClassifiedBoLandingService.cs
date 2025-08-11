@@ -70,14 +70,24 @@ namespace QLN.Common.Infrastructure.IService.V2IClassifiedBoService
             DateTime? toDate = null, DateTime? publishedFrom = null, DateTime? publishedTo = null, int? status = null, bool? isFeatured = null,
             bool? isPromoted = null, int pageNumber = 1, int pageSize = 12, CancellationToken cancellationToken = default);
 
-        Task<PaginatedResult<DealsAdSummaryDto>> GetAllDeals(int? pageNumber = 1, int? pageSize = 12, string? search = null,
-string? sortBy = null, CancellationToken cancellationToken = default);
+        Task<PaginatedResult<DealsAdSummaryDto>> GetAllDeals(
+                    int? pageNumber = 1,
+                    int? pageSize = 12,
+                    string? subscriptionType = null,
+                    DateOnly? startDate = null,
+                    DateOnly? endDate = null,
+                    string? search = null,
+                    string? sortBy = null,
+                    CancellationToken cancellationToken = default);
 
         Task<PaginatedResult<DealsViewSummaryDto>> DealsViewSummary(
             int? pageNumber = 1,
             int? pageSize = 12,
+            DateOnly? startDate = null,
+            DateOnly? endDate = null,
             string? search = null,
-            string? sortBy = null, string? status = null,
+            string? sortBy = null,
+            string? status = null,
             bool? isPromoted = null,
             bool? isFeatured = null,
             CancellationToken cancellationToken = default);

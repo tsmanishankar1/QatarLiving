@@ -90,7 +90,8 @@ namespace QLN.Common.DTO_s
         public EventStatus? Status { get; set; }
         public string? Search { get; set; }
         public int? CategoryId { get; set; }
-        public string? SortOrder { get; set; }
+        public string? SortOrder { get; set; } 
+        public string? PriceSortOrder { get; set; }
         public DateOnly? FromDate { get; set; }
         public DateOnly? ToDate { get; set; }
         public string? FilterType { get; set; }

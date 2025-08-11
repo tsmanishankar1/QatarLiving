@@ -18,7 +18,7 @@ namespace QLN.DataMigration.Services
             CancellationToken cancellationToken);
         Task<CommunitiesResponse?> GetCommunitiesFromDrupalAsync(CancellationToken cancellationToken, int? page = null, int? page_size = null);
         Task<ArticleResponse?> GetNewsFromDrupalAsync(string sourceCategory, CancellationToken cancellationToken, int? page = null, int? page_size = null);
-        Task<ContentEventsResponse?> GetEventsFromDrupalAsync(string category_id, CancellationToken cancellationToken, int? page = null, int? page_size = null);
+        Task<ContentEventsResponse?> GetEventsFromDrupalAsync(CancellationToken cancellationToken, int? page = null, int? page_size = null);
         Task<CategoriesResponse?> GetCategoriesFromDrupalAsync(CancellationToken cancellationToken);
     }
 }

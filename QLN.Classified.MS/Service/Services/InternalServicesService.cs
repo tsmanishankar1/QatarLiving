@@ -53,6 +53,7 @@ namespace QLN.Classified.MS.Service.Services
 
             var allCategories = await query
                 .AsNoTracking()
+                .OrderBy(c => c.Id)
                 .ToListAsync(cancellationToken);
 
             var rootCategories = allCategories
@@ -391,7 +392,7 @@ namespace QLN.Classified.MS.Service.Services
 
             throw new ArgumentException("Invalid ServiceAdType.");
         }
-        private static void ValidateCommon(QLN.Common.Infrastructure.Model.Services dto)
+        private static void ValidateCommon(Common.Infrastructure.Model.Services dto)
         {
             if (string.IsNullOrWhiteSpace(dto.Title))
                 throw new ArgumentException("Title is required.");
@@ -429,7 +430,7 @@ namespace QLN.Classified.MS.Service.Services
                 throw new ArgumentException("License certificate is required for therapeutic services.");
             }
         }
-        public async Task<string> UpdateServiceAd(string userId, QLN.Common.Infrastructure.Model.Services dto, CancellationToken cancellationToken = default)
+        public async Task<string> UpdateServiceAd(string userId, Common.Infrastructure.Model.Services dto, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -547,7 +548,7 @@ namespace QLN.Classified.MS.Service.Services
                 throw new Exception("Error updating service ad", ex);
             }
         }
-        private async Task<CommonIndexRequest> IndexServiceToAzureSearch(QLN.Common.Infrastructure.Model.Services dto, CancellationToken cancellationToken)
+        private async Task<CommonIndexRequest> IndexServiceToAzureSearch(Common.Infrastructure.Model.Services dto, CancellationToken cancellationToken)
         {
 
             var indexDoc = new ServicesIndex
@@ -616,7 +617,7 @@ namespace QLN.Classified.MS.Service.Services
             return !string.IsNullOrWhiteSpace(email) &&
                    Regex.IsMatch(email, @"^[^@\s]+@[^@\s]+\.[^@\s]+$", RegexOptions.IgnoreCase);
         }
-        public async Task<QLN.Common.Infrastructure.Model.Services?> GetServiceAdById(long id, CancellationToken cancellationToken = default)
+        public async Task<Common.Infrastructure.Model.Services?> GetServiceAdById(long id, CancellationToken cancellationToken = default)
         {
             var ad = await _dbContext.Services
                 .AsNoTracking()
@@ -665,7 +666,7 @@ namespace QLN.Classified.MS.Service.Services
                 throw; 
             }
         }
-        public async Task<ServicesPagedResponse<QLN.Common.Infrastructure.Model.Services>> GetAllServicesWithPagination(BasePaginationQuery? dto, CancellationToken cancellationToken = default)
+        public async Task<ServicesPagedResponse<Common.Infrastructure.Model.Services>> GetAllServicesWithPagination(BasePaginationQuery? dto, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -807,7 +808,7 @@ namespace QLN.Classified.MS.Service.Services
                 throw new Exception("An error occurred while fetching all services.", ex);
             }
         }
-        public async Task<QLN.Common.Infrastructure.Model.Services> PromoteService(PromoteServiceRequest request, string? uid, CancellationToken ct)
+        public async Task<Common.Infrastructure.Model.Services> PromoteService(PromoteServiceRequest request, string? uid, CancellationToken ct)
         {
             var serviceAd = await _dbContext.Services
                 .FirstOrDefaultAsync(s => s.Id == request.ServiceId && s.IsActive, ct);
@@ -842,7 +843,7 @@ namespace QLN.Classified.MS.Service.Services
 
             return serviceAd;
         }
-        public async Task<QLN.Common.Infrastructure.Model.Services> FeatureService(FeatureServiceRequest request, string? uid, CancellationToken ct)
+        public async Task<Common.Infrastructure.Model.Services> FeatureService(FeatureServiceRequest request, string? uid, CancellationToken ct)
         {
             var serviceAd = await _dbContext.Services
                 .FirstOrDefaultAsync(s => s.Id == request.ServiceId && s.IsActive, ct);
@@ -879,7 +880,7 @@ namespace QLN.Classified.MS.Service.Services
 
             return serviceAd;
         }
-        public async Task<QLN.Common.Infrastructure.Model.Services> RefreshService(RefreshServiceRequest request, string? uid, CancellationToken ct)
+        public async Task<Common.Infrastructure.Model.Services> RefreshService(RefreshServiceRequest request, string? uid, CancellationToken ct)
         {
             var serviceAd = await _dbContext.Services
                 .FirstOrDefaultAsync(s => s.Id == request.ServiceId && s.IsActive, ct);
@@ -915,7 +916,7 @@ namespace QLN.Classified.MS.Service.Services
 
             return serviceAd;
         }
-        public async Task<QLN.Common.Infrastructure.Model.Services> PublishService(PublishServiceRequest request, string? uid, CancellationToken ct)
+        public async Task<Common.Infrastructure.Model.Services> PublishService(PublishServiceRequest request, string? uid, CancellationToken ct)
         {
             var serviceAd = await _dbContext.Services
                 .FirstOrDefaultAsync(s => s.Id == request.ServiceId && s.IsActive, ct);
@@ -984,13 +985,13 @@ namespace QLN.Classified.MS.Service.Services
 
             return serviceAd;
         }
-        public async Task<List<QLN.Common.Infrastructure.Model.Services>> ModerateBulkService(BulkModerationRequest request, CancellationToken ct)
+        public async Task<List<Common.Infrastructure.Model.Services>> ModerateBulkService(BulkModerationRequest request, CancellationToken ct)
         {
             var ads = await _dbContext.Services
                 .Where(s => request.AdIds.Contains(s.Id))
                 .ToListAsync(ct);
 
-            var updatedAds = new List<QLN.Common.Infrastructure.Model.Services>();
+            var updatedAds = new List<Common.Infrastructure.Model.Services>();
 
             foreach (var ad in ads)
             {
@@ -1044,6 +1045,7 @@ namespace QLN.Classified.MS.Service.Services
 
                     case BulkModerationAction.Remove:
                         ad.Status = ServiceStatus.Rejected;
+                        ad.IsActive = false;
                         ad.UpdatedBy = request.UpdatedBy;
                         shouldUpdate = true;
                         break;
@@ -1082,7 +1084,7 @@ namespace QLN.Classified.MS.Service.Services
             await _dbContext.SaveChangesAsync(ct);
             return updatedAds;
         }
-        private async Task EnsureNoActiveAdConflict(QLN.Common.Infrastructure.Model.Services currentAd, CancellationToken ct)
+        private async Task EnsureNoActiveAdConflict(Common.Infrastructure.Model.Services currentAd, CancellationToken ct)
         {
             var conflict = await _dbContext.Services.AnyAsync(s =>
                 s.Id != currentAd.Id &&

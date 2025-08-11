@@ -130,7 +130,6 @@
             return await _httpClient.GetFromJsonAsync<CategoriesResponse>(DrupalContentConstants.CategoriesPath, cancellationToken);
         }
         public async Task<ContentEventsResponse?> GetEventsFromDrupalAsync(
-            string category_id,
             CancellationToken cancellationToken,
             int? page = null,
             int? page_size = null
@@ -139,7 +138,7 @@
             page ??= 1;
             page_size ??= 30;
 
-            string requestUri = $"{DrupalContentConstants.EventsPath}?page={page}&page_size={page_size}&category_id={category_id}";
+            string requestUri = $"{DrupalContentConstants.EventsPath}?page={page}&page_size={page_size}";
 
             return await _httpClient.GetFromJsonAsync<ContentEventsResponse>(requestUri, cancellationToken);
         }
