@@ -15,6 +15,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Modal
         public IMudDialogInstance MudDialog { get; set; }
         [Inject]
         public IClassifiedService ClassifiedService { get; set; }
+        [Inject] private ILogger<AddFeaturedCategoryModalBase> Logger { get; set; } = default!;
         [Inject]
         public ISnackbar Snackbar { get; set; }
 
@@ -26,9 +27,9 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Modal
         protected bool IsLoadingCategories { get; set; } = true;
         public string TitleName { get; set; }
 
-        protected string? SelectedCategoryId;
-        protected string? SelectedSubcategoryId;
-        protected string? SelectedSectionId;
+        protected long? SelectedCategoryId;
+        protected long? SelectedSubcategoryId;
+        protected long? SelectedSectionId;
         protected string SelectedCategory { get; set; } = string.Empty;
         protected string SelectedSubcategory { get; set; } = string.Empty;
         protected string SelectedSection { get; set; } = string.Empty;
@@ -54,18 +55,11 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Modal
                     {
                         PropertyNameCaseInsensitive = true
                     }) ?? new();
-
-                    foreach (var cat in _categoryTree)
-                        Console.WriteLine($"- {cat.Name} ({cat.Id}) → {cat.Children?.Count ?? 0} subcategories");
-                }
-                else
-                {
-                    Console.WriteLine(" Failed to fetch category tree. Status: " + response?.StatusCode);
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine(" Exception while loading category tree: " + ex.Message);
+                Logger.LogError(ex, "OnInitializedAsync");
             }
             finally
             {
@@ -73,47 +67,30 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Modal
             }
         }
 
-        protected void OnCategoryChanged(string? categoryId)
+        protected void OnCategoryChanged(long? categoryId)
         {
-            Console.WriteLine($" Category Selected: {categoryId}");
             SelectedCategoryId = categoryId;
             SelectedSubcategoryId = null;
             SelectedSectionId = null;
-
-            var category = _categoryTree.FirstOrDefault(c => c.Id == categoryId);
+            var category = _categoryTree.FirstOrDefault(c => c.Id == categoryId.ToString());
             SelectedCategory = category?.Name ?? string.Empty;
-
             _subcategories = category?.Children ?? new();
-
-            Console.WriteLine($"Subcategories Count: {_subcategories.Count}");
-            foreach (var sub in _subcategories)
-                Console.WriteLine($" - {sub.Name} ({sub.Id})");
-
             _sections = new();
         }
 
 
-        protected void OnSubcategoryChanged(string? subcategoryId)
+        protected void OnSubcategoryChanged(long? subcategoryId)
         {
-            Console.WriteLine($"➡️ Subcategory Selected: {subcategoryId}");
             SelectedSubcategoryId = subcategoryId;
             SelectedSectionId = null;
-
-            var sub = _subcategories.FirstOrDefault(c => c.Id == subcategoryId);
+            var sub = _subcategories.FirstOrDefault(c => c.Id == subcategoryId.ToString());
             SelectedSubcategory = sub?.Name ?? string.Empty;
-
             _sections = sub?.Children ?? new();
-
-            Console.WriteLine($"Sections Count: {_sections.Count}");
-            foreach (var sec in _sections)
-                Console.WriteLine($" - {sec.Name} ({sec.Id})");
         }
-        protected void OnSectionChanged(string? sectionId)
+        protected void OnSectionChanged(long? sectionId)
         {
-            Console.WriteLine($" Section Selected: {sectionId}");
             SelectedSectionId = sectionId;
-
-            var section = _sections.FirstOrDefault(c => c.Id == sectionId);
+            var section = _sections.FirstOrDefault(c => c.Id == sectionId.ToString());
             SelectedSection = section?.Name ?? string.Empty;
         }
 
@@ -121,7 +98,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Modal
 
         protected bool IsFormValid()
         {
-            return !string.IsNullOrEmpty(SelectedCategoryId);
+            return SelectedCategoryId.HasValue;
         }
 
 

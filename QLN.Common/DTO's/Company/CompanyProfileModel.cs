@@ -58,6 +58,8 @@ namespace QLN.Common.DTO_s.Company
         public int CRNumber { get; set; }
         [Required]
         public string CRDocument { get; set; } = string.Empty;
+        public string UploadFeed { get; set; } = string.Empty;
+        public string XMLFeed { get; set; } = string.Empty;
         public VerifiedStatus? Status { get; set; }
         [Required]
         public VerticalType Vertical { get; set; }

@@ -74,15 +74,14 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                 var duplicateExists = await _context.SeasonalPicks
                     .AnyAsync(p =>
                         p.IsActive == true &&
-                        p.Title == dto.Title &&
-                        p.CategoryId == dto.CategoryId &&
+                        p.Title == dto.Title &&                       
                         p.Vertical == dto.Vertical &&
                         p.EndDate >= today,
                         cancellationToken);
 
                 if (duplicateExists)
                 {
-                    var message = $"A seasonal pick with the category '{dto.CategoryName}' already exists for vertical '{dto.Vertical}'.";
+                    var message = $"A seasonal pick with the title '{dto.Title}' already exists for vertical '{dto.Vertical}'.";
                     _logger.LogWarning(message);
                     throw new ConflictException(message);
                 }
@@ -279,9 +278,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
 
                     if (!seasonalPicksMap.TryGetValue(pickId, out var seasonalPicks))
                         throw new InvalidDataException($"Seasonal Pick with ID '{assignment.PickId}' not found or inactive.");
-
-                    if (seasonalPicks.CreatedBy != userId)
-                        throw new UnauthorizedAccessException("You are not authorized to update this Seasonal Pick.");
+                 
 
                     seasonalPicks.SlotOrder = assignment.SlotOrder;
                     seasonalPicks.UpdatedBy = userId;
@@ -327,12 +324,6 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                 {
                     _logger.LogWarning("Pick not found for delete. PickId: {PickId}", pickId);
                     throw new KeyNotFoundException($"Pick with ID '{pickId}' not found.");
-                }
-
-                if (pick.CreatedBy != userId)
-                {
-                    _logger.LogWarning("Unauthorized attempt to delete pick. PickId: {PickId}, UserId: {UserId}", pickId, userId);
-                    throw new UnauthorizedAccessException("You are not authorized to delete this pick.");
                 }
 
                 pick.IsActive = false;
@@ -396,13 +387,13 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                     p.IsActive &&
                     p.Id != parsedId &&
                     p.Vertical == dto.Vertical &&
-                    p.CategoryId == dto.CategoryId &&
+                    p.Title == dto.Title &&
                     p.EndDate >= today,
                     cancellationToken);
 
                 if (duplicateExists)
                 {
-                    var message = $"A seasonal pick '{dto.CategoryName}' already exists for vertical '{dto.Vertical}'.";
+                    var message = $"A seasonal pick title '{dto.Title}' already exists for vertical '{dto.Vertical}'.";
                     _logger.LogWarning(message);
                     throw new ConflictException(message);
                 }
@@ -455,15 +446,14 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                 bool duplicateExists = await _context.FeaturedStores
                     .AnyAsync(p =>
                         p.IsActive &&
-                        p.Title == dto.Title &&
-                        p.StoreId.ToLower() == dto.StoreId.ToLower() &&
+                        p.Title == dto.Title &&                        
                         p.Vertical == dto.Vertical &&
                         p.EndDate >= today,
                         cancellationToken);
 
                 if (duplicateExists)
                 {
-                    var message = $"A featured store with the name '{dto.StoreName}' already exists for vertical '{dto.Vertical}'.";
+                    var message = $"A featured store with the title '{dto.Title}' already exists for vertical '{dto.Vertical}'.";
                     _logger.LogWarning(message);
                     throw new ConflictException(message);
                 }
@@ -661,9 +651,6 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                     if (!storeDict.TryGetValue(storeGuid.ToString(), out var store))
                         throw new KeyNotFoundException($"Store with ID '{assignment.StoreId}' not found or not active in vertical '{request.Vertical}'.");
 
-                    if (store.CreatedBy != userId)
-                        throw new UnauthorizedAccessException("You are not authorized to update this store.");
-
                     store.SlotOrder = assignment.SlotOrder;
                     store.UpdatedBy = userId;
                     store.UpdatedAt = DateTime.UtcNow;
@@ -705,12 +692,6 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                 {
                     _logger.LogWarning("Featured store not found. StoreId: {StoreId}", storeId);
                     throw new KeyNotFoundException($"Featured store with ID '{storeId}' not found.");
-                }
-
-                if (store.CreatedBy != userId)
-                {
-                    _logger.LogWarning("Unauthorized attempt to delete store. StoreId: {StoreId}, UserId: {UserId}", storeId, userId);
-                    throw new UnauthorizedAccessException("You are not authorized to delete this featured store.");
                 }
 
                 store.IsActive = false;
@@ -769,13 +750,13 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                     p.IsActive &&
                     p.Id != parsedId &&
                     p.Vertical == dto.Vertical &&
-                    p.StoreId == dto.StoreId &&
+                    p.Title == dto.Title &&
                     p.EndDate >= today,
                     cancellationToken);
 
                 if (duplicateExists)
                 {
-                    var message = $"A featured store '{dto.StoreName}' already exists for vertical '{dto.Vertical}'.";
+                    var message = $"A featured store title '{dto.Title}' already exists for vertical '{dto.Vertical}'.";
                     _logger.LogWarning(message);
                     throw new ConflictException(message);
                 }
@@ -825,13 +806,12 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                     p.IsActive &&
                     p.Title == dto.Title &&
                     p.Vertical == dto.Vertical &&
-                    p.CategoryId == dto.CategoryId &&
                     p.EndDate >= today,
                     cancellationToken);
 
                 if (duplicateExists)
                 {
-                    var message = $"A featured category '{dto.CategoryName}' already exists for vertical '{dto.Vertical}'.";
+                    var message = $"A featured category Title '{dto.Title}' already exists for vertical '{dto.Vertical}'.";
                     _logger.LogWarning(message);
                     throw new ConflictException(message);
                 }
@@ -893,12 +873,6 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                 {
                     _logger.LogWarning("FeaturedCategory not found for delete. FeaturedCategoryId: {FeaturedCategoryId}", id);
                     throw new KeyNotFoundException($"FeaturedCategory with ID '{id}' not found.");
-                }
-
-                if (featuredCategory.CreatedBy != userId)
-                {
-                    _logger.LogWarning("Unauthorized delete attempt. FeaturedCategoryId: {FeaturedCategoryId}, UserId: {UserId}", id, userId);
-                    throw new UnauthorizedAccessException("You are not authorized to delete this FeaturedCategory.");
                 }
 
                 featuredCategory.IsActive = false;
@@ -994,13 +968,13 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                     p.IsActive &&
                     p.Id != parsedId &&
                     p.Vertical == dto.Vertical &&
-                    p.CategoryId == dto.CategoryId &&
+                    p.Title == dto.Title &&
                     p.EndDate >= today,
                     cancellationToken);
 
                 if (duplicateExists)
                 {
-                    var message = $"A featured category '{dto.CategoryName}' already exists for vertical '{dto.Vertical}'.";
+                    var message = $"A featured category title '{dto.Title}' already exists for vertical '{dto.Vertical}'.";
                     _logger.LogWarning(message);
                     throw new ConflictException(message);
                 }
@@ -1102,9 +1076,6 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                     if (!featuredCategoryMap.TryGetValue(categoryId, out var featuredCategory))
                         throw new InvalidDataException($"Featured Category with ID '{assignment.CategoryId}' not found or inactive.");
 
-                    if (featuredCategory.CreatedBy != userId)
-                        throw new UnauthorizedAccessException("You are not authorized to update this Featured Category.");
-
                     featuredCategory.SlotOrder = assignment.SlotOrder;
                     featuredCategory.UpdatedBy = userId;
                     featuredCategory.UpdatedAt = DateTime.UtcNow;
@@ -1143,9 +1114,6 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                 var newItem = relevantCategories.FirstOrDefault(p => p.Id == categoryGuid);
                 if (newItem == null)
                     throw new InvalidOperationException("Selected featured category not found.");
-
-                if (newItem.CreatedBy != userId)
-                    throw new UnauthorizedAccessException("You are not authorized to update this Featured Category.");
 
                 foreach (var item in relevantCategories)
                 {
@@ -1191,7 +1159,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
             foreach (var ad in ads)
             {
                 bool shouldUpdate = false;
-
+                
                 switch (request.Action)
                 {
                     case BulkActionEnum.Approve:
@@ -1293,6 +1261,34 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                     case BulkActionEnum.Remove:
                         ad.Status = AdStatus.Rejected;
                         shouldUpdate = true;
+                        break;
+
+                    case BulkActionEnum.Hold:
+                        if (ad.Status == AdStatus.Draft)
+                        {
+                            throw new InvalidOperationException("Cannot hold an ad that is in draft status.");
+                        }
+                        else if (ad.Status != AdStatus.Hold)
+                        {
+                            ad.Status = AdStatus.Hold;
+                            shouldUpdate = true;
+                        }
+                        else
+                        {
+                            throw new InvalidOperationException("Ad is already on hold.");
+                        }
+                        break;
+
+                    case BulkActionEnum.Onhold:
+                        if (ad.Status != AdStatus.Onhold)
+                        {
+                            ad.Status = AdStatus.Unpublished;
+                            shouldUpdate = true;
+                        }
+                        else
+                        {
+                            throw new InvalidOperationException("Ad is not on hold.");
+                        }
                         break;
 
                     default:
@@ -1321,7 +1317,6 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
             return "Action completed successfully";
         }
 
-
         public async Task<string> BulkCollectiblesAction(BulkActionRequest request, string userId, CancellationToken ct)
         {
             // Fetch all collectibles in one query
@@ -1339,7 +1334,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
             foreach (var ad in ads)
             {
                 bool shouldUpdate = false;
-
+               
                 switch (request.Action)
                 {
                     case BulkActionEnum.Approve:
@@ -1441,6 +1436,34 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                     case BulkActionEnum.Remove:
                         ad.Status = AdStatus.Rejected;
                         shouldUpdate = true;
+                        break;
+
+                    case BulkActionEnum.Hold:
+                        if (ad.Status == AdStatus.Draft)
+                        {
+                            throw new InvalidOperationException("Cannot hold an ad that is in draft status.");
+                        }
+                        else if (ad.Status != AdStatus.Hold)
+                        {
+                            ad.Status = AdStatus.Hold;
+                            shouldUpdate = true;
+                        }
+                        else
+                        {
+                            throw new InvalidOperationException("Ad is already on hold.");
+                        }
+                        break;
+
+                    case BulkActionEnum.Onhold:
+                        if (ad.Status != AdStatus.Onhold)
+                        {
+                            ad.Status = AdStatus.Unpublished;
+                            shouldUpdate = true;
+                        }
+                        else
+                        {
+                            throw new InvalidOperationException("Ad is not on hold.");
+                        }
                         break;
 
                     default:
@@ -3267,14 +3290,19 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                             break;
 
                         case BulkActionEnum.Hold:
-                            if (ad.Status == AdStatus.Published || ad.Status == AdStatus.Unpublished ||
-                                ad.Status == AdStatus.PendingApproval || ad.Status == AdStatus.NeedsModification || ad.Status != AdStatus.Hold)
+                            if (ad.Status == AdStatus.Draft)
+                            {
+                                throw new ConflictException("Cannot hold an ad that is in draft status.");
+                            }
+                            else if (ad.Status != AdStatus.Hold)
                             {
                                 ad.Status = AdStatus.Hold;
                                 shouldUpdate = true;
                             }
                             else
+                            {
                                 throw new ConflictException("Ad is already on hold.");
+                            }
                             break;
 
                         case BulkActionEnum.Onhold:

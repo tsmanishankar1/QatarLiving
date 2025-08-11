@@ -13,5 +13,6 @@ namespace QLN.Common.Infrastructure.IService.ICompanyService
         Task<string> ApproveCompany(string userId, CompanyProfileApproveDto dto, CancellationToken cancellationToken = default);
         Task<List<Company>> GetCompaniesByTokenUser(string userId, CancellationToken cancellationToken = default);
         Task<CompanySubscriptionListResponseDto> GetCompanySubscriptions(CompanySubscriptionFilter filter, CancellationToken cancellationToken = default);
+        Task<string> MigrateCompany(string guid, string uid, string userName, CompanyProfile dto, CancellationToken cancellationToken = default);
     }
 }

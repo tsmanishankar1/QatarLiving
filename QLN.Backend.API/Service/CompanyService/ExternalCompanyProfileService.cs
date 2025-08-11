@@ -63,6 +63,51 @@ namespace QLN.Backend.API.Service.CompanyService
                 throw;
             }
         }
+
+        public async Task<string> MigrateCompany(string guid, string uid, string userName, CompanyProfile dto, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var url = $"/api/companyprofile/migratecompanybyuserid?guid={guid}&uid={uid}&userName={userName}";
+                var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, ConstantValues.Company.CompanyServiceAppId, url);
+                request.Content = new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
+
+                var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
+
+                if (response.StatusCode == HttpStatusCode.BadRequest)
+                {
+                    var errorJson = await response.Content.ReadAsStringAsync(cancellationToken);
+
+                    string errorMessage;
+                    try
+                    {
+                        var problem = JsonSerializer.Deserialize<ProblemDetails>(errorJson);
+                        errorMessage = problem?.Detail ?? "Unknown error.";
+                    }
+                    catch
+                    {
+                        errorMessage = errorJson;
+                    }
+                    throw new InvalidDataException(errorMessage);
+                }
+                if (response.StatusCode == HttpStatusCode.Conflict)
+                {
+                    var errorJson = await response.Content.ReadAsStringAsync(cancellationToken);
+                    var problem = JsonSerializer.Deserialize<ProblemDetails>(errorJson);
+                    throw new ConflictException(problem?.Detail ?? "Conflict error.");
+                }
+                response.EnsureSuccessStatusCode();
+
+                var rawJson = await response.Content.ReadAsStringAsync(cancellationToken);
+                return JsonSerializer.Deserialize<string>(rawJson) ?? "Unknown response";
+            }
+
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating company profile");
+                throw;
+            }
+        }
         public async Task<QLN.Common.Infrastructure.Model.Company?> GetCompanyById(Guid id, CancellationToken cancellationToken = default)
         {
             try
@@ -335,5 +380,6 @@ namespace QLN.Backend.API.Service.CompanyService
                 throw;
             }
         }
+
     }
 }

@@ -152,6 +152,70 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
             .Produces<string>(StatusCodes.Status409Conflict)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapPost("/migratecompanybyuserid", async Task<Results<
+                Ok<string>,
+                BadRequest<ProblemDetails>,
+                Conflict<string>,
+                ProblemHttpResult>>
+            (
+                [FromQuery] string guid,
+                [FromQuery] string uid,
+                [FromQuery] string userName,
+                CompanyRequest dto,
+                ICompanyProfileService service,
+                CancellationToken cancellationToken = default) =>
+            {
+                try
+                {
+                    dto.CreatedBy = uid;
+                    dto.UserName = userName;
+                    if (dto.CreatedBy == string.Empty)
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "UserId must be provided in the payload.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+
+                    var result = await service.MigrateCompany(guid, uid, userName, dto, cancellationToken);
+                    return TypedResults.Ok(result);
+                }
+                catch (ConflictException ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Conflict",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status409Conflict
+                    );
+                }
+                catch (InvalidDataException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid Data",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                           title: "Internal Server Error",
+                           detail: ex.Message,
+                           statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+            .WithName("MigrateCompanyProfileByUserId")
+            .WithTags("Company")
+            .WithSummary("Migrate company profile by passing user ID explicitly")
+            .WithDescription("Used by external services to migrate company profiles without requiring authorization.")
+            .ExcludeFromDescription()
+            .Produces<string>(StatusCodes.Status200OK)
+            .Produces<string>(StatusCodes.Status409Conflict)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
             return group;
         }
         public static RouteGroupBuilder MapGetByCompanyProfile(this RouteGroupBuilder group)
