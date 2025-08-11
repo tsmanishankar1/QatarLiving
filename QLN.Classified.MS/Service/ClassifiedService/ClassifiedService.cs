@@ -25,6 +25,7 @@ using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.QLDbContext;
 using QLN.Common.Infrastructure.Service.FileStorage;
 using QLN.Common.Infrastructure.Utilities;
+using QLN.Common.Migrations.QLLog;
 using static Dapr.Client.Autogen.Grpc.v1.Dapr;
 using static QLN.Common.DTO_s.ClassifiedsIndex;
 
@@ -143,6 +144,7 @@ namespace QLN.Classified.MS.Service
         {
             throw new NotImplementedException();
         }
+
         public async Task<AdCreatedResponseDto> CreateClassifiedItemsAd(
     Items dto,
     CancellationToken cancellationToken = default)
@@ -221,11 +223,12 @@ namespace QLN.Classified.MS.Service
             }
         }
 
+
         public async Task<AdCreatedResponseDto> RefreshClassifiedItemsAd(
-     SubVertical subVertical,
-     long adId,
-     string userId,
-     CancellationToken cancellationToken)
+            SubVertical subVertical,
+            long adId,
+            string userId,
+            CancellationToken cancellationToken)
         {
             _logger.LogInformation(
                 "RefreshClassifiedItemsAd called. SubVertical: {SubVertical}, AdId: {AdId}, UserId: {UserId}",
@@ -295,6 +298,29 @@ namespace QLN.Classified.MS.Service
                 _logger.LogDebug("Saving changes to database for AdId: {AdId}", adId);
                 await _context.SaveChangesAsync(cancellationToken);
 
+                _logger.LogDebug("Indexing refreshed ad {AdId} in Azure Search for {SubVertical}", adId, subVertical);
+                switch (subVertical)
+                {
+                    case SubVertical.Items:
+                        await IndexItemsToAzureSearch((Items)adItem, cancellationToken);
+                        break;
+
+                    case SubVertical.Preloved:
+                        await IndexPrelovedToAzureSearch((Preloveds)adItem, cancellationToken);
+                        break;
+
+                    case SubVertical.Collectibles:
+                        await IndexCollectiblesToAzureSearch((Collectibles)adItem, cancellationToken);
+                        break;
+
+                    case SubVertical.Deals:
+                        await IndexDealsToAzureSearch((Deals)adItem, cancellationToken);
+                        break;
+                }
+
+                _logger.LogInformation("Ad {AdId} successfully refreshed and indexed.", adId);
+
+
                 _logger.LogInformation("Ad {AdId} successfully refreshed.", adId);
 
                 return new AdCreatedResponseDto
@@ -319,7 +345,6 @@ namespace QLN.Classified.MS.Service
                 throw new InvalidOperationException("Failed to refresh the ad due to an unexpected error.", ex);
             }
         }
-
 
         public async Task<AdCreatedResponseDto> CreateClassifiedPrelovedAd(Preloveds dto, CancellationToken cancellationToken = default)
         {
@@ -492,216 +517,103 @@ namespace QLN.Classified.MS.Service
                 throw new InvalidOperationException("An unexpected error occurred while creating the Deals ad. Please try again later.", ex);
             }
         }
-
-        public async Task<DeleteAdResponseDto> DeleteClassifiedItemsAd(long adId, string userId, CancellationToken cancellationToken = default)
+      
+        public async Task<DeleteAdResponseDto> DeleteClassifiedAd(SubVertical subVertical, long adId, string userId, CancellationToken cancellationToken = default)
         {
+            if (adId <= 0)
+                throw new ArgumentException("Ad ID must be a valid positive number.", nameof(adId));
+
+            if (string.IsNullOrWhiteSpace(userId))
+                throw new ArgumentException("UserId is required.", nameof(userId));
 
             try
             {
-                if (string.IsNullOrWhiteSpace(userId))
+                switch (subVertical)
                 {
-                    throw new ArgumentException("UserId must not be empty.");
+                    case SubVertical.Items:
+                        {
+                            var entity = await _context.Item
+                                .FirstOrDefaultAsync(x => x.Id == adId && x.IsActive == true, cancellationToken);
+
+                            if (entity == null)
+                                throw new KeyNotFoundException($"Items ad with ID {adId} not found.");
+
+                            if (!string.Equals(entity.UserId, userId, StringComparison.OrdinalIgnoreCase))
+                                throw new UnauthorizedAccessException("You are not authorized to delete this ad.");
+
+                            entity.IsActive = false;
+                            entity.UpdatedAt = DateTime.UtcNow;
+
+                            await _context.SaveChangesAsync(cancellationToken);
+
+                            return new DeleteAdResponseDto { Message = "Ad soft-deleted successfully" };
+                        }
+
+                    case SubVertical.Preloved:
+                        {
+                            var entity = await _context.Preloved
+                                .FirstOrDefaultAsync(x => x.Id == adId && x.IsActive == true, cancellationToken);
+
+                            if (entity == null)
+                                throw new KeyNotFoundException($"Preloved ad with ID {adId} not found.");
+
+                            if (!string.Equals(entity.UserId, userId, StringComparison.OrdinalIgnoreCase))
+                                throw new UnauthorizedAccessException("You are not authorized to delete this ad.");
+
+                            entity.IsActive = false;
+                            entity.UpdatedAt = DateTime.UtcNow;
+
+                            await _context.SaveChangesAsync(cancellationToken);
+
+                            return new DeleteAdResponseDto { Message = "Ad soft-deleted successfully" };
+                        }
+
+                    case SubVertical.Collectibles:
+                        {
+                            var entity = await _context.Collectible
+                                .FirstOrDefaultAsync(x => x.Id == adId && x.IsActive == true, cancellationToken);
+
+                            if (entity == null)
+                                throw new KeyNotFoundException($"Collectibles ad with ID {adId} not found.");
+
+                            if (!string.Equals(entity.UserId, userId, StringComparison.OrdinalIgnoreCase))
+                                throw new UnauthorizedAccessException("You are not authorized to delete this ad.");
+
+                            entity.IsActive = false;
+                            entity.UpdatedAt = DateTime.UtcNow;
+
+                            await _context.SaveChangesAsync(cancellationToken);
+
+                            return new DeleteAdResponseDto { Message = "Ad soft-deleted successfully" };
+                        }
+
+                    case SubVertical.Deals:
+                        {
+                            var entity = await _context.Deal
+                                .FirstOrDefaultAsync(x => x.Id == adId && x.IsActive == true, cancellationToken);
+
+                            if (entity == null)
+                                throw new KeyNotFoundException($"Deals ad with ID {adId} not found.");
+
+                            if (!string.Equals(entity.UserId, userId, StringComparison.OrdinalIgnoreCase))
+                                throw new UnauthorizedAccessException("You are not authorized to delete this ad.");
+
+                            entity.IsActive = false;
+                            entity.UpdatedAt = DateTime.UtcNow;
+
+                            await _context.SaveChangesAsync(cancellationToken);
+
+                            return new DeleteAdResponseDto { Message = "Ad soft-deleted successfully" };
+                        }
+
+                    default:
+                        throw new InvalidOperationException($"Unsupported subvertical: {subVertical}");
                 }
-
-                var entity = await _context.Item.Where(x => x.Id == adId && x.IsActive == true)
-                    .Select(x => new { x.Id, x.UserId, x.SubVertical })
-                    .FirstOrDefaultAsync(cancellationToken);
-
-                if (entity == null)
-                {
-                    throw new KeyNotFoundException($"Ad with ID {adId} not found.");
-                }
-
-                if (!string.Equals(entity.SubVertical.ToString(), SubVertical.Items.ToString(), StringComparison.OrdinalIgnoreCase))
-                {
-                    throw new InvalidOperationException($"Ad ID {adId} does not belong to the Items subvertical. ");
-                }
-
-                if (!string.Equals(entity.UserId, userId, StringComparison.OrdinalIgnoreCase))
-                    throw new UnauthorizedAccessException("You are not authorized to delete this ad. It doesn't belong to you.");
-
-                var patchEntity = new Items
-                {
-                    Id = entity.Id,
-                    IsActive = false,
-                    UpdatedAt = DateTime.UtcNow
-                };
-                _context.Item.Attach(patchEntity);
-                _context.Entry(patchEntity).Property(x => x.IsActive).IsModified = true;
-                _context.Entry(patchEntity).Property(x => x.UpdatedAt).IsModified = true;
-
-                await _context.SaveChangesAsync(cancellationToken);
-
-                return new DeleteAdResponseDto
-                {
-                    Message = "Ad soft-deleted successfully",                    
-                };
-            }           
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error occurred while deleting classified items ad with ID: {AdId}", adId);
-                throw new InvalidOperationException("An unexpected error occurred while deleting the classified items ad.", ex);
-            }
-        }
-
-        public async Task<DeleteAdResponseDto> DeleteClassifiedPrelovedAd(long adId, string userId, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                if (string.IsNullOrWhiteSpace(userId))
-                {
-                    throw new ArgumentException("UserId must not be empty.");
-                }
-
-                var entity = await _context.Preloved.Where(x => x.Id == adId && x.IsActive == true)
-                    .Select(x => new { x.Id, x.UserId, x.SubVertical })
-                    .FirstOrDefaultAsync(cancellationToken);
-
-                if (entity == null)
-                {
-                    throw new KeyNotFoundException($"Ad with ID {adId} not found.");
-                }
-
-                if (!string.Equals(entity.SubVertical.ToString(), SubVertical.Preloved.ToString(), StringComparison.OrdinalIgnoreCase))
-                {
-                    throw new InvalidOperationException($"Ad ID {adId} does not belong to the Preloved subvertical. ");
-                }
-
-                if (!string.Equals(entity.UserId, userId, StringComparison.OrdinalIgnoreCase))
-                    throw new UnauthorizedAccessException("You are not authorized to delete this ad. It doesn't belong to you.");
-
-                var patchEntity = new Preloveds
-                {
-                    Id = entity.Id,
-                    IsActive = false,
-                    UpdatedAt = DateTime.UtcNow
-                };
-                _context.Preloved.Attach(patchEntity);
-                _context.Entry(patchEntity).Property(x => x.IsActive).IsModified = true;
-                _context.Entry(patchEntity).Property(x => x.UpdatedAt).IsModified = true;
-
-                await _context.SaveChangesAsync(cancellationToken);
-
-                return new DeleteAdResponseDto
-                {
-                    Message = "Ad soft-deleted successfully",
-                };
-            }
-            catch (JsonException jex)
-            {
-                _logger.LogError(jex, "JSON parsing failed for Preloved ad ID: {AdId}", adId);
-                throw new InvalidOperationException("Failed to parse Preloved ad JSON. Invalid format.", jex);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error occurred while deleting classified preloved ad with ID: {AdId}", adId);
-                throw new InvalidOperationException("An unexpected error occurred while deleting the classified preloved ad.", ex);
-            }
-        }
-
-        public async Task<DeleteAdResponseDto> DeleteClassifiedCollectiblesAd(long adId, string userId, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                if (string.IsNullOrWhiteSpace(userId))
-                {
-                    throw new ArgumentException("UserId must not be empty.");
-                }
-
-                var entity = await _context.Collectible.Where(x => x.Id == adId && x.IsActive == true)
-                    .Select(x => new { x.Id, x.UserId, x.SubVertical })
-                    .FirstOrDefaultAsync(cancellationToken);
-
-                if (entity == null)
-                {
-                    throw new KeyNotFoundException($"Ad with ID {adId} not found.");
-                }
-
-                if (!string.Equals(entity.SubVertical.ToString(), SubVertical.Collectibles.ToString(), StringComparison.OrdinalIgnoreCase))
-                {
-                    throw new InvalidOperationException($"Ad ID {adId} does not belong to the Preloved subvertical. ");
-                }
-
-                if (!string.Equals(entity.UserId, userId, StringComparison.OrdinalIgnoreCase))
-                    throw new UnauthorizedAccessException("You are not authorized to delete this ad. It doesn't belong to you.");
-
-                var patchEntity = new Collectibles
-                {
-                    Id = entity.Id,
-                    IsActive = false,
-                    UpdatedAt = DateTime.UtcNow
-                };
-                _context.Collectible.Attach(patchEntity);
-                _context.Entry(patchEntity).Property(x => x.IsActive).IsModified = true;
-                _context.Entry(patchEntity).Property(x => x.UpdatedAt).IsModified = true;
-
-                await _context.SaveChangesAsync(cancellationToken);
-
-
-                return new DeleteAdResponseDto
-                {
-                    Message = "Collectibles Ad deleted successfully",
-                };
-            }
-            catch (JsonException jex)
-            {
-                _logger.LogError(jex, "JSON parsing failed for Collectibles ad ID: {AdId}", adId);
-                throw new InvalidOperationException("Failed to parse Collectibles ad JSON. Invalid format.", jex);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error occurred while deleting classified collectibles ad with ID: {AdId}", adId);
-                throw new InvalidOperationException("An unexpected error occurred while deleting the classified collectibles ad.", ex);
-            }
-        }
-
-        public async Task<DeleteAdResponseDto> DeleteClassifiedDealsAd(long adId, string userId, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                if (string.IsNullOrWhiteSpace(userId))
-                {
-                    throw new ArgumentException("UserId must not be empty.");
-                }
-
-                var entity = await _context.Deal.Where(x => x.Id == adId && x.IsActive == true)
-                    .Select(x => new { x.Id, x.UserId})
-                    .FirstOrDefaultAsync(cancellationToken);
-
-                if (entity == null)
-                {
-                    throw new KeyNotFoundException($"Ad with ID {adId} not found.");
-                }              
-
-                if (!string.Equals(entity.UserId, userId, StringComparison.OrdinalIgnoreCase))
-                    throw new UnauthorizedAccessException("You are not authorized to delete this ad. It doesn't belong to you.");
-
-                var patchEntity = new Deals
-                {
-                    Id = entity.Id,
-                    IsActive = false,
-                    UpdatedAt = DateTime.UtcNow
-                };
-                _context.Deal.Attach(patchEntity);
-                _context.Entry(patchEntity).Property(x => x.IsActive).IsModified = true;
-                _context.Entry(patchEntity).Property(x => x.UpdatedAt).IsModified = true;
-
-                await _context.SaveChangesAsync(cancellationToken);
-
-                return new DeleteAdResponseDto
-                {
-                    Message = "Deals Ad deleted successfully",
-                };
-            }
-            catch (JsonException jex)
-            {
-                _logger.LogError(jex, "JSON parsing failed for Deals ad ID: {AdId}", adId);
-                throw new InvalidOperationException("Failed to parse Deals ad JSON. Invalid format.", jex);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error occurred while deleting classified deals ad with ID: {AdId}", adId);
-                throw new InvalidOperationException("An unexpected error occurred while deleting the classified deals ad.", ex);
+                _logger.LogError(ex, "Error occurred while deleting classified ad with ID: {AdId}", adId);
+                throw new InvalidOperationException("Failed to delete Classified Ad.", ex);
             }
         }
 
@@ -1730,6 +1642,37 @@ namespace QLN.Classified.MS.Service
 
                 await _context.SaveChangesAsync(cancellationToken);
 
+                foreach (var ad in ads)
+                {
+                    switch ((SubVertical)subVertical)
+                    {
+                        case SubVertical.Items:
+                            var item = await _context.Item.FirstOrDefaultAsync(i => i.Id == ad.Id, cancellationToken);
+                            if (item != null)
+                                await IndexItemsToAzureSearch(item, cancellationToken);
+                            break;
+
+                        case SubVertical.Deals:
+                            var deal = await _context.Deal.FirstOrDefaultAsync(d => d.Id == ad.Id, cancellationToken);
+                            if (deal != null)
+                                await IndexDealsToAzureSearch(deal, cancellationToken);
+                            break;
+
+                        case SubVertical.Preloved:
+                            var preloved = await _context.Preloved.FirstOrDefaultAsync(p => p.Id == ad.Id, cancellationToken);
+                            if (preloved != null)
+                                await IndexPrelovedToAzureSearch(preloved, cancellationToken);
+                            break;
+
+                        case SubVertical.Collectibles:
+                            var collectible = await _context.Collectible.FirstOrDefaultAsync(c => c.Id == ad.Id, cancellationToken);
+                            if (collectible != null)
+                                await IndexCollectiblesToAzureSearch(collectible, cancellationToken);
+                            break;
+                    }
+                }
+
+
                 _logger.LogInformation("{Count} ad(s) successfully {Action}.",
                     ads.Count, isPublished ? "published" : "unpublished");
 
@@ -2064,6 +2007,8 @@ namespace QLN.Classified.MS.Service
                 _logger.LogInformation("FeatureClassifiedAd | SubVertical: {SubVertical}, AdId: {AdId}, UserId: {UserId}",
                     dto.SubVertical, dto.AdId, userId);
 
+                object? adItem = null;
+
                 switch (dto.SubVertical)
                 {
                     case SubVertical.Items:
@@ -2079,6 +2024,7 @@ namespace QLN.Classified.MS.Service
                             ad.IsFeatured = true;
                             ad.UpdatedAt = DateTime.UtcNow;
                             ad.FeaturedExpiryDate = DateTime.UtcNow.AddDays(30);
+                            adItem = ad;
                             await _context.SaveChangesAsync(cancellationToken);
                             break;
                         }
@@ -2096,6 +2042,7 @@ namespace QLN.Classified.MS.Service
                             ad.IsFeatured = true;
                             ad.FeaturedExpiryDate = DateTime.UtcNow.AddDays(30);
                             ad.UpdatedAt = DateTime.UtcNow;
+                            adItem = ad;
                             await _context.SaveChangesAsync(cancellationToken);
                             break;
                         }
@@ -2113,6 +2060,7 @@ namespace QLN.Classified.MS.Service
                             ad.IsFeatured = true;
                             ad.FeaturedExpiryDate = DateTime.UtcNow.AddDays(30);
                             ad.UpdatedAt = DateTime.UtcNow;
+                            adItem = ad;
                             await _context.SaveChangesAsync(cancellationToken);
                             break;
                         }
@@ -2130,12 +2078,36 @@ namespace QLN.Classified.MS.Service
                             ad.IsFeatured = true;
                             ad.FeaturedExpiryDate = DateTime.UtcNow.AddDays(30);
                             ad.UpdatedAt = DateTime.UtcNow;
+                            adItem = ad;
                             await _context.SaveChangesAsync(cancellationToken);
                             break;
                         }
 
                     default:
                         throw new InvalidOperationException($"Invalid SubVertical: {dto.SubVertical}");
+                }
+
+                if (adItem != null)
+                {
+                    _logger.LogDebug("Indexing featured ad {AdId} in Azure Search for {SubVertical}", dto.AdId, dto.SubVertical);
+                    switch (dto.SubVertical)
+                    {
+                        case SubVertical.Items:
+                            await IndexItemsToAzureSearch((Items)adItem, cancellationToken);
+                            break;
+
+                        case SubVertical.Preloved:
+                            await IndexPrelovedToAzureSearch((Preloveds)adItem, cancellationToken);
+                            break;
+
+                        case SubVertical.Collectibles:
+                            await IndexCollectiblesToAzureSearch((Collectibles)adItem, cancellationToken);
+                            break;
+
+                        case SubVertical.Deals:
+                            await IndexDealsToAzureSearch((Deals)adItem, cancellationToken);
+                            break;
+                    }
                 }
 
                 return "The ad has been successfully marked as featured.";
@@ -2252,6 +2224,24 @@ namespace QLN.Classified.MS.Service
                 _logger.LogDebug("Saving changes to database for AdId: {AdId}", dto.AdId);
                 await _context.SaveChangesAsync(cancellationToken);
                 _logger.LogInformation("Ad {AdId} successfully marked as promoted.", dto.AdId);
+                
+                _logger.LogDebug("Indexing promoted ad {AdId} in Azure Search for {SubVertical}", dto.AdId, dto.SubVertical);
+                switch (dto.SubVertical)
+                {
+                    case SubVertical.Items:
+                        await IndexItemsToAzureSearch((Items)adItem, cancellationToken);
+                        break;
+                    case SubVertical.Preloved:
+                        await IndexPrelovedToAzureSearch((Preloveds)adItem, cancellationToken);
+                        break;
+                    case SubVertical.Collectibles:
+                        await IndexCollectiblesToAzureSearch((Collectibles)adItem, cancellationToken);
+                        break;
+                    case SubVertical.Deals:
+                        await IndexDealsToAzureSearch((Deals)adItem, cancellationToken);
+                        break;
+                }
+
 
                 return "The ad has been successfully marked as promoted.";
             }
@@ -2270,10 +2260,6 @@ namespace QLN.Classified.MS.Service
                 throw new InvalidOperationException("Failed to promote the ad due to an unexpected error.", ex);
             }
         }
-
-
-
-
 
     }
 }

@@ -168,16 +168,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                    SERVICE_APP_ID,
                    $"/api/classifieds/refreshed/{userId}/{adId}?subVertical={subVertical}",
                    cancellationToken
-               );
-                //var item = await _searchService.GetByIdAsync<ClassifiedsIndex>(ConstantValues.Verticals.Classifieds, adId.ToString());
-                //if (item == null)
-                //{
-                //    throw new InvalidOperationException($"Ad with ID {adId} not found.");
-                //}
-
-                //item.IsRefreshed = true;
-                //item.CreatedDate = DateTime.UtcNow;
-                //item.RefreshExpiryDate = DateTime.UtcNow.AddHours(72);
+               );                
                 return new AdCreatedResponseDto
                 {
                     
@@ -332,115 +323,41 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 throw;
             }
         }
-
-        public async Task<DeleteAdResponseDto> DeleteClassifiedItemsAd(long adId, string userId, CancellationToken cancellationToken = default)
+          
+        public async Task<DeleteAdResponseDto> DeleteClassifiedAd(SubVertical subVertical, long adId, string userId, CancellationToken cancellationToken = default)
         {
             try
             {
                 if (adId <= 0)
-                    throw new ArgumentException("Ad ID must be a valid positive number.");
+                    throw new ArgumentException("Ad ID must be a valid positive number.", nameof(adId));
 
                 if (string.IsNullOrWhiteSpace(userId))
-                    throw new ArgumentException("UserId is required.");
-
+                    throw new ArgumentException("UserId must not be empty.", nameof(userId));
 
                 var response = await _dapr.InvokeMethodAsync<DeleteAdResponseDto>(
                     HttpMethod.Delete,
                     SERVICE_APP_ID,
-                    $"api/classifieds/items/delete-by-id/{adId}/{userId}",
+                    $"api/classifieds/{subVertical}/delete-by-id/{adId}/{userId}",
                     cancellationToken
-                    );
+                );
                 
-                await _searchService.DeleteAsync(ConstantValues.IndexNames.ClassifiedsItemsIndex, adId.ToString());
+                string indexName = subVertical switch
+                {
+                    SubVertical.Items => ConstantValues.IndexNames.ClassifiedsItemsIndex,
+                    SubVertical.Preloved => ConstantValues.IndexNames.ClassifiedsPrelovedIndex,
+                    SubVertical.Collectibles => ConstantValues.IndexNames.ClassifiedsCollectiblesIndex,
+                    SubVertical.Deals => ConstantValues.IndexNames.ClassifiedsDealsIndex,
+                    _ => throw new InvalidOperationException($"Unsupported subVertical: {subVertical}")
+                };
+
+                await _searchService.DeleteAsync(indexName, adId.ToString());
+
                 return response;
             }
             catch (Exception ex)
             {
                 _log.LogException(ex);
-                throw new InvalidOperationException("Failed to delete Classified Items Ad.", ex);
-            }
-        }
-
-        public async Task<DeleteAdResponseDto> DeleteClassifiedPrelovedAd(long adId, string userId, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                if (adId <= 0)
-                    throw new ArgumentException("Ad ID is required.");
-
-
-                if (string.IsNullOrWhiteSpace(userId))
-                    throw new ArgumentException("UserId is required.");
-
-
-                var response = await _dapr.InvokeMethodAsync<DeleteAdResponseDto>(
-                    HttpMethod.Delete,
-                    SERVICE_APP_ID,
-                    $"api/classifieds/preloved/delete-by-id/{adId}/{userId}",
-                    cancellationToken
-                );
-               
-                await _searchService.DeleteAsync(ConstantValues.IndexNames.ClassifiedsPrelovedIndex, adId.ToString());
-                return response;
-            }
-            catch (Exception ex)
-            {
-                _log.LogException(ex);
-                throw new InvalidOperationException("Failed to delete Classified Preloved Ad.", ex);
-            }
-        }
-
-        public async Task<DeleteAdResponseDto> DeleteClassifiedCollectiblesAd(long adId, string userId, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                if (adId <= 0)
-                    throw new ArgumentException("Ad ID is required.");
-
-                if (string.IsNullOrWhiteSpace(userId))
-                    throw new ArgumentException("UserId is required.");
-
-                var response = await _dapr.InvokeMethodAsync<DeleteAdResponseDto>(
-                    HttpMethod.Delete,
-                    SERVICE_APP_ID,
-                    $"api/classifieds/collectibles/delete-by-id/{adId}/{userId}",
-                    cancellationToken
-                );
-               
-                await _searchService.DeleteAsync(ConstantValues.IndexNames.ClassifiedsCollectiblesIndex, adId.ToString());
-                return response;
-            }
-            catch (Exception ex)
-            {
-                _log.LogException(ex);
-                throw new InvalidOperationException("Failed to delete Classified Collectibles Ad.", ex);
-            }
-        }
-
-        public async Task<DeleteAdResponseDto> DeleteClassifiedDealsAd(long adId, string userId, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                if (adId <= 0)
-                    throw new ArgumentException("Ad ID is required.");
-
-                if (string.IsNullOrWhiteSpace(userId))
-                    throw new ArgumentException("UserId is required.");
-
-                var response = await _dapr.InvokeMethodAsync<DeleteAdResponseDto>(
-                    HttpMethod.Delete,
-                    SERVICE_APP_ID,
-                    $"api/classifieds/deals/delete-by-id/{adId}/{userId}",
-                    cancellationToken
-                );
-               
-                await _searchService.DeleteAsync(ConstantValues.IndexNames.ClassifiedsDealsIndex, adId.ToString());
-                return response;
-            }
-            catch (Exception ex)
-            {
-                _log.LogException(ex);
-                throw new InvalidOperationException("Failed to delete Classified Deals Ad.", ex);
+                throw new InvalidOperationException($"Failed to delete classified ad from subvertical {subVertical}.", ex);
             }
         }
 
