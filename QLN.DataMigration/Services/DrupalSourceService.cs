@@ -25,10 +25,10 @@
 
         public async Task<DrupalItems?> GetItemsAsync(
             string environment,
-            int categoryId,
-            string sortField,
-            string sortOrder,
-            string? keywords,
+            //int categoryId,
+            //string sortField,
+            //string sortOrder,
+            //string? keywords,
             int? page,
             int? pageSize, 
             CancellationToken cancellationToken
@@ -37,15 +37,15 @@
             var formData = new List<KeyValuePair<string, string>>
             {
                 new KeyValuePair<string, string>("env", environment),
-                new KeyValuePair<string, string>("category_id", categoryId.ToString()),
-                new KeyValuePair<string, string>("sort_field", sortField),
-                new KeyValuePair<string, string>("sort_order", sortOrder)
+                //new KeyValuePair<string, string>("category_id", categoryId.ToString()),
+                //new KeyValuePair<string, string>("sort_field", sortField),
+                //new KeyValuePair<string, string>("sort_order", sortOrder)
             };
 
-            if(!string.IsNullOrEmpty(keywords))
-            {
-                formData.Add(new KeyValuePair<string, string>("keywords", keywords));
-            }
+            //if(!string.IsNullOrEmpty(keywords))
+            //{
+            //    formData.Add(new KeyValuePair<string, string>("keywords", keywords));
+            //}
             
             if (page != null)
             {

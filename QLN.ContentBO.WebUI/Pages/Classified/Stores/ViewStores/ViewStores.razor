@@ -1,15 +1,13 @@
 @page "/manage/classified/stores/view/stores"
-@inherits ViewStoresBase
 @using QLN.ContentBO.WebUI.Models;
-@using MudBlazor
 @layout StoresLayout
+@inherits ViewStoresBase
 
 <MudGrid Style="padding-top: 18px">
     <MudItem xs="12" md="12">
         <StoresSearchSortBar OnSearch="HandleSearch" OnSort="HandleSort" />
         <div class="community-table">
-        <ViewStoreTable 
-            Listings="@Listings"
+            <ViewStoreTable Listings="StoreItems"
             TotalCount="@TotalCount"
             CurrentPage="@currentPage"
             PageSize="@pageSize"

@@ -7,8 +7,10 @@
     using QLN.Common.DTO_s;
     using QLN.Common.Infrastructure.Constants;
     using QLN.Common.Infrastructure.DTO_s;
+    using QLN.Common.Infrastructure.IService;
     using QLN.Common.Infrastructure.IService.IContentService;
     using QLN.Common.Infrastructure.IService.V2IContent;
+    using QLN.Common.Infrastructure.Model;
     using QLN.Common.Infrastructure.Utilities;
     using QLN.DataMigration.Models;
     using System.Text;
@@ -24,6 +26,7 @@
         private readonly IV2EventService _eventService;
         private readonly IV2NewsService _newsService;
         private readonly IV2CommunityPostService _communityPostService;
+        private readonly IClassifiedService _classifiedsService;
         private readonly DaprClient _daprClient;
 
         public DataOutputService(
@@ -54,17 +57,108 @@
             _logger.LogInformation("Completed saving all state");
         }
 
-        [Obsolete]
-        public async Task SaveMigrationItemsAsync(List<MigrationItem> migrationItems, CancellationToken cancellationToken)
+        public async Task SaveMigrationItemsAsync(List<DrupalItem> migrationItems, CancellationToken cancellationToken)
         {
+            const int CollectablesCategory = 7311;
+
             // needs to be modified to call a Classifieds MS
             foreach (var item in migrationItems)
             {
-                var newGuid = Guid.NewGuid().ToString();
+                try
+                {
+                    if (item.CategoryParent.Tid != CollectablesCategory)
+                    {
+                        var entity = new Items
+                        {
+                            //Id = item.Nid, // dont have an ID so cant make this repeatable
+                            Title = item.Title,
+                            Description = item.Desc,
+                            Price = item.Price,
+                            CategoryId = item.CategoryParent.Tid, // may need to look this up
+                            AdType = AdTypeEnum.Subscription,
+                            SubVertical = SubVertical.Items,
+                            UserName = item.Author.Username,
+                            CreatedAt = DateTime.TryParse(item.CreatedDate, out var createdAt) ? createdAt : DateTime.UtcNow,
+                            LastRefreshedOn = DateTime.TryParse(item.RefreshedDate, out var lastRefreshed) ? lastRefreshed : DateTime.UtcNow,
+                            BuildingNumber = item.BuildingNo,
+                            StreetNumber = item.StreetNo,
+                            Brand = item.Make?.Name,
+                            Model = item.Model?.Name,
+                            UserId = item.Author.Uid.ToString(),
+                            ContactEmail = item.Email,
+                            ContactNumberCountryCode = "+974",// assuming Qatar country code
+                            ContactNumber = item.Phone,
+                            WhatsappNumberCountryCode = "+974",// assuming Qatar country code
+                            WhatsAppNumber = item.Whatsapp ?? item.Phone ?? string.Empty,
+                            CreatedBy = item.Author.Username,
+                            IsFeatured = item.Feature,
+                            IsPromoted = item.Promote,
+                            UpdatedAt = DateTime.UtcNow,
+                            IsActive = true,
+                            Images = item.Images?.Select(img => new ImageInfo
+                            {
+                                Url = img
+                            }).ToList() ?? new List<ImageInfo>(),
+                            IsRefreshed = lastRefreshed > createdAt,
+                            Latitude = item.GeoLocation?.Lat,
+                            Longitude = item.GeoLocation?.Lng,
+                            Location = item.Location?.Name,
+                            Status = item.Published ? AdStatus.Published : AdStatus.Unpublished,
+                            zone = item.Zone?.Name ?? string.Empty,
+                            PublishedDate = DateTime.TryParse(item.CreatedDate, out var publishedDate) ? publishedDate : DateTime.UtcNow, // not sure if this is required
+                        };
 
-                await _daprClient.SaveStateAsync(ConstantValues.StateStoreNames.CommonStore, newGuid, item, cancellationToken: cancellationToken);
+                        await _classifiedsService.MigrateClassifiedItemsAd(entity, cancellationToken);
 
-                _logger.LogInformation($"Saving {item.Title} with ID {newGuid} to state");
+                    } else
+                    {
+                        var entity = new Collectibles
+                        {
+                            //Id = item.Nid, // dont have an ID so cant make this repeatable
+                            Title = item.Title,
+                            Description = item.Desc,
+                            Price = item.Price,
+                            CategoryId = item.CategoryParent.Tid, // may need to look this up
+                            AdType = AdTypeEnum.Subscription,
+                            SubVertical = SubVertical.Collectibles,
+                            UserName = item.Author.Username,
+                            CreatedAt = DateTime.TryParse(item.CreatedDate, out var createdAt) ? createdAt : DateTime.UtcNow,
+                            BuildingNumber = item.BuildingNo,
+                            StreetNumber = item.StreetNo,
+                            Brand = item.Make?.Name,
+                            Model = item.Model?.Name,
+                            UserId = item.Author.Uid.ToString(),
+                            ContactEmail = item.Email,
+                            ContactNumberCountryCode = "+974",// assuming Qatar country code
+                            ContactNumber = item.Phone,
+                            WhatsappNumberCountryCode = "+974",// assuming Qatar country code
+                            WhatsAppNumber = item.Whatsapp ?? item.Phone ?? string.Empty,
+                            CreatedBy = item.Author.Username,
+                            IsFeatured = item.Feature,
+                            IsPromoted = item.Promote,
+                            UpdatedAt = DateTime.UtcNow,
+                            IsActive = true,
+                            Images = item.Images?.Select(img => new ImageInfo
+                            {
+                                Url = img
+                            }).ToList() ?? new List<ImageInfo>(),
+                            Latitude = item.GeoLocation?.Lat,
+                            Longitude = item.GeoLocation?.Lng,
+                            Location = item.Location?.Name,
+                            Status = item.Published ? AdStatus.Published : AdStatus.Unpublished,
+                            zone = item.Zone?.Name ?? string.Empty,
+                            PublishedDate = DateTime.TryParse(item.CreatedDate, out var publishedDate) ? publishedDate : DateTime.UtcNow, // not sure if this is required
+                            
+                        };
+
+                        await _classifiedsService.MigrateClassifiedCollectiblesAd(entity, cancellationToken);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError($"Failed to create articles - {ex.Message}");
+                    throw new Exception("Unexpected error during article creation", ex);
+                }
             }
             _logger.LogInformation("Completed saving all items to state");
         }
@@ -117,7 +211,7 @@
 
         public async Task SaveContentEventsAsync(List<ContentEvent> items, CancellationToken cancellationToken)
         {
-            var events = new List<V2Events>();
+            //var events = new List<V2Events>();
 
             foreach (var dto in items)
             {
@@ -204,28 +298,28 @@
                     entity.EventSchedule.TimeSlots = timeSlots;
                 }
 
-                events.Add(entity);
+                //events.Add(entity);
+                try
+                {
+
+                    await _eventService.MigrateEvent(entity, cancellationToken);
+
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError($"Failed to create events - {ex.Message}");
+                    throw new Exception("Unexpected error during events creation", ex);
+                }
 
                 
 
             }
 
-            try
-            {
-
-                await _eventService.BulkMigrateEvents(events, cancellationToken);
-
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"Failed to create events - {ex.Message}");
-                throw new Exception("Unexpected error during events creation", ex);
-            }
         }
 
         public async Task SaveContentCommunityPostsAsync(List<CommunityPost> items, CancellationToken cancellationToken)
         {
-            var posts = new List<V2CommunityPostDto>();
+            //var posts = new List<V2CommunityPostDto>();
 
             foreach (var dto in items)
             {
@@ -247,20 +341,20 @@
                     DateCreated = DateTime.TryParse(dto.DateCreated, out var dateCreated) ? dateCreated : DateTime.UtcNow,
                     LikedUserIds = new List<string>() // creating an empty list so this will be processed into the index
                 };
-                posts.Add(entity);
+                //posts.Add(entity);
+                try
+                {
+
+                    await _communityPostService.MigrateCommunityPostAsync(entity, cancellationToken);
+
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError($"Failed to create community posts - {ex.Message}");
+                    throw new Exception("Unexpected error during article creation", ex);
+                }
             }
 
-            try
-            {
-
-                await _communityPostService.BulkMigrateCommunityPostsAsync(posts, cancellationToken);
-
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"Failed to create community posts - {ex.Message}");
-                throw new Exception("Unexpected error during article creation", ex);
-            }
         }
 
         public async Task SaveEventCategoriesAsync(List<Common.Infrastructure.DTO_s.EventCategory> items, CancellationToken cancellationToken)

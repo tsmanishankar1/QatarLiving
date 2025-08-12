@@ -3,6 +3,7 @@ using Dapr.Client;
 using Google.Apis.Auth.OAuth2;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Spatial;
+using QLN.Backend.API.Service.ProductService;
 using QLN.Common.DTO_s;
 using QLN.Common.DTO_s.Classifieds;
 using QLN.Common.DTO_s.ClassifiedsBo;
@@ -12,8 +13,10 @@ using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.EventLogger;
 using QLN.Common.Infrastructure.IService;
 using QLN.Common.Infrastructure.IService.IFileStorage;
+using QLN.Common.Infrastructure.IService.IProductService;
 using QLN.Common.Infrastructure.IService.ISearchService;
 using QLN.Common.Infrastructure.Model;
+using QLN.Common.Infrastructure.QLDbContext;
 using QLN.Common.Infrastructure.Utilities;
 using System.Net;
 using System.Text;
@@ -32,14 +35,17 @@ namespace QLN.Backend.API.Service.ClassifiedService
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IFileStorageBlobService _fileStorageBlob;
         private readonly ISearchService _searchService;
+        private readonly IV2SubscriptionService _subscriptionContext;
 
-        public ExternalClassifiedService(DaprClient dapr, IEventlogger log, IHttpContextAccessor httpContextAccessor, IFileStorageBlobService fileStorageBlob, ISearchService searchService)
+
+        public ExternalClassifiedService(DaprClient dapr, IEventlogger log, IHttpContextAccessor httpContextAccessor, IFileStorageBlobService fileStorageBlob, ISearchService searchService, IV2SubscriptionService subscriptionService)
         {
             _dapr = dapr ?? throw new ArgumentNullException(nameof(dapr));
             _log = log ?? throw new ArgumentNullException(nameof(log));
             _httpContextAccessor = httpContextAccessor;
             _fileStorageBlob = fileStorageBlob;
             _searchService = searchService ?? throw new ArgumentNullException(nameof(searchService));
+            _subscriptionContext = subscriptionService;
         }
         public async Task<bool> SaveSearch(SaveSearchRequestDto dto, string userId, CancellationToken cancellationToken = default)
         {
@@ -154,6 +160,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
      SubVertical subVertical,
      long adId,
      string userId,
+     Guid subscriptionId,
      CancellationToken cancellationToken)
         {
             if (adId <= 0)
@@ -161,18 +168,93 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 throw new ArgumentException("AdId is required.");
             }
 
+            HttpStatusCode? failedStatusCode = null;
+
             try
             {
-                await _dapr.InvokeMethodAsync(
-                   HttpMethod.Put,
-                   SERVICE_APP_ID,
-                   $"/api/classifieds/refreshed/{userId}/{adId}?subVertical={subVertical}",
-                   cancellationToken
-               );                
+               
+                if (subscriptionId != Guid.Empty)
+                {
+                    var canUse = await _subscriptionContext.ValidateSubscriptionUsageAsync(
+                        subscriptionId,
+                        "refresh",
+                        1,
+                        cancellationToken
+                    );
+
+                    if (!canUse)
+                    {
+                        _log.LogWarning(
+                            "Subscription {SubscriptionId} has insufficient quota for refresh.",
+                            GuidToLong(subscriptionId)
+                        );
+                        throw new InvalidOperationException("Insufficient subscription quota for refresh.");
+                    }
+                }
+
+                var url = $"/api/classifieds/items/refreshed/{userId}/{adId}?subVertical={(int)subVertical}&subscriptionId={subscriptionId}";
+
+                var serviceRequest = _dapr.CreateInvokeMethodRequest(HttpMethod.Put, SERVICE_APP_ID, url);
+                var response = await _dapr.InvokeMethodWithResponseAsync(serviceRequest, cancellationToken);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync(cancellationToken);
+                    string errorMessage;
+
+                    if (!string.IsNullOrWhiteSpace(errorContent))
+                    {
+                        var trimmed = errorContent.TrimStart();
+                        if (trimmed.StartsWith("{"))
+                        {
+                            try
+                            {
+                                var problem = JsonSerializer.Deserialize<ProblemDetails>(errorContent);
+                                errorMessage = problem?.Detail ?? "Unknown validation error.";
+                            }
+                            catch (JsonException)
+                            {
+                                errorMessage = errorContent;
+                            }
+                        }
+                        else
+                        {
+                            
+                            errorMessage = errorContent;
+                        }
+                    }
+                    else
+                    {
+                        errorMessage = "No error details returned from service.";
+                    }
+
+                    failedStatusCode = response.StatusCode;
+                    throw new InvalidDataException(errorMessage);
+                }
+
+                
+                if (subscriptionId != Guid.Empty)
+                {
+                    var success = await _subscriptionContext.RecordSubscriptionUsageAsync(
+                        subscriptionId,
+                        "refresh",
+                        1,
+                        cancellationToken
+                    );
+
+                    if (!success)
+                    {
+                        _log.LogWarning(
+                            "Failed to record subscription usage for SubscriptionId {SubscriptionId}",
+                            GuidToLong(subscriptionId)
+                        );
+                    }
+                }
+
+               
                 return new AdCreatedResponseDto
                 {
-                    
-                    CreatedAt = DateTime.Now,
+                    CreatedAt = DateTime.UtcNow,
                     AdId = adId,
                     Message = "Ad successfully refreshed."
                 };
@@ -181,6 +263,14 @@ namespace QLN.Backend.API.Service.ClassifiedService
             {
                 _log.LogException(ex);
                 throw new InvalidOperationException("AdId is required and must be valid.", ex);
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw new InvalidOperationException(ex.Message);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                throw new KeyNotFoundException(ex.Message);
             }
             catch (DaprException daprEx)
             {
@@ -194,10 +284,20 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
             catch (Exception ex)
             {
+                if (failedStatusCode == HttpStatusCode.Conflict)
+                {
+                    throw new ConflictException(ex.Message);
+                }
+                else if (failedStatusCode == HttpStatusCode.NotFound)
+                {
+                    throw new KeyNotFoundException(ex.Message);
+                }
                 _log.LogException(ex);
                 throw new InvalidOperationException("Failed to refresh the ad due to an unexpected error.", ex);
             }
         }
+
+
 
         public async Task<AdCreatedResponseDto> CreateClassifiedPrelovedAd(Preloveds dto, CancellationToken cancellationToken = default)
         {
@@ -866,6 +966,26 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
             try
             {
+               
+                if (dto.subscriptionid != Guid.Empty)
+                {
+                    var canUse = await _subscriptionContext.ValidateSubscriptionUsageAsync(
+                        dto.subscriptionid,
+                        "Promote",
+                        1,
+                        cancellationToken
+                    );
+
+                    if (!canUse)
+                    {
+                        _log.LogWarning(
+                            "Subscription {SubscriptionId} has insufficient quota for promotion.", GuidToLong(dto.subscriptionid)
+                        );
+                        throw new InvalidOperationException("Insufficient subscription quota for promotion.");
+                    }
+                }
+
+                // --- 2. Call internal service via Dapr ---
                 var subVerticalStr = ((int)dto.SubVertical).ToString();
                 var url = $"/api/classifieds/promoted/{userId}/{dto.AdId}?subVertical={subVerticalStr}";
                 var serviceRequest = _dapr.CreateInvokeMethodRequest(HttpMethod.Put, SERVICE_APP_ID, url);
@@ -897,6 +1017,25 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
                     failedStatusCode = response.StatusCode;
                     throw new InvalidDataException(errorMessage);
+                }
+
+                
+                if (dto.subscriptionid != Guid.Empty)
+                {
+                    var success = await _subscriptionContext.RecordSubscriptionUsageAsync(
+                        dto.subscriptionid,
+                        "Promote",
+                        1,
+                        cancellationToken
+                    );
+
+                    if (!success)
+                    {
+                        _log.LogWarning(
+                            "Failed to record subscription usage for SubscriptionId {SubscriptionId}",
+                           GuidToLong(dto.subscriptionid)
+                        );
+                    }
                 }
 
                 return "The ad has been successfully marked as promoted.";
@@ -935,9 +1074,10 @@ namespace QLN.Backend.API.Service.ClassifiedService
                     throw new KeyNotFoundException(ex.Message);
                 }
                 _log.LogException(ex);
-                throw new InvalidOperationException("Failed to refresh the ad due to an unexpected error.", ex);
+                throw new InvalidOperationException("Failed to promote the ad due to an unexpected error.", ex);
             }
         }
+
 
 
         public async Task<string> FeatureClassifiedAd(ClassifiedsPromoteDto dto, string userId, CancellationToken cancellationToken = default)
@@ -946,49 +1086,111 @@ namespace QLN.Backend.API.Service.ClassifiedService
             {
                 throw new ArgumentException("AdId is required.");
             }
+
             HttpStatusCode? failedStatusCode = null;
-            string failedErrorMessage = null;
+
             try
             {
-                var queryParams = new Dictionary<string, string>
+                
+                if (dto.subscriptionid != Guid.Empty)
                 {
-                    { "adId", dto.AdId.ToString() },
-                    { "subVertical", ((int)dto.SubVertical).ToString() },
-                    { "userId", userId }
-                };
+                    var canUse = await _subscriptionContext.ValidateSubscriptionUsageAsync(
+                        dto.subscriptionid,
+                        "feature",
+                        1,
+                        cancellationToken
+                    );
+
+                    if (!canUse)
+                    {
+                        _log.LogWarning(
+                            "Subscription {SubscriptionId} has insufficient quota for feature.",
+                            GuidToLong(dto.subscriptionid)
+                        );
+                        throw new InvalidOperationException("Insufficient subscription quota for feature.");
+                    }
+                }
+                var queryParams = new Dictionary<string, string>
+{
+    { "adId", dto.AdId.ToString() },
+    { "subVertical", ((int)dto.SubVertical).ToString() },
+    { "userId", userId }
+};
 
                 var queryString = "?" + string.Join("&", queryParams.Select(kv =>
-                $"{Uri.EscapeDataString(kv.Key)}={Uri.EscapeDataString(kv.Value)}"));
+                    $"{Uri.EscapeDataString(kv.Key)}={Uri.EscapeDataString(kv.Value)}"));
 
                 var url = $"/api/classifieds/featured/{queryString}";
 
+
+
+                //var subVerticalStr = ((int)dto.SubVertical).ToString();
+                //var url = $"/api/classifieds/items/featured/{userId}/{dto.AdId}?subVertical={subVerticalStr}";
+
                 var serviceRequest = _dapr.CreateInvokeMethodRequest(HttpMethod.Put, SERVICE_APP_ID, url);
                 serviceRequest.Content = new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
+
                 var response = await _dapr.InvokeMethodWithResponseAsync(serviceRequest, cancellationToken);
+
                 if (!response.IsSuccessStatusCode)
                 {
                     var errorJson = await response.Content.ReadAsStringAsync(cancellationToken);
                     string errorMessage;
-                    try
+
+                    if (!string.IsNullOrWhiteSpace(errorJson))
                     {
-                        var problem = JsonSerializer.Deserialize<ProblemDetails>(errorJson);
-                        errorMessage = problem?.Detail ?? "Unknown validation error.";
+                        try
+                        {
+                            var problem = JsonSerializer.Deserialize<ProblemDetails>(errorJson);
+                            errorMessage = problem?.Detail ?? "Unknown validation error.";
+                        }
+                        catch (JsonException)
+                        {
+                            errorMessage = errorJson;
+                        }
                     }
-                    catch
+                    else
                     {
-                        errorMessage = errorJson;
+                        errorMessage = "No error details returned from service.";
                     }
+
                     failedStatusCode = response.StatusCode;
-                    failedErrorMessage = errorMessage;
                     throw new InvalidDataException(errorMessage);
                 }
-                response.EnsureSuccessStatusCode();
+
+                
+                if (dto.subscriptionid != Guid.Empty)
+                {
+                    var success = await _subscriptionContext.RecordSubscriptionUsageAsync(
+                        dto.subscriptionid,
+                        "feature",
+                        1,
+                        cancellationToken
+                    );
+
+                    if (!success)
+                    {
+                        _log.LogWarning(
+                            "Failed to record subscription usage for SubscriptionId {SubscriptionId}",
+                            GuidToLong(dto.subscriptionid)
+                        );
+                    }
+                }
+
                 return "The ad has been successfully marked as featured.";
             }
             catch (ArgumentException ex)
             {
                 _log.LogException(ex);
                 throw new InvalidOperationException("AdId is required and must be valid.", ex);
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw new InvalidOperationException(ex.Message);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                throw new KeyNotFoundException(ex.Message);
             }
             catch (DaprException daprEx)
             {
@@ -1011,9 +1213,10 @@ namespace QLN.Backend.API.Service.ClassifiedService
                     throw new KeyNotFoundException(ex.Message);
                 }
                 _log.LogException(ex);
-                throw new InvalidOperationException("Failed to refresh the ad due to an unexpected error.", ex);
+                throw new InvalidOperationException("Failed to feature the ad due to an unexpected error.", ex);
             }
         }
+
 
         public async Task<PaginatedAdResponseDto> GetFilteredAds(SubVertical subVertical, bool? isPublished,int page,int pageSize,string? search,string userId,CancellationToken cancellationToken = default)
             {
@@ -1093,8 +1296,21 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 );
             }
         }
+        private static long GuidToLong(Guid guid)
+        {
+            var bytes = guid.ToByteArray();
+            return BitConverter.ToInt64(bytes, 0); // uses first 8 bytes
+        }
 
+        public Task<string> MigrateClassifiedItemsAd(Items dto, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
 
+        public Task<string> MigrateClassifiedCollectiblesAd(Collectibles dto, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
 

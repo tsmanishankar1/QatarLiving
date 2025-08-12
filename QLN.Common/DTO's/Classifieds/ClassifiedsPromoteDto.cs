@@ -10,5 +10,7 @@ namespace QLN.Common.DTO_s.Classifieds
     {
         public long AdId { get; set; }
         public SubVertical SubVertical { get; set; }
+
+        public Guid subscriptionid { get; set; }
     }
 }

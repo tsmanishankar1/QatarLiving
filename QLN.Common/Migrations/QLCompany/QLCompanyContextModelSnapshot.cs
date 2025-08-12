@@ -170,6 +170,11 @@ namespace QLN.Common.Migrations.QLCompany
                     b.Property<DateTime?>("UpdatedUtc")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("UploadFeed")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
                     b.Property<string>("UserDesignation")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
@@ -198,6 +203,11 @@ namespace QLN.Common.Migrations.QLCompany
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
+
+                    b.Property<string>("XMLFeed")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
 
                     b.HasKey("Id");
 

@@ -9,7 +9,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.EditCompnay
     public class EditAdActionBase : ComponentBase
     {
         [Inject] public IDialogService DialogService { get; set; }
-        [Parameter] public EditCompany Company { get; set; } = new();
+        [Parameter] public CompanyProfileItem Company { get; set; } = new();
         [Parameter] public string CompanyName { get; set; } = "Lulu Store";
         [Parameter] public int AdId { get; set; } = 21660;
         [Parameter] public int OrderId { get; set; } = 24578;

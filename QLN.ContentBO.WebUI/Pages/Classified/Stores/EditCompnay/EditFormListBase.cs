@@ -4,12 +4,13 @@ using QLN.ContentBO.WebUI.Models;
 using MudExRichTextEditor;
 using Microsoft.JSInterop;
 using MudBlazor;
+using QLN.ContentBO.WebUI.Components;
 
 namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.EditCompnay
 {
-    public class EditFormListBase : ComponentBase
+    public class EditFormListBase : QLComponentBase
     {
-        [Parameter] public EditCompany Company { get; set; } = new();
+        [Parameter] public CompanyProfileItem Company { get; set; } = new();
         [Inject] private IJSRuntime JS { get; set; }
         protected MudExRichTextEdit Editor;
          [Inject] ISnackbar Snackbar { get; set; }
@@ -19,8 +20,6 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.EditCompnay
         protected CountryModel SelectedWhatsappCountry;
         private DotNetObjectReference<EditFormListBase>? _dotNetRef;
         [Inject] ILogger<EditFormListBase> Logger { get; set; }
-        [Inject]
-        public NavigationManager NavigationManager { get; set; } = default!;
 
         protected string ShortFileName(string name, int max)
          {
@@ -47,14 +46,14 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.EditCompnay
         protected Task OnPhoneCountryChanged(CountryModel model)
         {
             SelectedPhoneCountry = model;
-            Company.PhoneCode = model.Code;
+            Company.PhoneNumberCountryCode = model.Code;
             return Task.CompletedTask;
         }
 
         protected Task OnWhatsappCountryChanged(CountryModel model)
         {
             SelectedWhatsappCountry = model;
-            Company.WhatsappCode = model.Code;
+            Company.WhatsAppCountryCode = model.Code;
             return Task.CompletedTask;
         }
         protected Task OnPhoneChanged(string phone)
@@ -65,13 +64,13 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.EditCompnay
 
         protected Task OnWhatsappChanged(string phone)
         {
-            Company.WhatsappNumber = phone;
+            Company.WhatsAppNumber = phone;
             return Task.CompletedTask;
         }
         protected void ClearFile()
         {
-            Company.CertificateFileName = null;
-            Company.Certificate = null;
+            Company.CrDocument = string.Empty;
+            Company.TherapeuticCertificate = string.Empty;
         }
         protected async Task OnCrFileSelected(IBrowserFile file)
         {
@@ -85,8 +84,8 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.EditCompnay
             using var ms = new MemoryStream();
             await stream.CopyToAsync(ms);
 
-             Company.CertificateFileName = file.Name;
-             Company.Certificate = Convert.ToBase64String(ms.ToArray());
+             Company.CrDocument = file.Name;
+             Company.CrDocument = Convert.ToBase64String(ms.ToArray());
         }
 
 
@@ -107,6 +106,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.EditCompnay
         {
 
         }
+
         protected async Task HandleFilesChanged(InputFileChangeEventArgs e)
         {
             var file = e.File;
@@ -116,13 +116,13 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.EditCompnay
                 using var memoryStream = new MemoryStream();
                 await stream.CopyToAsync(memoryStream);
                 var base64 = Convert.ToBase64String(memoryStream.ToArray());
-                 Company.CoverImageBase64 = $"data:{file.ContentType};base64,{base64}";
+                 Company.CoverImage1 = $"data:{file.ContentType};base64,{base64}";
                 _coverImageError = null;
             }
         }
         protected void RemoveCoverImage()
         {
-            Company.CoverImageBase64 = null;
+            Company.CoverImage1 = null;
             StateHasChanged(); // ensure UI refreshes
         }
 
@@ -147,12 +147,13 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.EditCompnay
                 await file.OpenReadStream(10 * 1024 * 1024).CopyToAsync(ms);
                 var base64 = Convert.ToBase64String(ms.ToArray());
                  _localLogoBase64 = base64;
-                 Company.CompanyLogoBase64 = base64;
+                 Company.CompanyLogo = base64;
             }
         }
+
         protected void onNavigationBack()
         {
-            NavigationManager.NavigateTo("/manage/classified/stores");
+            NavManager.NavigateTo("/manage/classified/stores");
         }
     }
 }

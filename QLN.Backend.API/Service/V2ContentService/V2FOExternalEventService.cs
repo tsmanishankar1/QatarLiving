@@ -2,6 +2,8 @@
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.IService.IContentService;
+using QLN.Common.Infrastructure.IService.ISearchService;
+using QLN.Common.Infrastructure.Utilities;
 using System.Net;
 
 namespace QLN.Backend.API.Service.V2ContentService
@@ -10,90 +12,100 @@ namespace QLN.Backend.API.Service.V2ContentService
     {
         private readonly DaprClient _dapr;
         private readonly ILogger<V2ExternalEventService> _logger;
-        public V2FOExternalEventService(DaprClient dapr, ILogger<V2ExternalEventService> logger)
+        private readonly ISearchService _search;
+        public V2FOExternalEventService(DaprClient dapr, ILogger<V2ExternalEventService> logger, ISearchService search)
         {
             _dapr = dapr;
             _logger = logger;
+            _search = search;
         }
         public async Task<V2Events> GetEventBySlug(string slug, CancellationToken cancellationToken = default)
         {
             try
             {
-                var url = $"/api/v2/fo/event/slug/{slug}";
-                return await _dapr.InvokeMethodAsync<V2Events>(
-                    HttpMethod.Get,
-                    ConstantValues.V2Content.ContentServiceAppId,
-                    url,
-                    cancellationToken
-                );
-            }
-            catch (InvocationException ex) when (ex.Response?.StatusCode == HttpStatusCode.NotFound)
-            {
-                _logger.LogWarning(ex, "Event with Slug '{slug}' not found.", slug);
-                return null;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error fetching event by slug '{slug}'", slug);
-                throw;
-            }
-        }
-        public async Task<List<V2Events>> GetAllFOIsFeaturedEvents(bool isFeatured, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                return await _dapr.InvokeMethodAsync<List<V2Events>>(
-                    HttpMethod.Get,
-                    ConstantValues.V2Content.ContentServiceAppId,
-                    $"/api/v2/fo/event/getallfofeaturedevents?isFeatured={isFeatured}",
-                    cancellationToken
-                ) ?? new List<V2Events>();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error retrieving all events.");
-                throw;
-            }
-        }
-        public async Task<V2Events?> GetFOEventById(Guid id, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var url = $"/api/v2/fo/event/getfobyid/{id}";
+                if (string.IsNullOrWhiteSpace(slug))
+                    return null;
 
-                return await _dapr.InvokeMethodAsync<V2Events>(
-                    HttpMethod.Get,
-                    ConstantValues.V2Content.ContentServiceAppId,
-                    url,
-                    cancellationToken);
-            }
-            catch (InvocationException ex) when (ex.Response?.StatusCode == System.Net.HttpStatusCode.NotFound)
-            {
-                return null;
+                var req = new CommonSearchRequest
+                {
+                    Text = "*",
+                    PageNumber = 1,
+                    PageSize = 1,
+                    Filters = new Dictionary<string, object>
+                    {
+                        ["Slug"] = slug
+                    }
+                };
+
+                var res = await _search.SearchAsync(ConstantValues.IndexNames.ContentEventsIndex, req);
+                var doc = res.ContentEventsItems?.FirstOrDefault();
+                if (doc is null)
+                {
+                    _logger.LogWarning("Event with Slug '{Slug}' not found in index.", slug);
+                    return null;
+                }
+
+                return MapIndexToDto(doc);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving event for Id : {Id}", id);
+                _logger.LogError(ex, "Error fetching event by slug '{Slug}' from Azure Search", slug);
                 throw;
             }
         }
-        public async Task<PagedResponse<V2Events>> GetFOPagedEvents(GetPagedEventsRequest request, CancellationToken cancellationToken = default)
+
+        private static V2Events MapIndexToDto(ContentEventsIndex i)
         {
-            try
+            _ = i ?? throw new ArgumentNullException(nameof(i));
+            Guid.TryParse(i.Id, out var id);
+
+            static TEnum ParseEnum<TEnum>(string? s, TEnum fallback) where TEnum : struct
+                => Enum.TryParse<TEnum>(s ?? string.Empty, true, out var v) ? v : fallback;
+
+            return new V2Events
             {
-                var url = "/api/v2/fo/event/getfopaginatedevents";
-                return await _dapr.InvokeMethodAsync<GetPagedEventsRequest, PagedResponse<V2Events>>(
-                    HttpMethod.Post,
-                    ConstantValues.V2Content.ContentServiceAppId,
-                    url,
-                    request,
-                    cancellationToken);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error retrieving paged event categories.");
-                throw;
-            }
+                Id = id,
+                Slug = i.Slug,
+                CategoryId = i.CategoryId,
+                CategoryName = i.CategoryName,
+                EventTitle = i.EventTitle,
+                EventType = ParseEnum(i.EventType, V2EventType.FreeAcess),
+                Price = i.Price,
+                LocationId = i.LocationId,
+                Location = i.Location,
+                Venue = i.Venue,
+                Longitude = i.Longitude,
+                Latitude = i.Latitude,
+                RedirectionLink = i.RedirectionLink,
+                EventDescription = i.EventDescription,
+                CoverImage = i.CoverImage,
+                IsFeatured = i.IsFeatured,
+                FeaturedSlot = i.FeaturedSlot is null
+                    ? new V2Slot()
+                    : new V2Slot { Id = i.FeaturedSlot.Id, Name = i.FeaturedSlot.Name },
+                Status = ParseEnum(i.Status, EventStatus.UnPublished),
+                PublishedDate = i.PublishedDate,
+                IsActive = i.IsActive,
+                CreatedBy = i.CreatedBy,
+                CreatedAt = i.CreatedAt,
+                UpdatedAt = i.UpdatedAt,
+                UpdatedBy = i.UpdatedBy,
+
+                EventSchedule = i.EventSchedule is null
+                    ? null
+                    : new EventSchedule
+                    {
+                        StartDate = i.EventSchedule.StartDate.ToDateOnly(),
+                        EndDate = i.EventSchedule.EndDate.ToDateOnly(),
+                        GeneralTextTime = i.EventSchedule.GeneralTextTime,
+                        TimeSlotType = ParseEnum(i.EventSchedule.TimeSlotType, V2EventTimeType.GeneralTime),
+                        TimeSlots = i.EventSchedule.TimeSlots?.Select(ts => new TimeSlot
+                        {
+                            DayOfWeek = ParseEnum(ts.DayOfWeek, DayOfWeek.Sunday),
+                            TextTime = ts.TextTime
+                        }).ToList()
+                    }
+            };
         }
     }
 }
