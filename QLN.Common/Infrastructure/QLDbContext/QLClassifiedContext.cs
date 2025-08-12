@@ -13,7 +13,6 @@ namespace QLN.Common.Infrastructure.QLDbContext
         {
         }
         public DbSet<StoresSubscriptionDto> StoresSubscriptions { get; set; }
-        //public DbSet<SubscriptionTypes> SubscriptionType {  get; set; }
         public DbSet<StoreStatus> StoreStatuses { get; set; }
         public DbSet<StoreProducts> StoreProduct { get; set; }
         public DbSet<ProductFeatures> ProductFeature { get; set; }
@@ -24,13 +23,10 @@ namespace QLN.Common.Infrastructure.QLDbContext
         public DbSet<Collectibles> Collectible { get; set; }
         public DbSet<StoreFlyers> StoreFlyer { get; set; }
         public DbSet<Services> Services { get; set; }
-        public DbSet<Category> Categories { get; set; }
-        
+        public DbSet<Category> Categories { get; set; }     
         public DbSet<SeasonalPicks> SeasonalPicks { get; set; }
-
         public DbSet<FeaturedStore> FeaturedStores { get; set; }
         public DbSet<FeaturedCategory> FeaturedCategories { get; set; }
-
         public DbSet<StoresDashboardHeader> StoresDashboardHeaderItems { get; set; }
         public DbSet<StoresDashboardSummary> StoresDashboardSummaryItems { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
