@@ -572,7 +572,7 @@ namespace QLN.Classified.MS.Service.Services
                 BuildingNumber = dto.BuildingNumber,
                 LicenseCertificate = dto.LicenseCertificate,
                 ZoneId = dto.ZoneId,
-                SubscriptionId = dto.SubscriptionId,
+                SubscriptionId = dto.SubscriptionId.ToString(),
                 Comments = dto.Comments,
                 Longitude = (double)dto.Longitude,
                 Lattitude = (double)dto.Lattitude,
