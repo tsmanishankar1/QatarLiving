@@ -7,6 +7,7 @@ using QLN.Common.DTO_s;
 using QLN.Common.DTO_s.Payments;
 using QLN.Common.Infrastructure.IService.IPayments;
 using QLN.Common.Infrastructure.IService.IPayToFeatureService;
+using QLN.Common.Infrastructure.Subscriptions;
 using System.Net;
 using System.Text.Json;
 
@@ -18,11 +19,32 @@ public static class FatoraEndpoints
     {
         group.MapGet("/fatora/webhooks/success", async Task<IResult> (
             [FromServices] IPaymentService service,
-            [FromBody] PaymentTransactionRequest request,
+            [FromQuery(Name = "transaction_id")] string transactionId,
+            [FromQuery(Name = "order_id")] string orderId,
+            [FromQuery(Name = "card_token")] string? cardToken,
+            [FromQuery(Name = "mode")] string? mode,
+            [FromQuery(Name = "response_code")] string? responseCode,
+            [FromQuery(Name = "description")] string? description,
+            [FromQuery(Name = "platform")] string? platform,
+            [FromQuery(Name = "vertical")] Vertical? vertical,
+            [FromQuery(Name = "subscription_category")] SubscriptionCategory? subscriptionCategory,
             CancellationToken cancellationToken) =>
         {
             try
             {
+                var request = new PaymentTransactionRequest
+                {
+                    TransactionId = transactionId,
+                    OrderId = orderId,
+                    CardToken = cardToken,
+                    Mode = mode,
+                    ResponseCode = responseCode,
+                    Description = description,
+                    Platform = platform,
+                    Vertical = vertical,
+                    SubscriptionCategory = subscriptionCategory,
+                };
+
                 var result = await service.PaymentSuccessAsync(request, cancellationToken);
                 return TypedResults.Ok(result);
             }
@@ -38,7 +60,7 @@ public static class FatoraEndpoints
             .WithSummary("Handle Fatura Payment Success")
             .WithDescription("This endpoint handles the success of a Fatura payment.");
 
-        
+
 
 
         return group;
@@ -48,11 +70,32 @@ public static class FatoraEndpoints
     {
         group.MapGet("/fatora/webhooks/failure", async Task<IResult> (
             [FromServices] IPaymentService service,
-            [FromBody] PaymentTransactionRequest request,
+            [FromQuery(Name = "transaction_id")] string transactionId,
+            [FromQuery(Name = "order_id")] string orderId,
+            [FromQuery(Name = "card_token")] string? cardToken,
+            [FromQuery(Name = "mode")] string? mode,
+            [FromQuery(Name = "response_code")] string? responseCode,
+            [FromQuery(Name = "description")] string? description,
+            [FromQuery(Name = "platform")] string? platform,
+            [FromQuery(Name = "vertical")] Vertical? vertical,
+            [FromQuery(Name = "subscription_category")] SubscriptionCategory? subscriptionCategory,
             CancellationToken cancellationToken) =>
         {
             try
             {
+                var request = new PaymentTransactionRequest
+                {
+                    TransactionId = transactionId,
+                    OrderId = orderId,
+                    CardToken = cardToken,
+                    Mode = mode,
+                    ResponseCode = responseCode,
+                    Description = description,
+                    Platform = platform,
+                    Vertical = vertical,
+                    SubscriptionCategory = subscriptionCategory
+                };
+
                 var result = await service.PaymentFailureAsync(request, cancellationToken);
                 return TypedResults.Ok(result);
             }
