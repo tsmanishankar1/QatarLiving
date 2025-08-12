@@ -318,10 +318,8 @@ namespace QLN.Backend.API.Service.V2ContentService
         {
             try
             {
-                var path = "/api/v2/dailyliving/publishstatusbyid"; // Internal endpoint without auth
+                var path = "/api/v2/dailyliving/publishstatusbyid";
                 var appId = ConstantValues.V2Content.ContentServiceAppId;
-
-                // Compose payload as DailyTopic (you can also use a separate DTO if needed)
                 var payload = new DailyTopic
                 {
                     Id = id,
@@ -405,6 +403,7 @@ namespace QLN.Backend.API.Service.V2ContentService
             foreach (var s in slots.Where(x => x.SlotNumber is >= 6 and <= 9 && x.ContentType == DailyContentType.Article).OrderBy(x => x.SlotNumber))
                 if (await LoadNewsAsync(s.RelatedContentId, ct) is { } n)
                     moreArticles.Add(MapNewsToEvent(n, "More Articles"));
+            var featuredEvents = await LoadFeaturedEventsAsync(ct);
 
             // Dynamic topics
             var topicQueues = new List<BaseQueueResponse<ContentEvent>>();
@@ -457,7 +456,7 @@ namespace QLN.Backend.API.Service.V2ContentService
                     DailyTopStories = new BaseQueueResponse<ContentPost> { QueueLabel = "Top Stories", Items = topStories },
                     DailyEvent = new BaseQueueResponse<ContentEvent> { QueueLabel = "Highlighted Event", Items = highlighted },
                     DailyMoreArticles = new BaseQueueResponse<ContentEvent> { QueueLabel = "More Articles", Items = moreArticles },
-                    DailyFeaturedEvents = new BaseQueueResponse<ContentEvent> { QueueLabel = "Featured Events", Items = new() }, // keep simple
+                    DailyFeaturedEvents = new BaseQueueResponse<ContentEvent> { QueueLabel = "Featured Events", Items = featuredEvents },
                     DailyTopics1 = topicQueues.ElementAtOrDefault(0) ?? new() { QueueLabel = string.Empty, Items = new() },
                     DailyTopics2 = topicQueues.ElementAtOrDefault(1) ?? new() { QueueLabel = string.Empty, Items = new() },
                     DailyTopics3 = topicQueues.ElementAtOrDefault(2) ?? new() { QueueLabel = string.Empty, Items = new() },
@@ -570,7 +569,32 @@ namespace QLN.Backend.API.Service.V2ContentService
             UpdatedAt = e.UpdatedAt,
             DateCreated = (e.CreatedAt == default ? DateTime.UtcNow : e.CreatedAt).ToString("o")
         };
-    }
+        private async Task<List<ContentEvent>> LoadFeaturedEventsAsync(CancellationToken ct)
+        {
+            try
+            {
+                var res = await _search.SearchRawAsync<ContentEventsIndex>(
+                    ConstantValues.IndexNames.ContentEventsIndex,
+                    new RawSearchRequest
+                    {
+                        Filter = "IsActive eq true and IsFeatured eq true",
+                        OrderBy = "FeaturedSlot/Id asc",     
+                        Top = 12,
+                        Skip = 0,
+                        Text = "*",
+                        IncludeTotalCount = false
+                    },
+                    ct
+                );
 
+                return res.Items.Select(e => MapEventToEvent(e, "Featured Events")).ToList();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to load featured events from index; returning empty list");
+                return new List<ContentEvent>();
+            }
+        }
+    }
 }
 
