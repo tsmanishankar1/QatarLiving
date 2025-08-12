@@ -524,7 +524,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
             }
         }
 
-        public async Task<List<FeaturedStore>> GetSlottedFeaturedStores(Vertical vertical, CancellationToken cancellationToken = default)
+        public async Task<List<FeaturedStoreItem>> GetSlottedFeaturedStores(Vertical vertical, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -541,9 +541,34 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                     .OrderBy(p => p.SlotOrder)
                     .ToListAsync(cancellationToken);
 
-                _logger.LogInformation("Fetched {Count} slotted featured stores.", slottedStores.Count);
+                var productSummary = _context.StoresDashboardSummaryItems.ToList();
 
-                return slottedStores;
+                var featuredStoreDtos = (from store in slottedStores
+                                         join summary in productSummary
+                                             on store.StoreId.ToLower() equals summary.CompanyId.ToString().ToLower() into summaryGroup
+                                         from summary in summaryGroup.DefaultIfEmpty()
+                                         select new FeaturedStoreItem
+                                         {
+                                             Id = store.Id,
+                                             Title = store.Title,
+                                             Vertical = store.Vertical,
+                                             StoreId = store.StoreId,
+                                             StoreName = store.StoreName,
+                                             ImageUrl = store.ImageUrl,
+                                             StartDate = store.StartDate,
+                                             EndDate = store.EndDate,
+                                             SlotOrder = store.SlotOrder,
+                                             IsActive = store.IsActive,
+                                             CreatedBy = store.CreatedBy,
+                                             CreatedAt = store.CreatedAt,
+                                             UpdatedBy = store.UpdatedBy,
+                                             UpdatedAt = store.UpdatedAt,
+                                             ProductCount = summary?.ProductCount ?? 0
+                                         }).ToList();
+
+                _logger.LogInformation("Fetched {Count} slotted featured stores.", featuredStoreDtos.Count);
+
+                return featuredStoreDtos;
             }
             catch (Exception ex)
             {
