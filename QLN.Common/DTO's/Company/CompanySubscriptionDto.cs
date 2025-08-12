@@ -10,6 +10,7 @@ namespace QLN.Common.DTO_s.Company
 {
     public class CompanySubscriptionDto
     {
+        public Guid? CompanyId { get; set; }
         public string CompanyName { get; set; }
         public string Email { get; set; }
         public string Mobile { get; set; }
