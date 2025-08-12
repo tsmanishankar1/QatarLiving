@@ -97,7 +97,7 @@ namespace QLN.Subscriptions.Actor.ActorClass
             return null;
         }
 
-        public async Task<bool> ValidateUsageAsync(string quotaType, decimal requestedAmount, CancellationToken ct = default)
+        public async Task<bool> ValidateUsageAsync(string quotaType, int requestedAmount, CancellationToken ct = default)
         {
             var data = await GetDataAsync(ct);
             if (data == null) return false;
@@ -105,13 +105,13 @@ namespace QLN.Subscriptions.Actor.ActorClass
             if (data.StatusId != V2Status.Active || data.EndDate <= DateTime.UtcNow)
                 return false;
 
-            var qty = (int)Math.Ceiling(requestedAmount);
+            var qty = requestedAmount;
             var action = MapQuotaTypeToAction(quotaType);
             var res = data.Quota.ValidateAction(action, qty);
             return res.IsValid;
         }
 
-        public async Task<bool> RecordUsageAsync(string quotaType, decimal amount, CancellationToken ct = default)
+        public async Task<bool> RecordUsageAsync(string quotaType, int amount, CancellationToken ct = default)
         {
             var data = await GetDataAsync(ct);
             if (data == null) return false;
@@ -119,7 +119,7 @@ namespace QLN.Subscriptions.Actor.ActorClass
             if (data.StatusId != V2Status.Active || data.EndDate <= DateTime.UtcNow)
                 return false;
 
-            var qty = (int)Math.Ceiling(amount);
+            var qty = amount;
             var action = MapQuotaTypeToAction(quotaType);
             var ok = data.Quota.RecordUsage(action, qty);
             if (!ok) return false;

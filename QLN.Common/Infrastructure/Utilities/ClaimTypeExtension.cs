@@ -1,4 +1,6 @@
-﻿using System.Security.Claims;
+﻿using QLN.Common.Infrastructure.Model;
+using System.Security.Claims;
+using System.Text.Json;
 
 namespace QLN.Common.Infrastructure.Utilities
 {
@@ -56,6 +58,37 @@ namespace QLN.Common.Infrastructure.Utilities
             catch
             {
                 return string.Empty;
+            }
+        }
+
+        public static DrupalUser? GetDrupalUserInfo(this ClaimsPrincipal user)
+        {
+            try
+            {
+                var userObject = user.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                if (string.IsNullOrEmpty(userObject))
+                {
+                    return null;
+                }
+                try
+                {
+                    var drupalUser = JsonSerializer.Deserialize<DrupalUser>(userObject);
+                    if (drupalUser != null)
+                    {
+                        return drupalUser;
+                    }
+
+                    return null;
+                }
+                catch (Exception)
+                {
+
+                    return null;
+                }
+            }
+            catch
+            {
+                return null;
             }
         }
     }

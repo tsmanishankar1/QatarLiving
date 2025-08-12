@@ -223,12 +223,42 @@ namespace QLN.Classified.MS.Service
             }
         }
 
+        public async Task<string> MigrateClassifiedItemsAd(Items dto, CancellationToken cancellationToken = default)
+        {
+
+            try
+            {
+                _logger.LogInformation("Starting MigrateClassifiedItemsAd for UserId={UserId}, Title='{Title}'", dto.UserId, dto.Title);
+
+                _logger.LogDebug("Adding Items ad to EF context...");
+                _context.Item.Add(dto);
+
+                await _context.SaveChangesAsync(cancellationToken);
+                _logger.LogInformation("Database save completed. New AdId={AdId}", dto.Id);
+
+                _logger.LogDebug("Indexing ad to Azure Search...");
+                await IndexItemsToAzureSearch(dto, cancellationToken);
+                _logger.LogInformation("Ad indexed to Azure Search successfully. AdId={AdId}", dto.Id);
+
+                return $"Completed adding {dto.Id}";
+            }
+            catch (Exception ex)
+            {
+                _logger.LogCritical(ex, "Unhandled error occurred during ad creation for UserId={UserId}, Title='{Title}'", dto.UserId, dto.Title);
+                throw new InvalidOperationException(
+                    "An unexpected error occurred while creating the Items ad. Please try again later.",
+                    ex
+                );
+            }
+        }
+
 
         public async Task<AdCreatedResponseDto> RefreshClassifiedItemsAd(
-            SubVertical subVertical,
-            long adId,
-            string userId,
-            CancellationToken cancellationToken)
+     SubVertical subVertical,
+     long adId,
+     string userId,
+     Guid subscriptionId,
+     CancellationToken cancellationToken)
         {
             _logger.LogInformation(
                 "RefreshClassifiedItemsAd called. SubVertical: {SubVertical}, AdId: {AdId}, UserId: {UserId}",
@@ -237,6 +267,7 @@ namespace QLN.Classified.MS.Service
             try
             {
                 string? adTitle;
+
                 object? adItem = subVertical switch
                 {
                     SubVertical.Items => await _context.Item.FirstOrDefaultAsync(i => i.Id == adId && i.IsActive, cancellationToken),
@@ -438,6 +469,33 @@ namespace QLN.Classified.MS.Service
             {
                 _logger.LogError(ex, "Operation error while creating classified Collectibles ad.");
                 throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogCritical(ex, "Unhandled error occurred during Collectibles ad creation.");
+                throw new InvalidOperationException("An unexpected error occurred while creating the Collectibles ad. Please try again later.", ex);
+            }
+        }
+
+        public async Task<string> MigrateClassifiedCollectiblesAd(Collectibles dto, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                _logger.LogInformation("Starting MigrateClassifiedItemsAd for UserId={UserId}, Title='{Title}'", dto.UserId, dto.Title);
+
+                _logger.LogDebug("Adding Items ad to EF context...");
+                _context.Collectible.Add(dto);
+
+                await _context.SaveChangesAsync(cancellationToken);
+                _logger.LogInformation("Database save completed. New AdId={AdId}", dto.Id);
+
+                _logger.LogDebug("Indexing ad to Azure Search...");
+                
+                await IndexCollectiblesToAzureSearch(dto, cancellationToken);
+
+                _logger.LogInformation("Ad indexed to Azure Search successfully. AdId={AdId}", dto.Id);
+                return $"Completed adding {dto.Id}";
+
             }
             catch (Exception ex)
             {

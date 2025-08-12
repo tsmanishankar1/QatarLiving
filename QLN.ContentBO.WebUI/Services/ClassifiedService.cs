@@ -45,6 +45,18 @@ namespace QLN.ContentBO.WebUI.Services
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
+        public async Task<HttpResponseMessage?> GetFeaturedStores(Vertical vertical)
+        {
+            try
+            {
+                return await _httpClient.GetAsync($"/api/v2/classifiedbo/featured-stores/slotted?vertical={vertical}");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("GetFeaturedStores" + ex.Message);
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
         public async Task<HttpResponseMessage?> GetAllSeasonalPicks(Vertical vertical)
         {
             try
@@ -56,6 +68,20 @@ namespace QLN.ContentBO.WebUI.Services
             catch (Exception ex)
             {
                 _logger.LogError("GetAllSeasonalPicks" + ex.Message);
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+        public async Task<HttpResponseMessage?> GetAllFeaturedStores(Vertical vertical)
+        {
+            try
+            {
+                var response = await _httpClient.GetAsync($"/api/v2/classifiedbo/getfeaturedstores?vertical={vertical}");
+                return response;
+
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("GetAllFeaturedStores" + ex.Message);
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
@@ -74,6 +100,23 @@ namespace QLN.ContentBO.WebUI.Services
             catch (Exception ex)
             {
                 _logger.LogError("CreateSeasonalPicksAsync: " + ex.Message);
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+        public async Task<HttpResponseMessage?> CreateFeaturedStoresAsync(object payload)
+        {
+            try
+            {
+                var json = JsonSerializer.Serialize(payload);
+                var request = new HttpRequestMessage(HttpMethod.Post, "/api/v2/classifiedbo/featured-store")
+                {
+                    Content = new StringContent(json, Encoding.UTF8, "application/json")
+                };
+                return await _httpClient.SendAsync(request);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("CreateFeaturedStoresAsync" + ex.Message);
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
@@ -103,6 +146,31 @@ namespace QLN.ContentBO.WebUI.Services
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
+        public async Task<HttpResponseMessage?> ReplaceFeaturedStoresAsync(string pickId, int slot, Vertical vertical)
+        {
+            try
+            {
+                var payload = new
+                {
+                    storeId = pickId,
+                    targetSlotId = slot,
+                    vertical = vertical
+                };
+
+                var request = new HttpRequestMessage(HttpMethod.Put, "/api/v2/classifiedbo/featured-stores/replace-slot")
+                {
+                    Content = JsonContent.Create(payload)
+                };
+
+                return await _httpClient.SendAsync(request);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("ReplaceFeaturedStoresAsync: " + ex.Message);
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+
 
         public async Task<HttpResponseMessage?> DeleteSeasonalPicks(string pickId, Vertical vertical)
         {
@@ -115,6 +183,20 @@ namespace QLN.ContentBO.WebUI.Services
             catch (Exception ex)
             {
                 _logger.LogError("DeleteSeasonalPicks: " + ex.Message);
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+        public async Task<HttpResponseMessage?> DeleteFeaturedStores(string pickId, Vertical vertical)
+        {
+            try
+            {
+                var request = new HttpRequestMessage(HttpMethod.Delete,
+                    $"/api/v2/classifiedbo/featured-stores/soft-delete?storeId={pickId}&Vertical={vertical}");
+                return await _httpClient.SendAsync(request);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("DeleteFeaturedStores: " + ex.Message);
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
@@ -139,6 +221,29 @@ namespace QLN.ContentBO.WebUI.Services
             catch (Exception ex)
             {
                 _logger.LogError("ReorderSeasonalPicksAsync: " + ex.Message);
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+        public async Task<HttpResponseMessage?> ReorderFeaturedStoresAsync(IEnumerable<object> slotAssignments, Vertical vertical)
+        {
+            try
+            {
+                var payload = new
+                {
+                    slotAssignments = slotAssignments,
+                    vertical = vertical
+                };
+                var json = JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true });
+                var request = new HttpRequestMessage(HttpMethod.Put, "/api/v2/classifiedbo/featured-stores/reorder-slots")
+                {
+                    Content = new StringContent(json, Encoding.UTF8, "application/json")
+                };
+
+                return await _httpClient.SendAsync(request);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("ReorderFeaturedStoresAsync " + ex.Message);
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
@@ -175,13 +280,11 @@ namespace QLN.ContentBO.WebUI.Services
                     PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
                     WriteIndented = true
                 };
-
                 var json = JsonSerializer.Serialize(payload, options);
                 var request = new HttpRequestMessage(HttpMethod.Post, "/api/v2/classifiedbo/createfeaturedcategory")
                 {
                     Content = new StringContent(json, Encoding.UTF8, "application/json")
                 };
-
                 return await _httpClient.SendAsync(request);
             }
             catch (Exception ex)
@@ -238,6 +341,30 @@ namespace QLN.ContentBO.WebUI.Services
             }
             
         }
+        public async Task<HttpResponseMessage?> UpdateFeaturedStoreAsync(object payload)
+        { 
+            try
+            {
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                    WriteIndented = true
+                };
+                var json = JsonSerializer.Serialize(payload, options);
+                var request = new HttpRequestMessage(HttpMethod.Put, "/api/v2/classifiedbo/editfeaturedstore")
+                {
+                    Content = new StringContent(json, Encoding.UTF8, "application/json")
+                };
+                return await _httpClient.SendAsync(request);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("UpdateFeaturedStoreAsync" + ex.Message);
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+            
+        }
+
 
 
 
@@ -878,6 +1005,23 @@ namespace QLN.ContentBO.WebUI.Services
             catch (Exception ex)
             {
                 Logger.LogError(ex, "GetFeaturedCategoryById");
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+        public async Task<HttpResponseMessage> GetFeaturedStoreById(string id)
+        {
+            try
+            {
+                var request = new HttpRequestMessage(
+                    HttpMethod.Get,
+                    $"/api/v2/classifiedbo/getfeaturedstore?id={id}"
+                );
+
+                return await _httpClient.SendAsync(request);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "GetFeaturedStoreById");
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }

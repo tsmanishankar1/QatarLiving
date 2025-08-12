@@ -60,12 +60,12 @@ namespace QLN.Backend.API.Service.ClassifiedBoService
             }
         }
 
-        public async Task<ClassifiedBOPageResponse<PreLovedViewP2PDto>> ViewPreLovedP2PSubscriptions(string? createdDate, string? publishedDate, int? Page, int? PageSize, string? Search, string? SortBy, string? SortOrder, CancellationToken cancellationToken = default)
+        public async Task<ClassifiedBOPageResponse<PreLovedViewP2PDto>> ViewPreLovedP2PSubscriptions(string? Status, string? createdDate, string? publishedDate, int? Page, int? PageSize, string? Search, string? SortBy, string? SortOrder, CancellationToken cancellationToken = default)
         {
             try
             {
                 _logger.LogInformation("Preloved p2p external services initiated.");
-                var queryParams = $"?createdDate={createdDate}&publishedDate={publishedDate}&Page={Page}&PageSize={PageSize}&Search={Search}&SortBy={SortBy}&SortOrder={SortOrder}";
+                var queryParams = $"?Status={Status}&createdDate={createdDate}&publishedDate={publishedDate}&Page={Page}&PageSize={PageSize}&Search={Search}&SortBy={SortBy}&SortOrder={SortOrder}";
                 var response = await _dapr.InvokeMethodAsync<ClassifiedBOPageResponse<PreLovedViewP2PDto>>(
                     HttpMethod.Get,
                     SERVICE_APP_ID,

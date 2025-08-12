@@ -21,9 +21,9 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Modal
 
         [Parameter]
         public string Title { get; set; } = "Add Seasonal Pick";
-        protected List<CategoryTreeNode> _categoryTree = new();
-        protected List<CategoryTreeNode> _subcategories = new();
-        protected List<CategoryTreeNode> _sections = new();
+        protected string? featuredCategoryTitle;
+        [Inject] IServiceBOService serviceBOService { get; set; }
+        protected List<L1Category> _selectedL1Categories = new();
         protected bool IsLoadingCategories { get; set; } = true;
         public string TitleName { get; set; }
 
@@ -35,11 +35,27 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Modal
         protected string SelectedSection { get; set; } = string.Empty;
         protected string ImagePreviewUrl { get; set; }
         protected string ImagePreviewWithoutBase64 { get; set; }
+        [Parameter] public List<ServiceCategory> CategoryTrees { get; set; } = new();
 
         protected ElementReference fileInput;
 
-        protected DateTime? StartDate { get; set; } = DateTime.Today;
-        protected DateTime? EndDate { get; set; } = DateTime.Today;
+        protected DateTime? StartDate { get; set; } 
+        protected DateTime? EndDate { get; set; } 
+        protected DateRange? dateRange
+        {
+            get => StartDate.HasValue && EndDate.HasValue ? new DateRange(StartDate.Value, EndDate.Value) : null;
+            set
+            {
+                if (value != null)
+                {
+                    var start = value.Start ?? DateTime.Today;
+                    var end = value.End ?? start;
+                    StartDate = start;
+                    EndDate = end;
+                }
+                StateHasChanged();
+            }
+        }
 
         protected bool IsSubmitting { get; set; } = false;
 
@@ -47,15 +63,8 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Modal
         {
             try
             {
-                var response = await ClassifiedService.GetAllCategoryTreesAsync("items");
-                if (response?.IsSuccessStatusCode == true)
-                {
-                    var json = await response.Content.ReadAsStringAsync();
-                    _categoryTree = JsonSerializer.Deserialize<List<CategoryTreeNode>>(json, new JsonSerializerOptions
-                    {
-                        PropertyNameCaseInsensitive = true
-                    }) ?? new();
-                }
+                if (CategoryTrees == null || !CategoryTrees.Any())
+                    await LoadCategoryTreesAsync();
             }
             catch (Exception ex)
             {
@@ -66,60 +75,33 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Modal
                 IsLoadingCategories = false;
             }
         }
-
         protected void OnCategoryChanged(long? categoryId)
         {
             SelectedCategoryId = categoryId;
-            SelectedSubcategoryId = null;
-            SelectedSectionId = null;
-            var category = _categoryTree.FirstOrDefault(c => c.Id == categoryId.ToString());
-            SelectedCategory = category?.Name ?? string.Empty;
-            _subcategories = category?.Children ?? new();
-            _sections = new();
+            var selected = CategoryTrees.FirstOrDefault(c => c.Id == categoryId);
+            SelectedCategory = selected?.CategoryName;
+            _selectedL1Categories = selected?.Fields ?? new();
         }
-
 
         protected void OnSubcategoryChanged(long? subcategoryId)
         {
             SelectedSubcategoryId = subcategoryId;
-            SelectedSectionId = null;
-            var sub = _subcategories.FirstOrDefault(c => c.Id == subcategoryId.ToString());
-            SelectedSubcategory = sub?.Name ?? string.Empty;
-            _sections = sub?.Children ?? new();
+            var sub = _selectedL1Categories
+                    .FirstOrDefault(c => c.Id == subcategoryId);
+            SelectedSubcategory = sub?.CategoryName ?? string.Empty;
         }
-        protected void OnSectionChanged(long? sectionId)
-        {
-            SelectedSectionId = sectionId;
-            var section = _sections.FirstOrDefault(c => c.Id == sectionId.ToString());
-            SelectedSection = section?.Name ?? string.Empty;
-        }
-
-
 
         protected bool IsFormValid()
         {
-            return SelectedCategoryId.HasValue;
+            return SelectedCategoryId.HasValue && SelectedSubcategoryId.HasValue &&
+                   !string.IsNullOrWhiteSpace(featuredCategoryTitle) &&
+                   StartDate.HasValue &&
+                   EndDate.HasValue &&
+                   !string.IsNullOrEmpty(ImagePreviewUrl);
         }
 
 
         protected void Close() => MudDialog.Cancel();
-
-        protected void Save()
-        {
-            var newItem = new LandingPageItem
-            {
-                
-                Category = SelectedCategory,
-                Subcategory = SelectedSubcategory,
-                Section = SelectedSection,
-                ImageUrl = ImagePreviewUrl,
-                Title = $"{SelectedCategory} - {SelectedSubcategory}",
-                EndDate = DateTime.Now.AddMonths(3)
-            };
-
-            MudDialog.Close(DialogResult.Ok(newItem));
-        }
-
         protected async Task SaveAsync()
         {
             if (!IsFormValid())
@@ -129,20 +111,18 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Modal
             }
 
             IsSubmitting = true;
-
+            var imageUrl = await UploadImageAsync(ImagePreviewWithoutBase64);
             var payload = new
             {
-                vertical = "classifieds",
-                title=Title,
+                vertical = Vertical.Classifieds,
+                title = featuredCategoryTitle,
                 categoryId = SelectedCategoryId,
                 categoryName = SelectedCategory,
                 l1CategoryId = SelectedSubcategoryId,
                 l1categoryName = SelectedSubcategory,
-                //l2categoryId = SelectedSectionId,
-                //l2categoryName = SelectedSection,
                 startDate = StartDate?.ToString("yyyy-MM-dd"),
                 endDate = EndDate?.ToString("yyyy-MM-dd"),
-                imageUrl = ImagePreviewWithoutBase64
+                imageUrl = imageUrl
             };
 
             try
@@ -190,6 +170,61 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Modal
             var base64 = Convert.ToBase64String(ms.ToArray());
             ImagePreviewUrl = $"data:{file.ContentType};base64,{base64}";
             ImagePreviewWithoutBase64 = base64;
+        }
+        private async Task<string?> UploadImageAsync(string base64Image)
+        {
+            if (string.IsNullOrWhiteSpace(base64Image))
+                return null;
+
+            var uploadPayload = new FileUploadModel
+            {
+                Container = "services-images",
+                File = base64Image
+            };
+            var uploadResponse = await FileUploadService.UploadFileAsync(uploadPayload);
+            if (uploadResponse.IsSuccessStatusCode)
+            {
+                var result = await uploadResponse.Content.ReadFromJsonAsync<FileUploadResponseDto>();
+                if (result?.IsSuccess == true)
+                {
+                    return result.FileUrl;
+                }
+                else
+                {
+                    Logger.LogWarning("Image upload failed: {Message}", result?.Message);
+                }
+            }
+            else
+            {
+                Logger.LogWarning("Image upload HTTP error");
+            }
+            return null;
+        }
+        private async Task LoadCategoryTreesAsync()
+        {
+            try
+            {
+                var response = await serviceBOService.GetAllClassifiedsCategories(Vertical.Classifieds, SubVertical.Items);
+                if (response is { IsSuccessStatusCode: true })
+                {
+                    var result = await response.Content.ReadFromJsonAsync<List<ServiceCategory>>();
+                    CategoryTrees = result ?? new();
+                    StateHasChanged();
+                }
+                else
+                {
+                    Snackbar.Add("Failed to load categoryies", Severity.Warning);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "LoadCategoryTreesAsync");
+            }
+            finally
+            {
+                IsLoadingCategories = false;
+                StateHasChanged();
+            }
         }
 
     }

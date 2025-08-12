@@ -10,7 +10,7 @@ namespace QLN.Common.Infrastructure.Model
 {
     public class UserLegacyData
     {
-        [Key]
+        public Guid UserId { get; set; }
         public required long Uid { get; set; }
         public required string Status { get; set; }
         public string? Language { get; set; }
@@ -28,14 +28,13 @@ namespace QLN.Common.Infrastructure.Model
         public List<string>? Permissions { get; set; }
         public List<string>? Roles { get; set; }
         //public List<object> ShowroomInfo { get; set; }
-        public LegacySubscription? Subscription { get; set; }
     }
 
     public class LegacySubscription
     {
-        [Key]
-        public required string ReferenceId { get; set; }
+        public Guid UserId { get; set; }
         public required long Uid { get; set; }
+        public required string ReferenceId { get; set; }
         public required string StartDate { get; set; }
         public required string ExpireDate { get; set; }
         public required string ProductType { get; set; }

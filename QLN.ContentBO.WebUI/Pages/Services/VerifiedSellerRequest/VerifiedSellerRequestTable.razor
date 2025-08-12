@@ -31,11 +31,11 @@
     </HeaderContent>
 
     <RowTemplate>
-        <MudTd title="@(string.IsNullOrWhiteSpace(context.BusinessName) ? "-" : context.BusinessName)"Class="truncate-text">@context.BusinessName</MudTd>
-        <MudTd title="@(string.IsNullOrWhiteSpace(context.Username) ? "-" : context.Username)"Class="truncate-text">@context.Username</MudTd>
-        <MudTd title="@(string.IsNullOrWhiteSpace(context.CRFile) ? "-" : context.CRFile)"Class="truncate-text hover-title">@context.CRFile</MudTd>
-         <MudTd Class="truncate-text">@context.CRLicense</MudTd>
-        <MudTd Class="truncate-text">@context.Enddate</MudTd>
+        <MudTd title="@(string.IsNullOrWhiteSpace(context.CompanyName) ? "-" : context.CompanyName)"Class="truncate-text">@context.CompanyName</MudTd>
+        <MudTd title="@(string.IsNullOrWhiteSpace(context.UserName) ? "-" : context.UserName)"Class="truncate-text">@context.UserName</MudTd>
+        <MudTd title="@(string.IsNullOrWhiteSpace(context.CRDocument) ? "-" : context.CRDocument)"Class="truncate-text hover-title">@context.CRDocument</MudTd>
+         <MudTd Class="truncate-text">@context.LicenseNumber</MudTd>
+        <MudTd Class="truncate-text">@(context.CRExpiryDate?.ToString("dd-MM-yyyy hh:mm tt") ?? "--")</MudTd>
        <MudTd>
             <MudMenu Icon="@Icons.Material.Filled.MoreVert">
                 <MudMenuItem>
