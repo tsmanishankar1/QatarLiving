@@ -1,4 +1,4 @@
-﻿@inherits AddFeaturedCategoryModalBase
+@inherits EditFeaturedCategoryModalBase
 @using MudBlazor
 
 <MudDialog MaxWidth="MaxWidth.Small" FullWidth="true">
@@ -38,7 +38,7 @@
                     else
                     {
                         <MudSelectItem T="long?" Value=null Disabled="true">Choose</MudSelectItem>
-                        @foreach (var category in  CategoryTrees )
+                        @foreach (var category in CategoryTrees )
                         {
                             <MudSelectItem T="long?" Value="@category.Id">@category.CategoryName</MudSelectItem>
                         }
@@ -47,10 +47,9 @@
             </div>
             <div class="mx-auto">
                 <MudSelect T="long?" Label="Subcategory"
-                           Value="SelectedSubcategoryId"
+                           @bind-Value="SelectedSubcategoryId"
                            Disabled="@(!SelectedCategoryId.HasValue)"
                            Class="classified-field no-underline"
-                           ValueChanged="OnSubcategoryChanged"
                            Required="true"
                            RequiredError="Subcategory is required">
                     <MudSelectItem T="long?" Value=null Disabled="true">Choose</MudSelectItem>
@@ -63,7 +62,7 @@
 
             <div class="mx-auto" style="width: 330px;">
                 <MudDateRangePicker Class="classified-datepicker-field no-underline" Style="border: 1px solid #D0D5DD; border-radius: 6px; padding: 10px;" @bind-DateRange="dateRange" Required="true" 
-                               MinDate="@DateTime.Today"DisplayMonths="1"/>
+                               DisplayMonths="1"/>
             </div> 
             <!-- Image Upload -->
             <div class="mx-auto">
@@ -92,7 +91,7 @@
             <!-- Footer Buttons -->
             <div class=" classified-button-wrapper mx-auto mt-2">
                 <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SaveAsync" Disabled="@(!IsFormValid())" Class="classified-button">
-                    Add
+                    Edit
                 </MudButton>
                 <MudButton Variant="Variant.Outlined" Color="Color.Inherit" OnClick="Close" Class="classified-button mt-2">
                     Close

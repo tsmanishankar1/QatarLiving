@@ -9,7 +9,7 @@ using QLN.ContentBO.WebUI.Interfaces;
 
 namespace QLN.ContentBO.WebUI.Pages.Classified.Modal
 {
-    public class AddStoreModalBase : QLComponentBase
+    public class EditStoreModalBase : QLComponentBase
     {
         [CascadingParameter]
         public IMudDialogInstance MudDialog { get; set; }
@@ -19,47 +19,69 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Modal
         public ISnackbar Snackbar { get; set; }
         protected string? featuredCategoryTitle;
         [Inject] IServiceBOService serviceBOService { get; set; }
-        public List<VerificationProfileStatus> Listings { get; set; } = new();
+        protected FeaturedStoreDto selectedFeaturedStore { get; set; } = new();
 
         [Parameter]
         public string Title { get; set; } = "Add Seasonal Pick";
-        [Parameter] public List<ServiceCategory> CategoryTrees { get; set; } = new();
-        protected List<L1Category> _selectedL1Categories = new();
-        protected List<L2Category> _selectedL2Categories = new();
+        [Parameter]
+        public EventCallback ReloadData { get; set; }
+        [Parameter]
+        public String CategoryId { get; set; }
+
         protected bool IsLoadingCategories { get; set; } = true;
         protected DateRange? dateRange
         {
-            get => StartDate.HasValue && EndDate.HasValue ? new DateRange(StartDate.Value, EndDate.Value) : null;
+            get => (selectedFeaturedStore.StartDate != DateOnly.MinValue && selectedFeaturedStore.EndDate != DateOnly.MinValue)
+                ? new DateRange(
+                    selectedFeaturedStore.StartDate?.ToDateTime(TimeOnly.MinValue),
+                    selectedFeaturedStore.EndDate?.ToDateTime(TimeOnly.MinValue)
+                  )
+                : null;
+
             set
             {
-                if (value != null)
-                {
-                    var start = value.Start ?? DateTime.Today;
-                    var end = value.End ?? start;
-                    StartDate = start;
-                    EndDate = end;
-                }
-                StateHasChanged();
+                if (value?.Start != null)
+                    selectedFeaturedStore.StartDate = DateOnly.FromDateTime(value.Start.Value);
+
+                if (value?.End != null)
+                    selectedFeaturedStore.EndDate = DateOnly.FromDateTime(value.End.Value);
             }
         }
-
         protected Guid? SelectedCategoryId;
         protected string SelectedCategory { get; set; } = string.Empty;
+        protected string SelectedSubcategory { get; set; } = string.Empty;
+        protected string SelectedSection { get; set; } = string.Empty;
         protected string ImagePreviewUrl { get; set; }
         protected string ImagePreviewWithoutBase64 { get; set; }
-
+        public List<VerificationProfileStatus> Listings { get; set; } = new();
         protected ElementReference fileInput;
 
-        protected DateTime? StartDate { get; set; } 
-        protected DateTime? EndDate { get; set; } 
 
         protected bool IsSubmitting { get; set; } = false;
+        [Parameter] public List<ServiceCategory> CategoryTrees { get; set; } = new();
 
-        protected override async Task OnInitializedAsync()
+        protected override async Task OnParametersSetAsync()
         {
             try
             {
-                  Listings =  await LoadCategoryTreesAsync();
+                    Listings =  await LoadCategoryTreesAsync();
+
+                selectedFeaturedStore = await GetFeaturedStoresById();
+                if (selectedFeaturedStore != null)
+                {
+                    featuredCategoryTitle = selectedFeaturedStore.Title;
+                    ImagePreviewUrl = selectedFeaturedStore.ImageUrl;
+                    if (Guid.TryParse(selectedFeaturedStore.StoreId, out var storeGuid))
+                    {
+                        SelectedCategoryId = storeGuid;
+                    }
+                    SelectedCategory = selectedFeaturedStore.StoreName;
+                    dateRange = new DateRange(
+                       selectedFeaturedStore.StartDate?.ToDateTime(TimeOnly.MinValue),
+                       selectedFeaturedStore.EndDate?.ToDateTime(TimeOnly.MinValue)
+                   );
+                }
+                StateHasChanged();
             }
             catch (Exception ex)
             {
@@ -75,7 +97,17 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Modal
         {
             SelectedCategoryId = categoryId;
             var selected = Listings.FirstOrDefault(c => c.Id == categoryId);
-            SelectedCategory = selected?.CompanyName ?? string.Empty;
+            SelectedCategory = selected?.CompanyName;
+        }
+
+
+        protected bool IsFormValid()
+        {
+            return SelectedCategoryId.HasValue
+                && !string.IsNullOrWhiteSpace(featuredCategoryTitle)
+                && selectedFeaturedStore.StartDate.HasValue
+                && selectedFeaturedStore.StartDate.HasValue
+                && !string.IsNullOrEmpty(ImagePreviewUrl);
         }
         private bool IsBase64String(string? base64)
         {
@@ -86,14 +118,6 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Modal
             return Convert.TryFromBase64String(base64, buffer, out _);
         }
 
-        protected bool IsFormValid()
-        {
-            return SelectedCategoryId.HasValue
-                && !string.IsNullOrWhiteSpace(featuredCategoryTitle)
-                && StartDate.HasValue
-                && EndDate.HasValue
-                && !string.IsNullOrEmpty(ImagePreviewUrl);
-        }
 
         protected void Close() => MudDialog.Cancel();
         protected async Task SaveAsync()
@@ -105,29 +129,34 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Modal
             }
 
             IsSubmitting = true;
-            var imageUrl = await UploadImageAsync(ImagePreviewWithoutBase64);
+            var imageUrl = ImagePreviewUrl;
+            if (IsBase64String(ImagePreviewWithoutBase64))
+            {
+                imageUrl = await UploadImageAsync(ImagePreviewWithoutBase64);
+            }
             var payload = new
             {
+                id = selectedFeaturedStore.Id,
                 title = featuredCategoryTitle,
                 vertical = Vertical.Classifieds,
-                storeId = SelectedCategoryId,
                 storeName = SelectedCategory,
-                startDate = StartDate?.ToString("yyyy-MM-dd"),
-                endDate = EndDate?.ToString("yyyy-MM-dd"),
+                storeId = SelectedCategoryId,
+                startDate = selectedFeaturedStore.StartDate?.ToString("yyyy-MM-dd"),
+                endDate = selectedFeaturedStore.EndDate?.ToString("yyyy-MM-dd"),
                 imageUrl = imageUrl
             };
 
             try
             {
-                var response = await ClassifiedService.CreateFeaturedStoresAsync(payload);
+                var response = await ClassifiedService.UpdateFeaturedStoreAsync(payload);
                 if (response?.IsSuccessStatusCode == true)
                 {
-                    Snackbar.Add("Featured Store added successfully!", Severity.Success);
+                    Snackbar.Add("Featued Store Updated successfully!", Severity.Success);
                     MudDialog.Close(DialogResult.Ok(true));
                 }
                 else
                 {
-                    Snackbar.Add("Failed to add Featured Store.", Severity.Error);
+                    Snackbar.Add("Failed to update Featued Store", Severity.Error);
                 }
             }
             catch (Exception ex)
@@ -192,7 +221,6 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Modal
             }
             return null;
         }
-
         private async Task<List<VerificationProfileStatus>> LoadCategoryTreesAsync()
         {
             try
@@ -202,7 +230,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Modal
                     vertical = 3,
                     subVertical = 5,
                     pageNumber = 1,
-                    pageSize = 12
+                    pageSize = 50
                 };
                 var response = await serviceBOService.GetAllCompaniesAsync(payload);
                 if (response.IsSuccessStatusCode)
@@ -218,7 +246,24 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Modal
 
             return new List<VerificationProfileStatus>();
         }
-    
+        private async Task<FeaturedStoreDto> GetFeaturedStoresById()
+        {
+            try
+            {
+                var apiResponse = await ClassifiedService.GetFeaturedStoreById(CategoryId);
+                if (apiResponse.IsSuccessStatusCode)
+                {
+                    var response = await apiResponse.Content.ReadFromJsonAsync<FeaturedStoreDto>();
+                    return response ?? new FeaturedStoreDto();
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "GetFeaturedStoresById");
+            }
+            return new FeaturedStoreDto();
+        }
+
 
     }
 }

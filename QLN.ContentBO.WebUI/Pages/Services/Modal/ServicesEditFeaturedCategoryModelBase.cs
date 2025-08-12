@@ -29,8 +29,8 @@ namespace QLN.ContentBO.WebUI.Pages.Services.Modal
         {
             get => (selectedFeaturedCategory.StartDate != DateOnly.MinValue && selectedFeaturedCategory.EndDate != DateOnly.MinValue)
                 ? new DateRange(
-                    selectedFeaturedCategory.StartDate.ToDateTime(TimeOnly.MinValue),
-                    selectedFeaturedCategory.EndDate.ToDateTime(TimeOnly.MinValue)
+                    selectedFeaturedCategory.StartDate?.ToDateTime(TimeOnly.MinValue),
+                    selectedFeaturedCategory.EndDate?.ToDateTime(TimeOnly.MinValue)
                   )
                 : null;
 
@@ -90,8 +90,8 @@ namespace QLN.ContentBO.WebUI.Pages.Services.Modal
                 SelectedSubcategoryId = selectedFeaturedCategory.L1CategoryId;
                 SelectedSubcategory = selectedFeaturedCategory.L1categoryName;
                     dateRange = new DateRange(
-                        selectedFeaturedCategory.StartDate.ToDateTime(TimeOnly.MinValue),
-                        selectedFeaturedCategory.EndDate.ToDateTime(TimeOnly.MinValue)
+                        selectedFeaturedCategory.StartDate?.ToDateTime(TimeOnly.MinValue),
+                        selectedFeaturedCategory.EndDate?.ToDateTime(TimeOnly.MinValue)
                     );
                 var category = CategoryTrees.FirstOrDefault(c => c.Id == selectedFeaturedCategory.CategoryId);
                 if (category != null)
@@ -212,8 +212,8 @@ namespace QLN.ContentBO.WebUI.Pages.Services.Modal
                 categoryName = SelectedCategory,
                 l1categoryName = SelectedSubcategory,
                 l1CategoryId = SelectedSubcategoryId,
-                startDate = selectedFeaturedCategory.StartDate.ToString("yyyy-MM-dd"),
-                endDate = selectedFeaturedCategory.EndDate.ToString("yyyy-MM-dd"),
+                startDate = selectedFeaturedCategory.StartDate?.ToString("yyyy-MM-dd"),
+                endDate = selectedFeaturedCategory.EndDate?.ToString("yyyy-MM-dd"),
                 imageUrl = imageUrl,
                 slotOrder = selectedFeaturedCategory.SlotOrder,
             };
