@@ -165,7 +165,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
             }
         }
 
-        public async Task<ClassifiedBOPageResponse<PreLovedViewP2PDto>> ViewPreLovedP2PSubscriptions(string? createdDate, string? publishedDate, int? Page, int? PageSize, string? Search, string? SortBy, string? SortOrder, CancellationToken cancellationToken = default)
+        public async Task<ClassifiedBOPageResponse<PreLovedViewP2PDto>> ViewPreLovedP2PSubscriptions(string? Status, string? createdDate, string? publishedDate, int? Page, int? PageSize, string? Search, string? SortBy, string? SortOrder, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -248,6 +248,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                                 })
                 .Where(x =>
                     (
+                    (string.IsNullOrEmpty(Status) || x.Status == Status) &&
                    (!createdDateParsed.HasValue || x.CreatedDate >= createdDateParsed.Value) &&
                     (!publishedDateParsed.HasValue || x.PublishedDate >= publishedDateParsed.Value) &&
                     (

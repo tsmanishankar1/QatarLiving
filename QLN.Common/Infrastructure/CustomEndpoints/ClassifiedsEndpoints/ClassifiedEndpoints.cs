@@ -10,10 +10,12 @@ using Microsoft.Extensions.Logging;
 using QLN.Common.DTO_s;
 using QLN.Common.DTO_s.Classifieds;
 using QLN.Common.DTO_s.ClassifiedsBo;
+using QLN.Common.DTO_s.ClassifiedsFo;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.CustomException;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService;
+using QLN.Common.Infrastructure.IService.IClassifiedBoService;
 using QLN.Common.Infrastructure.IService.ISearchService;
 using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.Utilities;
@@ -681,11 +683,12 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .ExcludeFromDescription();
 
             group.MapPut("/items/refresh", async Task<IResult> (
-        HttpContext httpContext,
-        [FromQuery] SubVertical subVertical,
-        [FromQuery] long adId,
-        IClassifiedService service,
-        CancellationToken token) =>
+      HttpContext httpContext,
+      [FromQuery] SubVertical subVertical,
+      [FromQuery] long adId,
+      [FromQuery] Guid subscriptionId,   
+      IClassifiedService service,
+      CancellationToken token) =>
             {
                 try
                 {
@@ -708,7 +711,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                     var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
                     string userId = userData.GetProperty("uid").GetString();
 
-                    var result = await service.RefreshClassifiedItemsAd(subVertical, adId, userId, token);
+                    var result = await service.RefreshClassifiedItemsAd(subVertical, adId, userId, subscriptionId, token);
 
                     return TypedResults.Ok(result);
                 }
@@ -721,69 +724,71 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                     );
                 }
             })
-    .RequireAuthorization()
-    .WithName("RefreshItemsAd")
-    .WithTags("Classified")
-    .WithSummary("Refresh the ad (authorized)")
-    .WithDescription("Refresh an ad by resetting CreatedDate and RefreshExpiryDate, requires login.")
-    .Produces(StatusCodes.Status200OK)
-    .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-    .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
-    .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+  .RequireAuthorization()
+  .WithName("RefreshItemsAd")
+  .WithTags("Classified")
+  .WithSummary("Refresh the ad (authorized)")
+  .WithDescription("Refresh an ad by resetting CreatedDate and RefreshExpiryDate, requires login.")
+  .Produces(StatusCodes.Status200OK)
+  .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+  .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+  .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
 
-            group.MapPut("/refreshed/{userId}/{adId}",
-    async Task<IResult> (
-        string userId,
-        long adId,
-        [FromQuery] SubVertical subVertical,
-        IClassifiedService service,
-        CancellationToken token) =>
-    {
-        try
-        {
-            if (string.IsNullOrWhiteSpace(userId))
+            group.MapPut("/items/refreshed/{userId}/{adId}", async Task<IResult> (
+                string userId,
+                long adId,
+                [FromQuery] SubVertical subVertical,
+                [FromQuery] Guid subscriptionId,       
+                IClassifiedService service,
+                CancellationToken token) =>
             {
-                return TypedResults.BadRequest(new ProblemDetails
+                try
                 {
-                    Title = "Validation Error",
-                    Detail = "UserId is required.",
-                    Status = StatusCodes.Status400BadRequest
-                });
-            }
+                    if (string.IsNullOrWhiteSpace(userId))
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "UserId is required.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
 
-            if (adId <= 0)
-            {
-                return TypedResults.BadRequest(new ProblemDetails
+                    if (adId <= 0)
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "AdId is required.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    var result = await service.RefreshClassifiedItemsAd(subVertical, adId, userId, subscriptionId, token);
+
+                    return TypedResults.Ok(result);
+                }
+                catch (Exception ex)
                 {
-                    Title = "Validation Error",
-                    Detail = "AdId is required.",
-                    Status = StatusCodes.Status400BadRequest
-                });
-            }
+                    return TypedResults.Problem(
+                        title: "Error Refreshing Ad",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+            .ExcludeFromDescription()
+            .WithName("RefreshedItemsAd")
+            .WithTags("Classified")
+            .WithSummary("Refresh the ad (direct call)")
+            .WithDescription("Refresh an ad by resetting CreatedDate and RefreshExpiryDate, using explicit userId.")
+            .Produces(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-            var result = await service.RefreshClassifiedItemsAd(subVertical, adId, userId, token);
 
-            return TypedResults.Ok(result);
-        }
-        catch (Exception ex)
-        {
-            return TypedResults.Problem(
-                title: "Error Refreshing Ad",
-                detail: ex.Message,
-                statusCode: StatusCodes.Status500InternalServerError
-            );
-        }
-    })
-    .ExcludeFromDescription()
-    .WithName("RefreshedItemsAd")
-    .WithTags("Classified")
-    .WithSummary("Refresh the ad (direct call)")
-    .WithDescription("Refresh an ad by resetting CreatedDate and RefreshExpiryDate, using explicit userId.")
-    .Produces(StatusCodes.Status200OK)
-    .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-    .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
-    .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
 
 
@@ -4310,6 +4315,78 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status404NotFound)
             .ProducesProblem(StatusCodes.Status500InternalServerError);
+            
+
+            group.MapGet("/stores-dashboard-header", async Task<Results<
+          Ok<List<StoresDashboardHeaderDto>>,
+          BadRequest<ProblemDetails>,
+          ProblemHttpResult>>
+          (
+          [FromServices]IClassifiedsFoService service,
+          HttpContext context,
+            string? UserId, string? CompanyId,
+          CancellationToken cancellationToken
+          ) =>
+            {
+                try
+                {
+                    var result = await service.GetStoresDashboardHeader(UserId, CompanyId,cancellationToken);
+                    return TypedResults.Ok(result);
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        instance: context.Request.Path
+                    );
+                }
+            })
+                .WithName("StoresDashboardHeader")
+                .AllowAnonymous()
+                .WithTags("Classified")
+                .WithSummary("To display the stores dashboard header information.")
+                .WithDescription("Fetches all stores dashboard header information.")
+                .Produces<List<StoresDashboardHeaderDto>>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapGet("/stores-dashboard-summary", async Task<Results<
+          Ok<List<StoresDashboardSummaryDto>>,
+          BadRequest<ProblemDetails>,
+          ProblemHttpResult>>
+          (
+          [FromServices] IClassifiedsFoService service,
+          HttpContext context,
+            string? CompanyId, string? SubscriptionId,
+          CancellationToken cancellationToken
+          ) =>
+            {
+                try
+                {
+                    var result = await service.GetStoresDashboardSummary(CompanyId, SubscriptionId,  cancellationToken);
+                    return TypedResults.Ok(result);
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        instance: context.Request.Path
+                    );
+                }
+            })
+                .WithName("StoresDashboardSummary")
+                .AllowAnonymous()
+                .WithTags("Classified")
+                .WithSummary("To display the stores dashboard summary information.")
+                .WithDescription("Fetches all stores dashboard summary information.")
+                .Produces<List<StoresDashboardSummaryDto>>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
             return group;
         }
 

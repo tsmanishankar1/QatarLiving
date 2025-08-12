@@ -26,6 +26,7 @@ public class LandingPageBase : QLComponentBase
 
     private List<SeasonalPickDto> _seasonalPicks = new();
     private List<SeasonalPickDto> _featuredCategory = new();
+    private List<SeasonalPickDto> _featuredStores = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -41,6 +42,7 @@ public class LandingPageBase : QLComponentBase
             await LoadDataForCurrentTab();
             await LoadAllSeasonalPicks();
             await LoadAllFeaturedCategory();
+            await LoadAllFeaturedStores();
 
         }
         catch (Exception ex)
@@ -204,7 +206,7 @@ public class LandingPageBase : QLComponentBase
     private async Task<List<LandingPageItem>> LoadFeaturedStores()
     {
         var picks = new List<LandingPageItem>();
-        HttpResponseMessage? response = await ClassifiedService.GetFeaturedSeasonalPicks(Vertical.Classifieds);
+        HttpResponseMessage? response = await ClassifiedService.GetFeaturedStores(Vertical.Classifieds);
 
         if (response?.IsSuccessStatusCode == true)
         {
@@ -218,8 +220,8 @@ public class LandingPageBase : QLComponentBase
                 .Where(x => x.SlotOrder >= 1 && x.SlotOrder <= 6)
                 .ToDictionary(x => x.SlotOrder, x => new LandingPageItem
                 {
-                    Id = null,
-                    Category = x.CategoryName,
+                     Id = Guid.Parse(x.Id),
+                    Category = x.StoreName,
                     EndDate = x.EndDate,
                     SlotOrder = x.SlotOrder,
                     IsPlaceholder = false
@@ -235,7 +237,7 @@ public class LandingPageBase : QLComponentBase
                 {
                     picks.Add(new LandingPageItem
                     {
-                        Id = Guid.NewGuid(),
+                        Id = null,
                         Category = "Select a store to feature",
                         EndDate = null,
                         SlotOrder = slot,
@@ -265,6 +267,28 @@ public class LandingPageBase : QLComponentBase
             Snackbar.Add("Failed to load the seasonal pick items", Severity.Error);
         }
     }
+    private async Task LoadAllFeaturedStores()
+    {
+        var response = await ClassifiedService.GetAllFeaturedStores(Vertical.Classifieds);
+
+        if (response?.IsSuccessStatusCode == true)
+        {
+            var content = await response.Content.ReadAsStringAsync();
+            _featuredStores = JsonSerializer.Deserialize<List<SeasonalPickDto>>(content, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            }) ?? new List<SeasonalPickDto>();
+            foreach (var store in _featuredStores)
+        {
+            store.CategoryName = store.StoreName; 
+        }
+        }
+        else
+        {
+            Snackbar.Add("Failed to load the seasonal pick items", Severity.Error);
+        }
+    }
+    
 
     private async Task LoadAllFeaturedCategory()
     {
@@ -355,6 +379,7 @@ public class LandingPageBase : QLComponentBase
             await LoadDataForCurrentTab();
             await LoadAllFeaturedCategory();
             await LoadAllSeasonalPicks();
+            await LoadAllFeaturedStores();
             StateHasChanged();
         }
     }
@@ -372,7 +397,7 @@ public class LandingPageBase : QLComponentBase
         {
             0 => _featuredCategory,
             1 => _seasonalPicks,
-            2 => _seasonalPicks,
+            2 => _featuredStores,
             _ => _seasonalPicks
         };
         var parameters = new DialogParameters
@@ -422,22 +447,16 @@ public class LandingPageBase : QLComponentBase
     {
         var title = $"{GetCurrentTabAddButtonText()}";
 
-        var parameters = new DialogParameters
-        {
-            { "Title", "Delete Confirmation" },
-            { "Description", $"Do you want to delete this {title}?" },
-            { "ButtonTitle", "Delete" },
-            { "OnConfirmed", EventCallback.Factory.Create(this, async () => await ConfirmDeleteItem(id)) }
-        };
 
-        await ShowConfirmationDialog();
+        await ShowConfirmationDialog(id);
     }
+   
 
     protected async Task ConfirmDeleteItem(string id)
     {
         try
         {
-             string GetItemTypeName() => currentItemType switch
+            string GetItemTypeName() => currentItemType switch
             {
                 LandingPageItemType.FeaturedCategory => "Featured Category",
                 LandingPageItemType.SeasonalPick => "Seasonal Pick",
@@ -445,7 +464,7 @@ public class LandingPageBase : QLComponentBase
                 _ => "Item"
             };
 
-           HttpResponseMessage? response = null;
+            HttpResponseMessage? response = null;
 
             switch (currentItemType)
             {
@@ -458,7 +477,7 @@ public class LandingPageBase : QLComponentBase
                     break;
 
                 case LandingPageItemType.FeaturedStore:
-                    response = await ClassifiedService.DeleteSeasonalPicks(id, Vertical.Classifieds);
+                    response = await ClassifiedService.DeleteFeaturedStores(id, Vertical.Classifieds);
                     break;
 
                 default:
@@ -469,7 +488,7 @@ public class LandingPageBase : QLComponentBase
             if (response?.IsSuccessStatusCode == true)
             {
                 Snackbar.Add($"{GetItemTypeName()} deleted successfully", Severity.Success);
-                await LoadDataForCurrentTab(); 
+                await LoadDataForCurrentTab();
             }
             else
             {
@@ -515,7 +534,7 @@ public class LandingPageBase : QLComponentBase
         }
     }
 
-    private async Task ShowConfirmationDialog()
+    private async Task ShowConfirmationDialog(string id)
     {
         var title = $"{GetCurrentTabAddButtonText()}";
 
@@ -524,7 +543,7 @@ public class LandingPageBase : QLComponentBase
             { "Title", "Delete Confirmation" },
             { "Descrption",$"Do you want to delete this {title}?" },
             { "ButtonTitle", "Delete" },
-            { "OnConfirmed",  EventCallback.Factory.Create(this, async () => await DeleteFeatureEvent("d5d89b0b-eaae-4853-90c3-238d4531bd1a"))}
+            { "OnConfirmed",  EventCallback.Factory.Create(this, async () => await ConfirmDeleteItem(id))}
         };
         var options = new DialogOptions { CloseButton = false, MaxWidth = MaxWidth.Small, FullWidth = true };
         var dialog = DialogService.Show<ConfirmationDialog>("", parameters, options);

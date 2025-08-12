@@ -69,6 +69,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedBOEndPoints
           (
           [FromServices] IClassifiedPreLovedBOService service,
           HttpContext context,
+          string? Status,
           string? createdDate,
           string? publishedDate,
           int? Page, int? PageSize, string? Search, string? SortBy, string? SortOrder,
@@ -79,7 +80,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedBOEndPoints
                 {
                     int page = Page ?? 1;
                     int pageSize = PageSize ?? 12;
-                    var result = await service.ViewPreLovedP2PSubscriptions(createdDate, publishedDate, page, pageSize, Search, SortBy, SortOrder, cancellationToken);
+                    var result = await service.ViewPreLovedP2PSubscriptions(Status,createdDate, publishedDate, page, pageSize, Search, SortBy, SortOrder, cancellationToken);
 
                     return TypedResults.Ok(result);
                 }

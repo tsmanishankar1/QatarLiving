@@ -7,9 +7,9 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
     {
         public static RouteGroupBuilder MapClassifiedsEndpoints(this RouteGroupBuilder group)
         {
-            group.MapClassifiedEndpoints()
-                .MapClassifiedsFeaturedItemEndpoint()
-                .MapClassifiedFOStoresEndpoints();
+            group.MapClassifiedEndpoints();
+            group.MapClassifiedsFeaturedItemEndpoint();
+            group.MapClassifiedFOStoresEndpoints();
             return group;
         }
     }

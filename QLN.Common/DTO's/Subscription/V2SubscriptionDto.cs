@@ -88,11 +88,11 @@ namespace QLN.Common.DTO_s.Subscription
 
         [Required]
         [StringLength(100, ErrorMessage = "User ID must not exceed 100 characters")]
-        public string UserId { get; set; } = string.Empty;
-
+   
         public Guid? CompanyId { get; set; }
 
         public int? PaymentId { get; set; }
+        
     }
 
     /// <summary>
@@ -106,7 +106,7 @@ namespace QLN.Common.DTO_s.Subscription
 
         [Required]
         [StringLength(100, ErrorMessage = "User ID must not exceed 100 characters")]
-        public string UserId { get; set; } = string.Empty;
+        
 
         public Guid? CompanyId { get; set; }
 
@@ -127,10 +127,11 @@ namespace QLN.Common.DTO_s.Subscription
         [Required]
         [StringLength(50, ErrorMessage = "Quota type must not exceed 50 characters")]
         public string QuotaType { get; set; } = string.Empty;
+        
 
         [Required]
-        [Range(0.01, 999999.99, ErrorMessage = "Requested amount must be between 0.01 and 999999.99")]
-        public decimal RequestedAmount { get; set; }
+        [Range(1, 999999, ErrorMessage = "Requested amount must be between 0.01 and 999999.99")]
+        public int RequestedAmount { get; set; }
     }
 
     /// <summary>
@@ -144,10 +145,11 @@ namespace QLN.Common.DTO_s.Subscription
         [Required]
         [StringLength(50, ErrorMessage = "Quota type must not exceed 50 characters")]
         public string QuotaType { get; set; } = string.Empty;
+      
 
         [Required]
-        [Range(0.01, 999999.99, ErrorMessage = "Amount must be between 0.01 and 999999.99")]
-        public decimal Amount { get; set; }
+        [Range(1, 999999, ErrorMessage = "Requested amount must be between 1 and 999,999")]
+        public int Amount { get; set; }
     }
 
     /// <summary>
@@ -163,8 +165,9 @@ namespace QLN.Common.DTO_s.Subscription
         public string QuotaType { get; set; } = string.Empty;
 
         [Required]
-        [Range(0.01, 999999.99, ErrorMessage = "Requested amount must be between 0.01 and 999999.99")]
-        public decimal RequestedAmount { get; set; }
+        [Range(1, 999999, ErrorMessage = "Requested amount must be between 1 and 999,999")]
+        public int RequestedAmount { get; set; }
+
     }
 
     #endregion
@@ -244,6 +247,7 @@ namespace QLN.Common.DTO_s.Subscription
         public bool Success { get; set; }
         public DateTime PurchasedAt { get; set; }
         public DateTime ExpiresAt { get; set; }
+       
     }
 
     /// <summary>
@@ -255,9 +259,10 @@ namespace QLN.Common.DTO_s.Subscription
         public string Message { get; set; } = string.Empty;
         public Guid SubscriptionId { get; set; }
         public string QuotaType { get; set; } = string.Empty;
-        public decimal RequestedAmount { get; set; }
+        public int RequestedAmount { get; set; }
         public decimal AvailableQuota { get; set; }
         public string Version { get; set; } = "V2";
+       
     }
 
     /// <summary>
@@ -269,10 +274,11 @@ namespace QLN.Common.DTO_s.Subscription
         public string Message { get; set; } = string.Empty;
         public Guid SubscriptionId { get; set; }
         public string QuotaType { get; set; } = string.Empty;
-        public decimal AmountRecorded { get; set; }
+        public int AmountRecorded { get; set; }
         public decimal RemainingQuota { get; set; }
         public DateTime RecordedAt { get; set; }
         public string Version { get; set; } = "V2";
+        
     }
 
     #endregion
