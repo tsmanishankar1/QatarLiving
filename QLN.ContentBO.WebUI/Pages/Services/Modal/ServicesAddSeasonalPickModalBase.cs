@@ -28,17 +28,23 @@ namespace QLN.ContentBO.WebUI.Pages.Services.Modal
         protected bool IsLoadingCategories { get; set; } = true;
         protected DateRange? dateRange
         {
-            get => StartDate.HasValue && EndDate.HasValue ? new DateRange(StartDate, EndDate) : null;
+            get => StartDate.HasValue && EndDate.HasValue ? new DateRange(StartDate.Value, EndDate.Value) : null;
             set
             {
-                StartDate = value?.Start;
-                EndDate = value?.End;
+                if (value != null)
+                {
+                    var start = value.Start ?? DateTime.Today;
+                    var end = value.End ?? start;
+                    StartDate = start;
+                    EndDate = end;
+                }
+                StateHasChanged();
             }
         }
         protected string? featuredCategoryTitle;
-        protected string? SelectedCategoryId;
-        protected string? SelectedSubcategoryId;
-        protected string? SelectedSectionId;
+        protected long? SelectedCategoryId;
+        protected long? SelectedSubcategoryId;
+        protected long? SelectedSectionId;
         protected string SelectedCategory { get; set; } = string.Empty;
         protected string SelectedSubcategory { get; set; } = string.Empty;
         protected string SelectedSection { get; set; } = string.Empty;
@@ -46,8 +52,8 @@ namespace QLN.ContentBO.WebUI.Pages.Services.Modal
         protected string ImagePreviewWithoutBase64 { get; set; }
         protected ElementReference fileInput;
 
-        protected DateTime? StartDate { get; set; } = DateTime.Today;
-        protected DateTime? EndDate { get; set; } = DateTime.Today;
+        protected DateTime? StartDate { get; set; }
+        protected DateTime? EndDate { get; set; }
 
         protected bool IsSubmitting { get; set; } = false;
 
@@ -94,46 +100,42 @@ namespace QLN.ContentBO.WebUI.Pages.Services.Modal
 
 
 
-        protected void OnCategoryChanged(string? categoryId)
+        protected void OnCategoryChanged(long? categoryId)
         {
-            SelectedCategoryId = categoryId.ToString();
+            SelectedCategoryId = categoryId;
             SelectedSubcategoryId = null;
             SelectedSectionId = null;
             _selectedL2Categories.Clear();
-            var selectedCategory = CategoryTrees.FirstOrDefault(c => c.Id.ToString() == categoryId);
-            _selectedL1Categories = selectedCategory?.L1Categories ?? new();
-            var selected = CategoryTrees.FirstOrDefault(c => c.Id.ToString() == categoryId);
-            SelectedCategory = selected?.Category;
+            var selectedCategory = CategoryTrees.FirstOrDefault(c => c.Id == categoryId);
+            _selectedL1Categories = selectedCategory?.Fields ?? new();
+            var selected = CategoryTrees.FirstOrDefault(c => c.Id == categoryId);
+            SelectedCategory = selected?.CategoryName;
         }
 
 
-        protected void OnSubcategoryChanged(string? subcategoryId)
+        protected void OnSubcategoryChanged(long? subcategoryId)
         {
-           SelectedSubcategoryId = subcategoryId.ToString();
+            SelectedSubcategoryId = subcategoryId;
             SelectedSectionId = null;
-
-            var selectedL1 = _selectedL1Categories.FirstOrDefault(l1 => l1.Id.ToString() == subcategoryId);
-            _selectedL2Categories = selectedL1?.L2Categories ?? new();
+            var selectedL1 = _selectedL1Categories.FirstOrDefault(l1 => l1.Id == subcategoryId);
+            _selectedL2Categories = selectedL1?.Fields ?? new();
+             SelectedSubcategory = selectedL1?.CategoryName ?? string.Empty;
         }
-        protected void OnSectionChanged(string? sectionId)
+        protected void OnSectionChanged(long? sectionId)
         {
             SelectedSectionId = sectionId;
-            var section = _selectedL2Categories.FirstOrDefault(c => c.Id.ToString() == sectionId);
-            SelectedSection = section?.Name ?? string.Empty;
+            var section = _selectedL2Categories.FirstOrDefault(c => c.Id == sectionId);
+            SelectedSection = section?.CategoryName ?? string.Empty;
         }
-        
-
-
-
         protected bool IsFormValid()
         {
-            return !string.IsNullOrEmpty(SelectedCategoryId) &&
-                   !string.IsNullOrEmpty(SelectedSubcategoryId) &&
-                   !string.IsNullOrEmpty(SelectedSectionId)
-                    && !string.IsNullOrWhiteSpace(featuredCategoryTitle)
-                    && StartDate.HasValue
-                    && EndDate.HasValue
-                    && !string.IsNullOrEmpty(ImagePreviewUrl);;
+            return SelectedCategoryId.HasValue &&
+                   SelectedSubcategoryId.HasValue &&
+                   SelectedSectionId.HasValue &&
+                   !string.IsNullOrWhiteSpace(featuredCategoryTitle) &&
+                   StartDate.HasValue &&
+                   EndDate.HasValue &&
+                   !string.IsNullOrEmpty(ImagePreviewUrl);
         }
 
 
@@ -165,15 +167,16 @@ namespace QLN.ContentBO.WebUI.Pages.Services.Modal
             var imageUrl = await UploadImageAsync(ImagePreviewWithoutBase64);
             var payload = new
             {
-                vertical = "services",
+                title = featuredCategoryTitle,
+                vertical = Vertical.Services,
                 categoryId = SelectedCategoryId,
                 categoryName = SelectedCategory,
                 l1CategoryId = SelectedSubcategoryId,
                 l1categoryName = SelectedSubcategory,
                 l2categoryId = SelectedSectionId,
                 l2categoryName = SelectedSection,
-                startDate = StartDate?.ToUniversalTime().ToString("o"),
-                endDate = EndDate?.ToUniversalTime().ToString("o"),
+                startDate = StartDate?.ToString("yyyy-MM-dd"),
+                endDate = EndDate?.ToString("yyyy-MM-dd"),
                 slotOrder = 0,
                 imageUrl = imageUrl
             };
@@ -184,10 +187,6 @@ namespace QLN.ContentBO.WebUI.Pages.Services.Modal
                 {
                     Snackbar.Add("Seasonal pick added successfully!", Severity.Success);
                     MudDialog.Close(DialogResult.Ok(true));
-                }
-                else if (response?.StatusCode == System.Net.HttpStatusCode.Conflict)
-                {
-                    Snackbar.Add($"A seasonal pick with the category '{SelectedCategory}' already exists for vertical '{payload.vertical}'", Severity.Warning);
                 }
                 else
                 {

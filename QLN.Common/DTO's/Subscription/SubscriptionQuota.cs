@@ -64,8 +64,8 @@ namespace QLN.Common.DTO_s.Subscription
         public DateTime LastUsageUpdate { get; set; } = DateTime.UtcNow;
 
         // Refresh constraints
-        public string RefreshInterval { get; set; } = "Every 72 Hours";
-        public int RefreshIntervalHours { get; set; } = 72;
+        public string RefreshInterval { get; set; }
+        public int RefreshIntervalHours { get; set; }
 
         // Extra metadata
         public string Vertical { get; set; } = string.Empty;
@@ -155,7 +155,7 @@ namespace QLN.Common.DTO_s.Subscription
                     r.RemainingQuota = RemainingDailyRefreshes;
                     r.Message = r.IsValid ? "Can refresh" :
                         (!CanRefreshAds ? "Refresh not allowed" :
-                        (!CanRefreshNow() ? $"Must wait {RefreshIntervalHours} hours" : "Insufficient daily refresh quota"));
+                        (!CanRefreshNow() ? $"Must wait {RefreshIntervalHours}" : "Insufficient daily refresh quota"));
                     break;
 
                 case ActionTypes.SocialMediaPost:

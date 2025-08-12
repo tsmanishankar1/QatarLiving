@@ -99,11 +99,11 @@ app.MapGet("/migrate_categories", async (
 app.MapGet("/migrate_items", async (
     [FromServices] IMigrationService migrationService,
     [FromQuery] string environment,
-    [FromQuery(Name = "category_id")] int categoryId,
+    [FromQuery(Name = "import_images")] bool importImages,
     CancellationToken cancellationToken = default
     ) =>
     {
-        return await migrationService.MigrateItems(environment, categoryId, cancellationToken);
+        return await migrationService.MigrateItems(environment, importImages, cancellationToken);
     })
     .WithSummary("Migrate Items - not ready yet");
 

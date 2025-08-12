@@ -28,12 +28,12 @@ namespace QLN.Common.Infrastructure.IService.IProductService
         /// <summary>
         /// Validates if addon has enough quota for the requested usage
         /// </summary>
-        Task<bool> ValidateUsageAsync(string quotaType, decimal requestedAmount, CancellationToken cancellationToken = default);
+        Task<bool> ValidateUsageAsync(string quotaType, int requestedAmount, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Records usage against addon quota
         /// </summary>
-        Task<bool> RecordUsageAsync(string quotaType, decimal amount, CancellationToken cancellationToken = default);
+        Task<bool> RecordUsageAsync(string quotaType, int amount, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Checks if addon is currently active

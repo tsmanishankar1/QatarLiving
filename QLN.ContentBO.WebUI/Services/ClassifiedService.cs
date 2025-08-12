@@ -33,7 +33,7 @@ namespace QLN.ContentBO.WebUI.Services
             }
         }
 
-        public async Task<HttpResponseMessage?> GetFeaturedSeasonalPicks(string vertical)
+        public async Task<HttpResponseMessage?> GetFeaturedSeasonalPicks(Vertical vertical)
         {
             try
             {
@@ -45,17 +45,43 @@ namespace QLN.ContentBO.WebUI.Services
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
-        public async Task<HttpResponseMessage?> GetAllSeasonalPicks(string vertical)
+        public async Task<HttpResponseMessage?> GetFeaturedStores(Vertical vertical)
+        {
+            try
+            {
+                return await _httpClient.GetAsync($"/api/v2/classifiedbo/featured-stores/slotted?vertical={vertical}");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("GetFeaturedStores" + ex.Message);
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+        public async Task<HttpResponseMessage?> GetAllSeasonalPicks(Vertical vertical)
         {
             try
             {
                 var response = await _httpClient.GetAsync($"/api/v2/classifiedbo/getseasonalpicks?vertical={vertical}");
                 return response;
-    
+
             }
             catch (Exception ex)
             {
                 _logger.LogError("GetAllSeasonalPicks" + ex.Message);
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+        public async Task<HttpResponseMessage?> GetAllFeaturedStores(Vertical vertical)
+        {
+            try
+            {
+                var response = await _httpClient.GetAsync($"/api/v2/classifiedbo/getfeaturedstores?vertical={vertical}");
+                return response;
+
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("GetAllFeaturedStores" + ex.Message);
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
@@ -77,9 +103,26 @@ namespace QLN.ContentBO.WebUI.Services
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
+        public async Task<HttpResponseMessage?> CreateFeaturedStoresAsync(object payload)
+        {
+            try
+            {
+                var json = JsonSerializer.Serialize(payload);
+                var request = new HttpRequestMessage(HttpMethod.Post, "/api/v2/classifiedbo/featured-store")
+                {
+                    Content = new StringContent(json, Encoding.UTF8, "application/json")
+                };
+                return await _httpClient.SendAsync(request);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("CreateFeaturedStoresAsync" + ex.Message);
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
 
 
-        public async Task<HttpResponseMessage?> ReplaceSeasonalPickAsync(string pickId, int slot, string vertical)
+        public async Task<HttpResponseMessage?> ReplaceSeasonalPickAsync(string pickId, int slot, Vertical vertical)
         {
             try
             {
@@ -103,8 +146,33 @@ namespace QLN.ContentBO.WebUI.Services
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
+        public async Task<HttpResponseMessage?> ReplaceFeaturedStoresAsync(string pickId, int slot, Vertical vertical)
+        {
+            try
+            {
+                var payload = new
+                {
+                    storeId = pickId,
+                    targetSlotId = slot,
+                    vertical = vertical
+                };
 
-        public async Task<HttpResponseMessage?> DeleteSeasonalPicks(string pickId, string vertical)
+                var request = new HttpRequestMessage(HttpMethod.Put, "/api/v2/classifiedbo/featured-stores/replace-slot")
+                {
+                    Content = JsonContent.Create(payload)
+                };
+
+                return await _httpClient.SendAsync(request);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("ReplaceFeaturedStoresAsync: " + ex.Message);
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+
+
+        public async Task<HttpResponseMessage?> DeleteSeasonalPicks(string pickId, Vertical vertical)
         {
             try
             {
@@ -118,8 +186,22 @@ namespace QLN.ContentBO.WebUI.Services
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
+        public async Task<HttpResponseMessage?> DeleteFeaturedStores(string pickId, Vertical vertical)
+        {
+            try
+            {
+                var request = new HttpRequestMessage(HttpMethod.Delete,
+                    $"/api/v2/classifiedbo/featured-stores/soft-delete?storeId={pickId}&Vertical={vertical}");
+                return await _httpClient.SendAsync(request);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("DeleteFeaturedStores: " + ex.Message);
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
 
-        public async Task<HttpResponseMessage?> ReorderSeasonalPicksAsync(IEnumerable<object> slotAssignments, string vertical)
+        public async Task<HttpResponseMessage?> ReorderSeasonalPicksAsync(IEnumerable<object> slotAssignments, Vertical vertical)
         {
             try
             {
@@ -128,9 +210,7 @@ namespace QLN.ContentBO.WebUI.Services
                     slotAssignments = slotAssignments,
                     vertical = vertical
                 };
-
                 var json = JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true });
-                Console.Write("the payload sent here is" + json);
                 var request = new HttpRequestMessage(HttpMethod.Put, "/api/v2/classifiedbo/seasonal-picks/reorder-slots")
                 {
                     Content = new StringContent(json, Encoding.UTF8, "application/json")
@@ -144,7 +224,30 @@ namespace QLN.ContentBO.WebUI.Services
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
-        public async Task<HttpResponseMessage?> GetFeaturedCategory(string vertical)
+        public async Task<HttpResponseMessage?> ReorderFeaturedStoresAsync(IEnumerable<object> slotAssignments, Vertical vertical)
+        {
+            try
+            {
+                var payload = new
+                {
+                    slotAssignments = slotAssignments,
+                    vertical = vertical
+                };
+                var json = JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true });
+                var request = new HttpRequestMessage(HttpMethod.Put, "/api/v2/classifiedbo/featured-stores/reorder-slots")
+                {
+                    Content = new StringContent(json, Encoding.UTF8, "application/json")
+                };
+
+                return await _httpClient.SendAsync(request);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("ReorderFeaturedStoresAsync " + ex.Message);
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+        public async Task<HttpResponseMessage?> GetFeaturedCategory(Vertical vertical)
         {
             try
             {
@@ -156,11 +259,11 @@ namespace QLN.ContentBO.WebUI.Services
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
-        public async Task<HttpResponseMessage?> GetAllFeatureCategory(string vertical)
+        public async Task<HttpResponseMessage?> GetAllFeatureCategory(Vertical vertical)
         {
             try
             {
-                return await _httpClient.GetAsync($"/api/v2/classifiedbo/getfeaturedcategoriesbyvertical/{vertical}");
+                return await _httpClient.GetAsync($"/api/v2/classifiedbo/getfeaturedcategoriesbyvertical?vertical={vertical}");
             }
             catch (Exception ex)
             {
@@ -177,13 +280,11 @@ namespace QLN.ContentBO.WebUI.Services
                     PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
                     WriteIndented = true
                 };
-
                 var json = JsonSerializer.Serialize(payload, options);
                 var request = new HttpRequestMessage(HttpMethod.Post, "/api/v2/classifiedbo/createfeaturedcategory")
                 {
                     Content = new StringContent(json, Encoding.UTF8, "application/json")
                 };
-
                 return await _httpClient.SendAsync(request);
             }
             catch (Exception ex)
@@ -192,9 +293,83 @@ namespace QLN.ContentBO.WebUI.Services
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
+        public async Task<HttpResponseMessage?> UpdateFeaturedCategoryAsync(object payload)
+        {
+            try
+            {
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                    WriteIndented = true
+                };
+
+                var json = JsonSerializer.Serialize(payload, options);
+                var request = new HttpRequestMessage(HttpMethod.Put, "/api/v2/classifiedbo/editfeaturedcategory")
+                {
+                    Content = new StringContent(json, Encoding.UTF8, "application/json")
+                };
+
+                return await _httpClient.SendAsync(request);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("UpdateFeaturedCategoryAsync " + ex.Message);
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+        public async Task<HttpResponseMessage?> UpdateSeasonalPicksAsync(object payload)
+        { 
+            try
+            {
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                    WriteIndented = true
+                };
+
+                var json = JsonSerializer.Serialize(payload, options);
+                var request = new HttpRequestMessage(HttpMethod.Put, "/api/v2/classifiedbo/editseasonalpick")
+                {
+                    Content = new StringContent(json, Encoding.UTF8, "application/json")
+                };
+                return await _httpClient.SendAsync(request);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("UpdateSeasonalPicksAsync" + ex.Message);
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+            
+        }
+        public async Task<HttpResponseMessage?> UpdateFeaturedStoreAsync(object payload)
+        { 
+            try
+            {
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                    WriteIndented = true
+                };
+                var json = JsonSerializer.Serialize(payload, options);
+                var request = new HttpRequestMessage(HttpMethod.Put, "/api/v2/classifiedbo/editfeaturedstore")
+                {
+                    Content = new StringContent(json, Encoding.UTF8, "application/json")
+                };
+                return await _httpClient.SendAsync(request);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("UpdateFeaturedStoreAsync" + ex.Message);
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+            
+        }
 
 
-        public async Task<HttpResponseMessage?> ReplaceFeaturedCategoryAsync(string pickId, int slot, string vertical)
+
+
+
+        public async Task<HttpResponseMessage?> ReplaceFeaturedCategoryAsync(string pickId, int slot, Vertical vertical)
         {
             try
             {
@@ -223,7 +398,7 @@ namespace QLN.ContentBO.WebUI.Services
             }
         }
 
-        public async Task<HttpResponseMessage?> DeleteFeaturedCategory(string pickId, string vertical)
+        public async Task<HttpResponseMessage?> DeleteFeaturedCategory(string pickId, Vertical vertical)
         {
             try
             {
@@ -239,7 +414,7 @@ namespace QLN.ContentBO.WebUI.Services
             }
         }
 
-        public async Task<HttpResponseMessage?> ReorderFeaturedCategoryAsync(IEnumerable<object> slotAssignments, string vertical)
+        public async Task<HttpResponseMessage?> ReorderFeaturedCategoryAsync(IEnumerable<object> slotAssignments, Vertical vertical)
         {
             try
             {
@@ -248,7 +423,6 @@ namespace QLN.ContentBO.WebUI.Services
                     slotAssignments = slotAssignments,
                     vertical = vertical
                 };
-
                 var json = JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true });
                 var request = new HttpRequestMessage(HttpMethod.Put, "/api/v2/classifiedbo/featured-category/reorder-slots")
                 {
@@ -299,7 +473,6 @@ namespace QLN.ContentBO.WebUI.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"SearchClassifiedsViewTransactionAsync Error for " + ex);
                 responses.Add(new HttpResponseMessage(HttpStatusCode.ServiceUnavailable));
                 return responses;
             }
@@ -350,13 +523,8 @@ namespace QLN.ContentBO.WebUI.Services
         {
             try
             {
-
-
                 var query = $"?pageNumber={request.PageNumber}&pageSize={request.PageSize}";
-
                 var httpRequest = new HttpRequestMessage(HttpMethod.Get, $"/api/v2/classifiedbo/preloved-ads/payment-summary{query}");
-
-
                 return await _httpClient.SendAsync(httpRequest);
             }
             catch (Exception ex)
@@ -497,7 +665,6 @@ namespace QLN.ContentBO.WebUI.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine("GetAllZonesAsync Error: " + ex);
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
@@ -510,7 +677,7 @@ namespace QLN.ContentBO.WebUI.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"GetAddressByDetailsAsync Error: {ex}");
+                _logger.LogError("GetAddressByDetailsAsync: " + ex);
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
@@ -530,32 +697,26 @@ namespace QLN.ContentBO.WebUI.Services
                     })
                 };
 
-                // Send request
                 var response = await _httpClient.SendAsync(request);
-
-                Console.WriteLine($"Post response status: {response.StatusCode}");
-
                 if (!response.IsSuccessStatusCode)
                 {
                     var errorBody = await response.Content.ReadAsStringAsync();
-                    Console.WriteLine($"Error body: {errorBody}");
                 }
-
                 return response;
             }
             catch (HttpRequestException ex)
             {
-                Console.WriteLine($"HttpRequestException: {ex.Message}");
+                _logger.LogError("PostAdAsync " + ex);
                 return new HttpResponseMessage(HttpStatusCode.BadGateway);
             }
             catch (TaskCanceledException ex) when (!ex.CancellationToken.IsCancellationRequested)
             {
-                Console.WriteLine("HTTP request timed out.");
+                 _logger.LogError("PostAdAsync " + ex);
                 return new HttpResponseMessage(HttpStatusCode.RequestTimeout);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Unhandled error in PostClassifiedItemAsync: {ex}");
+                 _logger.LogError("PostAdAsync " + ex);
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
@@ -576,29 +737,27 @@ namespace QLN.ContentBO.WebUI.Services
 
                 var response = await _httpClient.SendAsync(request);
 
-                Console.WriteLine($"Update response status: {response.StatusCode}");
 
                 if (!response.IsSuccessStatusCode)
                 {
                     var errorBody = await response.Content.ReadAsStringAsync();
-                    Console.WriteLine($"Error body: {errorBody}");
                 }
 
                 return response;
             }
             catch (HttpRequestException ex)
             {
-                Console.WriteLine($"HttpRequestException: {ex.Message}");
+                _logger.LogError("UpdateAdAsyn " + ex);
                 return new HttpResponseMessage(HttpStatusCode.BadGateway);
             }
             catch (TaskCanceledException ex) when (!ex.CancellationToken.IsCancellationRequested)
             {
-                Console.WriteLine("HTTP request timed out.");
+                 _logger.LogError("UpdateAdAsyn " + ex);
                 return new HttpResponseMessage(HttpStatusCode.RequestTimeout);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Unhandled error in UpdateAdAsync: {ex}");
+                 _logger.LogError("UpdateAdAsyn " + ex);
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
@@ -623,7 +782,7 @@ namespace QLN.ContentBO.WebUI.Services
             }
         }
 
-      
+
         public async Task<HttpResponseMessage?> UplodAsync(object payload)
         {
             try
@@ -638,10 +797,6 @@ namespace QLN.ContentBO.WebUI.Services
                 {
                     Content = new StringContent(json, Encoding.UTF8, "application/json")
                 };
-
-                Console.WriteLine("PostAdAsync Request Payload:");
-                Console.WriteLine(json);
-
                 return await _httpClient.SendAsync(request);
             }
             catch (Exception ex)
@@ -655,7 +810,6 @@ namespace QLN.ContentBO.WebUI.Services
             try
             {
                 var url = $"/api/classified/items/refresh/{adId}?subVertical={subVertical}";
-                //  _logger.LogInformation("Calling RefreshAd API at URL: {Url}", url);
                 var response = await _httpClient.PostAsync(url, null); // No body required
                 return response;
             }
@@ -806,7 +960,6 @@ namespace QLN.ContentBO.WebUI.Services
             try
             {
                 var endpoint = $"/api/classified/deals/update";
-
                 using var request = new HttpRequestMessage(HttpMethod.Put, endpoint)
                 {
                     Content = JsonContent.Create(payload, options: new JsonSerializerOptions
@@ -815,32 +968,77 @@ namespace QLN.ContentBO.WebUI.Services
                         WriteIndented = false
                     })
                 };
-
                 var response = await _httpClient.SendAsync(request);
-
-                Console.WriteLine($"Update response status: {response.StatusCode}");
-
                 if (!response.IsSuccessStatusCode)
                 {
                     var errorBody = await response.Content.ReadAsStringAsync();
-                    Console.WriteLine($"Error body: {errorBody}");
                 }
-
                 return response;
             }
             catch (HttpRequestException ex)
             {
-                Console.WriteLine($"HttpRequestException: {ex.Message}");
+                _logger.LogError("UpdateDealsAsync " + ex.Message);
                 return new HttpResponseMessage(HttpStatusCode.BadGateway);
             }
             catch (TaskCanceledException ex) when (!ex.CancellationToken.IsCancellationRequested)
             {
-                Console.WriteLine("HTTP request timed out.");
+                _logger.LogError("UpdateDealsAsync " + ex.Message);
                 return new HttpResponseMessage(HttpStatusCode.RequestTimeout);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Unhandled error in UpdateAdAsync: {ex}");
+                _logger.LogError("UpdateDealsAsync " + ex.Message);
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+        public async Task<HttpResponseMessage> GetFeaturedCategoryById(string id)
+        {
+            try
+            {
+                var request = new HttpRequestMessage(
+                    HttpMethod.Get,
+                    $"/api/v2/classifiedbo/getfeaturedcategory?id={id}"
+                );
+
+                return await _httpClient.SendAsync(request);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "GetFeaturedCategoryById");
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+        public async Task<HttpResponseMessage> GetFeaturedStoreById(string id)
+        {
+            try
+            {
+                var request = new HttpRequestMessage(
+                    HttpMethod.Get,
+                    $"/api/v2/classifiedbo/getfeaturedstore?id={id}"
+                );
+
+                return await _httpClient.SendAsync(request);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "GetFeaturedStoreById");
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+        public async Task<HttpResponseMessage> GetSeasonalPicksById(string id)
+        {
+            try
+            {
+                var request = new HttpRequestMessage(
+                    HttpMethod.Get,
+                    $"/api/v2/classifiedbo/getseasonalpick?id={id}"
+                );
+
+                return await _httpClient.SendAsync(request);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "GetSeasonalPicksById");
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }

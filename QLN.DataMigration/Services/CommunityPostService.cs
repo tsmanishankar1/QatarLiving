@@ -166,7 +166,7 @@ namespace QLN.DataMigration.Services
                 throw;
             }
 
-            return $"Published article {post.Id} to {ConstantValues.PubSubTopics.ArticlesMigration} topic";
+            return $"Published article {post.Id} to {ConstantValues.PubSubTopics.PostsMigration} topic";
         }
     }
 }

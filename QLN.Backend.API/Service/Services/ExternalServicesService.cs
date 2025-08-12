@@ -7,9 +7,11 @@ using QLN.Common.Infrastructure.CustomException;
 using QLN.Common.Infrastructure.IService.IProductService;
 using QLN.Common.Infrastructure.IService.IService;
 using QLN.Common.Infrastructure.Model;
+using QLN.Common.Migrations.QLSubscription;
 using System.Net;
 using System.Text;
 using System.Text.Json;
+using System.Threading.Tasks;
 
 namespace QLN.Backend.API.Service.Services
 {
@@ -153,6 +155,29 @@ namespace QLN.Backend.API.Service.Services
         {
             try
             {
+                if (dto.AdType == ServiceAdType.Subscription && dto.SubscriptionId != Guid.Empty)
+                {
+                    var subscription = await _v2SubscriptionService.GetSubscriptionByIdAsync(dto.SubscriptionId.Value, cancellationToken);
+
+                    if (subscription == null)
+                        throw new InvalidDataException("Subscription not found.");
+
+                    if (subscription.StatusId != V2Status.Active || subscription.EndDate <= DateTime.UtcNow)
+                        throw new InvalidDataException("Subscription is inactive or expired.");
+
+                    var canUse = await _v2SubscriptionService.ValidateSubscriptionUsageAsync(
+                        dto.SubscriptionId.Value,
+                        ActionTypes.Publish, 
+                        1,
+                        cancellationToken
+                    );
+
+                    if (!canUse)
+                    {
+                        throw new InvalidDataException("Insufficient subscription quota to create this ad.");
+                    }
+                }
+
                 var url = $"/api/service/createbyuserid?uid={uid}&userName={userName}";
                 var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, ConstantValues.Services.ServiceAppId, url);
                 request.Content = new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
@@ -175,6 +200,23 @@ namespace QLN.Backend.API.Service.Services
                         throw new ConflictException(errorMessage);
                     }
                     throw new InvalidDataException(errorMessage);
+                }
+                if (dto.SubscriptionId != Guid.Empty)
+                {
+                    var success = await _v2SubscriptionService.RecordSubscriptionUsageAsync(
+                        dto.SubscriptionId.Value,
+                        ActionTypes.Publish,
+                        1,
+                        cancellationToken
+                    );
+
+                    if (!success)
+                    {
+                        _logger.LogWarning(
+                            "Failed to record subscription usage for SubscriptionId {SubscriptionId}",
+                            dto.SubscriptionId
+                        );
+                    }
                 }
                 await response.Content.ReadAsStringAsync(cancellationToken);
 
@@ -471,6 +513,27 @@ namespace QLN.Backend.API.Service.Services
         {
             try
             {
+                var quotaAction = request.IsRefreshed ? ActionTypes.Refresh : null;
+
+                if (quotaAction == ActionTypes.Refresh && request.SubscriptionId.HasValue && request.SubscriptionId.Value != Guid.Empty)
+                {
+                    var canUse = await _v2SubscriptionService.ValidateSubscriptionUsageAsync(
+                        request.SubscriptionId.Value,
+                        quotaAction,
+                        1,
+                        ct
+                    );
+
+                    if (!canUse)
+                    {
+                        _logger.LogWarning(
+                            "Subscription {SubscriptionId} has insufficient quota for {QuotaAction}.",
+                            request.SubscriptionId, quotaAction
+                        );
+                        throw new InvalidOperationException($"Insufficient subscription quota for {quotaAction.ToLower()}.");
+                    }
+                }
+
                 var url = $"/api/service/refreshbyuserid?uid={uid}";
                 var serviceRequest = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, ConstantValues.Services.ServiceAppId, url);
                 serviceRequest.Content = new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json");
@@ -480,13 +543,31 @@ namespace QLN.Backend.API.Service.Services
                 if (response.StatusCode == HttpStatusCode.OK)
                 {
                     var json = await response.Content.ReadAsStringAsync(ct);
-                    var serviceDto = JsonSerializer.Deserialize<QLN.Common.Infrastructure.Model.Services>(json, new JsonSerializerOptions
-                    {
-                        PropertyNameCaseInsensitive = true
-                    });
+                    var serviceDto = JsonSerializer.Deserialize<QLN.Common.Infrastructure.Model.Services>(
+                        json,
+                        new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+                    );
 
                     if (serviceDto is null)
                         throw new InvalidDataException("Invalid data returned from service.");
+
+                    if (serviceDto.SubscriptionId.HasValue && serviceDto.SubscriptionId.Value != Guid.Empty)
+                    {
+                        var success = await _v2SubscriptionService.RecordSubscriptionUsageAsync(
+                            serviceDto.SubscriptionId.Value,
+                            quotaAction,
+                            1,
+                            ct
+                        );
+
+                        if (!success)
+                        {
+                            _logger.LogWarning(
+                                "Failed to record subscription usage for SubscriptionId {SubscriptionId}",
+                                serviceDto.SubscriptionId
+                            );
+                        }
+                    }
 
                     return serviceDto;
                 }
@@ -502,7 +583,7 @@ namespace QLN.Backend.API.Service.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error refresh service");
+                _logger.LogError(ex, "Error refreshing service");
                 throw;
             }
         }
@@ -514,7 +595,6 @@ namespace QLN.Backend.API.Service.Services
                     ? ActionTypes.Publish
                     : ActionTypes.UnPublish;
 
-                // Step 1: Pre-check quota only when publishing
                 if (quotaAction == ActionTypes.Publish && request.SubscriptionId != Guid.Empty)
                 {
                     var canUse = await _v2SubscriptionService.ValidateSubscriptionUsageAsync(
@@ -534,7 +614,6 @@ namespace QLN.Backend.API.Service.Services
                     }
                 }
 
-                // Step 2: Call internal service
                 var url = $"/api/service/publishbyuserid?uid={uid}";
                 var serviceRequest = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, ConstantValues.Services.ServiceAppId, url);
                 serviceRequest.Content = new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json");
@@ -552,7 +631,6 @@ namespace QLN.Backend.API.Service.Services
                     if (serviceDto is null)
                         throw new InvalidDataException("Invalid data returned from service.");
 
-                    // Step 3: Record usage (increment/decrement count)
                     if (serviceDto.SubscriptionId != Guid.Empty)
                     {
                         var success = await _v2SubscriptionService.RecordSubscriptionUsageAsync(
@@ -630,5 +708,95 @@ namespace QLN.Backend.API.Service.Services
                 throw;
             }
         }
+    //    public async Task<SubscriptionBudgetDto> GetSubscriptionBudgetsAsync(
+    //Guid subscriptionId,
+    //CancellationToken cancellationToken = default)
+    //    {
+    //        try
+    //        {
+    //            // Hardcode the subscriptionId for testing
+    //            subscriptionId = Guid.Parse("48887e22-782a-4825-a0b6-bd27259ef554");
+
+    //            var request = new SubscriptionIdRequest
+    //            {
+    //                SubscriptionId = subscriptionId
+    //            };
+
+    //            // Call POST endpoint to get budgets by subscriptionId
+    //            var response = await _dapr.InvokeMethodAsync<SubscriptionIdRequest, SubscriptionBudgetDto>(
+    //                HttpMethod.Post,
+    //                ConstantValues.Services.ServiceAppId,
+    //                "/api/service/getbudgets",
+    //                request,
+    //                cancellationToken
+    //            );
+
+    //            return response ?? new SubscriptionBudgetDto();
+    //        }
+    //        catch (Exception ex)
+    //        {
+    //            _logger.LogError(ex, "Error fetching subscription budgets for {SubscriptionId}", subscriptionId);
+    //            throw;
+    //        }
+    //    }
+
+        public async Task<SubscriptionBudgetDto> GetSubscriptionBudgetsAsync(
+     Guid subscriptionId,
+     CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var request = new SubscriptionIdRequest { SubscriptionId = subscriptionId };
+
+                // Call POST endpoint to get budgets by subscriptionId
+                var response = await _dapr.InvokeMethodAsync<SubscriptionIdRequest, SubscriptionBudgetDto>(
+                    HttpMethod.Post,
+                    ConstantValues.Services.ServiceAppId,
+                    "/api/service/getbudgets",
+                    request,
+                    cancellationToken
+                );
+
+                return response ?? new SubscriptionBudgetDto();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching subscription budgets for {SubscriptionId}", subscriptionId);
+                throw;
+            }
+        }
+        public async Task<SubscriptionBudgetDto> GetSubscriptionBudgetsAsyncBySubVertical(
+      Guid subscriptionIdFromToken,
+      int subverticalId,
+      CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var request = new
+                {
+                    SubscriptionId = subscriptionIdFromToken,
+                    SubVerticalId = subverticalId
+                };
+
+                // Call POST endpoint to get budgets by subscriptionId and verticalId
+                var response = await _dapr.InvokeMethodAsync<object, SubscriptionBudgetDto>(
+                    HttpMethod.Post,
+                    ConstantValues.Services.ServiceAppId,
+                    "/api/service/getbudgetsbysubvertical",
+                    request,
+                    cancellationToken
+                );
+
+                return response ?? new SubscriptionBudgetDto();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error fetching subscription budgets for : {ex}");
+                throw;
+            }
+        }
+
+
+
     }
 }

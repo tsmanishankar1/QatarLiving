@@ -58,7 +58,7 @@ namespace QLN.Backend.API.Service.ProductService
         #region Subscription Operations
 
         public async Task<V2SubscriptionGroupResponseDto> GetSubscriptionsByVerticalAsync(
-            int verticalTypeId,
+            int verticalTypeId,string userid,
             CancellationToken cancellationToken = default)
         {
             var resultList = new List<V2SubscriptionResponseDto>();
@@ -106,7 +106,7 @@ namespace QLN.Backend.API.Service.ProductService
             };
         }
 
-        public async Task<Guid> PurchaseSubscriptionAsync(V2SubscriptionPurchaseRequestDto request, CancellationToken cancellationToken = default)
+        public async Task<Guid> PurchaseSubscriptionAsync(V2SubscriptionPurchaseRequestDto request, string userID, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(request);
 
@@ -129,7 +129,7 @@ namespace QLN.Backend.API.Service.ProductService
                     SubscriptionId = subscriptionId,
                     ProductCode = product.ProductCode,
                     ProductName = product.ProductName,
-                    UserId = request.UserId,
+                    UserId = userID,
                     CompanyId = request.CompanyId,
                     PaymentId = request.PaymentId,
                     Vertical = product.Vertical,
@@ -149,7 +149,7 @@ namespace QLN.Backend.API.Service.ProductService
                     Id = subscriptionId,
                     ProductCode = product.ProductCode,
                     ProductName = product.ProductName,
-                    UserId = request.UserId,
+                    //UserId = request.UserId,
                     CompanyId = request.CompanyId,
                     PaymentId = request.PaymentId,
                     Vertical = product.Vertical,                    
@@ -169,7 +169,7 @@ namespace QLN.Backend.API.Service.ProductService
                 if (!actorResult) throw new Exception("Failed to save subscription to actor");
 
                 await transaction.CommitAsync(cancellationToken);
-                _logger.LogInformation("V2 Subscription purchased successfully: {Id} for user: {UserId}", subscriptionId, request.UserId);
+                _logger.LogInformation("V2 Subscription purchased successfully: {Id} for user: {UserId}", subscriptionId);
                 return subscriptionId;
             }
             catch (Exception ex)
@@ -234,7 +234,7 @@ namespace QLN.Backend.API.Service.ProductService
             return subscriptions;
         }
 
-        public async Task<List<V2SubscriptionResponseDto>> GetAllActiveSubscriptionsAsync(CancellationToken cancellationToken = default)
+        public async Task<List<V2SubscriptionResponseDto>> GetAllActiveSubscriptionsAsync(string userid, CancellationToken cancellationToken = default)
         {
             _logger.LogInformation("Getting all active V2 subscriptions");
 
@@ -277,7 +277,7 @@ namespace QLN.Backend.API.Service.ProductService
             return subscriptions;
         }
 
-        public async Task<bool> CancelSubscriptionAsync(Guid subscriptionId, CancellationToken cancellationToken = default)
+        public async Task<bool> CancelSubscriptionAsync(Guid subscriptionId, string userid ,CancellationToken cancellationToken = default)
         {
             if (subscriptionId == Guid.Empty)
                 throw new ArgumentException("V2 Subscription ID cannot be empty", nameof(subscriptionId));
@@ -316,7 +316,7 @@ namespace QLN.Backend.API.Service.ProductService
             }
         }
 
-        public async Task<bool> ValidateSubscriptionUsageAsync(Guid subscriptionId, string quotaType, decimal requestedAmount, CancellationToken cancellationToken = default)
+        public async Task<bool> ValidateSubscriptionUsageAsync(Guid subscriptionId, string quotaType, int requestedAmount, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -330,7 +330,7 @@ namespace QLN.Backend.API.Service.ProductService
             }
         }
 
-        public async Task<bool> RecordSubscriptionUsageAsync(Guid subscriptionId, string quotaType, decimal amount, CancellationToken cancellationToken = default)
+        public async Task<bool> RecordSubscriptionUsageAsync(Guid subscriptionId,string quotaType, int amount, CancellationToken cancellationToken = default)
         {
             using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
             try
@@ -349,8 +349,7 @@ namespace QLN.Backend.API.Service.ProductService
                 if (dbSubscription != null)
                 {
                     var action = MapQuotaTypeToAction(quotaType);
-                    var qty = (int)Math.Ceiling(amount);
-
+                    var qty = (int)Math.Ceiling((decimal)amount);
                     var ok = dbSubscription.Quota.RecordUsage(action, qty);
                     if (ok)
                     {
@@ -374,7 +373,7 @@ namespace QLN.Backend.API.Service.ProductService
 
         #region Addon Operations
 
-        public async Task<Guid> PurchaseAddonAsync(V2UserAddonPurchaseRequestDto request, CancellationToken cancellationToken = default)
+        public async Task<Guid> PurchaseAddonAsync(V2UserAddonPurchaseRequestDto request,string userid, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(request);
 
@@ -398,7 +397,7 @@ namespace QLN.Backend.API.Service.ProductService
                     UserAddOnId = addonId,
                     ProductCode = product.ProductCode,
                     ProductName = product.ProductName,
-                    UserId = request.UserId,
+                    UserId = userid,
                     CompanyId = request.CompanyId,
                     SubscriptionId = request.SubscriptionId,
                     PaymentId = request.PaymentId,
@@ -419,7 +418,7 @@ namespace QLN.Backend.API.Service.ProductService
                     Id = addonId,
                     ProductCode = product.ProductCode,
                     ProductName = product.ProductName,
-                    UserId = request.UserId,
+                    UserId = userid,
                     CompanyId = request.CompanyId,
                     SubscriptionId = request.SubscriptionId,
                     PaymentId = request.PaymentId,
@@ -440,7 +439,7 @@ namespace QLN.Backend.API.Service.ProductService
                 if (!actorResult) throw new Exception("Failed to save addon to actor");
 
                 await transaction.CommitAsync(cancellationToken);
-                _logger.LogInformation("V2 Addon purchased successfully: {Id} for user: {UserId}", addonId, request.UserId);
+                _logger.LogInformation("V2 Addon purchased successfully: {Id} for user: {UserId}", addonId, userid);
                 return addonId;
             }
             catch (Exception ex)
@@ -451,7 +450,7 @@ namespace QLN.Backend.API.Service.ProductService
             }
         }
 
-        public async Task<bool> ValidateAddonUsageAsync(Guid addonId, string quotaType, decimal requestedAmount, CancellationToken cancellationToken = default)
+        public async Task<bool> ValidateAddonUsageAsync(Guid addonId,string quotaType, int requestedAmount, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -465,7 +464,7 @@ namespace QLN.Backend.API.Service.ProductService
             }
         }
 
-        public async Task<bool> RecordAddonUsageAsync(Guid addonId, string quotaType, decimal amount, CancellationToken cancellationToken = default)
+        public async Task<bool> RecordAddonUsageAsync(Guid addonId, string quotaType, int amount, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -952,8 +951,8 @@ namespace QLN.Backend.API.Service.ProductService
                 CanRefreshAds = (c.RefreshBudgetPerDay ?? 0) > 0,
                 CanPostSocialMedia = false,
 
-                RefreshInterval = "Every 72 Hours",
-                RefreshIntervalHours = 72
+                RefreshInterval = "Every 1 minute",
+                RefreshIntervalHours = 1
             };
 
             return q;
@@ -972,8 +971,8 @@ namespace QLN.Backend.API.Service.ProductService
                 CanFeatureAds = false,
                 CanRefreshAds = false,
                 CanPostSocialMedia = false,
-                RefreshInterval = "Every 72 Hours",
-                RefreshIntervalHours = 72
+                RefreshInterval = "Every 1 minute",
+                RefreshIntervalHours = 1
             };
 
             if (c.PayToPublish == true) { q.CanPublishAds = true; q.TotalAdsAllowed += 1; }
