@@ -10,10 +10,12 @@ using Microsoft.Extensions.Logging;
 using QLN.Common.DTO_s;
 using QLN.Common.DTO_s.Classifieds;
 using QLN.Common.DTO_s.ClassifiedsBo;
+using QLN.Common.DTO_s.ClassifiedsFo;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.CustomException;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService;
+using QLN.Common.Infrastructure.IService.IClassifiedBoService;
 using QLN.Common.Infrastructure.IService.ISearchService;
 using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.Utilities;
@@ -4313,6 +4315,78 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status404NotFound)
             .ProducesProblem(StatusCodes.Status500InternalServerError);
+            
+
+            group.MapGet("/stores-dashboard-header", async Task<Results<
+          Ok<List<StoresDashboardHeaderDto>>,
+          BadRequest<ProblemDetails>,
+          ProblemHttpResult>>
+          (
+          [FromServices]IClassifiedsFoService service,
+          HttpContext context,
+            string? UserId, string? CompanyId,
+          CancellationToken cancellationToken
+          ) =>
+            {
+                try
+                {
+                    var result = await service.GetStoresDashboardHeader(UserId, CompanyId,cancellationToken);
+                    return TypedResults.Ok(result);
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        instance: context.Request.Path
+                    );
+                }
+            })
+                .WithName("StoresDashboardHeader")
+                .AllowAnonymous()
+                .WithTags("Classified")
+                .WithSummary("To display the stores dashboard header information.")
+                .WithDescription("Fetches all stores dashboard header information.")
+                .Produces<List<StoresDashboardHeaderDto>>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapGet("/stores-dashboard-summary", async Task<Results<
+          Ok<List<StoresDashboardSummaryDto>>,
+          BadRequest<ProblemDetails>,
+          ProblemHttpResult>>
+          (
+          [FromServices] IClassifiedsFoService service,
+          HttpContext context,
+            string? CompanyId, string? SubscriptionId,
+          CancellationToken cancellationToken
+          ) =>
+            {
+                try
+                {
+                    var result = await service.GetStoresDashboardSummary(CompanyId, SubscriptionId,  cancellationToken);
+                    return TypedResults.Ok(result);
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        instance: context.Request.Path
+                    );
+                }
+            })
+                .WithName("StoresDashboardSummary")
+                .AllowAnonymous()
+                .WithTags("Classified")
+                .WithSummary("To display the stores dashboard summary information.")
+                .WithDescription("Fetches all stores dashboard summary information.")
+                .Produces<List<StoresDashboardSummaryDto>>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
             return group;
         }
 

@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using QLN.Common.DTO_s.ClassifiedsBo;
+using QLN.Common.DTO_s.ClassifiedsFo;
 using QLN.Common.Infrastructure.Model;
 
 
@@ -29,6 +30,9 @@ namespace QLN.Common.Infrastructure.QLDbContext
 
         public DbSet<FeaturedStore> FeaturedStores { get; set; }
         public DbSet<FeaturedCategory> FeaturedCategories { get; set; }
+
+        public DbSet<StoresDashboardHeader> StoresDashboardHeaderItems { get; set; }
+        public DbSet<StoresDashboardSummary> StoresDashboardSummaryItems { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<StoreFlyers>()
@@ -58,6 +62,75 @@ namespace QLN.Common.Infrastructure.QLDbContext
                  .WithOne(sc => sc.ParentCategory)
                  .HasForeignKey(sc => sc.ParentId)
                  .OnDelete(DeleteBehavior.Restrict);
+
+
+            modelBuilder.Entity<StoresDashboardHeader>(entity =>
+            {
+                entity.HasNoKey(); 
+                entity.ToSqlQuery(@"
+            SELECT subs.""CompanyId"",
+                subs.""SubscriptionId"",
+                subs.""ProductName"",
+                subs.""UserId"",
+                comp.""UserName"",
+                comp.""Status"",
+                comp.""CompanyName"",
+                comp.""CompanyLogo"",
+                subs.""StartDate"",
+                subs.""EndDate"",
+                '' as ""XMLFeed"",
+            '' as ""UploadFeed""
+            FROM public.""Subscriptions"" AS subs
+            INNER JOIN public.""Companies"" AS comp
+                ON subs.""CompanyId"" = comp.""Id""
+            WHERE subs.""Status"" = 1 
+              AND subs.""Vertical"" = 3
+              AND subs.""SubVertical"" = 3
+        ");
+                entity.Property(e => e.CompanyId).HasColumnName("CompanyId");
+                entity.Property(e => e.SubscriptionId).HasColumnName("SubscriptionId");
+                entity.Property(e => e.UserId).HasColumnName("UserId");
+                entity.Property(e => e.UserName).HasColumnName("UserName");
+                entity.Property(e => e.CompanyName).HasColumnName("CompanyName");
+                entity.Property(e => e.CompanyLogo).HasColumnName("CompanyLogo");
+                entity.Property(e => e.Status).HasColumnName("Status");
+                entity.Property(e => e.StartDate).HasColumnName("StartDate");
+                entity.Property(e => e.EndDate).HasColumnName("EndDate");
+                entity.Property(e => e.SubscriptionType).HasColumnName("ProductName");
+            });
+            modelBuilder.Entity<StoresDashboardSummary>(entity =>
+            {
+                entity.HasNoKey(); 
+                entity.ToSqlQuery(@"
+        SELECT 
+            subs.""SubscriptionId"",
+            subs.""CompanyId"",
+            subs.""ProductName"",
+            comp.""CompanyName"",
+            COUNT(prod.""StoreProductId"") as ""ProductCount""
+        FROM public.""Subscriptions"" AS subs
+        LEFT JOIN public.""Companies"" AS comp
+            ON subs.""CompanyId"" = comp.""Id""
+        LEFT JOIN public.""StoreFlyer"" AS fly
+            ON subs.""SubscriptionId"" = fly.""SubscriptionId""
+            AND subs.""CompanyId"" = fly.""CompanyId""
+        LEFT JOIN public.""StoreProduct"" AS prod
+            ON fly.""StoreFlyersId"" = prod.""FlyerId""
+        WHERE subs.""Status"" = 1 
+          AND subs.""Vertical"" = 3
+          AND subs.""SubVertical"" = 3
+        GROUP BY subs.""SubscriptionId"",
+                 subs.""CompanyId"",
+                 subs.""ProductName"",
+                 comp.""CompanyName""
+    ");
+
+                entity.Property(e => e.SubscriptionId).HasColumnName("SubscriptionId");
+                entity.Property(e => e.CompanyId).HasColumnName("CompanyId");
+                entity.Property(e => e.SubscriptionType).HasColumnName("ProductName");
+                entity.Property(e => e.CompanyName).HasColumnName("CompanyName");
+                entity.Property(e => e.ProductCount).HasColumnName("ProductCount");
+            });
 
             base.OnModelCreating(modelBuilder);
         }
