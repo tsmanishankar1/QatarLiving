@@ -23,7 +23,7 @@ public static class FatoraEndpoints
             [FromQuery(Name = "order_id")] string orderId,
             [FromQuery(Name = "card_token")] string? cardToken,
             [FromQuery(Name = "mode")] string? mode,
-            [FromQuery(Name = "response_Code")] string? responseCode,
+            [FromQuery(Name = "response_code")] string? responseCode,
             [FromQuery(Name = "description")] string? description,
             [FromQuery(Name = "platform")] string? platform,
             [FromQuery(Name = "vertical")] Vertical? vertical,
@@ -42,7 +42,7 @@ public static class FatoraEndpoints
                     Description = description,
                     Platform = platform,
                     Vertical = vertical,
-                    SubscriptionCategory = subscriptionCategory
+                    SubscriptionCategory = subscriptionCategory,
                 };
 
                 var result = await service.PaymentSuccessAsync(request, cancellationToken);
@@ -74,7 +74,7 @@ public static class FatoraEndpoints
             [FromQuery(Name = "order_id")] string orderId,
             [FromQuery(Name = "card_token")] string? cardToken,
             [FromQuery(Name = "mode")] string? mode,
-            [FromQuery(Name = "response_Code")] string? responseCode,
+            [FromQuery(Name = "response_code")] string? responseCode,
             [FromQuery(Name = "description")] string? description,
             [FromQuery(Name = "platform")] string? platform,
             [FromQuery(Name = "vertical")] Vertical? vertical,

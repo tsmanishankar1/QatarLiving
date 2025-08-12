@@ -137,7 +137,7 @@ namespace QLN.Backend.API.Service.ProductService
                     Quota = BuildSubscriptionQuotaFromProduct(product),
                     StartDate = DateTime.UtcNow,
                     EndDate = DateTime.UtcNow.Add(GetDurationFromProduct(product)),
-                    Status = SubscriptionStatus.Active,
+                    Status = SubscriptionStatus.Active, // this should likely be created in an PendingPayment status ?
                     CreatedAt = DateTime.UtcNow
                 };
 
