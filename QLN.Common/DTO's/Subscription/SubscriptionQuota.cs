@@ -12,6 +12,9 @@ namespace QLN.Common.DTO_s.Subscription
         public const string Promote = "promote";
         public const string Feature = "feature";
         public const string Refresh = "refresh";
+        public const string UnPublish = "unpublish";
+        public const string UnPromote = "unpromote";
+        public const string UnFeature = "unfeature";
         public const string SocialMediaPost = "social_media_post";
     }
 
@@ -101,7 +104,13 @@ namespace QLN.Common.DTO_s.Subscription
         public ValidationResult ValidateAction(string actionType, int quantity = 1)
         {
             CheckAndResetDailyQuotas();
-            var r = new ValidationResult { ActionType = actionType, RequestedQuantity = quantity, IsValid = false, Message = "Unknown action type" };
+            var r = new ValidationResult
+            {
+                ActionType = actionType,
+                RequestedQuantity = quantity,
+                IsValid = false,
+                Message = "Unknown action type"
+            };
 
             switch (actionType.ToLower())
             {
@@ -110,16 +119,37 @@ namespace QLN.Common.DTO_s.Subscription
                     r.RemainingQuota = RemainingAds;
                     r.Message = r.IsValid ? "Can publish" : (!CanPublishAds ? "Publishing not allowed" : "Insufficient ads quota");
                     break;
+
+                case ActionTypes.UnPublish:
+                    r.IsValid = true;
+                    r.RemainingQuota = RemainingAds;
+                    r.Message = "Can unpublish";
+                    break;
+
                 case ActionTypes.Promote:
                     r.IsValid = CanPromoteAds && RemainingPromotions >= quantity;
                     r.RemainingQuota = RemainingPromotions;
                     r.Message = r.IsValid ? "Can promote" : (!CanPromoteAds ? "Promotion not allowed" : "Insufficient promotion quota");
                     break;
+
+                case ActionTypes.UnPromote:
+                    r.IsValid = true;
+                    r.RemainingQuota = RemainingPromotions;
+                    r.Message = "Can unpromote";
+                    break;
+
                 case ActionTypes.Feature:
                     r.IsValid = CanFeatureAds && RemainingFeatures >= quantity;
                     r.RemainingQuota = RemainingFeatures;
                     r.Message = r.IsValid ? "Can feature" : (!CanFeatureAds ? "Featuring not allowed" : "Insufficient feature quota");
                     break;
+
+                case ActionTypes.UnFeature:
+                    r.IsValid = true;
+                    r.RemainingQuota = RemainingFeatures;
+                    r.Message = "Can unfeature";
+                    break;
+
                 case ActionTypes.Refresh:
                     r.IsValid = CanRefreshNow() && RemainingDailyRefreshes >= quantity;
                     r.RemainingQuota = RemainingDailyRefreshes;
@@ -127,6 +157,7 @@ namespace QLN.Common.DTO_s.Subscription
                         (!CanRefreshAds ? "Refresh not allowed" :
                         (!CanRefreshNow() ? $"Must wait {RefreshIntervalHours} hours" : "Insufficient daily refresh quota"));
                     break;
+
                 case ActionTypes.SocialMediaPost:
                     r.IsValid = CanPostSocialMedia && RemainingSocialMediaPosts >= quantity;
                     r.RemainingQuota = RemainingSocialMediaPosts;
@@ -144,12 +175,41 @@ namespace QLN.Common.DTO_s.Subscription
 
             switch (actionType.ToLower())
             {
-                case ActionTypes.Publish: AdsUsed += quantity; break;
-                case ActionTypes.Promote: PromotionsUsed += quantity; break;
-                case ActionTypes.Feature: FeaturesUsed += quantity; break;
-                case ActionTypes.Refresh: DailyRefreshesUsed += quantity; LastRefreshUsed = DateTime.UtcNow; break;
-                case ActionTypes.SocialMediaPost: SocialMediaPostsUsed += quantity; break;
-                default: return false;
+                case ActionTypes.Publish:
+                    AdsUsed += quantity;
+                    break;
+                case ActionTypes.UnPublish:
+                    AdsUsed -= quantity;
+                    if (AdsUsed < 0) AdsUsed = 0; 
+                    break;
+
+                case ActionTypes.Promote:
+                    PromotionsUsed += quantity;
+                    break;
+                case ActionTypes.UnPromote:
+                    PromotionsUsed -= quantity;
+                    if (PromotionsUsed < 0) PromotionsUsed = 0;
+                    break;
+
+                case ActionTypes.Feature:
+                    FeaturesUsed += quantity;
+                    break;
+                case ActionTypes.UnFeature:
+                    FeaturesUsed -= quantity;
+                    if (FeaturesUsed < 0) FeaturesUsed = 0;
+                    break;
+
+                case ActionTypes.Refresh:
+                    DailyRefreshesUsed += quantity;
+                    LastRefreshUsed = DateTime.UtcNow;
+                    break;
+
+                case ActionTypes.SocialMediaPost:
+                    SocialMediaPostsUsed += quantity;
+                    break;
+
+                default:
+                    return false;
             }
 
             LastUsageUpdate = DateTime.UtcNow;

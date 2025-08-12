@@ -1,6 +1,7 @@
 ﻿using Dapr.Client;
 using Microsoft.EntityFrameworkCore;
 using QLN.Common.DTO_s;
+using QLN.Common.DTO_s.Subscription;
 using QLN.Common.Infrastructure.Auditlog;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.CustomException;
@@ -21,11 +22,13 @@ namespace QLN.Classified.MS.Service.Services
         public readonly QLClassifiedContext _dbContext;
         public readonly DaprClient _dapr;
         public readonly AuditLogger _auditLogger;
-        public InternalServicesService(DaprClient dapr, AuditLogger auditLogger, QLClassifiedContext dbContext)
+        public readonly QLSubscriptionContext _subContext;
+        public InternalServicesService(DaprClient dapr, AuditLogger auditLogger, QLClassifiedContext dbContext, QLSubscriptionContext subContext)
         {
             _dapr = dapr;
             _auditLogger = auditLogger;
             _dbContext = dbContext;
+            _subContext = subContext;
         }
         public async Task<List<CategoryDto>> GetAllCategories(string? vertical, string? subVertical, CancellationToken cancellationToken = default)
         {
@@ -572,7 +575,7 @@ namespace QLN.Classified.MS.Service.Services
                 BuildingNumber = dto.BuildingNumber,
                 LicenseCertificate = dto.LicenseCertificate,
                 ZoneId = dto.ZoneId,
-                SubscriptionId = dto.SubscriptionId,
+                SubscriptionId = dto.SubscriptionId?.ToString(),
                 Comments = dto.Comments,
                 Longitude = (double)dto.Longitude,
                 Lattitude = (double)dto.Lattitude,
@@ -814,7 +817,20 @@ namespace QLN.Classified.MS.Service.Services
                 throw new KeyNotFoundException("Service Ad not found.");
 
             serviceAd.IsPromoted = request.IsPromoted;
-            serviceAd.PromotedExpiryDate = request.IsPromoted ? DateTime.UtcNow.AddDays(7) : null;
+            if (request.IsPromoted)
+            {
+                var subscription = await _subContext.Subscriptions
+                    .FirstOrDefaultAsync(sub => sub.SubscriptionId == serviceAd.SubscriptionId && (int)sub.Status == (int)V2Status.Active, ct);
+
+                if (subscription == null)
+                    throw new InvalidOperationException("Active subscription not found for this service.");
+
+                serviceAd.PromotedExpiryDate = subscription.EndDate;
+            }
+            else
+            {
+                serviceAd.PromotedExpiryDate = null;
+            }
             serviceAd.UpdatedBy = uid;
             serviceAd.UpdatedAt = DateTime.UtcNow;
 
@@ -849,7 +865,20 @@ namespace QLN.Classified.MS.Service.Services
                 throw new KeyNotFoundException("Service Ad not found.");
 
             serviceAd.IsFeatured = request.IsFeature;
-            serviceAd.FeaturedExpiryDate = request.IsFeature ? DateTime.UtcNow.AddDays(7) : null;
+            if (request.IsFeature)
+            {
+                var subscription = await _subContext.Subscriptions
+                    .FirstOrDefaultAsync(sub => sub.SubscriptionId == serviceAd.SubscriptionId && (int)sub.Status == (int)V2Status.Active, ct);
+
+                if (subscription == null)
+                    throw new InvalidOperationException("Active subscription not found for this service.");
+
+                serviceAd.FeaturedExpiryDate = subscription.EndDate;
+            }
+            else
+            {
+                serviceAd.FeaturedExpiryDate = null;
+            }
             serviceAd.UpdatedBy = uid;
             serviceAd.UpdatedAt = DateTime.UtcNow;
 
@@ -939,6 +968,12 @@ namespace QLN.Classified.MS.Service.Services
 
                 if (serviceAd.Status == ServiceStatus.Published)
                     throw new InvalidDataException("Service is already published.");
+
+                var subscription = await _subContext.Subscriptions
+                    .FirstOrDefaultAsync(sub => sub.SubscriptionId == serviceAd.SubscriptionId && (int)sub.Status == (int)V2Status.Active, ct);
+
+                if (subscription == null)
+                    throw new InvalidDataException("Active subscription not found for this service.");
 
                 serviceAd.Status = ServiceStatus.Published;
                 serviceAd.PublishedDate = DateTime.UtcNow;

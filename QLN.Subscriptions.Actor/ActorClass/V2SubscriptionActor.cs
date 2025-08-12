@@ -133,7 +133,6 @@ namespace QLN.Subscriptions.Actor.ActorClass
 
             return await FastSetDataAsync(data, cancellationToken);
         }
-
         public async Task<bool> IsActiveAsync(CancellationToken cancellationToken = default)
         {
             var data = await SyncFromDatabaseAsync(force: false, cancellationToken);

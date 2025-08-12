@@ -348,7 +348,10 @@ namespace QLN.Backend.API.Service.ProductService
 
                 if (dbSubscription != null)
                 {
-                    var ok = dbSubscription.Quota.RecordUsage(MapQuotaTypeToAction(quotaType), (int)Math.Ceiling(amount));
+                    var action = MapQuotaTypeToAction(quotaType);
+                    var qty = (int)Math.Ceiling(amount);
+
+                    var ok = dbSubscription.Quota.RecordUsage(action, qty);
                     if (ok)
                     {
                         dbSubscription.UpdatedAt = DateTime.UtcNow;
@@ -1007,15 +1010,16 @@ namespace QLN.Backend.API.Service.ProductService
         }
 
         private static string MapQuotaTypeToAction(string quotaType) =>
-            (quotaType ?? string.Empty).ToLower() switch
-            {
-                V2QuotaTypes.AdsBudget => ActionTypes.Publish,
-                V2QuotaTypes.PromoteBudget => ActionTypes.Promote,
-                V2QuotaTypes.FeatureBudget => ActionTypes.Feature,
-                V2QuotaTypes.RefreshBudget => ActionTypes.Refresh,
-                V2QuotaTypes.SocialMediaPosts => ActionTypes.SocialMediaPost,
-                _ => quotaType?.ToLower() ?? string.Empty
-            };
+     (quotaType ?? string.Empty).ToLower() switch
+     {
+         V2QuotaTypes.AdsBudget => ActionTypes.Publish,
+         V2QuotaTypes.PromoteBudget => ActionTypes.Promote,
+         V2QuotaTypes.FeatureBudget => ActionTypes.Feature,
+         V2QuotaTypes.RefreshBudget => ActionTypes.Refresh,
+         V2QuotaTypes.SocialMediaPosts => ActionTypes.SocialMediaPost,
+         _ => quotaType?.ToLower() ?? string.Empty
+     };
+
 
         private TimeSpan GetDurationFromProduct(Product product)
         {

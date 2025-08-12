@@ -37,7 +37,7 @@ namespace QLN.Common.Migrations.ClassifiedDev
                     EmailAddress = table.Column<string>(type: "text", nullable: true),
                     Location = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     LocationId = table.Column<int>(type: "integer", nullable: true),
-                    SubscriptionId = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
+                    SubscriptionId = table.Column<Guid>(type: "uuid", maxLength: 100, nullable: true),
                     ZoneId = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
                     StreetNumber = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: true),
                     BuildingNumber = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: true),

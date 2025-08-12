@@ -95,6 +95,7 @@ namespace QLN.Common.DTO_s
     public class PromoteServiceRequest
     {
         public long ServiceId { get; set; }
+        public Guid? SubscriptionId { get; set; }
         public bool IsPromoted { get; set; }
         [JsonIgnore]
         public string? UpdatedBy { get; set; } = null!;
@@ -102,6 +103,7 @@ namespace QLN.Common.DTO_s
     public class FeatureServiceRequest
     {
         public long ServiceId { get; set; }
+        public Guid? SubscriptionId { get; set; }
         public bool IsFeature { get; set; }
         [JsonIgnore]
         public string? UpdatedBy { get; set; } = null!;
@@ -117,6 +119,7 @@ namespace QLN.Common.DTO_s
     {
         public long ServiceId { get; set; }
         public ServiceStatus? Status { get; set; }
+        public Guid? SubscriptionId { get; set; }
         [JsonIgnore]
         public string? UpdatedBy { get; set; } = null!;
     }

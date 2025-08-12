@@ -1278,9 +1278,9 @@ namespace QLN.Common.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
-                    b.Property<string>("SubscriptionId")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
+                    b.Property<Guid?>("SubscriptionId")
+                        .HasMaxLength(100)
+                        .HasColumnType("uuid");
 
                     b.Property<string>("Title")
                         .IsRequired()
