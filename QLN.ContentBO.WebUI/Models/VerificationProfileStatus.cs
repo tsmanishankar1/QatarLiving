@@ -21,6 +21,7 @@ namespace QLN.ContentBO.WebUI.Models
         public TimeSpan? StartHour { get; set; }
         public TimeSpan? EndHour { get; set; }
         public string? UserDesignation { get; set; }
+        public string? UserName { get; set; }
         public string? CoverImage1 { get; set; }
         public string? CoverImage2 { get; set; }
         public bool? IsTherapeuticService { get; set; }
@@ -29,6 +30,7 @@ namespace QLN.ContentBO.WebUI.Models
         public string BusinessDescription { get; set; } = string.Empty;
         public int CRNumber { get; set; }
         public string CRDocument { get; set; } = string.Empty;
+        public DateTime? CRExpiryDate { get; set; }
         public VerifiedStatus? Status { get; set; }
         public VerticalType Vertical { get; set; }
         public SubVertical? SubVertical { get; set; }

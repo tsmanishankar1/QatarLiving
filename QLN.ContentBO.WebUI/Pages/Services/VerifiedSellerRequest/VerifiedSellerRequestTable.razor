@@ -32,8 +32,10 @@
 
     <RowTemplate>
         <MudTd title="@(string.IsNullOrWhiteSpace(context.CompanyName) ? "-" : context.CompanyName)"Class="truncate-text">@context.CompanyName</MudTd>
+        <MudTd title="@(string.IsNullOrWhiteSpace(context.UserName) ? "-" : context.UserName)"Class="truncate-text">@context.UserName</MudTd>
         <MudTd title="@(string.IsNullOrWhiteSpace(context.CRDocument) ? "-" : context.CRDocument)"Class="truncate-text hover-title">@context.CRDocument</MudTd>
          <MudTd Class="truncate-text">@context.LicenseNumber</MudTd>
+        <MudTd Class="truncate-text">@(context.CRExpiryDate?.ToString("dd-MM-yyyy hh:mm tt") ?? "--")</MudTd>
        <MudTd>
             <MudMenu Icon="@Icons.Material.Filled.MoreVert">
                 <MudMenuItem>

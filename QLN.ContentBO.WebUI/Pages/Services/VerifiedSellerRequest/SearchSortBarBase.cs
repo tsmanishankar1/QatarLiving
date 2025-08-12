@@ -94,8 +94,10 @@ namespace QLN.ContentBO.WebUI.Pages.Services.VerifiedSellerRequest
                 var exportData = Items.Select(x => new Dictionary<string, object?>
                 {
                     ["Company Name"] = x.CompanyName,
+                    ["User Name"] = x.UserName,
                     ["CR file"] = x.CRDocument,
                     ["CR License"] = x.LicenseNumber, 
+                    ["End Date"] = x.CRExpiryDate?.ToString("dd-MM-yyyy hh:mm tt"), 
                 }).ToList();
 
             await JS.InvokeVoidAsync("exportToExcel", exportData, "Services_VerifiedSellerRequests.xlsx", "Transactions");
