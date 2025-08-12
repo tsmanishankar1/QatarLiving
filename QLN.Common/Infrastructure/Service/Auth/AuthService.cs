@@ -9,17 +9,25 @@ using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
+using Microsoft.IdentityModel.Tokens;
 using QLN.Common.DTO_s;
+using QLN.Common.DTO_s.Company;
+using QLN.Common.DTOs;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.CustomException;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.EventLogger;
 using QLN.Common.Infrastructure.IService.IAuthService;
+using QLN.Common.Infrastructure.IService.ICompanyService;
 using QLN.Common.Infrastructure.IService.IEmailService;
 using QLN.Common.Infrastructure.IService.ITokenService;
 using QLN.Common.Infrastructure.Model;
+using System.Data;
+using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 
 namespace QLN.Common.Infrastructure.Service.AuthService
@@ -35,7 +43,9 @@ namespace QLN.Common.Infrastructure.Service.AuthService
         private readonly IConfiguration _config;
         private readonly IEventlogger _log;
         private readonly IWebHostEnvironment _env;
-
+        private readonly IExternalSubscriptionService _subscriptionService;
+        private readonly ICompanyProfileService _companyProfile;
+        private readonly HttpClient _httpClient;
 
         public AuthService(
             UserManager<ApplicationUser> userManager,
@@ -46,7 +56,10 @@ namespace QLN.Common.Infrastructure.Service.AuthService
             IConfiguration configuration,
             IEventlogger logger,
             IHttpContextAccessor httpContextAccessor,
-            IWebHostEnvironment env
+            IWebHostEnvironment env,
+            IExternalSubscriptionService subscriptionService,
+            ICompanyProfileService companyProfile,
+            IHttpClientFactory httpClientFactory
             )
         {
             _userManager = userManager;
@@ -58,10 +71,13 @@ namespace QLN.Common.Infrastructure.Service.AuthService
             _config = configuration;
             _log = logger;
             _env = env;
+            _subscriptionService = subscriptionService;
+            _companyProfile = companyProfile;
+            _httpClient = httpClientFactory.CreateClient();
         }
 
 
-        public async Task<string> Register(RegisterRequest request, HttpContext context)
+        public async Task<string> Register(RegisterRequest request)
         {
             var isBypassUser = _env.IsDevelopment() &&
                                request.Emailaddress == ConstantValues.ByPassEmail &&
@@ -987,5 +1003,343 @@ namespace QLN.Common.Infrastructure.Service.AuthService
                    Regex.IsMatch(email, @"^[^@\s]+@[^@\s]+\.[^@\s]+$", RegexOptions.IgnoreCase);
         }
 
+        public async Task<Results<Ok<LoginResponse>, BadRequest<ProblemDetails>, UnauthorizedHttpResult, ProblemHttpResult, ValidationProblem>> UserSync(DrupalUser drupalUser, DateTime expiry)
+        {
+            try
+            {
+                if (!long.TryParse(drupalUser.Uid, out var userId))
+                {
+                    Dictionary<string, string[]> errors = new Dictionary<string, string[]>
+                    {
+                        { nameof(drupalUser.Uid), new[] { "Invalid or missing Drupal UID. Must be a valid integer value." } }
+                    };
+
+                    return TypedResults.ValidationProblem(errors, title: "Parsing Drupal ID Error");
+                }
+
+                var user = await _userManager.Users.FirstOrDefaultAsync(u => u.LegacyUid == userId);
+                //var user = await _userManager.FindByEmailAsync(drupalUser.Email);
+
+                if (user == null)
+                {
+                    // Create new user with mapped values from DrupalUser
+                    var randomPassword = GenerateRandomPassword();
+                    
+                    user = new ApplicationUser
+                    {
+                        UserName = drupalUser.Alias,
+                        Email = drupalUser.Email,
+                        PhoneNumber = drupalUser.Phone ?? null,
+                        FirstName = drupalUser.Name,
+                        LastName = null,
+                        LegacyUid = userId,
+                        EmailConfirmed = true,
+                        PhoneNumberConfirmed = string.IsNullOrEmpty(drupalUser.Phone) ? true : false,
+                        TwoFactorEnabled = false,
+                        SecurityStamp = Guid.NewGuid().ToString(),
+                        CreatedAt = long.TryParse(drupalUser.Created, out var createdAt) ? EpochTime.DateTime(createdAt) : DateTime.UtcNow,
+                        // Map any available fields from DrupalUser if they exist
+                        LanguagePreferences = !string.IsNullOrEmpty(drupalUser.Language) ? drupalUser.Language : "en", // Default language,
+                        LegacyData = new UserLegacyData()
+                        {
+                            Access = drupalUser.Access ?? string.Empty,
+                            Created = drupalUser.Created ?? string.Empty,
+                            Init = drupalUser.Init ?? string.Empty,
+                            Status = drupalUser.Status ?? string.Empty,
+                            Uid = userId,
+                            Alias = drupalUser.Alias,
+                            Email = drupalUser.Email,
+                            IsAdmin = drupalUser.IsAdmin ?? false,
+                            Language = drupalUser.Language,
+                            Name = drupalUser.Name,
+                            Path = drupalUser.Path,
+                            Image = drupalUser.Image,
+                            Permissions = drupalUser.Permissions,
+                            Phone = drupalUser.Phone,
+                            QlnextUserId = drupalUser.QlnextUserId,
+                            Roles = drupalUser.Roles,
+                        },
+                        LegacySubscription = drupalUser.Subscription != null ? new LegacySubscription
+                        {
+                            Uid = userId,
+                            ReferenceId = drupalUser.Subscription.ReferenceId ?? string.Empty,
+                            StartDate = drupalUser.Subscription.StartDate ?? string.Empty,
+                            ExpireDate = drupalUser.Subscription.ExpireDate ?? string.Empty,
+                            ProductType = drupalUser.Subscription.ProductType ?? string.Empty,
+                            AccessDashboard = drupalUser.Subscription.AccessDashboard,
+                            ProductClass = drupalUser.Subscription.ProductClass ?? string.Empty,
+                            Categories = drupalUser.Subscription.Categories,
+                            SubscriptionCategories = drupalUser.Subscription.SubscriptionCategories,
+                            Snid = drupalUser.Subscription.Snid ?? string.Empty,
+                            Status = drupalUser.Subscription.Status ?? string.Empty
+                        } : null
+                    };
+
+                    var createResult = await _userManager.CreateAsync(user, randomPassword);
+                    if (!createResult.Succeeded)
+                    {
+                        var errors = createResult.Errors
+                            .GroupBy(e => e.Code)
+                            .ToDictionary(g => g.Key, g => g.Select(e => e.Description).ToArray());
+                        throw new RegistrationValidationException(errors);
+                    }
+
+                    bool isCompany = false;
+                    bool hasSubscription = false;
+
+                    var roles = new List<string>
+                    {
+                        "BasicUser",
+                    };
+
+                    if(drupalUser.Roles != null)
+                    {
+                        // Check if this user has a subscription
+                        isCompany = drupalUser.Roles.Contains("business_account");
+                        if(isCompany)
+                        {
+                            hasSubscription = drupalUser.Roles.Contains("subscription");
+                            if (hasSubscription)
+                            {
+                                if(drupalUser.Subscription != null && long.TryParse(drupalUser.Subscription.ExpireDate, out var subsExpiry))
+                                {
+                                    var expiryDate = EpochTime.DateTime(subsExpiry);
+                                    if (expiryDate < DateTime.UtcNow)
+                                    {
+                                        hasSubscription = false;
+                                    }
+                                }
+                            }
+                        }
+                        roles.AddRange(drupalUser.Roles);
+                    }
+
+                    foreach(var role in roles)
+                    {
+                        if (!await _roleManager.RoleExistsAsync(role))
+                            await _roleManager.CreateAsync(new IdentityRole<Guid>(role));
+                    }
+
+                    await _userManager.AddToRolesAsync(user, roles);
+
+                    if (isCompany)
+                    {
+                        var company = new CompanyProfile
+                        {
+                            CompanyName = drupalUser.Name,
+                            Email = drupalUser.Email,
+                            CompanyType = CompanyType.SME,
+                            BusinessDescription = "Migrated Company - please upate your description",
+                            PhoneNumber = drupalUser.Phone,
+                            WhatsAppNumber = drupalUser.Phone,
+                            PhoneNumberCountryCode = "+974",
+                            WhatsAppCountryCode = "+974",
+                            Status = VerifiedStatus.NeedChanges,
+                            Vertical = VerticalType.Classifieds,
+                        };
+                        // go off and create a company then save the company GUID to the user
+                        var companyGuid = Guid.NewGuid();
+                        try
+                        {
+                            // NOTE not working
+                            //await _companyProfile.MigrateCompany(companyGuid.ToString(), user.Id.ToString(), user.UserName, company);
+
+                            //user.Companies = new List<UserCompany>
+                            //{
+                            //    new UserCompany
+                            //    {
+                            //        DisplayName = drupalUser.Name,
+                            //        Id = companyGuid
+                            //    }
+                            //};
+
+                            //var updateResult = await _userManager.UpdateAsync(user);
+
+                            //if (!updateResult.Succeeded)
+                            //{
+                            //    var errors = updateResult.Errors
+                            //        .GroupBy(e => e.Code)
+                            //        .ToDictionary(g => g.Key, g => g.Select(e => e.Description).ToArray());
+                            //    throw new RegistrationValidationException(errors);
+                            //}
+
+                            _log.LogTrace($"Company created for userId {user.Id} with companyGuid {companyGuid}");
+
+                        }
+                        catch (Exception)
+                        {
+                            _log.LogError($"Issue creating a company for userId {user.Id}");
+                            throw;
+                        }
+                        
+                    }
+
+                    if(hasSubscription)
+                    {
+                        // go off and create a subscription with the same information in it then save the subscription GUID to the user
+                        var environment = _config["LegacySubscriptions:Environment"];
+                        var type = drupalUser.Subscription?.ProductClass;
+                        var uid = drupalUser.Subscription?.Uid;
+
+                        if(environment != null && type != null && uid != null)
+                        {
+                            var subscriptioninfo = await GetLegacySubscription(type, uid, environment);
+
+                            if(subscriptioninfo != null && subscriptioninfo.Drupal.Item.Status == "success")
+                            {
+                                DateTime.TryParse(subscriptioninfo.Drupal.Item.StartDate, out var startDate);
+                                DateTime.TryParse(subscriptioninfo.Drupal.Item.EndDate, out var endDate);
+                                TimeSpan duration = endDate - startDate;
+                                if (duration.TotalDays < 0)
+                                {
+                                    duration = TimeSpan.FromDays(30); // Default to 30 days if the duration is negative
+                                }
+
+                                var migratedSubscription = new SubscriptionRequestDto
+                                {
+                                    adsbudget = subscriptioninfo.Drupal.Item.AdsLimitDaily,
+                                    CategoryId = Subscriptions.SubscriptionCategory.Items,
+                                    Currency = "QAR",
+                                    Description = subscriptioninfo.Drupal.Item.Product,
+                                    Duration = duration,
+                                    featurebudget = 0,
+                                    Price = 0,
+                                    promotebudget = 0,
+                                    refreshbudget = int.TryParse(subscriptioninfo.Drupal.Item.RefreshLimitDaily, out var refreshLimitDaily) ? refreshLimitDaily : 0,
+                                    StatusId = Subscriptions.Status.Active,
+                                    SubscriptionName = subscriptioninfo.Drupal.Item.Product,
+                                    VerticalTypeId = subscriptioninfo.Drupal.Item.ProductClass == "item" ? Subscriptions.Vertical.Classifieds : Subscriptions.Vertical.Services // who knows if this is correct ?
+                                };
+
+                                // this will work but wont have any idea what the subscription ID is
+                                await _subscriptionService.CreateSubscriptionAsync(migratedSubscription);
+
+                                //user.Subscriptions = new List<UserSubscription>
+                                //{
+                                //    new UserSubscription
+                                //    {
+                                //        DisplayName = subscriptioninfo.Drupal.Item.Product,
+                                //        Id = subscriptionGuid
+                                //    }
+                                //};
+
+                                //var updateSubResult = await _userManager.UpdateAsync(user);
+
+                                //if (!updateSubResult.Succeeded)
+                                //{
+                                //    var errors = updateSubResult.Errors
+                                //        .GroupBy(e => e.Code)
+                                //        .ToDictionary(g => g.Key, g => g.Select(e => e.Description).ToArray());
+                                //    throw new RegistrationValidationException(errors);
+                                //}
+
+                                var subscriptionRole = "Subscriber";
+
+                                if (!await _roleManager.RoleExistsAsync(subscriptionRole))
+                                    await _roleManager.CreateAsync(new IdentityRole<Guid>(subscriptionRole));
+
+                                // add the user to the Subscriber role
+                                await _userManager.AddToRoleAsync(user, subscriptionRole);
+                            }
+
+                        }
+
+                    }
+                }
+
+                var assignedRoles = await _userManager.GetRolesAsync(user);
+
+                // Generate tokens for existing or newly created user
+                var accessToken = await _tokenService.GenerateEnrichedAccessToken(user, drupalUser, expiry, assignedRoles);
+
+                // RefreshToken not required yet
+
+                //var refreshToken = _tokenService.GenerateRefreshToken(); 
+
+                //await _userManager.SetAuthenticationTokenAsync(user, Constants.ConstantValues.QLNProvider, Constants.ConstantValues.RefreshToken, refreshToken);
+                //await _userManager.SetAuthenticationTokenAsync(user, Constants.ConstantValues.QLNProvider, Constants.ConstantValues.RefreshTokenExpiry, DateTime.UtcNow.AddDays(7).ToString("o"));
+
+                return TypedResults.Ok(new LoginResponse
+                {
+                    Username = user.UserName,
+                    Emailaddress = user.Email,
+                    Mobilenumber = user.PhoneNumber,
+                    AccessToken = accessToken,
+                    RefreshToken = string.Empty,
+                    IsTwoFactorEnabled = false // Assuming 2FA is not enabled for Drupal users
+                });
+            }
+            catch (Exception ex)
+            {
+                _log.LogException(ex);
+                return TypedResults.Problem(
+                    title: "Server Error",
+                    detail: "An unexpected error occurred. Please try again later.",
+                    statusCode: StatusCodes.Status500InternalServerError);
+            }
+        }
+
+        private string GenerateRandomPassword()
+        {
+            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
+            var random = new Random();
+            return new string(Enumerable.Repeat(chars, 12)
+                .Select(s => s[random.Next(s.Length)]).ToArray());
+        }
+
+        private async Task<LegacySubscriptionDto?> GetLegacySubscription(string type, string uid, string environment, CancellationToken cancellationToken = default)
+        {
+
+            var formData = new List<KeyValuePair<string, string>>
+            {
+                new KeyValuePair<string, string>("env", environment),
+                new KeyValuePair<string, string>("uid", uid),
+                new KeyValuePair<string, string>("type", type)
+            };
+            var content = new FormUrlEncodedContent(formData);
+
+            content.Headers.ContentType = new MediaTypeHeaderValue("application/x-www-form-urlencoded");
+
+            _httpClient.DefaultRequestHeaders.Add("x-api-key", _config["LegacySubscriptions:ApiKey"]);
+
+            var response = await _httpClient.PostAsync(ConstantValues.Subscriptions.SubscriptionsEndpoint, content);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                _log.LogError($"Failed to migrate categories. Status: {response.StatusCode}");
+                return null;
+            }
+
+            _log.LogTrace($"Got Response from migration endpoint {ConstantValues.Subscriptions.SubscriptionsEndpoint}");
+
+            var json = await response.Content.ReadAsStringAsync();
+
+            try
+            {
+                var jsonDeserialized = JsonSerializer.Deserialize<Dictionary<string, object>>(json, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+
+                if (jsonDeserialized == null)
+                {
+                    return null;
+                }
+
+                var levelDown = JsonSerializer.Serialize(jsonDeserialized.GetValueOrDefault(key: uid)); // serialize it to a string
+
+                var subscription = JsonSerializer.Deserialize<LegacySubscriptionDto>(levelDown, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                }); // deserialize into the object we want
+
+                return subscription;
+            }
+            catch (Exception ex)
+            {
+                _log.LogError($"Deserialization error: {ex.Message}");
+                return null;
+            }
+        }
     }
 }

@@ -1,20 +1,23 @@
-﻿using Microsoft.AspNetCore.Http.HttpResults;
+﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Routing;
-using System.Text;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Routing;
+using Microsoft.IdentityModel.Tokens;
 using QLN.Common.DTO_s;
-using Microsoft.AspNetCore.Builder;
-using static QLN.Common.Infrastructure.DTO_s.OtpDTO;
+using QLN.Common.Infrastructure.Constants;
+using QLN.Common.Infrastructure.CustomException;
+using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.EventLogger;
+using QLN.Common.Infrastructure.IService.IAuth;
 using QLN.Common.Infrastructure.IService.IAuthService;
 using QLN.Common.Infrastructure.Utilities;
-using QLN.Common.Infrastructure.DTO_s;
-using QLN.Common.Infrastructure.CustomException;
-using QLN.Common.Infrastructure.Constants;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 using System.Text.Json;
-using QLN.Common.Infrastructure.IService.IAuth;
+using static QLN.Common.Infrastructure.DTO_s.OtpDTO;
 
 
 namespace QLN.Common.Infrastructure.CustomEndpoints.User
@@ -37,7 +40,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.User
             {
                 try
                 {
-                    var result = await authService.Register(request, context);
+                    var result = await authService.Register(request);
                     return TypedResults.Ok(result); 
                 }
                 catch (VerificationRequiredException ex)
@@ -663,6 +666,59 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.User
              .WithTags("Manage Account")
              .WithSummary("Get user profile information")
              .WithDescription("Retrieves profile data using logged-in user's ID.")
+             .Produces<object>(StatusCodes.Status200OK)
+             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
+             .RequireAuthorization();
+
+            return group;
+        }
+
+        // get manageinfo
+        public static RouteGroupBuilder MapGetUserSyncEndpoint(this RouteGroupBuilder group)
+        {
+            group.MapGet("/sync", async Task<IResult>
+                (HttpContext context,
+                  [FromServices] IAuthService authService,
+                  [FromServices] IEventlogger log) =>
+            {
+                try
+                {
+                    var user = context.User.GetDrupalUserInfo(); // Extension method
+                    if (user == null)
+                    {
+                        return TypedResults.Unauthorized();
+                    }
+
+                    // Try parse the expiry time into a long
+                    long.TryParse(context.User.Claims.First(x => x.Type == JwtRegisteredClaimNames.Exp).Value, out var expiryDateTime);
+
+                    // convert this to a DateTime
+                    var expiry = EpochTime.DateTime(expiryDateTime);
+
+                    // initiate the UserSync function
+                    return await authService.UserSync(user, expiry);
+                }
+                catch(RegistrationValidationException ex)
+                {
+                    log.LogException(ex);
+                    return TypedResults.Problem(
+                        detail: $"Registration Issue: {ex.Message}",
+                        statusCode: StatusCodes.Status500InternalServerError);
+                }
+                catch (Exception ex)
+                {
+                    log.LogException(ex);
+                    return TypedResults.Problem(
+                        detail: "An unexpected error occurred. Please try again later.",
+                        statusCode: StatusCodes.Status500InternalServerError);
+                }
+            })
+             .WithName("UserSync")
+             .WithTags("Authentication")
+             .WithSummary("Sync user information")
+             .WithDescription("Creates user if not yet synchronised")
              .Produces<object>(StatusCodes.Status200OK)
              .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
              .Produces<ProblemDetails>(StatusCodes.Status404NotFound)

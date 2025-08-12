@@ -2,7 +2,7 @@ namespace QLN.ContentBO.WebUI.Models
 {
     public class ServiceAdPaymentSummaryDto
     {
-        public Guid AddId { get; set; }
+        public long AddId { get; set; }
         public string? AddTitle { get; set; }
         public string? UserName { get; set; }
         public string? EmailAddress { get; set; }

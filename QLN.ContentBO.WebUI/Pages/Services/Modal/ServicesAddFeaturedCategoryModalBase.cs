@@ -23,29 +23,35 @@ namespace QLN.ContentBO.WebUI.Pages.Services.Modal
         public string Title { get; set; } = "Add Seasonal Pick";
         protected DateRange? dateRange
         {
-            get => StartDate.HasValue && EndDate.HasValue ? new DateRange(StartDate, EndDate) : null;
+            get => StartDate.HasValue && EndDate.HasValue ? new DateRange(StartDate.Value, EndDate.Value) : null;
             set
             {
-                StartDate = value?.Start;
-                EndDate = value?.End;
+                if (value != null)
+                {
+                    var start = value.Start ?? DateTime.Today;
+                    var end = value.End ?? start;
+                    StartDate = start;
+                    EndDate = end;
+                }
+                StateHasChanged();
             }
         }
+        protected DateTime? StartDate { get; set; }
+        protected DateTime? EndDate { get; set; }
 
         protected List<CategoryTreeNode> _categoryTree = new();
         protected List<CategoryTreeNode> _subcategories = new();
         protected List<L1Category> _selectedL1Categories = new();
         protected bool IsLoadingCategories { get; set; } = true;
         protected string? featuredCategoryTitle;
-        protected string? SelectedCategoryId;
-        protected string? SelectedSubcategoryId;
+        protected long? SelectedCategoryId;
+        protected long? SelectedSubcategoryId;
         protected string SelectedCategory { get; set; } = string.Empty;
         protected string SelectedSubcategory { get; set; } = string.Empty;
         protected string ImagePreviewUrl { get; set; }
         protected string ImagePreviewWithoutBase64 { get; set; }
         protected ElementReference fileInput;
         [Parameter] public List<ServiceCategory> CategoryTrees { get; set; } = new();
-        protected DateTime? StartDate { get; set; } = DateTime.Today;
-        protected DateTime? EndDate { get; set; } = DateTime.Today;
         protected bool IsSubmitting { get; set; } = false;
         protected override async Task OnInitializedAsync()
         {
@@ -63,18 +69,20 @@ namespace QLN.ContentBO.WebUI.Pages.Services.Modal
                 IsLoadingCategories = false;
             }
         }
-        protected void OnCategoryChanged(string? categoryId)
+
+        protected void OnCategoryChanged(long? categoryId)
         {
-            SelectedCategoryId = categoryId?.ToString();
-            var selected = CategoryTrees.FirstOrDefault(c => c.Id.ToString() == categoryId);
-            SelectedCategory = selected?.Category;
-            _selectedL1Categories = selected?.L1Categories ?? new();
+            SelectedCategoryId = categoryId;
+            var selected = CategoryTrees.FirstOrDefault(c => c.Id == categoryId);
+            SelectedCategory = selected?.CategoryName;
+            _selectedL1Categories = selected?.Fields ?? new();
         }
-        protected void OnSubcategoryChanged(string? subcategoryId)
+        protected void OnSubcategoryChanged(long? subcategoryId)
         {
             SelectedSubcategoryId = subcategoryId;
-            var sub = _subcategories.FirstOrDefault(c => c.Id == subcategoryId);
-            SelectedSubcategory = sub?.Name ?? string.Empty;
+            var sub = _selectedL1Categories
+                    .FirstOrDefault(c => c.Id == subcategoryId);
+            SelectedSubcategory = sub?.CategoryName ?? string.Empty;
         }
         private async Task LoadCategoryTreesAsync()
         {
@@ -104,13 +112,16 @@ namespace QLN.ContentBO.WebUI.Pages.Services.Modal
         }
         protected bool IsFormValid()
         {
-            return !string.IsNullOrEmpty(SelectedCategoryId)
-                && !string.IsNullOrEmpty(SelectedSubcategoryId)
+            return SelectedCategoryId.HasValue
+                && SelectedCategoryId.Value != 0
+                && SelectedSubcategoryId.HasValue
+                && SelectedSubcategoryId.Value != 0
                 && !string.IsNullOrWhiteSpace(featuredCategoryTitle)
                 && StartDate.HasValue
                 && EndDate.HasValue
                 && !string.IsNullOrEmpty(ImagePreviewUrl);
         }
+
         protected void Close() => MudDialog.Cancel();
         protected async Task SaveAsync()
         {
@@ -123,9 +134,12 @@ namespace QLN.ContentBO.WebUI.Pages.Services.Modal
             var imageUrl = await UploadImageAsync(ImagePreviewWithoutBase64);
             var payload = new
             {
-                vertical = "services",
+                vertical = Vertical.Services,
+                title = featuredCategoryTitle,
                 categoryId = SelectedCategoryId,
                 categoryName = SelectedCategory,
+                l1categoryName = SelectedSubcategory,
+                l1CategoryId = SelectedSubcategoryId,
                 startDate = StartDate?.ToString("yyyy-MM-dd"),
                 endDate = EndDate?.ToString("yyyy-MM-dd"),
                 imageUrl = imageUrl

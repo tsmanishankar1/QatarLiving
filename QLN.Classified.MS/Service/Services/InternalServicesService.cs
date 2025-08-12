@@ -21,11 +21,13 @@ namespace QLN.Classified.MS.Service.Services
         public readonly QLClassifiedContext _dbContext;
         public readonly DaprClient _dapr;
         public readonly AuditLogger _auditLogger;
-        public InternalServicesService(DaprClient dapr, AuditLogger auditLogger, QLClassifiedContext dbContext)
+        public readonly QLSubscriptionContext _qLSubscriptionContext;
+        public InternalServicesService(DaprClient dapr, AuditLogger auditLogger, QLClassifiedContext dbContext, QLSubscriptionContext qLSubscriptionContext)
         {
             _dapr = dapr;
             _auditLogger = auditLogger;
             _dbContext = dbContext;
+            _qLSubscriptionContext = qLSubscriptionContext;
         }
         public async Task<List<CategoryDto>> GetAllCategories(string? vertical, string? subVertical, CancellationToken cancellationToken = default)
         {
@@ -185,7 +187,7 @@ namespace QLN.Classified.MS.Service.Services
                     _dbContext.Categories.Add(mainCategory);
                     await _dbContext.SaveChangesAsync(cancellationToken);
                 }
-                
+
                 if (dto.Fields != null && dto.Fields.Any())
                 {
                     foreach (var fieldDto in dto.Fields)
@@ -248,6 +250,7 @@ namespace QLN.Classified.MS.Service.Services
 
             return category;
         }
+
         public async Task<string> CreateServiceAd(string uid, string userName, ServiceDto dto, CancellationToken cancellationToken = default)
         {
             try
@@ -1095,5 +1098,180 @@ namespace QLN.Classified.MS.Service.Services
                 throw new ConflictException($"Ad '{currentAd.Title}' cannot be published. An active ad already exists in the same category by this user.");
             }
         }
+        public async Task<SubscriptionBudgetDto> GetSubscriptionBudgetsAsync(
+     Guid subscriptionId,
+     CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var subscription = await _qLSubscriptionContext.Subscriptions
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(s => s.SubscriptionId == subscriptionId
+                                           && (int)s.Vertical == 4, cancellationToken);
+
+                if (subscription == null)
+                {
+                    throw new ArgumentException(
+                        $"No subscription found with Id {subscriptionId} for vertical 4.");
+                }
+
+                if (subscription.Quota == null)
+                {
+                    throw new InvalidDataException("Subscription quota is empty.");
+                }
+
+                var quota = subscription.Quota;
+
+                var dto = new SubscriptionBudgetDto
+                {
+                    // Totals
+                    TotalAdsAllowed = quota.TotalAdsAllowed,
+                    TotalPromotionsAllowed = quota.TotalPromotionsAllowed,
+                    TotalFeaturesAllowed = quota.TotalFeaturesAllowed,
+                    DailyRefreshesAllowed = quota.DailyRefreshesAllowed,
+                    RefreshesPerAdAllowed = quota.RefreshesPerAdAllowed,
+                    SocialMediaPostsAllowed = quota.SocialMediaPostsAllowed,
+
+                    // Used
+                    AdsUsed = quota.AdsUsed,
+                    PromotionsUsed = quota.PromotionsUsed,
+                    FeaturesUsed = quota.FeaturesUsed,
+                    DailyRefreshesUsed = quota.DailyRefreshesUsed,
+                    RefreshesPerAdUsed = quota.RefreshesPerAdUsed,
+                    SocialMediaPostsUsed = quota.SocialMediaPostsUsed
+                };
+
+                return dto;
+            }
+            catch (ArgumentException) { throw; }
+            catch (InvalidDataException) { throw; }
+            catch (Exception ex)
+            {
+                throw new Exception("Error fetching subscription budgets", ex);
+            }
+        }
+        // public async Task<SubscriptionBudgetDto> GetSubscriptionBudgetsAsync(
+        //Guid subscriptionId,
+        //CancellationToken cancellationToken = default)
+        // {
+        //     try
+        //     {
+        //         // Hardcoded for testing
+        //         subscriptionId = Guid.Parse("48887e22-782a-4825-a0b6-bd27259ef554");
+
+        //         var subscription = await _qLSubscriptionContext.Subscriptions
+        //             .AsNoTracking()
+        //             .FirstOrDefaultAsync(s =>
+        //                 s.SubscriptionId == subscriptionId &&
+        //                 (int)s.Vertical == 4,
+        //                 cancellationToken);
+
+        //         if (subscription == null)
+        //         {
+        //             throw new ArgumentException(
+        //                 $"No subscription found with Id {subscriptionId} for vertical 4.");
+        //         }
+
+        //         if (subscription.Quota == null)
+        //         {
+        //             throw new InvalidDataException("Subscription quota is empty.");
+        //         }
+
+        //         var quota = subscription.Quota;
+
+        //         var dto = new SubscriptionBudgetDto
+        //         {
+        //             // Totals
+        //             TotalAdsAllowed = quota.TotalAdsAllowed,
+        //             TotalPromotionsAllowed = quota.TotalPromotionsAllowed,
+        //             TotalFeaturesAllowed = quota.TotalFeaturesAllowed,
+        //             DailyRefreshesAllowed = quota.DailyRefreshesAllowed,
+        //             RefreshesPerAdAllowed = quota.RefreshesPerAdAllowed,
+        //             SocialMediaPostsAllowed = quota.SocialMediaPostsAllowed,
+
+        //             // Used
+        //             AdsUsed = quota.AdsUsed,
+        //             PromotionsUsed = quota.PromotionsUsed,
+        //             FeaturesUsed = quota.FeaturesUsed,
+        //             DailyRefreshesUsed = quota.DailyRefreshesUsed,
+        //             RefreshesPerAdUsed = quota.RefreshesPerAdUsed,
+        //             SocialMediaPostsUsed = quota.SocialMediaPostsUsed
+        //         };
+
+        //         return dto;
+        //     }
+        //     catch (ArgumentException) { throw; }
+        //     catch (InvalidDataException) { throw; }
+        //     catch (Exception ex)
+        //     {
+        //         throw new Exception("Error fetching subscription budgets", ex);
+        //     }
+        // }
+
+
+
+        public async Task<SubscriptionBudgetDto> GetSubscriptionBudgetsAsyncBySubVertical(
+     Guid subscriptionIdFromToken,
+     int subverticalId,
+     CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var subscription = await _qLSubscriptionContext.Subscriptions
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(s =>
+                        s.SubscriptionId == subscriptionIdFromToken &&
+                        (int?)s.SubVertical == subverticalId,
+                        cancellationToken);
+
+                if (subscription == null)
+                {
+                    throw new ArgumentException(
+                        $"No subscription found with Id {subscriptionIdFromToken} for subvertical {subverticalId}.");
+                }
+
+                if (subscription.Quota == null)
+                {
+                    throw new InvalidDataException("Subscription quota is empty.");
+                }
+
+                var quota = subscription.Quota;
+
+                return new SubscriptionBudgetDto
+                {
+                    
+                    TotalAdsAllowed = quota.TotalAdsAllowed,
+                    TotalPromotionsAllowed = quota.TotalPromotionsAllowed,
+                    TotalFeaturesAllowed = quota.TotalFeaturesAllowed,
+                    DailyRefreshesAllowed = quota.DailyRefreshesAllowed,
+                    RefreshesPerAdAllowed = quota.RefreshesPerAdAllowed,
+                    SocialMediaPostsAllowed = quota.SocialMediaPostsAllowed,
+                    AdsUsed = quota.AdsUsed,
+                    PromotionsUsed = quota.PromotionsUsed,
+                    FeaturesUsed = quota.FeaturesUsed,
+                    DailyRefreshesUsed = quota.DailyRefreshesUsed,
+                    RefreshesPerAdUsed = quota.RefreshesPerAdUsed,
+                    SocialMediaPostsUsed = quota.SocialMediaPostsUsed
+                };
+            }
+            catch (ArgumentException)
+            {
+                throw;
+            }
+            catch (InvalidDataException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error fetching subscription budgets", ex);
+            }
+        }
+
+
+
+
+
+
     }
 }

@@ -4,7 +4,7 @@ namespace QLN.ContentBO.WebUI.Models
 {
     public class BulkModerationRequest
     {
-        public List<Guid> AdIds { get; set; } = new();
+        public List<long> AdIds { get; set; } = new();
         public BulkModerationAction Action { get; set; }
         public string? Reason { get; set; }
         public string? UpdatedBy { get; set; }

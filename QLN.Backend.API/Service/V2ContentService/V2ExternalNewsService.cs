@@ -10,6 +10,7 @@ using QLN.Common.Infrastructure.CustomException;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService.IContentService;
 using QLN.Common.Infrastructure.IService.IFileStorage;
+using QLN.Common.Infrastructure.IService.ISearchService;
 using System.Net;
 using System.Text;
 using System.Text.Json;
@@ -23,17 +24,50 @@ namespace QLN.Backend.API.Service.V2ContentService
         private readonly DaprClient _dapr;
         private readonly ILogger<V2ExternalNewsService> _logger;
         private readonly IFileStorageBlobService _blobStorage;
+        private readonly ISearchService _search;
 
         public V2ExternalNewsService(
             DaprClient dapr,
             ILogger<V2ExternalNewsService> logger,
-            IFileStorageBlobService blobStorage)
+            IFileStorageBlobService blobStorage,
+            ISearchService search)
         {
             _dapr = dapr;
             _logger = logger;
             _blobStorage = blobStorage;
+            _search = search;
         }
-       
+
+        private static V2NewsArticleDTO MapIndexToDto(ContentNewsIndex i)
+        {
+            _ = i ?? throw new ArgumentNullException(nameof(i));
+            Guid.TryParse(i.Id, out var id);
+
+            return new V2NewsArticleDTO
+            {
+                Id = id,
+                Title = i.Title,
+                Content = i.Content,
+                authorName = i.authorName,
+                CoverImageUrl = i.CoverImageUrl,
+                Slug = i.Slug,
+                UserId = i.UserId,
+                WriterTag = i.WriterTag,
+                PublishedDate = i.PublishedDate,
+                IsActive = i.IsActive,
+                CreatedBy = i.CreatedBy,
+                CreatedAt = i.CreatedAt,
+                UpdatedAt = i.UpdatedAt,
+                UpdatedBy = i.UpdatedBy,
+                Categories = i.Categories?.Select(c => new V2ArticleCategory
+                {
+                    CategoryId = c.CategoryId,
+                    SubcategoryId = c.SubcategoryId,
+                    SlotId = c.SlotId
+                }).ToList() ?? new()
+            };
+        }
+
         public async Task<string> CreateWritertagAsync(Writertag dto, CancellationToken cancellationToken)
         {
             try
@@ -137,81 +171,165 @@ namespace QLN.Backend.API.Service.V2ContentService
         }
 
         public async Task<PagedResponse<V2NewsArticleDTO>> GetAllNewsArticlesAsync(
-        int? page, int? perPage, string? search, CancellationToken cancellationToken = default)
+                    int? page, int? perPage, string? search, CancellationToken cancellationToken = default)
         {
-            try
-            {
-                var queryParams = new List<string>
-    {
-        $"page={page ?? 1}",
-        $"perPage={perPage ?? 12}",
-        $"search={Uri.EscapeDataString(search ?? "")}"
-    };
+            var currentPage = Math.Max(1, page ?? 1);
+            var pageSize = Math.Clamp(perPage ?? 12, 1, 100);
 
-                var url = $"/api/v2/news/news?{string.Join("&", queryParams)}";
-                return await _dapr.InvokeMethodAsync<PagedResponse<V2NewsArticleDTO>>(
-                    HttpMethod.Get,
-                    ConstantValues.V2Content.ContentServiceAppId,
-                    url,
-                    cancellationToken);
-            }
-            catch (Exception ex)
-            {
-                return null;
-            }
-        }
-
-        public async Task<List<V2NewsArticleDTO>> GetArticlesByCategoryIdAsync(int categoryId, CancellationToken cancellationToken)
-        {
-            var url = $"api/v2/news/categories/{categoryId}";
-            var response = await _dapr.InvokeMethodAsync<List<V2NewsArticleDTO>>(
-                HttpMethod.Get,
-                V2Content.ContentServiceAppId,
-                url,
+            var results = await _search.SearchRawAsync<ContentNewsIndex>(
+                ConstantValues.IndexNames.ContentNewsIndex,
+                new RawSearchRequest
+                {
+                    Filter = "IsActive eq true",
+                    OrderBy = "PublishedDate desc, CreatedAt desc",
+                    Top = pageSize,
+                    Skip = (currentPage - 1) * pageSize,
+                    Text = string.IsNullOrWhiteSpace(search) ? "*" : search!,
+                    IncludeTotalCount = true
+                },
                 cancellationToken
             );
-            return response;
+
+            var items = results.Items.Select(MapIndexToDto).ToList();
+
+            return new PagedResponse<V2NewsArticleDTO>
+            {
+                Page = currentPage,
+                PerPage = pageSize,
+                TotalCount = (int)results.TotalCount,   // <-- use total from Azure Search
+                Items = items
+            };
+        }
+        public async Task<List<V2NewsArticleDTO>> GetArticlesByCategoryIdAsync(int categoryId, CancellationToken cancellationToken)
+        {
+            var results = await _search.SearchRawAsync<ContentNewsIndex>(
+                ConstantValues.IndexNames.ContentNewsIndex,
+                new RawSearchRequest
+                {
+                    Filter = $"IsActive eq true and Categories/any(c: c/CategoryId eq {categoryId})",
+                    OrderBy = "PublishedDate desc, CreatedAt desc",
+                    Top = 100,
+                    Skip = 0,
+                    Text = "*",
+                    IncludeTotalCount = false
+                },
+                cancellationToken
+            );
+
+            return results.Items.Select(MapIndexToDto).ToList();
         }
 
         public async Task<List<V2NewsArticleDTO>> GetArticlesBySubCategoryIdAsync(
-    int categoryId,
-    int subCategoryId,
-    ArticleStatus status,
-    string? search,
-    int? page,
-    int? pageSize,
-    CancellationToken cancellationToken)
+            int categoryId,
+            int subCategoryId,
+            ArticleStatus status,
+            string? searchText,
+            int? page,
+            int? pageSize,
+            CancellationToken cancellationToken)
         {
-            var queryParams = new List<string>();
-            if (status != ArticleStatus.None)
-                queryParams.Add($"status={(int)status}");
-            if (page.HasValue) queryParams.Add($"page={page.Value}");
-            if (pageSize.HasValue) queryParams.Add($"pageSize={pageSize.Value}");
+            string slotPredicate = status switch
+            {
+                ArticleStatus.Published => "c/SlotId eq 14",
+                ArticleStatus.Unpublished => "c/SlotId eq 15",
+                ArticleStatus.Live => "c/SlotId ge 1 and c/SlotId le 13",
+                _ => "c/SlotId ge 1"
+            };
 
-            if (!string.IsNullOrWhiteSpace(search))
-                queryParams.Add($"search={Uri.EscapeDataString(search)}");
+            var p = Math.Max(1, page ?? 1);
+            var ps = Math.Clamp(pageSize ?? 50, 1, 200);
 
-            var query = queryParams.Count > 0 ? "?" + string.Join("&", queryParams) : string.Empty;
-            var url = $"api/v2/news/categories/{categoryId}/sub/{subCategoryId}{query}";
+            var results = await _search.SearchRawAsync<ContentNewsIndex>(
+                ConstantValues.IndexNames.ContentNewsIndex,
+                new RawSearchRequest
+                {
+                    Filter = $"IsActive eq true and Categories/any(c: c/CategoryId eq {categoryId} and c/SubcategoryId eq {subCategoryId} and {slotPredicate})",
+                    // CASE WHEN isn’t supported in Azure Search order by; use your computed fields if needed.
+                    OrderBy = "PublishedDate desc, CreatedAt desc",
+                    Top = ps,
+                    Skip = (p - 1) * ps,
+                    Text = string.IsNullOrWhiteSpace(searchText) ? "*" : searchText!,
+                    IncludeTotalCount = false
+                },
+                cancellationToken
+            );
 
+            var dtos = results.Items.Select(MapIndexToDto).ToList();
+            foreach (var dto in dtos)
+            {
+                dto.Categories = dto.Categories
+                    .Where(c => c.CategoryId == categoryId && c.SubcategoryId == subCategoryId)
+                    .ToList();
+            }
+            return dtos;
+        }
+
+        public async Task<V2NewsArticleDTO?> GetArticleByIdAsync(Guid id, CancellationToken cancellationToken = default)
+        {
             try
             {
-                var response = await _dapr.InvokeMethodAsync<List<V2NewsArticleDTO>>(
-                    HttpMethod.Get,
-                    V2Content.ContentServiceAppId,
-                    url,
-                    cancellationToken
-                );
-
-                return response ?? new();
+                var doc = await _search.GetByIdAsync<ContentNewsIndex>(ConstantValues.IndexNames.ContentNewsIndex, id.ToString());
+                return doc is null ? null : MapIndexToDto(doc);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error invoking method from content service");
+                _logger.LogError(ex, "Error reading article by id {Id} from Azure Search", id);
                 throw;
             }
         }
 
+        public async Task<V2NewsArticleDTO?> GetArticleBySlugAsync(string slug, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var req = new CommonSearchRequest
+                {
+                    Text = "*",
+                    PageNumber = 1,
+                    PageSize = 1,
+                    Filters = new Dictionary<string, object>
+                    {
+                        ["IsActive"] = true,
+                        ["Slug"] = slug
+                    }
+                };
+
+                var res = await _search.SearchAsync(ConstantValues.IndexNames.ContentNewsIndex, req);
+                var doc = res.ContentNewsItems?.FirstOrDefault();
+                return doc is null ? null : MapIndexToDto(doc);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error reading article by slug {Slug} from Azure Search", slug);
+                throw;
+            }
+        }
+
+        public async Task<List<V2NewsArticleDTO>> GetAllNewsFilterArticles(bool? isActive, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var filters = new Dictionary<string, object>();
+                if (isActive.HasValue) filters["IsActive"] = isActive.Value;
+
+                var req = new CommonSearchRequest
+                {
+                    Text = "*",
+                    PageNumber = 1,
+                    PageSize = 1000,
+                    OrderBy = "PublishedDate desc",
+                    Filters = filters
+                };
+
+                var res = await _search.GetAllAsync(ConstantValues.IndexNames.ContentNewsIndex, req);
+                return (res.ContentNewsItems ?? new List<ContentNewsIndex>()).Select(MapIndexToDto).ToList();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error reading filtered news list from Azure Search");
+                throw;
+            }
+        }
         public async Task<string> UpdateNewsArticleAsync(V2NewsArticleDTO dto, CancellationToken cancellationToken)
         {
             try
@@ -290,35 +408,6 @@ namespace QLN.Backend.API.Service.V2ContentService
             }
         }
 
-        public async Task<List<V2NewsArticleDTO>> GetAllNewsFilterArticles(bool? isActive, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                // Build URL with query string
-                string queryParam = isActive.HasValue ? $"?isActive={isActive.Value.ToString().ToLower()}" : string.Empty;
-                var url = $"/api/v2/news/filterbystatus{queryParam}";
-
-                var request = _dapr.CreateInvokeMethodRequest(
-                    HttpMethod.Get,
-                    ConstantValues.V2Content.ContentServiceAppId, // Your News service's Dapr App ID
-                    url);
-
-                var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
-                response.EnsureSuccessStatusCode();
-
-                var rawJson = await response.Content.ReadAsStringAsync();
-
-                return JsonSerializer.Deserialize<List<V2NewsArticleDTO>>(rawJson, new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true
-                }) ?? throw new Exception("Failed to deserialize filtered articles.");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error calling GetNewsArticlesByIsActiveAsync");
-                throw;
-            }
-        }
         public async Task<string> DeleteTagName(Guid id, CancellationToken cancellationToken = default)
         {
             var url = $"/api/v2/news/tag/{id}";
@@ -429,56 +518,6 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw;
             }
         }
-        public async Task<V2NewsArticleDTO?> GetArticleByIdAsync(Guid id, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var url = $"/api/v2/news/getbyid/{id}";
-
-                return await _dapr.InvokeMethodAsync<V2NewsArticleDTO>(
-                    HttpMethod.Get,
-                    ConstantValues.V2Content.ContentServiceAppId,
-                    url,
-                    cancellationToken);
-            }
-            catch (InvocationException ex) when (ex.Response?.StatusCode == System.Net.HttpStatusCode.NotFound)
-            {
-                return null;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error retrieving news article for Id: {Id}", id);
-                throw;
-            }
-        }
-
-        public async Task<V2NewsArticleDTO?> GetArticleBySlugAsync(string slug, CancellationToken cancellationToken)
-        {
-            var url = $"/api/v2/news/getbyslug/{slug}";
-            var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Get, ConstantValues.V2Content.ContentServiceAppId, url);
-
-            var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
-
-            if (response.StatusCode == HttpStatusCode.NotFound)
-            {
-                // Return null if not found (optional: log or track)
-                return null;
-            }
-
-            if (!response.IsSuccessStatusCode)
-            {
-                var errorContent = await response.Content.ReadAsStringAsync(cancellationToken);
-                throw new Exception($"Failed to fetch article. Status: {response.StatusCode}, Body: {errorContent}");
-            }
-
-            var rawJson = await response.Content.ReadAsStringAsync(cancellationToken);
-
-            return JsonSerializer.Deserialize<V2NewsArticleDTO>(rawJson, new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true
-            });
-        }
-
 
         public async Task AddCategoryAsync(V2NewsCategory category, CancellationToken cancellationToken = default)
         {
@@ -673,31 +712,140 @@ namespace QLN.Backend.API.Service.V2ContentService
                 };
             }
         }
-        public async Task<GenericNewsPageResponse> GetNewsLandingPageAsync(
-         int categoryId,
-         int subCategoryId,
-         CancellationToken cancellationToken = default
-     )
+        private async Task<List<ContentNewsIndex>> FetchSinglePerSlotRange(
+                    int categoryId, int subCategoryId, int start, int end, CancellationToken cancellationToken)
         {
-            var url = $"/api/v2/news/landing?categoryId={categoryId}&subCategoryId={subCategoryId}";
-            try
+            string CatSlotFilter(int catId, int subId, int slot) =>
+                $"IsActive eq true and Categories/any(c: c/CategoryId eq {catId} and c/SubcategoryId eq {subId} and c/SlotId eq {slot})";
+
+            var acc = new List<ContentNewsIndex>();
+            for (int s = start; s <= end; s++)
             {
-                return await _dapr.InvokeMethodAsync<GenericNewsPageResponse>(
-                    HttpMethod.Get,
-                    ConstantValues.V2Content.ContentServiceAppId,
-                    url,
-                    cancellationToken);
+                var res = await _search.SearchRawAsync<ContentNewsIndex>(
+                    ConstantValues.IndexNames.ContentNewsIndex,
+                    new RawSearchRequest
+                    {
+                        Filter = CatSlotFilter(categoryId, subCategoryId, s),
+                        OrderBy = "PublishedDate desc, CreatedAt desc",
+                        Top = 3,
+                        Skip = 0,
+                        Text = "*",
+                        IncludeTotalCount = false
+                    },
+                    cancellationToken
+                );
+                if (res.Items.Count > 0) acc.Add(res.Items[0]);
             }
-            catch (OperationCanceledException)
+            return acc;
+        }
+
+        public async Task<GenericNewsPageResponse> GetNewsLandingPageAsync(
+            int categoryId,
+            int subCategoryId,
+            CancellationToken cancellationToken = default)
+        {
+            var categoryDto = await GetCategoryByIdAsync(categoryId, cancellationToken)
+                ?? throw new KeyNotFoundException($"Category {categoryId} not found");
+            var subDto = categoryDto.SubCategories?.FirstOrDefault(s => s.Id == subCategoryId)
+                ?? throw new KeyNotFoundException($"SubCategory {subCategoryId} not found");
+
+            string catKey = (categoryDto.CategoryName ?? $"cat_{categoryId}").ToLowerInvariant().Replace(" ", "_");
+            string subKey = (subDto.SubCategoryName ?? $"sub_{subCategoryId}").ToLowerInvariant().Replace(" ", "_");
+            string pageName = $"qln_{catKey}_{subKey}";
+
+            var slot1to4 = await FetchSinglePerSlotRange(categoryId, subCategoryId, 1, 4, cancellationToken);
+            var slot5to8 = await FetchSinglePerSlotRange(categoryId, subCategoryId, 5, 8, cancellationToken);
+            var slot9to13 = await FetchSinglePerSlotRange(categoryId, subCategoryId, 9, 13, cancellationToken);
+
+            string CatSlotFilter(int catId, int subId, int slot) =>
+                $"IsActive eq true and Categories/any(c: c/CategoryId eq {catId} and c/SubcategoryId eq {subId} and c/SlotId eq {slot})";
+
+            var slot14Filter = CatSlotFilter(categoryId, subCategoryId, 14);
+
+            var slot14Top4 = await _search.SearchRawAsync<ContentNewsIndex>(
+                ConstantValues.IndexNames.ContentNewsIndex,
+                new RawSearchRequest
+                {
+                    Filter = slot14Filter,
+                    OrderBy = "PublishedDate desc, CreatedAt desc",
+                    Top = 4,
+                    Skip = 0,
+                    Text = "*",
+                    IncludeTotalCount = false
+                },
+                cancellationToken
+            );
+
+            var slot14Rest = await _search.SearchRawAsync<ContentNewsIndex>(
+                ConstantValues.IndexNames.ContentNewsIndex,
+                new RawSearchRequest
+                {
+                    Filter = slot14Filter,
+                    OrderBy = "PublishedDate desc, CreatedAt desc",
+                    Top = 100,
+                    Skip = 4,
+                    Text = "*",
+                    IncludeTotalCount = false
+                },
+                cancellationToken
+            );
+
+            List<Common.Infrastructure.DTO_s.ContentPost> MapToPosts(IEnumerable<ContentNewsIndex> list)
+                => list.Select(i =>
+                {
+                    Guid.TryParse(i.Id, out var gid);
+                    return new Common.Infrastructure.DTO_s.ContentPost
+                    {
+                        Id = gid,
+                        Nid = i.Id,
+                        DateCreated = (i.CreatedAt == default ? DateTime.UtcNow : i.CreatedAt).ToString("o"),
+                        ImageUrl = i.CoverImageUrl,
+                        UserName = i.authorName,
+                        Title = i.Title,
+                        WriterTag = i.WriterTag,
+                        Description = i.Content,
+                        Category = categoryDto.CategoryName,
+                        NodeType = "post",
+                        IsActive = i.IsActive,
+                        Slug = i.Slug,
+                        CreatedAt = i.CreatedAt,
+                        UpdatedAt = i.UpdatedAt
+                    };
+                }).ToList();
+
+            Common.Infrastructure.DTO_s.BaseQueueResponse<Common.Infrastructure.DTO_s.ContentPost> BuildQueue(
+                string sectionKey, string label, IEnumerable<Common.Infrastructure.DTO_s.ContentPost> items)
             {
-                _logger.LogInformation("GetNewsLandingPageAsync was cancelled by caller.");
-                throw;
+                var qName = $"{pageName}_{sectionKey}";
+                var list = items.ToList();
+                list.ForEach(p =>
+                {
+                    p.PageName = pageName;
+                    p.QueueName = qName;
+                    p.QueueLabel = label;
+                });
+                return new Common.Infrastructure.DTO_s.BaseQueueResponse<Common.Infrastructure.DTO_s.ContentPost>
+                {
+                    QueueLabel = label,
+                    Items = list
+                };
             }
-            catch (Exception ex)
+
+            var page = new Common.Infrastructure.DTO_s.GenericNewsPage
             {
-                _logger.LogError(ex, "Error calling content service for landing page");
-                throw new ApplicationException("Failed to retrieve news landing page. See inner exception for details.", ex);
-            }
+                TopStory = BuildQueue("top_story", "Top Story", MapToPosts(slot1to4)),
+                MoreArticles = BuildQueue("more_articles", "More Articles", MapToPosts(slot5to8)),
+                Articles1 = BuildQueue("articles_1", "Articles 1", MapToPosts(slot9to13)),
+                Articles2 = BuildQueue("articles_2", "Articles 2", MapToPosts(slot14Rest.Items)),
+                MostPopularArticles = BuildQueue("most_popular_articles", "Most Popular Articles", MapToPosts(slot14Top4.Items)),
+                WatchOnQatarLiving = new Common.Infrastructure.DTO_s.BaseQueueResponse<Common.Infrastructure.DTO_s.ContentVideo>
+                {
+                    QueueLabel = "Watch on Qatar Living",
+                    Items = Enumerable.Empty<Common.Infrastructure.DTO_s.ContentVideo>().ToList()
+                }
+            };
+
+            return new GenericNewsPageResponse { News = page };
         }
         public async Task<NewsCommentApiResponse> EditNewsCommentAsync(string articleId, Guid commentId, string userId, string updatedText, CancellationToken ct = default)
         {
@@ -745,6 +893,11 @@ namespace QLN.Backend.API.Service.V2ContentService
         }
 
         public Task<string> BulkMigrateNewsArticleAsync(List<V2NewsArticleDTO> articles, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<string> MigrateNewsArticleAsync(V2NewsArticleDTO article, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }

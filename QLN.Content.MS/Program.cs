@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http.HttpResults;
+﻿using Dapr;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.OpenApi.Models;
 using QLN.Common.DTO_s;
@@ -15,6 +16,7 @@ using QLN.Content.MS.Service.DailyInternalService;
 using QLN.Content.MS.Service.EventInternalService;
 using QLN.Content.MS.Service.NewsInternalService;
 using QLN.Content.MS.Service.ReportInternalService;
+using static QLN.Common.Infrastructure.Constants.ConstantValues;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
@@ -63,6 +65,10 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.UseCloudEvents();
+app.MapSubscribeHandler();
+
 var eventGroup = app.MapGroup("/api/v2/event");
 eventGroup.MapEventEndpoints();
 var foEventGroup = app.MapGroup("/api/v2/fo/event");
@@ -81,12 +87,14 @@ communityPostGroup.MapCommunityPostEndpoints();
 var bannerPostGroup = app.MapGroup("/api/v2/banner");
 bannerPostGroup.MapBannerPostEndpoints();
 
-app.MapPost("/api/v2/news/bulkMigrate", async Task<Results<
+app.MapPost("/api/v2/news/bulkMigrate", 
+    [Topic(PubSubName, PubSubTopics.ArticlesMigration)] 
+        async Task<Results<
              Ok<string>,
              BadRequest<ProblemDetails>,
              ProblemHttpResult>>
          (
-             List<V2NewsArticleDTO> articles,
+             V2NewsArticleDTO article,
              IV2NewsService service,
              CancellationToken cancellationToken
          ) =>
@@ -94,7 +102,7 @@ app.MapPost("/api/v2/news/bulkMigrate", async Task<Results<
     try
     {
 
-        var result = await service.BulkMigrateNewsArticleAsync(articles, cancellationToken);
+        var result = await service.MigrateNewsArticleAsync(article, cancellationToken);
 
         return TypedResults.Ok(result);
     }
@@ -114,19 +122,21 @@ app.MapPost("/api/v2/news/bulkMigrate", async Task<Results<
 }).ExcludeFromDescription()
 .WithName("BulkMigrateNews")
 .WithTags("News")
-.WithSummary("Bulk Migrate News Articles")
-.WithDescription("Bulk Migrate News Articles")
+.WithSummary("Bulk Migrate News Article")
+.WithDescription("Bulk Migrate News Article")
 .Produces<string>(StatusCodes.Status200OK)
 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-app.MapPost("/api/v2/events/bulkMigrate", async Task<Results<
+app.MapPost("/api/v2/events/bulkMigrate",
+    [Topic(PubSubName, PubSubTopics.EventsMigration)] 
+            async Task<Results<
             Ok<string>,
             ForbidHttpResult,
             BadRequest<ProblemDetails>,
             ProblemHttpResult>>
             (
-            List<V2Events> events,
+            V2Events dto,
             IV2EventService service,
             HttpContext httpContext,
             CancellationToken cancellationToken
@@ -134,7 +144,7 @@ app.MapPost("/api/v2/events/bulkMigrate", async Task<Results<
  {
      try
      {
-         var result = await service.BulkMigrateEvents(events, cancellationToken);
+         var result = await service.MigrateEvent(dto, cancellationToken);
          return TypedResults.Ok(result);
      }
      catch (Exception ex)
@@ -150,12 +160,14 @@ app.MapPost("/api/v2/events/bulkMigrate", async Task<Results<
 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-app.MapPost("/api/v2/community/bulkMigrate", async Task<Results<
+app.MapPost("/api/v2/community/bulkMigrate",
+    [Topic(PubSubName, PubSubTopics.PostsMigration)] 
+                async Task<Results<
                 Ok<string>,
                 BadRequest<ProblemDetails>,
                 ProblemHttpResult>>
             (
-                List<V2CommunityPostDto> posts,
+                V2CommunityPostDto post,
                 IV2CommunityPostService service,
                 CancellationToken ct
             ) =>
@@ -163,7 +175,7 @@ app.MapPost("/api/v2/community/bulkMigrate", async Task<Results<
      try
      {
 
-         var result = await service.BulkMigrateCommunityPostsAsync(posts, ct);
+         var result = await service.MigrateCommunityPostAsync(post, ct);
          return TypedResults.Ok(result);
      }
      catch (Exception ex)

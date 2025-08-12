@@ -110,6 +110,11 @@ namespace QLN.Common.Infrastructure.Constants
         public static class PubSubTopics
         {
             public const string IndexUpdates = "index-updates";
+            public const string ArticlesMigration = "articles-migration";
+            public const string EventsMigration = "events-migration";
+            public const string PostsMigration = "posts-migration";
+            public const string ItemsMigration = "items-migration";
+            public const string CollectablesMigration = "collectables-migration";
         }
         public static class Verticals
         {
@@ -154,6 +159,11 @@ namespace QLN.Common.Infrastructure.Constants
             public const string CompanyStoreName = "companystatestore";
             public const string CompanyIndexKey = "company-index";
             public const string CompanyServiceAppId = "qln-company-ms";
+        }
+
+        public static class Subscriptions
+        {
+            public const string SubscriptionsEndpoint = "http://ql-migrate.westeurope.cloudapp.azure.com/subscriptions.php";
         }
     }
 }

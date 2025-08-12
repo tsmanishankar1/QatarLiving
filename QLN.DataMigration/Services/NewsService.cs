@@ -1,4 +1,5 @@
 ﻿using Dapr.Client;
+using FirebaseAdmin.Messaging;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.DTO_s;
@@ -53,6 +54,26 @@ namespace QLN.DataMigration.Services
                 _logger.LogError(ex, "Error creating news article via external service");
                 throw;
             }
+        }
+
+        public async Task<string> MigrateNewsArticleAsync(V2NewsArticleDTO article, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                await _dapr.PublishEventAsync(
+                            pubsubName: ConstantValues.PubSubName,
+                            topicName: ConstantValues.PubSubTopics.ArticlesMigration,
+                            data: article,
+                            cancellationToken: cancellationToken
+                        );
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error publishing article {article.Id} to {ConstantValues.PubSubTopics.ArticlesMigration} topic");
+                throw;
+            }
+
+            return $"Published article {article.Id} to {ConstantValues.PubSubTopics.ArticlesMigration} topic";
         }
 
         public async Task<string> CreateNewsArticleAsync(string userId, V2NewsArticleDTO dto, CancellationToken cancellationToken = default)
