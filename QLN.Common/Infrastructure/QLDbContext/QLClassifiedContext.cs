@@ -4,6 +4,7 @@ using QLN.Common.DTO_s.ClassifiedsFo;
 using QLN.Common.Infrastructure.Model;
 
 
+
 namespace QLN.Common.Infrastructure.QLDbContext
 {
     public class QLClassifiedContext : DbContext
@@ -13,6 +14,7 @@ namespace QLN.Common.Infrastructure.QLDbContext
         {
         }
         public DbSet<StoresSubscriptionDto> StoresSubscriptions { get; set; }
+        public DbSet<ViewStoresSubscription> ViewStoresSubscriptions { get; set; }
         public DbSet<StoreStatus> StoreStatuses { get; set; }
         public DbSet<StoreProducts> StoreProduct { get; set; }
         public DbSet<ProductFeatures> ProductFeature { get; set; }
@@ -126,6 +128,50 @@ namespace QLN.Common.Infrastructure.QLDbContext
                 entity.Property(e => e.SubscriptionType).HasColumnName("ProductName");
                 entity.Property(e => e.CompanyName).HasColumnName("CompanyName");
                 entity.Property(e => e.ProductCount).HasColumnName("ProductCount");
+            });
+            modelBuilder.Entity<ViewStoresSubscription>(entity =>
+            {
+                entity.HasNoKey();
+                entity.ToSqlQuery(@"
+        SELECT comp.""Id"" as ""CompanyId"",
+               subs.""SubscriptionId"",
+               subs.""ProductName"" as ""SubscriptionType"",
+               subs.""UserId"",
+               comp.""UserName"",
+               comp.""PhoneNumber"" as ""Mobile"",
+               comp.""WhatsAppNumber"" as ""Whatsapp"",
+               comp.""WebsiteUrl"" as ""WebUrl"",
+               comp.""Email"",
+               comp.""Status"",
+               comp.""CompanyName"",
+               subs.""StartDate"",
+               subs.""EndDate"",
+               pay.""PaymentId"" as ""OrderId"",
+               pay.""Fee"" as ""Amount""
+        FROM public.""Subscriptions"" AS subs
+        INNER JOIN public.""Companies"" AS comp
+            ON subs.""CompanyId"" = comp.""Id""
+        INNER JOIN public.""Payments"" AS pay
+            ON subs.""PaymentId"" = pay.""PaymentId""
+        WHERE subs.""Vertical"" = 3
+          AND subs.""SubVertical"" = 3
+    ");
+
+                entity.Property(e => e.CompanyId).HasColumnName("CompanyId");
+                entity.Property(e => e.SubscriptionId).HasColumnName("SubscriptionId");
+                entity.Property(e => e.SubscriptionType).HasColumnName("SubscriptionType");
+                entity.Property(e => e.UserId).HasColumnName("UserId");
+                entity.Property(e => e.UserName).HasColumnName("UserName");
+                entity.Property(e => e.Mobile).HasColumnName("Mobile");
+                entity.Property(e => e.Whatsapp).HasColumnName("Whatsapp");
+                entity.Property(e => e.WebUrl).HasColumnName("WebUrl");
+                entity.Property(e => e.Email).HasColumnName("Email");
+                entity.Property(e => e.Status).HasColumnName("Status");
+                entity.Property(e => e.CompanyName).HasColumnName("CompanyName");
+                entity.Property(e => e.StartDate).HasColumnName("StartDate");
+                entity.Property(e => e.EndDate).HasColumnName("EndDate");
+                entity.Property(e => e.OrderId).HasColumnName("OrderId");
+                entity.Property(e => e.Amount).HasColumnName("Amount");
             });
 
             base.OnModelCreating(modelBuilder);
