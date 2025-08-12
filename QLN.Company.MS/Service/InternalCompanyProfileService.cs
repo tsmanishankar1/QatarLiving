@@ -527,6 +527,7 @@ namespace QLN.Company.MS.Service
                               join s in subscriptions on c.Id equals s.CompanyId
                               select new CompanySubscriptionDto
                               {
+                                  CompanyId = c.Id,
                                   CompanyName = c.CompanyName,
                                   Email = c.Email,
                                   Mobile = c.PhoneNumber,
