@@ -490,6 +490,114 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
+        public async Task<Items> GetItemAdBySlug(string slug, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(slug))
+                throw new ArgumentException("Slug must not be null or empty.", nameof(slug));
+
+            try
+            {
+                var result = await _dapr.InvokeMethodAsync<Items>(
+                    HttpMethod.Get,
+                    SERVICE_APP_ID,
+                    $"api/classifieds/items/slug/{slug}",
+                    cancellationToken);
+
+                return result;
+            }
+            catch (InvocationException ex)
+            {
+                _log.LogException(ex);
+                throw new InvalidOperationException($"Failed to retrieve ad details for Slug: {slug} from classified microservice.", ex);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                _log.LogException(ex);
+                throw new KeyNotFoundException($"Ad with Slug '{slug}' does not exist.");
+            }
+        }
+
+        public async Task<Preloveds> GetPrelovedAdBySlug(string slug, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(slug))
+                throw new ArgumentException("Slug must not be null or empty.", nameof(slug));
+
+            try
+            {
+                var result = await _dapr.InvokeMethodAsync<Preloveds>(
+                    HttpMethod.Get,
+                    SERVICE_APP_ID,
+                    $"api/classifieds/preloved/slug/{slug}",
+                    cancellationToken);
+
+                return result;
+            }
+            catch (InvocationException ex)
+            {
+                _log.LogException(ex);
+                throw new InvalidOperationException($"Failed to retrieve ad details for Slug: {slug} from classified microservice.", ex);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                _log.LogException(ex);
+                throw new KeyNotFoundException($"Ad with Slug '{slug}' does not exist.");
+            }
+        }
+
+        public async Task<Collectibles> GetCollectiblesAdBySlug(string slug, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(slug))
+                throw new ArgumentException("Slug must not be null or empty.", nameof(slug));
+
+            try
+            {
+                var result = await _dapr.InvokeMethodAsync<Collectibles>(
+                    HttpMethod.Get,
+                    SERVICE_APP_ID,
+                    $"api/classifieds/collectibles/slug/{slug}",
+                    cancellationToken);
+
+                return result;
+            }
+            catch (InvocationException ex)
+            {
+                _log.LogException(ex);
+                throw new InvalidOperationException($"Failed to retrieve ad details for Slug: {slug} from classified microservice.", ex);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                _log.LogException(ex);
+                throw new KeyNotFoundException($"Ad with Slug '{slug}' does not exist.");
+            }
+        }
+
+        public async Task<Deals> GetDealsAdBySlug(string slug, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(slug))
+                throw new ArgumentException("Slug must not be null or empty.", nameof(slug));
+
+            try
+            {
+                var result = await _dapr.InvokeMethodAsync<Deals>(
+                    HttpMethod.Get,
+                    SERVICE_APP_ID,
+                    $"api/classifieds/deals/slug/{slug}",
+                    cancellationToken);
+
+                return result;
+            }
+            catch (InvocationException ex)
+            {
+                _log.LogException(ex);
+                throw new InvalidOperationException($"Failed to retrieve ad details for Slug: {slug} from classified microservice.", ex);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                _log.LogException(ex);
+                throw new KeyNotFoundException($"Ad with Slug '{slug}' does not exist.");
+            }
+        }
+
         public async Task<List<Items>> GetAllItemsAdByUser(string userId, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(userId))

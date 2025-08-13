@@ -242,5 +242,20 @@ namespace QLN.DataMigration.Services
         {
             throw new NotImplementedException();
         }
+
+        public Task<Items> GetItemAdBySlug(string slug, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<Preloveds> GetPrelovedAdBySlug(string slug, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<Collectibles> GetCollectiblesAdBySlug(string slug, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
