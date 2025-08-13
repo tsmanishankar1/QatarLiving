@@ -1645,6 +1645,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                     );
                 }
             })
+            .AllowAnonymous()
             .WithName($"GetFeatured_{ConstantValues.Verticals.Services}_Items")
             .WithTags("Service")
             .WithSummary("Get all featured service items")

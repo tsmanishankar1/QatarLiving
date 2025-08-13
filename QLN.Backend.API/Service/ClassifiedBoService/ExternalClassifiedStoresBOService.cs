@@ -36,12 +36,12 @@ namespace QLN.Backend.API.Service.ClassifiedBoService
             _searchService = searchService;
         }
 
-        public async Task<ClassifiedBOPageResponse<StoresSubscriptionDto>> getStoreSubscriptions(string? subscriptionType, string? filterDate, int? Page, int? PageSize, string? Search, CancellationToken cancellationToken = default)
+        public async Task<ClassifiedBOPageResponse<ViewStoresSubscriptionDto>> getStoreSubscriptions(string? subscriptionType, string? filterDate, int? Page, int? PageSize, string? Search, CancellationToken cancellationToken = default)
         {
             try
             {
                 var queryParams = $"?subscriptionType={subscriptionType}&filterDate={filterDate}&Page={Page}&PageSize={PageSize}&Search={Search}";
-                var response = await _dapr.InvokeMethodAsync<ClassifiedBOPageResponse<StoresSubscriptionDto>>(
+                var response = await _dapr.InvokeMethodAsync<ClassifiedBOPageResponse<ViewStoresSubscriptionDto>>(
                     HttpMethod.Get,
                     SERVICE_APP_ID,
 
@@ -49,7 +49,7 @@ namespace QLN.Backend.API.Service.ClassifiedBoService
                     cancellationToken
                 );
 
-                return response ?? new ClassifiedBOPageResponse<StoresSubscriptionDto>();
+                return response ?? new ClassifiedBOPageResponse<ViewStoresSubscriptionDto>();
             }
             catch (Exception ex)
             {
