@@ -609,7 +609,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
         }
         public static RouteGroupBuilder MapServiceGetBySlugEndpoint(this RouteGroupBuilder group)
         {
-            group.MapGet("/getbyslug", async Task<Results<Ok<Services>, NotFound<ProblemDetails>, ProblemHttpResult>> (
+            group.MapGet("/getbyslug/{slug}", async Task<Results<Ok<Services>, NotFound<ProblemDetails>, ProblemHttpResult>> (
                 string? slug,
                 IServices service,
                 CancellationToken cancellationToken) =>
