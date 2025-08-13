@@ -33,6 +33,24 @@ namespace QLN.ContentBO.WebUI.Services
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
+        public async Task<HttpResponseMessage> GetAllClassifiedsCategories(Vertical vertical, SubVertical subVertical)
+        {
+            try
+            {
+                var request = new HttpRequestMessage(
+                HttpMethod.Get,
+                $"api/service/getallcategories?vertical={vertical}&subVertical={subVertical}"
+                );
+
+                var response = await _httpClient.SendAsync(request);
+                return response;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "GetServicesCategories");
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
         public async Task<HttpResponseMessage> GetPaginatedP2PListing(
         string? sortBy = null,
         string? search = null,
@@ -262,32 +280,16 @@ namespace QLN.ContentBO.WebUI.Services
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
-        public async Task<HttpResponseMessage> GetAllCompaniesAsync(
-    bool? isBasicProfile = null,
-    int? status = null,
-    int? vertical = null,
-    int? subVertical = null)
+        public async Task<HttpResponseMessage> GetAllCompaniesAsync(object payload)
         {
             try
             {
-                var queryParams = new List<string>();
-
-                if (isBasicProfile.HasValue)
-                    queryParams.Add($"isBasicProfile={isBasicProfile.Value.ToString().ToLower()}");
-
-                if (status.HasValue)
-                    queryParams.Add($"status={status.Value}");
-
-                if (vertical.HasValue)
-                    queryParams.Add($"vertical={vertical.Value}");
-
-                if (subVertical.HasValue)
-                    queryParams.Add($"subVertical={subVertical.Value}");
-
-                var queryString = queryParams.Count > 0 ? "?" + string.Join("&", queryParams) : string.Empty;
-
-                var request = new HttpRequestMessage(HttpMethod.Get, $"api/companyprofile/getallcompanies{queryString}");
-
+                var json = JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true });
+                var request = new HttpRequestMessage(HttpMethod.Post, "api/companyprofile/getallcompanies")
+                {
+                    Content = new StringContent(json, Encoding.UTF8, "application/json")
+                };
+                
                 var response = await _httpClient.SendAsync(request);
                 return response;
             }
@@ -297,6 +299,7 @@ namespace QLN.ContentBO.WebUI.Services
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
+        
 
         public async Task<HttpResponseMessage> UpdateServiceStatus(BulkModerationRequest requestModel)
         {

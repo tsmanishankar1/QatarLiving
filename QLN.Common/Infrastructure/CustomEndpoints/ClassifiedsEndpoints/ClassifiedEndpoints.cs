@@ -7,14 +7,17 @@ using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Logging;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using QLN.Common.DTO_s;
 using QLN.Common.DTO_s.Classifieds;
 using QLN.Common.DTO_s.ClassifiedsBo;
+using QLN.Common.DTO_s.ClassifiedsFo;
 using QLN.Common.Infrastructure.Auditlog;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.CustomException;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService;
+using QLN.Common.Infrastructure.IService.IClassifiedBoService;
 using QLN.Common.Infrastructure.IService.ISearchService;
 using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.Subscriptions;
@@ -22,6 +25,7 @@ using QLN.Common.Infrastructure.Utilities;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Globalization;
 using System.Net.Http;
 using System.Security.Claims;
 using System.Text.Json;
@@ -4836,6 +4840,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
         .ToList()
                         };
 
+                        
 
                         int currentPage = Math.Max(1, req.PageNumber);
                         int itemsPerPage = Math.Max(1, Math.Min(100, req.PageSize));
@@ -4895,6 +4900,208 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status404NotFound)
             .ProducesProblem(StatusCodes.Status500InternalServerError);
+
+            group.MapPost("/stores-search-products", async (
+                [FromBody] ClassifiedsSearchRequest req,
+                [FromQuery] string? ProductName,
+                [FromQuery] string? CompanyId,
+                [FromServices] ISearchService svc,
+                [FromServices] ILoggerFactory logFac
+            ) =>
+            {
+                var logger = logFac.CreateLogger("ClassifiedStoresEndpoints");
+
+                var validationContext = new ValidationContext(req);
+                var validationResults = new List<ValidationResult>();
+                if (!Validator.TryValidateObject(req, validationContext, validationResults, validateAllProperties: true))
+                {
+                    var errorMessages = string.Join("; ", validationResults.Select(v => v.ErrorMessage));
+                    logger.LogWarning("Validation failed: {Errors}", errorMessages);
+
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Failed",
+                        Detail = errorMessages,
+                        Status = StatusCodes.Status400BadRequest,
+                        Instance = $"/api/v2/classifiedfo/stores-search-products"
+                    });
+                }
+
+                string indexName = ConstantValues.IndexNames.ClassifiedStoresIndex;
+
+                var request = new CommonSearchRequest
+                {
+                    Text = req.Text,
+                    Filters = req.Filters,
+                    OrderBy = req.OrderBy,
+                    PageNumber = req.PageNumber,
+                    PageSize = req.PageSize
+                };
+                if (indexName == null)
+                {
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid SubVertical",
+                        Detail = $"Unsupported subVertical value: '{req.SubVertical}'",
+                        Status = StatusCodes.Status400BadRequest,
+                        Instance = $"/api/v2/classifiedfo/stores-search"
+                    });
+                }
+
+                try
+                {
+                    var results = await svc.GetAllAsync(indexName, request);
+                    if (results == null)
+                        return Results.NoContent();
+                    if (results.ClassifiedStores != null)
+                    {
+                        var response = new ClassifiedStoresProducts
+                        {
+                            Products = results.ClassifiedStores
+                                        .Where(x =>
+                                            (string.IsNullOrEmpty(CompanyId) || x.CompanyId == CompanyId) &&
+                                             (string.IsNullOrEmpty(ProductName) || x.ProductName.ToLower().Contains(ProductName.ToLower()))
+                                       
+                                        )
+                                        .ToList()
+                        };
+
+                        response.Products = req.OrderBy?.ToLower() switch
+                        {
+                            "desc" => response.Products.OrderByDescending(t => t.ProductPrice).ToList(),
+                            "asc" => response.Products.OrderBy(t => t.ProductPrice).ToList(),
+                            _ => response.Products.OrderBy(t => t.ProductPrice).ToList() 
+                        };
+
+                        int currentPage = Math.Max(1, req.PageNumber);
+                        int itemsPerPage = Math.Max(1, Math.Min(100, req.PageSize));
+                        int totalCount = response.Products.Count;
+                        int totalPages = (int)Math.Ceiling((double)totalCount / itemsPerPage);
+
+                        if (currentPage > totalPages && totalPages > 0)
+                            currentPage = totalPages;
+
+                        var paginated = response.Products
+                            .Skip((currentPage - 1) * itemsPerPage)
+                            .Take(itemsPerPage)
+                            .ToList();
+
+
+                        return Results.Ok(new ClassifiedBOPageResponse<ClassifiedStoresIndex>
+                        {
+                            Page = currentPage,
+                            PerPage = itemsPerPage,
+                            TotalCount = totalCount,
+                            Items = paginated
+                        });
+                    }
+                    else
+                    {
+                        return Results.NotFound();
+                    }
+
+                }
+                catch (ArgumentException ex)
+                {
+                    logger.LogWarning(ex, "Invalid search request");
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid Request",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest,
+                        Instance = $"/api/v2/classifiedfo/stores-search-products"
+                    });
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "Unhandled exception during search");
+                    return Results.Problem(
+                        title: "Search Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        instance: $"/api/classifieds/stores-search-products"
+                    );
+                }
+            })
+            .WithName("SearchClassifiedsStoresProducts")
+            .WithTags("Classified")
+            .WithSummary("Classified stores search products")
+            .Produces(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status204NoContent)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status500InternalServerError);
+
+            group.MapGet("/stores-dashboard-header", async Task<Results<
+          Ok<List<StoresDashboardHeaderDto>>,
+          BadRequest<ProblemDetails>,
+          ProblemHttpResult>>
+          (
+          [FromServices]IClassifiedsFoService service,
+          HttpContext context,
+            string? UserId, string? CompanyId,
+          CancellationToken cancellationToken
+          ) =>
+            {
+                try
+                {
+                    var result = await service.GetStoresDashboardHeader(UserId, CompanyId,cancellationToken);
+                    return TypedResults.Ok(result);
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        instance: context.Request.Path
+                    );
+                }
+            })
+                .WithName("StoresDashboardHeader")
+                .AllowAnonymous()
+                .WithTags("Classified")
+                .WithSummary("To display the stores dashboard header information.")
+                .WithDescription("Fetches all stores dashboard header information.")
+                .Produces<List<StoresDashboardHeaderDto>>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapGet("/stores-dashboard-summary", async Task<Results<
+          Ok<List<StoresDashboardSummaryDto>>,
+          BadRequest<ProblemDetails>,
+          ProblemHttpResult>>
+          (
+          [FromServices] IClassifiedsFoService service,
+          HttpContext context,
+            string? CompanyId, string? SubscriptionId,
+          CancellationToken cancellationToken
+          ) =>
+            {
+                try
+                {
+                    var result = await service.GetStoresDashboardSummary(CompanyId, SubscriptionId,  cancellationToken);
+                    return TypedResults.Ok(result);
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        instance: context.Request.Path
+                    );
+                }
+            })
+                .WithName("StoresDashboardSummary")
+                .AllowAnonymous()
+                .WithTags("Classified")
+                .WithSummary("To display the stores dashboard summary information.")
+                .WithDescription("Fetches all stores dashboard summary information.")
+                .Produces<List<StoresDashboardSummaryDto>>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
             return group;
         }
 

@@ -92,12 +92,15 @@ namespace QLN.ContentBO.WebUI.Pages.Services.VerifiedSellerRequest
     {
       try
       {
-        var response = await _serviceBOService.GetAllCompaniesAsync(
-            isBasicProfile: false,
-            status: Status,
-            vertical: 4,
-            subVertical: null
-        );
+        var payload = new
+        {
+            isBasicProfile = false,
+            status = Status,
+            vertical = 4,
+            pageNumber = 1,
+            pageSize = 50
+        };
+        var response = await _serviceBOService.GetAllCompaniesAsync(payload);
         if (response.IsSuccessStatusCode)
         {
           var result = await response.Content.ReadFromJsonAsync<List<VerificationProfileStatus>>();

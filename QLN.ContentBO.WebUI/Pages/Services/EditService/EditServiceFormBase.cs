@@ -83,10 +83,10 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
                      await JS.InvokeVoidAsync("updateMapCoordinates", latitude, Longitude);
                 }
                 selectedFileName = GetFileNameFromUrl(selectedService.LicenseCertificate);
-                var selectedCategory = CategoryTrees.FirstOrDefault(c => c.Id == selectedService?.CategoryId);
-                _selectedL1Categories = selectedCategory?.Fields ?? new();
-                var selectedL1 = _selectedL1Categories.FirstOrDefault(l1 => l1.Id == selectedService?.L1CategoryId);
-                _selectedL2Categories = selectedL1?.Fields ?? new();
+                // var selectedCategory = CategoryTrees.FirstOrDefault(c => c.Id == selectedService?.CategoryId);
+                // _selectedL1Categories = selectedCategory?.Fields ?? new();
+                // var selectedL1 = _selectedL1Categories.FirstOrDefault(l1 => l1.Id == selectedService?.L1CategoryId);
+                // _selectedL2Categories = selectedL1?.Fields ?? new();
             }
             catch (Exception ex)
             {
@@ -102,7 +102,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
             _selectedL2Categories.Clear();
 
             var selectedCategory = CategoryTrees.FirstOrDefault(c => c.Id == categoryId);
-            _selectedL1Categories = selectedCategory?.Fields ?? new();
+            // _selectedL1Categories = selectedCategory?.Fields ?? new();
         }
 
 
@@ -112,7 +112,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
             _selectedL2CategoryId = null;
 
             var selectedL1 = _selectedL1Categories.FirstOrDefault(l1 => l1.Id == subcategoryId);
-            _selectedL2Categories = selectedL1?.Fields ?? new();
+            // _selectedL2Categories = selectedL1?.Fields ?? new();
         }
 
 

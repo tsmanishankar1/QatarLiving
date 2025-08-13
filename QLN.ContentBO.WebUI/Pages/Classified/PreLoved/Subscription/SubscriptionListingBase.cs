@@ -3,7 +3,9 @@ using Microsoft.AspNetCore.Components.Forms;
 using MudBlazor;
 using QLN.ContentBO.WebUI.Components;
 using QLN.ContentBO.WebUI.Interfaces;
+using QLN.ContentBO.WebUI.Components.ConfirmationDialog;
 using QLN.ContentBO.WebUI.Models;
+using Microsoft.JSInterop;
 using System.Text.Json;
 
 namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.Subscription
@@ -13,8 +15,11 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.Subscription
         [Parameter] public EventCallback<(string from, string to)> OnDateChanged { get; set; }
 
         [Inject] protected IPrelovedService PrelovedService { get; set; } = default!;
+                [Inject] protected IJSRuntime JS { get; set; } = default!;
+
 
         [Inject] protected ILogger<SubscriptionListingBase> _logger { get; set; } = default!;
+         [Inject] protected IDialogService DialogService { get; set; } = default!;
 
         protected string SearchText { get; set; } = string.Empty;
 
@@ -324,6 +329,60 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.Subscription
             _dateRange = new DateRange(_tempDateRange.Start, _tempDateRange.End);
             showDatePopover = false;
             StateHasChanged();
+        }
+         protected async Task ShowConfirmationExport()
+        {
+            var parameters = new DialogParameters
+            {
+                { "Title", "Export Classified Preloved" },
+                { "Descrption", "Do you want to export the current classified Preloved data to Excel?" },
+                { "ButtonTitle", "Export" },
+                { "OnConfirmed", EventCallback.Factory.Create(this, ExportToExcel) }
+            };
+
+            var options = new DialogOptions
+            {
+                CloseButton = false,
+                MaxWidth = MaxWidth.Small,
+                FullWidth = true
+            };
+
+            var dialog = DialogService.Show<ConfirmationDialog>("", parameters, options);
+            var result = await dialog.Result;
+        }
+        private async Task ExportToExcel()
+        {
+            try
+            {
+                if (Listings == null || !Listings.Any())
+                {
+                    Snackbar.Add("No data available to export.", Severity.Warning);
+                    return;
+                }
+
+                var exportData = Listings.Select(x => new Dictionary<string, object?>
+                {
+                    ["Ad Id"] = x.AdId,
+                    ["Order Id"] = x.OrderId,
+                    ["Subscription Type"] = x.SubscriptionType,
+                    ["User Name"] = x.UserName,
+                    ["Email"] = x.Email,
+                    ["Mobile"] = x.Mobile,
+                    ["Whatsapp"] = x.Whatsapp,
+                    ["Amount"] = x.Amount,
+                    ["Status"] = x.Status,
+                    ["Start Date"] = x.StartDate.ToString("yyyy/MM/dd") ?? "-",
+                    ["End Date"] = x.EndDate.ToString("yyyy/MM/dd") ?? "-",
+                }).ToList();
+
+                await JS.InvokeVoidAsync("exportToExcel", exportData, "Classified_Preloved_Subscriptions.xlsx", "Classified Preloved");
+
+                Snackbar.Add("Export successful!", Severity.Success);
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Export failed: {ex.Message}", Severity.Error);
+            }
         }
     }
 }

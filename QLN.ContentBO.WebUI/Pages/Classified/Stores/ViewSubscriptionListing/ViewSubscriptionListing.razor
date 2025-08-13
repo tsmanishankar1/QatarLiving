@@ -7,7 +7,7 @@
 <MudGrid Style="padding-top: 18px">
     <!-- Left Form Section -->
     <MudItem xs="12" md="12">
-        <StoresSearchSortBar OnSearch="HandleSearch" OnSort="HandleSort" />
+        <StoresSearchSortBar OnSearch="HandleSearch" OnSort="HandleSort" Items="@Listings" />
         <div class="community-table">
            <ViewSubscriptionTable 
             Listings="@Listings"

@@ -84,26 +84,12 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.P2p
                 if (response?.IsSuccessStatusCode ?? false)
                 {
                     var content = await response.Content.ReadAsStringAsync();
-                    Console.WriteLine($"API Raw Content: {content}");
-
                     var result = JsonSerializer.Deserialize<PagedResult<P2pListingModal>>(content, new JsonSerializerOptions
                     {
                         PropertyNamingPolicy = JsonNamingPolicy.CamelCase
                     });
-                    if (result == null)
-                    {
-                        Console.WriteLine("Deserialized result is null");
-                    }
-                    else
-                    {
-                        Console.WriteLine($"Items Count: {result.Items?.Count ?? 0}, TotalCount: {result.TotalCount}");
-                    }
                     Listings = result?.Items ?? new List<P2pListingModal>();
                     TotalCount = result?.TotalCount ?? 0;
-                }
-                else
-                {
-                    Console.WriteLine($"API call failed. StatusCode: {response?.StatusCode}");
                 }
             }
             catch (Exception ex)

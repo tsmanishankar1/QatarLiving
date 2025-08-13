@@ -10,17 +10,17 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.EditAd
 {
     public class CreateFormListBase : ComponentBase
     {
-        [Parameter] public List<CategoryTreeDto> CategoryTrees { get; set; } = new();
+        [Parameter] public List<ClassifiedsCategory> CategoryTrees { get; set; } = new();
         [Parameter] public List<LocationZoneDto> Zones { get; set; } = new();
-        protected CategoryTreeDto? SelectedCategory => CategoryTrees.FirstOrDefault(x => x.Id.ToString() == Ad.CategoryId);
-        protected CategoryTreeDto? SelectedSubcategory => SelectedCategory?.Children?.FirstOrDefault(x => x.Id.ToString() == Ad.L1CategoryId);
-        protected CategoryTreeDto? SelectedSubSubcategory => SelectedSubcategory?.Children?.FirstOrDefault(x => x.Id.ToString() == Ad.L2CategoryId);
+        protected ClassifiedsCategory? SelectedCategory => CategoryTrees.FirstOrDefault(x => x.Id.ToString() == Ad.CategoryId);
+        protected ClassifiedsCategoryField? SelectedSubcategory => SelectedCategory?.Fields?.FirstOrDefault(x => x.Id.ToString() == Ad.L1CategoryId);
+        protected ClassifiedsCategoryField? SelectedSubSubcategory => SelectedSubcategory?.Fields?.FirstOrDefault(x => x.Id.ToString() == Ad.L2CategoryId);
 
-        protected List<CategoryField> AvailableFields =>
+        protected List<ClassifiedsCategoryField> AvailableFields =>
                                         SelectedSubSubcategory?.Fields ??
                                         SelectedSubcategory?.Fields ??
                                         SelectedCategory?.Fields ??
-                                        new List<CategoryField>();
+                                        new List<ClassifiedsCategoryField>();
         [Parameter] public string[] ExcludedFields { get; set; } = Array.Empty<string>();
         [Parameter] public string? DefaultSelectedPhoneCountry { get; set; }
         [Parameter] public string? DefaultSelectedWhatsappCountry { get; set; }
@@ -109,7 +109,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.EditAd
             if (cat == null)
                 Logger.LogWarning("CategoryTree has a null item");
 
-            if (cat?.Id == null || cat?.Name == null)
+            if (cat?.Id == null || cat?.CategoryName == null)
                 Logger.LogWarning("CategoryTree has null Id or Name: {@cat}", cat);
         }
 

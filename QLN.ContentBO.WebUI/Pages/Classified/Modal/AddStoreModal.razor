@@ -16,10 +16,14 @@
                     @Title
                 </MudText>
             </div>
+            <div class="mx-auto">
+            <MudTextField  Class="classified-text-field no-underline" T="string" Placeholder="Featured Store Title*"
+                      @bind-Value="featuredCategoryTitle"   />
+            </div>
 
             <!-- Category -->
             <div class="mx-auto">
-                <MudSelect T="string" Label="Store Name"
+                <MudSelect T="Guid?" Label="Store Name"
                            Value="SelectedCategoryId"
                            Class="classified-field no-underline"
                            Required="true"
@@ -27,69 +31,26 @@
                            ValueChanged="OnCategoryChanged">
                     @if (IsLoadingCategories)
                     {
-                        <MudSelectItem T="string" Value=null Disabled="true">
+                        <MudSelectItem T="Guid?" Value=null Disabled="true">
                             <MudProgressCircular Size="Size.Small" Indeterminate="true" Color="Color.Primary" Class="mr-2" />
                             Loading categories...
                         </MudSelectItem>
                     }
                     else
                     {
-                        <MudSelectItem T="string" Value=null Disabled="true">Choose</MudSelectItem>
-                        @foreach (var category in _categoryTree)
+                        <MudSelectItem T="Guid?" Value=null Disabled="true">Choose</MudSelectItem>
+                        @foreach (var category in Listings)
                         {
-                            <MudSelectItem T="string" Value="@category.Id">@category.Name</MudSelectItem>
+                            <MudSelectItem T="Guid?" Value="@category.Id">@category.CompanyName</MudSelectItem>
                         }
                     }
                 </MudSelect>
 
-
             </div>
-
-            <!-- Subcategory -->
-          @*   <div class="mx-auto">
-                <MudSelect T="string" Label="Subcategory"
-                           Value="SelectedSubcategoryId"
-                           Disabled="@string.IsNullOrEmpty(SelectedCategoryId)"
-                           Class="classified-field no-underline"
-                           Required="true"
-                           RequiredError="Subcategory is required"
-                           ValueChanged="OnSubcategoryChanged">
-                    <MudSelectItem T="string" Value=null Disabled="true">Choose</MudSelectItem>
-                    @foreach (var sub in _subcategories)
-                    {
-                        <MudSelectItem T="string" Value="@sub.Id">@sub.Name</MudSelectItem>
-                    }
-                </MudSelect>
-
-            </div> *@
-
-            <!-- Section -->
-           @*  <div class="mx-auto">
-                <MudSelect T="string" Label="Section"
-                           Value="SelectedSectionId"
-                           ValueChanged="OnSectionChanged"
-                           Disabled="@string.IsNullOrEmpty(SelectedSubcategoryId)"
-                           Class="classified-field no-underline"
-                           Required="true"
-                           RequiredError="Section is required">
-                    <MudSelectItem T="string" Value=null Disabled="true">Choose</MudSelectItem>
-                    @foreach (var sec in _sections)
-                    {
-                        <MudSelectItem T="string" Value="@sec.Id">@sec.Name</MudSelectItem>
-                    }
-                </MudSelect>
-
-            </div> *@
-            <div class="mx-auto">
-                <MudDatePicker Class="classified-field no-underline" Label="Start Date" @bind-Date="StartDate" Required="true" DisableToolbar="true"
-                               MinDate="@DateTime.Today" />
-
-            </div>
-            <div class="mx-auto">
-                <MudDatePicker Class="classified-field no-underline" Label="End Date" @bind-Date="EndDate" Required="true" DisableToolbar="true"
-                               MinDate="@DateTime.Today" />
-
-            </div>
+             <div class="mx-auto" style="width: 330px;">
+                <MudDateRangePicker Class="classified-datepicker-field no-underline" Style="border: 1px solid #D0D5DD; border-radius: 6px; padding: 10px;" @bind-DateRange="dateRange" Required="true" 
+                               MinDate="@DateTime.Today"DisplayMonths="1"/>
+            </div> 
 
             <!-- Image Upload -->
             <div class="mx-auto">
@@ -118,7 +79,7 @@
 
             <!-- Footer Buttons -->
             <div class=" classified-button-wrapper mx-auto mt-2">
-                <MudButton Color="Color.Primary" OnClick="SaveAsync" Disabled="@(!IsFormValid())" Class="classified-button">
+               <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SaveAsync" Disabled="@(!IsFormValid())" Class="classified-button">
                     Add
                 </MudButton>
                 <MudButton Variant="Variant.Outlined" Color="Color.Inherit" OnClick="Close" Class="classified-button mt-2">
