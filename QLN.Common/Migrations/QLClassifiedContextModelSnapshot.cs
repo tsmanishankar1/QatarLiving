@@ -201,6 +201,73 @@ namespace QLN.Common.Migrations
                     b.ToTable("StoresSubscriptions");
                 });
 
+            modelBuilder.Entity("QLN.Common.DTO_s.ClassifiedsBo.ViewStoresSubscription", b =>
+                {
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("numeric")
+                        .HasColumnName("Amount");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("CompanyId");
+
+                    b.Property<string>("CompanyName")
+                        .HasColumnType("text")
+                        .HasColumnName("CompanyName");
+
+                    b.Property<string>("Email")
+                        .HasColumnType("text")
+                        .HasColumnName("Email");
+
+                    b.Property<DateTime>("EndDate")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("EndDate");
+
+                    b.Property<string>("Mobile")
+                        .HasColumnType("text")
+                        .HasColumnName("Mobile");
+
+                    b.Property<int>("OrderId")
+                        .HasColumnType("integer")
+                        .HasColumnName("OrderId");
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("StartDate");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer")
+                        .HasColumnName("Status");
+
+                    b.Property<Guid>("SubscriptionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("SubscriptionId");
+
+                    b.Property<string>("SubscriptionType")
+                        .HasColumnType("text")
+                        .HasColumnName("SubscriptionType");
+
+                    b.Property<string>("UserId")
+                        .HasColumnType("text")
+                        .HasColumnName("UserId");
+
+                    b.Property<string>("UserName")
+                        .HasColumnType("text")
+                        .HasColumnName("UserName");
+
+                    b.Property<string>("WebUrl")
+                        .HasColumnType("text")
+                        .HasColumnName("WebUrl");
+
+                    b.Property<string>("Whatsapp")
+                        .HasColumnType("text")
+                        .HasColumnName("Whatsapp");
+
+                    b.ToTable("ViewStoresSubscriptions");
+
+                    b.ToSqlQuery("\r\n        SELECT comp.\"Id\" as \"CompanyId\",\r\n               subs.\"SubscriptionId\",\r\n               subs.\"ProductName\" as \"SubscriptionType\",\r\n               subs.\"UserId\",\r\n               comp.\"UserName\",\r\n               comp.\"PhoneNumber\" as \"Mobile\",\r\n               comp.\"WhatsAppNumber\" as \"Whatsapp\",\r\n               comp.\"WebsiteUrl\" as \"WebUrl\",\r\n               comp.\"Email\",\r\n               comp.\"Status\",\r\n               comp.\"CompanyName\",\r\n               subs.\"StartDate\",\r\n               subs.\"EndDate\",\r\n               pay.\"PaymentId\" as \"OrderId\",\r\n               pay.\"Fee\" as \"Amount\"\r\n        FROM public.\"Subscriptions\" AS subs\r\n        INNER JOIN public.\"Companies\" AS comp\r\n            ON subs.\"CompanyId\" = comp.\"Id\"\r\n        INNER JOIN public.\"Payments\" AS pay\r\n            ON subs.\"PaymentId\" = pay.\"PaymentId\"\r\n        WHERE subs.\"Vertical\" = 3\r\n          AND subs.\"SubVertical\" = 3\r\n    ");
+                });
+
             modelBuilder.Entity("QLN.Common.DTO_s.ClassifiedsFo.StoresDashboardHeader", b =>
                 {
                     b.Property<Guid>("CompanyId")
@@ -454,6 +521,10 @@ namespace QLN.Common.Migrations
                     b.Property<DateTime?>("PublishedDate")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("Slug")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 
@@ -591,6 +662,10 @@ namespace QLN.Common.Migrations
                     b.Property<DateTime?>("PromotedExpiryDate")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("Slug")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
                     b.Property<string>("SocialMediaLinks")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
@@ -601,9 +676,9 @@ namespace QLN.Common.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 
-                    b.Property<string>("SubscriptionId")
+                    b.Property<Guid?>("SubscriptionId")
                         .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -894,6 +969,10 @@ namespace QLN.Common.Migrations
                     b.Property<DateTime?>("PublishedDate")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("Slug")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 
@@ -1087,6 +1166,10 @@ namespace QLN.Common.Migrations
 
                     b.Property<DateTime?>("PublishedDate")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Slug")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
 
                     b.Property<int>("Status")
                         .HasColumnType("integer");
