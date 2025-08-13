@@ -20,7 +20,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.ViewListing
         [Inject] protected NavigationManager NavManager { get; set; } = default!;
         [Inject] public IClassifiedService ClassifiedService { get; set; }
         [Inject] private ILogger<ViewListingBase> Logger { get; set; } = default!;
-        protected string SearchTerm { get; set; } = string.Empty;
+        protected string? SearchTerm { get; set; }
         protected bool Ascending { get; set; } = true;
         protected List<ClassifiedItemViewListing> ClassifiedItems { get; set; } = new();
         protected int TotalCount { get; set; }
@@ -139,12 +139,13 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.ViewListing
                 // ✅ Log the actual payload
                 // var payloadJson = JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true });
                 // Logger.LogInformation("Classified Payload:\n{Payload}", payloadJson);
+                payload = new();
 
-                var responses = await ClassifiedService.SearchClassifiedsViewListingAsync("getall-collectibles", payload);
+                var responses = await ClassifiedService.GetAllCollectibles(payload);
 
-                if (responses.Any() && responses[0].IsSuccessStatusCode)
+                if (responses.IsSuccessStatusCode)
                 {
-                    var result = await responses[0].Content.ReadFromJsonAsync<ClassifiedsCollectiblesApiResponse>();
+                    var result = await responses.Content.ReadFromJsonAsync<ClassifiedsCollectiblesApiResponse>();
                     if (result != null)
                     {
                         ClassifiedItems = result.ClassifiedsCollectibles;
