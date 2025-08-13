@@ -110,7 +110,7 @@ namespace QLN.Common.Infrastructure.Model
         public string UploadFeed { get; set; } = string.Empty;
         [MaxLength(150)]
         public string XMLFeed { get; set; } = string.Empty;
-
+        public VerifiedStatus? CompanyVerificationStatus { get; set; }
         public VerifiedStatus? Status { get; set; }
 
         [Required]
