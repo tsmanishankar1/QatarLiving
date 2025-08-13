@@ -32,6 +32,18 @@ namespace QLN.ContentBO.WebUI.Services
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
+        public async Task<HttpResponseMessage> GetServicesCategories(Vertical vertical, SubVertical subVertical)
+        {
+            try
+            {
+                return await _httpClient.GetAsync($"/api/service/getallcategories?vertical={vertical}&subVertical={subVertical}");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("GetServicesCategories Error: " + ex);
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
 
         public async Task<HttpResponseMessage?> GetFeaturedSeasonalPicks(Vertical vertical)
         {
@@ -449,7 +461,7 @@ namespace QLN.ContentBO.WebUI.Services
 
             try
             {
-                var endpoint = $"/api/v2/classifiedbo/{vertical}";
+                var endpoint = $"api/v2/classifiedbo/getall-items";
                 var response = await _httpClient.PostAsJsonAsync(endpoint, searchPayload);
                 responses.Add(response);
                 return responses;
@@ -482,7 +494,7 @@ namespace QLN.ContentBO.WebUI.Services
             try
             {
                 var json = JsonSerializer.Serialize(payload);
-                var request = new HttpRequestMessage(HttpMethod.Post, $"/api/v2/classifiedbo/{vertical}")
+                var request = new HttpRequestMessage(HttpMethod.Post, $"/api/v2/classifiedbo/bulk-items-action")
                 {
                     Content = new StringContent(json, Encoding.UTF8, "application/json")
                 };
@@ -862,68 +874,52 @@ namespace QLN.ContentBO.WebUI.Services
         {
             try
             {
-                var url = "/api/v2/classifiedbo/DealsViewSummary";
+                var url = "/api/v2/classifiedbo/getdealsSummary";
 
-                var queryParams = new List<string>
-        {
-            $"pageNumber={request.PageNumber}",
-            $"pageSize={request.PageSize}"
-        };
+                //         var queryParams = new List<string>
+                // {
+                //     $"pageNumber={request.PageNumber}",
+                //     $"pageSize={request.PageSize}"
+                // };
 
-                if (request.Status.HasValue)
-                {
-                    queryParams.Add($"status={request.Status.Value}");
-                }
-
-                if (!string.IsNullOrEmpty(request.SearchText))
-                {
-                    queryParams.Add($"search={Uri.EscapeDataString(request.SearchText)}");
-                }
-
-                if (request.CreationDate.HasValue)
-                {
-                    queryParams.Add($"creationDate={request.CreationDate.Value:yyyy-MM-dd}");
-                }
-
-                if (request.PublishedDate.HasValue)
-                {
-                    queryParams.Add($"datePublished={request.PublishedDate.Value:yyyy-MM-dd}");
-                }
-                if (request.IsPromoted == true)
-                {
-                    queryParams.Add("isPromoted=true");
-                }
-
-                if (request.IsFeatured == true)
-                {
-                    queryParams.Add("isFeatured=true");
-                }
-
-
-                //if (!string.IsNullOrEmpty(request.SortField))
-                //{
-                //    queryParams.Add($"sortField={request.SortField}");
-                //}
-
-                //if (!string.IsNullOrEmpty(request.SortDirection))
-                //{
-                //    queryParams.Add($"sortDirection={request.SortDirection}");
-                //}
-
-                if (queryParams.Count > 0)
-                {
-                    url += "?" + string.Join("&", queryParams);
-                }
+                //         if (!string.IsNullOrWhiteSpace(request.SubscriptionType))
+                //         {
+                //             queryParams.Add($"subscriptionType={Uri.EscapeDataString(request.SubscriptionType)}");
+                //         }
+                //         if (request.StartDate.HasValue)
+                //         {
+                //             queryParams.Add($"startDate={Uri.EscapeDataString(request.StartDate.Value.ToString("o"))}");
+                //         }
+                //         if (request.EndDate.HasValue)
+                //         {
+                //             queryParams.Add($"endDate={Uri.EscapeDataString(request.EndDate.Value.ToString("o"))}");
+                //         }
+                //         if (!string.IsNullOrWhiteSpace(request.SearchText))
+                //         {
+                //             queryParams.Add($"search={Uri.EscapeDataString(request.SearchText)}");
+                //         }
+                //         if (!string.IsNullOrWhiteSpace(request.SortBy))
+                //         {
+                //             queryParams.Add($"sortBy={Uri.EscapeDataString(request.SortBy)}");
+                //         }
+                //         if (queryParams.Count > 0)
+                //         {
+                //             url += "?" + string.Join("&", queryParams);
+                //         }
 
                 var httpRequest = new HttpRequestMessage(HttpMethod.Get, url);
-                return await _httpClient.SendAsync(httpRequest);
+                var response = await _httpClient.SendAsync(httpRequest);
+                var body = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"Response Body: {body}");
+                return response;
             }
             catch (Exception ex)
             {
-                _logger.LogError("GetPrelovedP2pListing: {Message}", ex.Message);
+                _logger.LogError("GetDealsListing: {Message}", ex.Message);
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
+
 
         public async Task<HttpResponseMessage?> PerformDealsBulkActionAsync(object payload)
         {
@@ -943,7 +939,7 @@ namespace QLN.ContentBO.WebUI.Services
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
-        public async Task<HttpResponseMessage?> GetDealsByIdAsync(string vertical, string adId)
+        public async Task<HttpResponseMessage?> GetDealsByIdAsync(string vertical, long? adId)
         {
             try
             {

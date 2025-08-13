@@ -130,12 +130,12 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Modal
                 var response = await ClassifiedService.CreateFeaturedCategoryAsync(payload);
                 if (response?.IsSuccessStatusCode == true)
                 {
-                    Snackbar.Add("Seasonal pick added successfully!", Severity.Success);
+                    Snackbar.Add("Featured Category added successfully!", Severity.Success);
                     MudDialog.Close(DialogResult.Ok(true));
                 }
                 else
                 {
-                    Snackbar.Add("Failed to add seasonal pick.", Severity.Error);
+                    Snackbar.Add("Failed to add Featured Category", Severity.Error);
                 }
             }
             catch (Exception ex)

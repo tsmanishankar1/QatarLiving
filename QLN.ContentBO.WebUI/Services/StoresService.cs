@@ -1,9 +1,10 @@
 ﻿using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Models;
 using QLN.ContentBO.WebUI.Services.Base;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Net;
 using System.Text;
-using System.Text.Json;
 
 namespace QLN.ContentBO.WebUI.Services
 {
@@ -18,18 +19,21 @@ namespace QLN.ContentBO.WebUI.Services
             _httpClient = httpClient;
             _logger = Logger;
         }
-
-        public async Task<HttpResponseMessage> GetAllStoresListing(CompanyRequestPayload companyRequestPayload)
+        public async Task<HttpResponseMessage> GetAllStoresListing(CompanySubscriptionFilter companyRequestPayload)
         {
             try
             {
-                var json = JsonSerializer.Serialize(companyRequestPayload);
-                var request = new HttpRequestMessage(HttpMethod.Post, "/api/companyprofile/getallcompanies")
+                var options = new JsonSerializerOptions
+                {
+                    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull 
+                };
+                var json = JsonSerializer.Serialize(companyRequestPayload, options);
+                var request = new HttpRequestMessage(HttpMethod.Post, "/api/companyprofile/viewstores")
                 {
                     Content = new StringContent(json, Encoding.UTF8, "application/json")
                 };
-
-                return await _httpClient.SendAsync(request);
+                var response = await _httpClient.SendAsync(request);
+                return response;
             }
             catch (Exception ex)
             {
@@ -37,6 +41,7 @@ namespace QLN.ContentBO.WebUI.Services
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
+
 
         public async Task<HttpResponseMessage> GetAllStoresSubscription(StoreSubscriptionQuery query)
         {

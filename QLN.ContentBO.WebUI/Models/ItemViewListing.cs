@@ -25,8 +25,8 @@ namespace QLN.ContentBO.WebUI.Models
 
     public class ClassifiedItemViewListing
     {
-        public string? Id { get; set; }
-        public string? SubVertical { get; set; }
+        public long? Id { get; set; }
+        public SubVertical? SubVertical { get; set; }
         public int? AdType { get; set; }
         public string AdTypeName => Enum.IsDefined(typeof(AdType), AdType)
         ? ((AdType)AdType).ToString()
@@ -35,11 +35,11 @@ namespace QLN.ContentBO.WebUI.Models
         public string? Description { get; set; }
         public decimal? Price { get; set; }
         public string? PriceType { get; set; }
-        public string? CategoryId { get; set; }
+        public long? CategoryId { get; set; }
         public string? Category { get; set; }
-        public string? L1CategoryId { get; set; }
+        public long? L1CategoryId { get; set; }
         public string? L1Category { get; set; }
-        public string? L2CategoryId { get; set; }
+        public long? L2CategoryId { get; set; }
         public string? L2Category { get; set; }
         public string? Location { get; set; }
         public DateTime? PublishedDate { get; set; }

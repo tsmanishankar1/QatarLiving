@@ -6,7 +6,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.ViewStores
 {
     public class ViewStoreTableBase : ComponentBase
     {
-        [Parameter] public List<CompanyProfileItem> Listings { get; set; } = new();
+        [Parameter] public List<CompanySubscriptionDto> Listings { get; set; }
         [Inject] public NavigationManager NavigationManager { get; set; }
         [Parameter] public int TotalCount { get; set; }
         [Parameter] public bool IsLoading { get; set; }
@@ -15,7 +15,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.ViewStores
         [Parameter] public EventCallback<string> OnTabChange { get; set; }
         [Parameter] public EventCallback<int> OnPageChange { get; set; }
         [Parameter] public EventCallback<int> OnPageSizeChange { get; set; }
-        [Parameter] public EventCallback<CompanyProfileItem> OnViewClicked { get; set; }
+        [Parameter] public EventCallback<CompanySubscriptionDto> OnViewClicked { get; set; }
 
         protected string selectedTab = "pendingApproval";
 
@@ -33,7 +33,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.ViewStores
             await OnTabChange.InvokeAsync(newTab);
         }
         
-        protected void EditStore(CompanyProfileItem order)
+        protected void EditStore(CompanySubscriptionDto order)
         {
             if (!string.IsNullOrEmpty(order?.CompanyName))
             {

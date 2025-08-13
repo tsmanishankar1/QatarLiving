@@ -70,7 +70,7 @@
 
                 <TemplateColumn Title="Ad ID">
                     <CellTemplate>
-                        <MudLink Href="#"> @(string.IsNullOrWhiteSpace(context.Item.AdId) ? "-" : context.Item.AdId)</MudLink>
+                        <MudLink Href="#"> @(context.Item.AdId == null ? "-" : context.Item.AdId)</MudLink>
                     </CellTemplate>
                 </TemplateColumn>
 

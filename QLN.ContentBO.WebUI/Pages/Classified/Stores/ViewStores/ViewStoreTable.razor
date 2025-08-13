@@ -40,12 +40,12 @@
             <RowTemplate>
                 <MudTd>@context.CompanyName</MudTd>
                 <MudTd>@context.Email</MudTd>
-                <MudTd>@context.PhoneNumber</MudTd>
-                <MudTd>@context.WhatsAppNumber</MudTd>
-                <MudTd>@context.WebsiteUrl</MudTd>
+                <MudTd>@context.Mobile</MudTd>
+                <MudTd>@context.WhatsApp</MudTd>
+                <MudTd>@context.WebUrl</MudTd>
                 <MudTd>@context.Status</MudTd>
-                <MudTd>@context.StartDay</MudTd>
-                <MudTd>@context.EndDay</MudTd>
+                <MudTd>@context.StartDate.ToString("dd-MM-yyyy hh:mmtt")</MudTd>
+                <MudTd>@context.EndDate.ToString("dd-MM-yyyy hh:mmtt")</MudTd>
                 <MudTd>
                     <MudMenu Icon="@Icons.Material.Filled.MoreVert" Dense="true"
                              AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopRight"
