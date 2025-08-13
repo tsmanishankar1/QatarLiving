@@ -9,12 +9,16 @@ using QLN.Common.DTO_s.ClassifiedsBoIndex;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.CustomException;
 using QLN.Common.Infrastructure.EventLogger;
+using QLN.Common.Infrastructure.IService;
 using QLN.Common.Infrastructure.IService.IFileStorage;
+using QLN.Common.Infrastructure.IService.IProductService;
 using QLN.Common.Infrastructure.IService.ISearchService;
 using QLN.Common.Infrastructure.IService.V2IClassifiedBoService;
 using QLN.Common.Infrastructure.Model;
+using QLN.Common.Infrastructure.QLDbContext;
 using QLN.Common.Infrastructure.Subscriptions;
 using QLN.Common.Infrastructure.Utilities;
+using QLN.Common.Migrations.QLLog;
 using System.Globalization;
 using System.Net;
 using System.Text;
@@ -33,19 +37,22 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IFileStorageBlobService _fileStorageBlob;
         private readonly ISearchService _searchService;
-
+        private readonly IV2SubscriptionService _subscriptionContext;
+        private readonly IClassifiedService _classifiedService;
         public ExternalClassifiedLandingService(
             DaprClient dapr,
             ILogger<ExternalClassifiedLandingService> logger,
             IHttpContextAccessor httpContextAccessor,
             IFileStorageBlobService fileStorageBlob,
-            ISearchService searchService)
+            ISearchService searchService, IV2SubscriptionService subscriptionService, IClassifiedService classifiedService)
         {
             _dapr = dapr ?? throw new ArgumentNullException(nameof(dapr));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _httpContextAccessor = httpContextAccessor;
             _fileStorageBlob = fileStorageBlob;
             _searchService = searchService;
+            _subscriptionContext = subscriptionService;
+            _classifiedService = classifiedService;
         }
 
         public async Task<string> CreateFeaturedCategory(string userId, string userName, FeaturedCategoryDto dto, CancellationToken cancellationToken = default)
@@ -963,103 +970,167 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
         }
 
 
-        public async Task<string> BulkItemsAction(BulkActionRequest request, string userId, CancellationToken cancellationToken = default)
-
+        public async Task<string> BulkItemsAction(
+      BulkActionRequest request,
+      string userId,
+      CancellationToken cancellationToken = default)
         {
-
-            ArgumentNullException.ThrowIfNull(request);
+            if (request == null)
+                throw new ArgumentNullException(nameof(request));
 
             if (string.IsNullOrWhiteSpace(userId))
-
-                throw new ArgumentException("UserId is required.");
-
-            var uploadedBlobKeys = new List<string>();
+                throw new ArgumentException("UserId cannot be null or empty.");
 
             HttpStatusCode? failedStatusCode = null;
 
-            string failedErrorMessage = null;
-
             try
-
             {
+                
+                var ads = await Task.WhenAll(
+                    request.AdIds.Select(id => _classifiedService.GetItemAdById(id, cancellationToken))
+                );
 
-                var url = "api/v2/classifiedbo/bulk-items-action-userid";
+               
+                var groupedActions = ads
+                    .Where(a => a != null && a.SubscriptionId.HasValue && a.SubscriptionId.Value != Guid.Empty)
+                    .GroupBy(a => new
+                    {
+                        a.SubscriptionId,
+                        ActionType = request.Action  
+                    })
+                    .ToList();
 
+                
+                foreach (var group in groupedActions)
+                {
+                    var subscriptionId = group.Key.SubscriptionId!.Value;
+                    var actionName = group.Key.ActionType switch
+                    {
+                        BulkActionEnum.Promote => "promote", // match single method case
+                        BulkActionEnum.Feature => "feature",
+                        _ => throw new InvalidOperationException("Invalid bulk action.")
+                    };
+
+                    var usageCount = group.Count();
+
+                    var canUse = await _subscriptionContext.ValidateSubscriptionUsageAsync(
+                        subscriptionId,
+                        actionName,
+                        usageCount,
+                        cancellationToken
+                    );
+
+                    if (!canUse)
+                    {
+                        _logger.LogWarning(
+                            "Subscription {SubscriptionId} has insufficient quota for {Action}. Required: {Count}",
+                            GuidToLong(subscriptionId),
+                            actionName,
+                            usageCount
+                        );
+                        throw new InvalidOperationException($"Insufficient subscription quota for {actionName}.");
+                    }
+                }
+
+                
+                var firstSubId = groupedActions.FirstOrDefault()?.Key.SubscriptionId ?? Guid.Empty;
+                var url = $"api/v2/classifiedbo/bulk-items-action-userid/{userId}&subscriptionId={firstSubId}";
                 var serviceRequest = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, SERVICE_APP_ID, url);
-
                 serviceRequest.Content = new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json");
 
                 var response = await _dapr.InvokeMethodWithResponseAsync(serviceRequest, cancellationToken);
 
                 if (!response.IsSuccessStatusCode)
-
                 {
-
                     var errorJson = await response.Content.ReadAsStringAsync(cancellationToken);
-
                     string errorMessage;
 
-                    try
-
+                    if (!string.IsNullOrWhiteSpace(errorJson))
                     {
-
-                        var problem = JsonSerializer.Deserialize<ProblemDetails>(errorJson);
-
-                        errorMessage = problem?.Detail ?? "Unknown validation error.";
-
+                        try
+                        {
+                            var problem = JsonSerializer.Deserialize<ProblemDetails>(errorJson);
+                            errorMessage = problem?.Detail ?? "Unknown validation error.";
+                        }
+                        catch (JsonException)
+                        {
+                            errorMessage = errorJson;
+                        }
                     }
-
-                    catch
-
+                    else
                     {
-
-                        errorMessage = errorJson;
-
+                        errorMessage = "No error details returned from service.";
                     }
 
                     failedStatusCode = response.StatusCode;
-
-                    failedErrorMessage = errorMessage;
-
                     throw new InvalidDataException(errorMessage);
-
                 }
 
-                response.EnsureSuccessStatusCode();
+                // 5️⃣ Record quota usage for each subscription-action pair
+                foreach (var group in groupedActions)
+                {
+                    var subscriptionId = group.Key.SubscriptionId!.Value;
+                    var actionName = group.Key.ActionType switch
+                    {
+                        BulkActionEnum.Promote => "Promote",
+                        BulkActionEnum.Feature => "Feature",
+                        _ => throw new InvalidOperationException("Invalid bulk action.")
+                    };
 
-                return "Status Changed successfully";
+                    var usageCount = group.Count();
 
+                    var success = await _subscriptionContext.RecordSubscriptionUsageAsync(
+                        subscriptionId,
+                        actionName,
+                        usageCount,
+                        cancellationToken
+                    );
+
+                    if (!success)
+                    {
+                        _logger.LogWarning(
+                            "Failed to record subscription usage for {Action} on SubscriptionId {SubscriptionId}",
+                            actionName,
+                            GuidToLong(subscriptionId)
+                        );
+                    }
+                }
+
+                return "Bulk action completed successfully.";
             }
-
-            catch (Exception ex)
-
+            catch (InvalidOperationException ex)
             {
-
+                throw new InvalidOperationException(ex.Message);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                throw new KeyNotFoundException(ex.Message);
+            }
+            catch (DaprException daprEx)
+            {
+                _logger.LogError(daprEx, "");
+                throw new InvalidOperationException("Failed to invoke internal service through Dapr.", daprEx);
+            }
+            catch (HttpRequestException httpEx)
+            {
+                _logger.LogInformation(httpEx, "");
+                throw new InvalidOperationException("Failed to communicate with the internal service.", httpEx);
+            }
+            catch (Exception ex)
+            {
                 if (failedStatusCode == HttpStatusCode.Conflict)
-
-                {
-
-                    _logger.LogWarning(ex, "Conflict detected while bulk items action.");
-
                     throw new ConflictException(ex.Message);
-
-                }
-
                 else if (failedStatusCode == HttpStatusCode.NotFound)
-
-                {
-
                     throw new KeyNotFoundException(ex.Message);
 
-                }
-
-                _logger.LogError(ex, "Error bulk items action");
-
-                throw;
-
+                _logger.LogError(ex, "");
+                throw new InvalidOperationException("Bulk action failed due to an unexpected error.", ex);
             }
-
         }
+
+
+
+
 
         public async Task<string> BulkCollectiblesAction(BulkActionRequest request, string userId, CancellationToken cancellationToken = default)
         {
@@ -1863,6 +1934,11 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
                 _logger.LogError(ex, "Unexpected error in selecting subscription types.");
                 throw new InvalidOperationException("Error in selecting subscription types.", ex);
             }
+        }
+        private static long GuidToLong(Guid guid)
+        {
+            var bytes = guid.ToByteArray();
+            return BitConverter.ToInt64(bytes, 0); // uses first 8 bytes
         }
 
 

@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using QLN.Common.DTO_s;
@@ -10,12 +11,14 @@ using QLN.Common.Infrastructure.QLDbContext;
 
 #nullable disable
 
-namespace QLN.Common.Migrations
+namespace QLN.Common.Migrations.ClassifiedDev
 {
     [DbContext(typeof(QLClassifiedContext))]
-    partial class QLClassifiedContextModelSnapshot : ModelSnapshot
+    [Migration("20250813101846_slugfield")]
+    partial class slugfield
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1400,36 +1403,6 @@ namespace QLN.Common.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Services");
-                });
-
-            modelBuilder.Entity("QLN.Common.Infrastructure.Model.Wishlist", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<long>("AdId")
-                        .HasColumnType("bigint");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("Subvertical")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<int>("Vertical")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Wishlists");
                 });
 
             modelBuilder.Entity("QLN.Common.DTO_s.ClassifiedsBo.ProductFeatures", b =>
