@@ -18,7 +18,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved
         [Inject] public IDialogService DialogService { get; set; }
 
         [Parameter] public EventCallback<string> SelectedTabChanged { get; set; }
-        [Parameter] public List<P2pListingModal> Listings { get; set; }
+        [Parameter] public List<PrelovedP2PSubscriptionItem> Listings { get; set; }
         [Parameter] public bool IsLoading { get; set; }
         [Parameter] public bool IsEmpty { get; set; }
         [Parameter] public int TotalCount { get; set; }
@@ -33,7 +33,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved
         protected string removeTargetItemId = null;
         protected bool isBulkRemove = false;
 
-        protected HashSet<P2pListingModal> SelectedListings { get; set; } = new();
+        protected HashSet<PrelovedP2PSubscriptionItem> SelectedListings { get; set; } = new();
         protected int currentPage = 1;
         protected int pageSize = 12;
         protected string _activeTab;
@@ -264,11 +264,11 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved
             };
         }
 
-        private async Task PerformBulkAction(BulkActionEnum action, string reason = "", List<string>? adIds = null)
+        private async Task PerformBulkAction(BulkActionEnum action, string reason = "", List<int>? adIds = null)
         {
             isBulkActionLoading = adIds == null; // only bulk shows spinner
 
-            adIds ??= [.. SelectedListings.Select(x => x.Id)];
+            adIds ??= [.. SelectedListings.Select(x => x.AdId)];
 
             if (adIds.Count == 0)
                 return;
@@ -289,7 +289,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved
                 if (response?.IsSuccessStatusCode == true)
                 {
                     SelectedListings.Clear();
-                    Listings = Listings.Where(i => !adIds.Contains(i.Id)).ToList();
+                    Listings = Listings.Where(i => !adIds.Contains(i.AdId)).ToList();
                     Snackbar.Add(GetSuccessMessage(action), Severity.Success);
 
                 }
