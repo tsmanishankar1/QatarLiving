@@ -55,10 +55,8 @@ namespace QLN.ContentBO.WebUI.Components.Banner
         bannerPageTypes
             .Select(group => new BannerPageLocationDto
             {
-                Id = group.Id,
                 VerticalId = group.VerticalId,
                 SubVerticalId = group.SubVerticalId,
-                BannerPageName = group.BannerPageName,
                 bannertypes = group.bannertypes
                     .Where(x => string.IsNullOrEmpty(bannerModel.BannerSize) || x.Dimensions == bannerModel.BannerSize)
                     .ToList()
@@ -66,7 +64,7 @@ namespace QLN.ContentBO.WebUI.Components.Banner
             .Where(g => g.bannertypes.Any())
             .ToList();
 
-        protected void OnCheckedChanged(BannerLocationDto item, bool isChecked, int? verticalId, int? subVerticalId, Guid pageId)
+        protected void OnCheckedChanged(BannerLocationDto item, bool isChecked, int? verticalId, int? subVerticalId, int pageId)
         {
             if (!verticalId.HasValue)
                 return;
@@ -241,7 +239,7 @@ namespace QLN.ContentBO.WebUI.Components.Banner
                             BannerTypeId = bannerType.Id,
                             VerticalId = (Vertical)(page.VerticalId ?? 0),
                             SubVerticalId = page.SubVerticalId.HasValue ? (SubVertical?)page.SubVerticalId.Value : null,
-                            PageId = page.Id
+                            PageId = page.PageId
                         };
 
                         bannerTypeRequests.Add(bannerTypeRequest);

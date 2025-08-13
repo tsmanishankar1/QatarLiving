@@ -427,7 +427,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
             group.MapGet("/getbyfilter", async Task<Results<Ok<List<V2BannerTypeDto>>, NotFound>> (
                 [FromQuery] Vertical verticalId,
                 [FromQuery] SubVertical? subVerticalId,
-                [FromQuery] Guid pageId,
+                [FromQuery] BannerPageId pageId,
                 IV2BannerService service,
                 CancellationToken cancellationToken) =>
             {
@@ -473,7 +473,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
             group.MapPost("/reorder", async Task<Results<Ok<string>, BadRequest<string>>> (
                 [FromQuery] Vertical verticalId,
                 [FromQuery] SubVertical? subVerticalId,
-                [FromQuery] Guid pageId,
+                [FromQuery] BannerPageId pageId,
                 [FromBody] List<Guid> banners,
                 IV2BannerService service,
                 CancellationToken cancellationToken) =>
