@@ -302,7 +302,7 @@ namespace QLN.Classified.MS.Service.Services
                     throw new ConflictException("You already have an active ad in this category. Please unpublish or remove it before posting another.");
                 }
                 dto.Status = GetAdStatus(dto.L1CategoryName, dto.AdType);
-                var slug = SlugHelper.GenerateSlug(dto.Title, dto.CategoryName, "Services");
+                var slug = SlugHelper.GenerateSlug(dto.Title, dto.CategoryName, "Services", Guid.NewGuid());
                 var entity = new Common.Infrastructure.Model.Services
                 {
                     Slug = slug,
@@ -489,7 +489,7 @@ namespace QLN.Classified.MS.Service.Services
                 if (hasActiveAd)
                     throw new ConflictException("You already have an active ad in this category. Please unpublish or remove it before posting another.");
                 dto.Status = GetAdStatus(dto.L1CategoryName, dto.AdType);
-                var slug = SlugHelper.GenerateSlug(dto.Title, dto.CategoryName, "Services");
+                var slug = SlugHelper.GenerateSlug(dto.Title, dto.CategoryName, "Services", Guid.NewGuid());
                 ValidateCommon(dto);
 
                 dto.UpdatedAt = DateTime.UtcNow;
