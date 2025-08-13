@@ -1,11 +1,9 @@
 using Microsoft.AspNetCore.Components;
-using System;
 using QLN.ContentBO.WebUI.Components.ToggleTabs;
 using QLN.ContentBO.WebUI.Models;
 using MudBlazor;
 using QLN.ContentBO.WebUI.Components.ConfirmationDialog;
 using QLN.ContentBO.WebUI.Components.RejectVerificationDialog;
-using QLN.Common.Infrastructure.Model;
 using QLN.ContentBO.WebUI.Interfaces;
 using System.Text.Json;
 
@@ -13,38 +11,30 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved
 {
     public partial class PreLovedTableBase : ComponentBase
     {
-        [Parameter]
-        public List<P2pListingModal> Listings { get; set; }
-        [Parameter]
-        public bool IsLoading { get; set; }
-        [Parameter]
-        public bool IsEmpty { get; set; }
+        [Inject] public IClassifiedService ClassifiedService { get; set; }
+        [Inject] public ISnackbar Snackbar { get; set; }
+        [Inject] public ILogger<PreLovedTableBase> Logger { get; set; }
         [Inject] public IDialogService DialogService { get; set; }
 
-        [Parameter]
-        public int TotalCount { get; set; }
-        [Parameter]
-        public EventCallback<int> OnPageChanged { get; set; }
+        [Parameter] public EventCallback<string> selectedTabChanged { get; set; }
+        [Parameter] public List<P2pListingModal> Listings { get; set; }
+        [Parameter] public bool IsLoading { get; set; }
+        [Parameter] public bool IsEmpty { get; set; }
+        [Parameter] public int TotalCount { get; set; }
+        [Parameter] public EventCallback<int> OnPageChanged { get; set; }
 
-        [Parameter]
-        public EventCallback<int> OnPageSizeChanged { get; set; }
+        [Parameter] public EventCallback<int> OnPageSizeChanged { get; set; }
 
-        // In PreLovedTableBase.cs
-        [Parameter]
-        public string SelectedTab { get; set; }  
+        [Parameter] public string SelectedTab { get; set; }
 
-        [Parameter]
-        public EventCallback<string> OnTabChanged { get; set; }
+        [Parameter] public EventCallback<string> OnTabChanged { get; set; }
 
-        [Inject]
-        public IClassifiedService ClassifiedService { get; set; }
-        [Inject] public ISnackbar Snackbar { get; set; }
+
         protected bool isBulkActionLoading = false;
-        protected string singleItemLoadingId = null;
+        protected string? singleItemLoadingId = null;
         protected string rejectionTargetItemId = null;
         protected string removeTargetItemId = null;
         protected bool isBulkRemove = false;
-        [Inject] public ILogger<PreLovedTableBase> Logger { get; set; }
 
         protected HashSet<P2pListingModal> SelectedListings { get; set; } = new();
         protected int currentPage = 1;
@@ -52,8 +42,17 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved
 
         //protected string selectedTab = ((int)AdStatusEnum.PendingApproval).ToString();
         protected string _activeTab;
-        [Parameter]
-        public EventCallback<string> selectedTabChanged { get; set; }
+
+
+        protected List<ToggleTabs.TabOption> tabOptions = new()
+        {
+            new() { Label = "Pending Approval", Value = ((int)AdStatusEnum.PendingApproval).ToString() },
+            new() { Label = "Published", Value = ((int)AdStatusEnum.Published).ToString() },
+            new() { Label = "Unpublished", Value = ((int)AdStatusEnum.Unpublished).ToString() },
+            new() { Label = "Promoted", Value = "promoted" },
+            new() { Label = "Featured", Value = "featured"  }
+        };
+
 
         protected async Task HandleTabChanged(string newTab)
         {
@@ -75,16 +74,6 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved
                 _activeTab = ((int)AdStatusEnum.PendingApproval).ToString();
             }
         }
-        protected List<ToggleTabs.TabOption> tabOptions = new()
-        {
-    new() { Label = "Pending Approval", Value = ((int)AdStatusEnum.PendingApproval).ToString() },
-    new() { Label = "Published", Value = ((int)AdStatusEnum.Published).ToString() },
-    new() { Label = "Unpublished", Value = ((int)AdStatusEnum.Unpublished).ToString() },
-    new() { Label = "Promoted", Value = "promoted" },
-    new() { Label = "Featured", Value = "featured"  }
-};
-
-
 
         protected async Task HandlePageChange(int newPage)
         {
@@ -100,7 +89,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved
         }
 
 
-    
+
 
         protected async Task ShowConfirmation(string title, string description, string buttonTitle, Func<Task> onConfirmedAction)
         {
@@ -177,19 +166,21 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved
         protected Task Approve(P2pListingModal item) => RunSingleAction(item.Id, BulkActionEnum.Approve);
         protected Task Publish(P2pListingModal item) => RunSingleAction(item.Id, BulkActionEnum.Publish);
         protected Task Unpublish(P2pListingModal item) => RunSingleAction(item.Id, BulkActionEnum.Unpublish);
-        protected Task OnRemove(P2pListingModal item)
+
+        protected async Task OnRemove(P2pListingModal item)
         {
             removeTargetItemId = item.Id;
             isBulkRemove = false;
-            OpenRemoveReasonDialog();
-            return Task.CompletedTask;
+            await OpenRemoveReasonDialog();
         }
+
         private async Task RunSingleAction(string itemId, BulkActionEnum action)
         {
             singleItemLoadingId = itemId;
-            await PerformBulkAction(action, "", new List<string> { itemId });
+            await PerformBulkAction(action, "", [itemId]);
         }
-        private void OpenRemoveReasonDialog()
+
+        private async Task OpenRemoveReasonDialog()
         {
             var parameters = new DialogParameters
             {
@@ -206,8 +197,9 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved
                 FullWidth = true
             };
 
-            DialogService.Show<RejectVerificationDialog>("", parameters, options);
+            await DialogService.ShowAsync<RejectVerificationDialog>("", parameters, options);
         }
+
         private async Task HandleRejection(string reason)
         {
             Console.WriteLine($"Rejection Reason: {reason}");
@@ -221,6 +213,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved
 
             rejectionTargetItemId = null;
         }
+
         private async Task HandleRemoveWithReason(string reason)
         {
             if (string.IsNullOrWhiteSpace(reason))
@@ -240,12 +233,12 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved
             isBulkRemove = false;
         }
 
-        protected Task RequestChanges(P2pListingModal item)
+        protected async Task RequestChanges(P2pListingModal item)
         {
-            OpenRejectDialog(item.Id);
-            return Task.CompletedTask;
+            await OpenRejectDialog(item.Id);
         }
-        private void OpenRejectDialog(string itemId)
+
+        private async Task OpenRejectDialog(string itemId)
         {
             rejectionTargetItemId = itemId;
             var parameters = new DialogParameters
@@ -261,8 +254,9 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved
                 MaxWidth = MaxWidth.Small,
                 FullWidth = true
             };
-            var dialog = DialogService.Show<RejectVerificationDialog>("", parameters, options);
+            var dialog = await DialogService.ShowAsync<RejectVerificationDialog>("", parameters, options);
         }
+
         private string GetSuccessMessage(BulkActionEnum action)
         {
             return action switch
@@ -277,13 +271,14 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved
                 _ => "Action performed successfully."
             };
         }
-        private async Task PerformBulkAction(BulkActionEnum action, string reason = "", List<string> adIds = null)
+
+        private async Task PerformBulkAction(BulkActionEnum action, string reason = "", List<string>? adIds = null)
         {
             isBulkActionLoading = adIds == null; // only bulk shows spinner
 
-            adIds ??= SelectedListings.Select(x => x.Id).ToList();
+            adIds ??= [.. SelectedListings.Select(x => x.Id)];
 
-            if (!adIds.Any())
+            if (adIds.Count == 0)
                 return;
 
             var payload = new Dictionary<string, object>
@@ -322,7 +317,6 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved
             {
                 isBulkActionLoading = false;
                 singleItemLoadingId = null;
-                StateHasChanged();
             }
         }
     }

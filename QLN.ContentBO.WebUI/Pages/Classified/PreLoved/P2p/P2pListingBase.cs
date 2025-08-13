@@ -1,21 +1,18 @@
-﻿using DocumentFormat.OpenXml.Wordprocessing;
-using Google.Api;
-using Markdig.Parsers;
-using Microsoft.AspNetCore.Components;
+﻿using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using QLN.ContentBO.WebUI.Components;
 using QLN.ContentBO.WebUI.Models;
 using System.Text.Json;
 using QLN.ContentBO.WebUI.Interfaces;
+using Nextended.Core.Extensions;
 
 namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.P2p
 {
     public class P2pListingBase : QLComponentBase
     {
 
-        [Inject]
-        protected IClassifiedService ClassifiedService { get; set; } = default!;
-
+        [Inject] protected IPrelovedService PrelovedService { get; set; } = default!;
+        [Inject] protected ILogger<P2pListingBase> Logger { get; set; } = default!;
         protected List<P2pListingModal> Listings { get; set; } = new();
         protected string SearchText { get; set; } = string.Empty;
         protected string SortIcon { get; set; } = Icons.Material.Filled.Sort;
@@ -33,9 +30,9 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.P2p
         protected bool IsLoading { get; set; } = true;
         protected bool IsEmpty => !IsLoading && Listings.Count == 0;
         protected int TotalCount { get; set; }
-        protected int currentPage { get; set; } = 1;
-        protected int pageSize { get; set; } = 12;
-        protected string SelectedTab { get; set; } = ((int)AdStatusEnum.PendingApproval).ToString();
+        protected int CurrentPage { get; set; } = 1;
+        protected int PageSize { get; set; } = 12;
+        protected string SelectedTab { get; set; } = AdStatusEnum.PendingApproval.ToString();
 
         protected override async Task OnInitializedAsync()
         {
@@ -45,7 +42,6 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.P2p
         protected async Task LoadData()
         {
             IsLoading = true;
-            StateHasChanged();
 
             try
             {
@@ -64,22 +60,20 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.P2p
                     else if (SelectedTab == "featured")
                         isFeatured = true;
                 }
-                var request = new FilterRequest
+
+                var request = new PrelovedP2PSubscriptionQuery
                 {
-                    PageNumber = currentPage,
-                    PageSize = pageSize,
-                    Status = status, 
-                    SearchText = SearchText,
-                    CreationDate = dateCreated,
-                    PublishedDate = datePublished,
-                    SortField = SortField,
-                    SortDirection = SortDirection,
-                    IsPromoted = isPromoted,
-                    IsFeatured = isFeatured
+                    Status = SelectedTab.Capitalize(),
+                    CreatedDate = dateCreated.ToString(),
+                    PublishedDate = datePublished.ToString(),
+                    Page = CurrentPage,
+                    PageSize = PageSize,
+                    Search = SearchText,
+                    SortBy = SortField,
+                    SortOrder = SortDirection
                 };
 
-                
-                var response = await ClassifiedService.GetPrelovedP2pListing(request);
+                var response = await PrelovedService.GetPrelovedP2pListing(request);
 
                 if (response?.IsSuccessStatusCode ?? false)
                 {
@@ -94,12 +88,11 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.P2p
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error loading data: {ex.Message}");
+                Logger.LogError(ex, "LoadData");
             }
             finally
             {
                 IsLoading = false;
-                StateHasChanged();
             }
         }
 
@@ -108,7 +101,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.P2p
             if (SelectedTab != newTab)
             {
                 SelectedTab = newTab;
-                currentPage = 1;
+                CurrentPage = 1;
                 await LoadData();
                 StateHasChanged();
             }
@@ -117,7 +110,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.P2p
         protected async void OnSearchChanged(ChangeEventArgs e)
         {
             SearchText = e.Value?.ToString();
-            currentPage = 1;
+            CurrentPage = 1;
             await LoadData();
         }
 
@@ -129,7 +122,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.P2p
                 : Icons.Material.Filled.ArrowDownward;
             await LoadData();
         }
-      
+
 
         protected async Task HandlePageChanged(int newPage)
         {
@@ -138,8 +131,8 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.P2p
 
         protected async Task HandlePageSizeChanged(int newSize)
         {
-            pageSize = newSize;
-            currentPage = 1;
+            PageSize = newSize;
+            CurrentPage = 1;
             await LoadData();
         }
         protected void ToggleCreatedPopover()
@@ -182,6 +175,5 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.P2p
             datePublished = null;
             SearchText = string.Empty;
         }
-
     }
 }
