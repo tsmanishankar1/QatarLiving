@@ -31,6 +31,8 @@ namespace QLN.Common.Infrastructure.QLDbContext
         public DbSet<FeaturedCategory> FeaturedCategories { get; set; }
         public DbSet<StoresDashboardHeader> StoresDashboardHeaderItems { get; set; }
         public DbSet<StoresDashboardSummary> StoresDashboardSummaryItems { get; set; }
+
+        public DbSet<Wishlist> Wishlists { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<StoreFlyers>()

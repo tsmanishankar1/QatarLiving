@@ -17,6 +17,7 @@ using QLN.Common.Infrastructure.IService.IProductService;
 using QLN.Common.Infrastructure.IService.ISearchService;
 using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.QLDbContext;
+using QLN.Common.Infrastructure.Subscriptions;
 using QLN.Common.Infrastructure.Utilities;
 using System.Net;
 using System.Text;
@@ -1311,6 +1312,237 @@ namespace QLN.Backend.API.Service.ClassifiedService
         {
             throw new NotImplementedException();
         }
+
+        public async Task<string> Favourite(WishlistCreateDto dto, string userId, CancellationToken cancellationToken = default)
+        {
+            if (dto.AdId <= 0)
+            {
+                throw new ArgumentException("AdId is required.");
+            }
+
+            HttpStatusCode? failedStatusCode = null;
+
+            try
+            {
+                var queryParams = new Dictionary<string, string>
+                {
+                    { "adId", dto.AdId.ToString() },
+                    { "vertical", ((int)dto.Vertical).ToString() },
+                    { "userId", userId }
+                };
+
+                var queryString = "?" + string.Join("&", queryParams.Select(kv =>
+                    $"{Uri.EscapeDataString(kv.Key)}={Uri.EscapeDataString(kv.Value)}"));
+
+                var url = $"/api/classifieds/wishlist/favourite-by-id{queryString}";
+
+                var serviceRequest = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, SERVICE_APP_ID, url);
+                serviceRequest.Content = new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
+
+                var response = await _dapr.InvokeMethodWithResponseAsync(serviceRequest, cancellationToken);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorJson = await response.Content.ReadAsStringAsync(cancellationToken);
+                    string errorMessage;
+
+                    if (!string.IsNullOrWhiteSpace(errorJson))
+                    {
+                        try
+                        {
+                            var problem = JsonSerializer.Deserialize<ProblemDetails>(errorJson);
+                            errorMessage = problem?.Detail ?? "Unknown validation error.";
+                        }
+                        catch (JsonException)
+                        {
+                            errorMessage = errorJson;
+                        }
+                    }
+                    else
+                    {
+                        errorMessage = "No error details returned from service.";
+                    }
+
+                    failedStatusCode = response.StatusCode;
+                    throw new InvalidDataException(errorMessage);
+                }
+
+                var successMessage = await response.Content.ReadAsStringAsync(cancellationToken);
+                return string.IsNullOrWhiteSpace(successMessage)
+                    ? "Added to favourites successfully."
+                    : successMessage;
+            }
+            catch (ArgumentException ex)
+            {
+                _log.LogException(ex);
+                throw new InvalidOperationException("AdId is required and must be valid.", ex);
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw new InvalidOperationException(ex.Message);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                throw new KeyNotFoundException(ex.Message);
+            }
+            catch (DaprException daprEx)
+            {
+                _log.LogException(daprEx);
+                throw new InvalidOperationException("Failed to invoke internal service through Dapr.", daprEx);
+            }
+            catch (HttpRequestException httpEx)
+            {
+                _log.LogException(httpEx);
+                throw new InvalidOperationException("Failed to communicate with the internal service.", httpEx);
+            }
+            catch (Exception ex)
+            {
+                if (failedStatusCode == HttpStatusCode.Conflict)
+                {
+                    throw new ConflictException(ex.Message);
+                }
+                else if (failedStatusCode == HttpStatusCode.NotFound)
+                {
+                    throw new KeyNotFoundException(ex.Message);
+                }
+                _log.LogException(ex);
+                throw new InvalidOperationException("Failed to add to favourites due to an unexpected error.", ex);
+            }
+        }
+
+        public async Task<List<Wishlist>> GetAllByUserFavouriteList(string userId, Vertical vertical, SubVertical subVertical, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(userId))
+                    throw new ArgumentException("User ID must not be empty.", nameof(userId));
+
+                //var queryParams = new Dictionary<string, string>
+                //{
+                //    { "vertical", ((int)vertical).ToString() },
+                //    { "subVertical", ((int)subVertical).ToString() },
+                //    { "userId", userId }
+                //};
+
+                var queryString = $"?userId={Uri.EscapeDataString(userId)}" +
+                          $"&vertical={(int)vertical}" +
+                          $"&subVertical={(int)subVertical}";
+
+                var result = await _dapr.InvokeMethodAsync<List<Wishlist>>(
+                    HttpMethod.Get,
+                    SERVICE_APP_ID, 
+                    $"api/classifieds/wishlist/list-by-id{queryString}",
+                    cancellationToken);
+
+                return result ?? new List<Wishlist>(); 
+            }
+            catch (InvocationException ex)
+            {
+                throw new InvalidOperationException("Failed to retrieve wishlist from external service.", ex);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Unexpected error occurred while retrieving wishlist.", ex);
+            }
+        }
+
+        public async Task<string> UnFavourite(string userId, Vertical vertical, SubVertical subVertical, long adId, CancellationToken cancellationToken = default)
+        {
+            if (adId <= 0)
+            {
+                throw new ArgumentException("AdId is required and must be greater than zero.");
+            }
+
+            HttpStatusCode? failedStatusCode = null;
+
+            try
+            {
+                var queryParams = new Dictionary<string, string>
+                {
+                    { "userId", userId },
+                    { "vertical", ((int)vertical).ToString() },
+                    { "subVertical", ((int)subVertical).ToString() },
+                    { "adId", adId.ToString() }
+                };
+
+                var queryString = "?" + string.Join("&", queryParams.Select(kv =>
+                    $"{Uri.EscapeDataString(kv.Key)}={Uri.EscapeDataString(kv.Value)}"));
+                
+                var url = $"/api/classifieds/wishlist/unfavourite-by-id{queryString}";
+
+                var serviceRequest = _dapr.CreateInvokeMethodRequest(HttpMethod.Delete, SERVICE_APP_ID, url);
+
+                var response = await _dapr.InvokeMethodWithResponseAsync(serviceRequest, cancellationToken);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorJson = await response.Content.ReadAsStringAsync(cancellationToken);
+                    string errorMessage;
+
+                    if (!string.IsNullOrWhiteSpace(errorJson))
+                    {
+                        try
+                        {
+                            var problem = JsonSerializer.Deserialize<ProblemDetails>(errorJson);
+                            errorMessage = problem?.Detail ?? "Unknown validation error.";
+                        }
+                        catch (JsonException)
+                        {
+                            errorMessage = errorJson;
+                        }
+                    }
+                    else
+                    {
+                        errorMessage = "No error details returned from service.";
+                    }
+
+                    failedStatusCode = response.StatusCode;
+                    throw new InvalidDataException(errorMessage);
+                }
+
+                var successMessage = await response.Content.ReadAsStringAsync(cancellationToken);
+                return string.IsNullOrWhiteSpace(successMessage)
+                    ? "Wishlist item removed successfully."
+                    : successMessage;
+            }
+            catch (ArgumentException ex)
+            {
+                _log.LogException(ex);
+                throw new InvalidOperationException("AdId is required and must be valid.", ex);
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw new InvalidOperationException(ex.Message);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                throw new KeyNotFoundException(ex.Message);
+            }
+            catch (DaprException daprEx)
+            {
+                _log.LogException(daprEx);
+                throw new InvalidOperationException("Failed to invoke internal service through Dapr.", daprEx);
+            }
+            catch (HttpRequestException httpEx)
+            {
+                _log.LogException(httpEx);
+                throw new InvalidOperationException("Failed to communicate with the internal service.", httpEx);
+            }
+            catch (Exception ex)
+            {
+                if (failedStatusCode == HttpStatusCode.Conflict)
+                {
+                    throw new ConflictException(ex.Message);
+                }
+                else if (failedStatusCode == HttpStatusCode.NotFound)
+                {
+                    throw new KeyNotFoundException(ex.Message);
+                }
+                _log.LogException(ex);
+                throw new InvalidOperationException("Failed to remove from favourites due to an unexpected error.", ex);
+            }
+        }
+
     }
 }
 
