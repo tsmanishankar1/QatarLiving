@@ -101,6 +101,8 @@ namespace QLN.Common.Infrastructure.Model
         public string? Duration { get; set; }
         [MaxLength(100)]
         public string? Reservation { get; set; }
+        [MaxLength(200)]
+        public string? Slug { get; set; }
         public DateTime? PublishedDate { get; set; }
         public DateTime? ExpiryDate { get; set; }
         public bool IsActive { get; set; }
