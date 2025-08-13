@@ -823,7 +823,7 @@ namespace QLN.Classified.MS.Service
             try
             {
                 var adPreloved = await _context.Preloved.AsNoTracking()
-                    .FirstOrDefaultAsync(p => p.Id == adId && p.IsActive == true, cancellationToken);
+                    .FirstOrDefaultAsync(p => p.Id == adId, cancellationToken);
 
                 if (adPreloved == null)
                 {
