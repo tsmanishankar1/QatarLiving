@@ -600,6 +600,7 @@ namespace QLN.Classified.MS.Service.Services
                 CreatedAt = dto.CreatedAt,
                 UpdatedAt = dto.UpdatedAt,
                 UpdatedBy = dto.UpdatedBy,
+                Slug = dto.Slug,
                 Images = dto.PhotoUpload.Select(i => new ImageInfo
                 {
                     Url = i.Url,
@@ -624,6 +625,14 @@ namespace QLN.Classified.MS.Service.Services
             var ad = await _dbContext.Services
                 .AsNoTracking()
                 .FirstOrDefaultAsync(s => s.Id == id && s.IsActive, cancellationToken);
+
+            return ad;
+        }
+        public async Task<Common.Infrastructure.Model.Services?> GetServiceAdBySlug(string? slug, CancellationToken cancellationToken = default)
+        {
+            var ad = await _dbContext.Services
+                .AsNoTracking()
+                .FirstOrDefaultAsync(s => s.Slug == slug && s.IsActive, cancellationToken);
 
             return ad;
         }
