@@ -66,9 +66,6 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved
         }
         protected override void OnParametersSet()
         {
-            Console.WriteLine($"Parent SelectedTab: {SelectedTab}");
-            Console.WriteLine($"Child received selectedTab: {SelectedTab}");
-            Console.WriteLine($"Received selectedTab: {SelectedTab}");
             if (!string.IsNullOrEmpty(SelectedTab))
             {
                 _activeTab = SelectedTab;
@@ -77,7 +74,6 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved
             {
                 _activeTab = ((int)AdStatusEnum.PendingApproval).ToString();
             }
-            Console.WriteLine($"Active tab set to: {_activeTab}");
         }
         protected List<ToggleTabs.TabOption> tabOptions = new()
         {

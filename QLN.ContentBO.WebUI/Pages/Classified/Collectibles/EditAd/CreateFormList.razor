@@ -19,45 +19,45 @@
             {
                 @foreach (var cat in CategoryTrees)
                 {
-                    if (cat != null && cat.Id != null && cat.Name != null)
+                    if (cat != null && cat.Id != null && cat.CategoryName != null)
                     {
-                        <MudSelectItem T="string" Value="@cat.Id.ToString()">@cat.Name</MudSelectItem>
+                        <MudSelectItem T="string" Value="@cat.Id.ToString()">@cat.CategoryName</MudSelectItem>
                     }
                 }
             }
         </MudSelect>
 
 
-        @if (!string.IsNullOrEmpty(Ad.CategoryId) && SelectedCategory?.Children?.Any() == true)
+        @if (!string.IsNullOrEmpty(Ad.CategoryId) && SelectedCategory?.Fields?.Any() == true)
         {
           <MudSelect T="string" Class="white-bg" Label="Subcategory" Variant="Variant.Outlined"
                     Value="@Ad.L1CategoryId"
                     ValueChanged="@OnSubCategoryChanged"
                     For="@(() => Ad.L1CategoryId)"
                     FullWidth="true">
-                @foreach (var sub in SelectedCategory?.Children ?? Enumerable.Empty<CategoryTreeDto>())
+                @foreach (var sub in SelectedCategory?.Fields ?? Enumerable.Empty<ClassifiedsCategoryField>())
                 {
-                    if (sub?.Id != null && sub.Name != null)
+                    if (sub?.Id != null && sub.CategoryName != null)
                     {
-                        <MudSelectItem T="string" Value="@sub.Id.ToString()">@sub.Name</MudSelectItem>
+                        <MudSelectItem T="string" Value="@sub.Id.ToString()">@sub.CategoryName</MudSelectItem>
                     }
                 }
             </MudSelect>
 
         }
 
-        @if (!string.IsNullOrEmpty(Ad.L1CategoryId) && SelectedSubcategory?.Children?.Any() == true)
+        @if (!string.IsNullOrEmpty(Ad.L1CategoryId) && SelectedSubcategory?.Fields?.Any() == true)
         {
             <MudSelect T="string"Class="white-bg" Label="Section" Variant="Variant.Outlined"
                 Value="@Ad.L2CategoryId"
                 ValueChanged="@OnSubSubCategoryChanged"
                 For="@(() => Ad.L2CategoryId)"
                 FullWidth="true">
-                 @foreach (var subsub in SelectedSubcategory?.Children ?? Enumerable.Empty<CategoryTreeDto>())
+                 @foreach (var subsub in SelectedSubcategory?.Fields ?? Enumerable.Empty<ClassifiedsCategoryField>())
                 {
-                    if (subsub?.Id != null && subsub.Name != null)
+                    if (subsub?.Id != null && subsub.CategoryName != null)
                     {
-                        <MudSelectItem T="string" Value="@subsub.Id.ToString()">@subsub.Name</MudSelectItem>
+                        <MudSelectItem T="string" Value="@subsub.Id.ToString()">@subsub.CategoryName</MudSelectItem>
                     }
                 }
         </MudSelect>
@@ -65,20 +65,20 @@
         }
         @if (AvailableFields != null)
         {
-            @foreach (var field in AvailableFields.Where(f => !ExcludedFields.Contains(f.Name)))
+            @foreach (var field in AvailableFields.Where(f => !ExcludedFields.Contains(f.CategoryName)))
             {
-                if (!Ad.DynamicFields.ContainsKey(field.Name))
+                if (!Ad.DynamicFields.ContainsKey(field.CategoryName))
                 {
-                    Ad.DynamicFields[field.Name] = string.Empty;
+                    Ad.DynamicFields[field.CategoryName] = string.Empty;
                 }
 
                 <div class="mt-2">
                     @if (field.Type == "dropdown" || field.Type == "Dropdown")
                     {
                         <MudSelect T="string"
-                                Label="@field.Name"
+                                Label="@field.CategoryName"
                                 Variant="Variant.Outlined"
-                                @bind-Value="Ad.DynamicFields[field.Name]"
+                                @bind-Value="Ad.DynamicFields[field.CategoryName]"
                                 FullWidth="true"
                                 Class="white-bg"
                                 Immediate="true">
@@ -91,14 +91,14 @@
                     else if (field.Type == "Free Text")
                     {
                         <MudTextField T="string"
-                                    Label="@field.Name"
+                                    Label="@field.CategoryName"
                                     Variant="Variant.Outlined"
-                                    @bind-Value="Ad.DynamicFields[field.Name]"
+                                    @bind-Value="Ad.DynamicFields[field.CategoryName]"
                                     FullWidth="true"
                                     Class="white-bg" />
                     }
 
-                        @if (DynamicFieldErrors.TryGetValue(field.Name, out var errors))
+                        @if (DynamicFieldErrors.TryGetValue(field.CategoryName, out var errors))
                     {
                         @foreach (var error in errors)
                         {

@@ -122,7 +122,7 @@ else
            <MudTd>
             <img src="@context.Images?.FirstOrDefault()?.Url" style="width: 136px; height: 61px; border-radius: 6px;" />
         </MudTd>
-        <MudTd title="@(string.IsNullOrWhiteSpace(context.Id) ? "-" : context.Id)"Class="truncate-text hover-title">@context.Id</MudTd>
+        <MudTd Class="truncate-text hover-title">@context.Id</MudTd>
         <MudTd title="@(string.IsNullOrWhiteSpace(context.AdTypeName) ? "-" : context.AdTypeName)" Class="truncate-text hover-title">@context.AdType</MudTd>
         <MudTd title="@(string.IsNullOrWhiteSpace(context.Title) ? "-" : context.Title)" Class="truncate-text hover-title">@context.Title</MudTd>
         <MudTd title="@(string.IsNullOrWhiteSpace(context.UserId) ? "-" : context.UserId)" Class="truncate-text">@context.UserId</MudTd>
