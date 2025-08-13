@@ -186,7 +186,7 @@ namespace QLN.ContentBO.WebUI.Pages
                 }
                 else
                 {
-                    Snackbar.Add("Failed to add seasonal pick.", Severity.Error);
+                    Snackbar.Add("Failed to Edit seasonal pick.", Severity.Error);
                 }
             }
             catch (Exception ex)

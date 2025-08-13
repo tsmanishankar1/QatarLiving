@@ -13,7 +13,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
     public class EditDealsBase : QLComponentBase
     {
         [Parameter]
-        public string? AdId { get; set; }
+        public long? AdId { get; set; }
         [Inject] public NavigationManager Navigation { get; set; }
         protected DealsModal adPostModel { get; set; } = new();
 
@@ -48,7 +48,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
         {
             try
             {
-                if (!string.IsNullOrEmpty(AdId))
+                if (AdId != null)
                 {
                     await LoadDealAdData(AdId);
                 }
@@ -59,7 +59,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
             }
         }
 
-        private async Task LoadDealAdData(string adId)
+        private async Task LoadDealAdData(long? adId)
         {
             try
             {
@@ -114,7 +114,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
                 var response = await ClassifiedService.UpdateDealsAsync(adPostModel);
                 if (response != null && response.IsSuccessStatusCode)
                 {
-                    await LoadDealAdData(adPostModel.Id);
+                    // await LoadDealAdData(adPostModel.Id);
                     Snackbar.Add("Deal Data Updated", Severity.Success);
                 }
                 else if (response.StatusCode == HttpStatusCode.Unauthorized)

@@ -12,6 +12,7 @@ namespace QLN.ContentBO.WebUI.Interfaces
         /// <param name="vertical">Classifieds CategoryTrees</param>
         /// <returns>HttpResponseMessage</returns>
         Task<HttpResponseMessage?> GetAllCategoryTreesAsync(string vertical);
+        Task<HttpResponseMessage> GetServicesCategories(Vertical vertical, SubVertical subVertical);
         Task<HttpResponseMessage?> GetFeaturedSeasonalPicks(Vertical vertical);
         Task<HttpResponseMessage?> GetFeaturedStores(Vertical vertical);
         Task<HttpResponseMessage?> GetAllSeasonalPicks(Vertical vertical);
@@ -62,7 +63,7 @@ namespace QLN.ContentBO.WebUI.Interfaces
         Task<HttpResponseMessage?> GetDealsSubscription(FilterRequest request);
         Task<HttpResponseMessage?> GetDealsListing(FilterRequest request);
         Task<HttpResponseMessage?> PerformDealsBulkActionAsync(object payload);
-        Task<HttpResponseMessage?> GetDealsByIdAsync(string vertical, string adId);
+        Task<HttpResponseMessage?> GetDealsByIdAsync(string vertical, long? adId);
         Task<HttpResponseMessage?> UpdateDealsAsync(object payload);
         Task<HttpResponseMessage> GetFeaturedCategoryById(string id);
         Task<HttpResponseMessage> GetFeaturedStoreById(string id);

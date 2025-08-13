@@ -124,7 +124,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services.P2PTransaction
                     ["Whatsapp"] = x.Whatsapp,
                     ["Amount"] = x.Amount,
                     ["Status"] = x.Status?.ToString(),
-                    ["Create Date"] = x.CreationDate,
+                    ["Create Date"] = x.CreationDate.ToString("dd-MM-yyyy hh:mmtt"),
                     ["Start Date"] = x.StartDate,
                     ["End Date"] = x.EndDate,
                     ["Views"] = x.Views,

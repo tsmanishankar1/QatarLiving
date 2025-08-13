@@ -111,7 +111,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Landing
                             slotAssignments = newSlotOrder.Select((originalSlotNumber, newIndex) => new
                             {
                                 slotOrder = newIndex + 1,
-                                categoryId = pickMap.TryGetValue(originalSlotNumber, out var id) && id != Guid.Empty ? (Guid?)id : null
+                                pickId = pickMap.TryGetValue(originalSlotNumber, out var id) && id != Guid.Empty ? (Guid?)id : null
                             }).Cast<object>().ToList();
                             break;
                         case LandingPageItemType.FeaturedStore:

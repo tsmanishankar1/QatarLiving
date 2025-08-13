@@ -21,7 +21,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
         {
 
             group.MapGet("/stores-get-subscriptions", async Task<Results<
-          Ok<ClassifiedBOPageResponse<StoresSubscriptionDto>>,
+          Ok<ClassifiedBOPageResponse<ViewStoresSubscriptionDto>>,
           BadRequest<ProblemDetails>,
           ProblemHttpResult>>
           (
@@ -56,7 +56,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 .WithTags("ClassifiedBo")
                 .WithSummary("To list all subscriptions in the stores.")
                 .WithDescription("Fetches all subscriptions of users on stores")
-                .Produces<ClassifiedBOPageResponse<StoresSubscriptionDto>>(StatusCodes.Status200OK)
+                .Produces<ClassifiedBOPageResponse<ViewStoresSubscriptionDto>>(StatusCodes.Status200OK)
                 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
