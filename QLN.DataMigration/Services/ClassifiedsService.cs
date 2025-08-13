@@ -257,5 +257,10 @@ namespace QLN.DataMigration.Services
         {
             throw new NotImplementedException();
         }
+
+        public Task<Deals> GetDealsAdBySlug(string slug, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
