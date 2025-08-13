@@ -1,10 +1,11 @@
 ﻿using Microsoft.AspNetCore.Components;
 using MudBlazor;
+using Nextended.Core.Extensions;
 using QLN.ContentBO.WebUI.Components;
+using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Models;
 using System.Text.Json;
-using QLN.ContentBO.WebUI.Interfaces;
-using Nextended.Core.Extensions;
+using static QLN.ContentBO.WebUI.Components.ToggleTabs.ToggleTabs;
 
 namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.P2p
 {
@@ -13,7 +14,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.P2p
 
         [Inject] protected IPrelovedService PrelovedService { get; set; } = default!;
         [Inject] protected ILogger<P2pListingBase> Logger { get; set; } = default!;
-        protected List<P2pListingModal> Listings { get; set; } = new();
+        protected List<PrelovedP2PSubscriptionItem> Listings { get; set; } = new();
         protected string SearchText { get; set; } = string.Empty;
         protected string SortIcon { get; set; } = Icons.Material.Filled.Sort;
         protected string SortDirection { get; set; } = "asc";
@@ -32,7 +33,16 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.P2p
         protected int TotalCount { get; set; }
         protected int CurrentPage { get; set; } = 1;
         protected int PageSize { get; set; } = 12;
-        protected string SelectedTab { get; set; } = AdStatusEnum.PendingApproval.ToString();
+        protected string SelectedTab { get; set; } = "PendingApproval";
+        
+        protected List<TabOption> tabOptions =
+        [
+            new() { Label = "Pending Approval", Value = "PendingApproval" },
+            new() { Label = "Published", Value = "Published" },
+            new() { Label = "Unpublished", Value = "Unpublished" },
+            new() { Label = "Promoted", Value = "Promoted" },
+            new() { Label = "Promoted", Value = "Promoted"  }
+        ];
 
         protected override async Task OnInitializedAsync()
         {
@@ -45,22 +55,6 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.P2p
 
             try
             {
-                int? status = null;
-                bool? isPromoted = null;
-                bool? isFeatured = null;
-
-                if (int.TryParse(SelectedTab, out var tabValue))
-                {
-                    status = tabValue;
-                }
-                else
-                {
-                    if (SelectedTab == "promoted")
-                        isPromoted = true;
-                    else if (SelectedTab == "featured")
-                        isFeatured = true;
-                }
-
                 var request = new PrelovedP2PSubscriptionQuery
                 {
                     Status = SelectedTab.Capitalize(),
@@ -78,11 +72,11 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.P2p
                 if (response?.IsSuccessStatusCode ?? false)
                 {
                     var content = await response.Content.ReadAsStringAsync();
-                    var result = JsonSerializer.Deserialize<PagedResult<P2pListingModal>>(content, new JsonSerializerOptions
+                    var result = JsonSerializer.Deserialize<PrelovedP2PSubscriptionResponse>(content, new JsonSerializerOptions
                     {
                         PropertyNamingPolicy = JsonNamingPolicy.CamelCase
                     });
-                    Listings = result?.Items ?? new List<P2pListingModal>();
+                    Listings = result?.Items ?? [];
                     TotalCount = result?.TotalCount ?? 0;
                 }
             }
@@ -103,7 +97,6 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.P2p
                 SelectedTab = newTab;
                 CurrentPage = 1;
                 await LoadData();
-                StateHasChanged();
             }
         }
 
