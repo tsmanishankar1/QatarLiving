@@ -703,13 +703,12 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .ExcludeFromDescription();
 
             group.MapPut("/items/refresh", async Task<IResult> (
-        HttpContext httpContext,
-        [FromQuery] SubVertical subVertical,
-        [FromQuery] long adId,
-        [FromQuery] Guid subscriptionId,
-        IClassifiedService service,
-        AuditLogger auditLogger,
-        CancellationToken token) =>      
+                HttpContext httpContext,
+                [FromQuery] SubVertical subVertical,
+                [FromQuery] long adId,
+                IClassifiedService service,
+                AuditLogger auditLogger,
+                CancellationToken token) =>      
             {
                 string? uid = "unknown";
 
@@ -732,9 +731,30 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                     }
 
                     var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                    string userId = userData.GetProperty("uid").GetString();
+                   var subscriptionId = new Guid("5a024f96-7414-4473-80b8-f5d70297e262");
+                    // if (!userData.TryGetProperty("subscription", out var subscriptionElement) ||
+                    //!subscriptionElement.TryGetProperty("subscription_id", out var subscriptionIdElement))
+                    // {
+                    //     return TypedResults.Problem(new ProblemDetails
+                    //     {
+                    //         Title = "Unauthorized Access",
+                    //         Detail = "Subscription ID is missing in token.",
+                    //         Status = StatusCodes.Status403Forbidden
+                    //     });
+                    // }
                     uid = userData.GetProperty("uid").GetString();
 
-                    var result = await service.RefreshClassifiedItemsAd(subVertical, adId, uid, subscriptionId, token);
+                    // if (!Guid.TryParse(subscriptionIdElement.GetString(), out var subscriptionId))
+                    // {
+                    //     return TypedResults.Problem(new ProblemDetails
+                    //     {
+                    //         Title = "Invalid Subscription ID",
+                    //         Detail = "Subscription ID in token is not a valid GUID.",
+                    //         Status = StatusCodes.Status400BadRequest
+                    //     });
+                    // }
+                    var result = await service.RefreshClassifiedItemsAd(subVertical, adId, userId, subscriptionId, token);
 
                     await auditLogger.LogAuditAsync(
                         module: "Classified",
@@ -773,7 +793,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 string userId,
                 long adId,
                 [FromQuery] SubVertical subVertical,
-                [FromQuery] Guid subscriptionId,       
+                Guid subscriptionId,       
                 IClassifiedService service,
                 CancellationToken token) =>
             {
@@ -3871,9 +3891,20 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                     }
 
                     var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                    var subscriptionId = new Guid("5a024f96-7414-4473-80b8-f5d70297e262");
+                   // if (!userData.TryGetProperty("subscription", out var subscriptionElement) ||
+                   //!subscriptionElement.TryGetProperty("subscription_id", out var subscriptionIdElement))
+                   // {
+                   //     return TypedResults.Problem(new ProblemDetails
+                   //     {
+                   //         Title = "Unauthorized Access",
+                   //         Detail = "Subscription ID is missing in token.",
+                   //         Status = StatusCodes.Status403Forbidden
+                   //     });
+                   // }
                     uid = userData.GetProperty("uid").GetString();
 
-                    await service.PromoteClassifiedAd(dto, uid, token);
+                    await service.PromoteClassifiedAd(dto, uid, subscriptionId, token);
 
                     await auditLogger.LogAuditAsync(
                         module: "Classified",
@@ -3884,6 +3915,15 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         payload: dto,
                         cancellationToken: token
                         );
+                   // if (!Guid.TryParse(subscriptionIdElement.GetString(), out var subscriptionId))
+                   // {
+                   //     return TypedResults.Problem(new ProblemDetails
+                   //     {
+                   //         Title = "Invalid Subscription ID",
+                   //         Detail = "Subscription ID in token is not a valid GUID.",
+                   //         Status = StatusCodes.Status400BadRequest
+                   //     });
+                   // }
 
                     return TypedResults.Ok(new
                     {
@@ -3948,6 +3988,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
           string userId,
           long adId,
           [FromQuery] int subVertical,
+          Guid subscriptionid,
           IClassifiedService service,
           CancellationToken token) =>
       {
@@ -3972,14 +4013,15 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                       Status = StatusCodes.Status400BadRequest
                   });
               }
-
+              
               var dto = new ClassifiedsPromoteDto
               {
                   AdId = adId,
                   SubVertical = (QLN.Common.DTO_s.SubVertical)subVertical
+                  
               };
 
-              await service.PromoteClassifiedAd(dto, userId, token);
+              await service.PromoteClassifiedAd(dto, userId, subscriptionid, token);
 
               return TypedResults.Ok(new
               {
@@ -4034,8 +4076,29 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         return Results.Unauthorized();
                     }
                     var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                    var subscriptionId = new Guid("5a024f96-7414-4473-80b8-f5d70297e262");
+                   // if (!userData.TryGetProperty("subscription", out var subscriptionElement) ||
+                   //!subscriptionElement.TryGetProperty("subscription_id", out var subscriptionIdElement))
+                   // {
+                   //     return TypedResults.Problem(new ProblemDetails
+                   //     {
+                   //         Title = "Unauthorized Access",
+                   //         Detail = "Subscription ID is missing in token.",
+                   //         Status = StatusCodes.Status403Forbidden
+                   //     });
+                   // }
+
+                   // if (!Guid.TryParse(subscriptionIdElement.GetString(), out var subscriptionId))
+                   // {
+                   //     return TypedResults.Problem(new ProblemDetails
+                   //     {
+                   //         Title = "Invalid Subscription ID",
+                   //         Detail = "Subscription ID in token is not a valid GUID.",
+                   //         Status = StatusCodes.Status400BadRequest
+                   //     });
+                   // }
                     uid = userData.GetProperty("uid").GetString();
-                    await service.FeatureClassifiedAd(dto, uid, token);
+                    await service.FeatureClassifiedAd(dto, uid, subscriptionId, token);
 
                     await auditLogger.LogAuditAsync(
                         module: "Classified",
@@ -4106,6 +4169,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             group.MapPut("/featured", async Task<IResult> (
                 ClassifiedsPromoteDto dto,
                 string userId,
+                Guid subscriptionid,
                 IClassifiedService service,
                 CancellationToken token) =>
             {
@@ -4120,7 +4184,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                             Status = StatusCodes.Status400BadRequest
                         });
                     }
-                    await service.FeatureClassifiedAd(dto, userId, token);
+                    await service.FeatureClassifiedAd(dto, userId, subscriptionid ,token);
                     return TypedResults.Ok(new
                     {
                         AdId = dto.AdId,
