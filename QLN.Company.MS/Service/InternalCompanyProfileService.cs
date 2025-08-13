@@ -269,7 +269,7 @@ namespace QLN.Company.MS.Service
                 if (existing == null)
                     throw new KeyNotFoundException($"Company with ID {dto.Id} was not found.");
 
-                if ((int)(existing.SubVertical ?? 0) == (int)SubVertical.Stores)
+                if (existing.Vertical == VerticalType.Classifieds && (int)(existing.SubVertical ?? 0) == (int)SubVertical.Stores)
                     throw new ArgumentException("Editing companies in the 'Stores' category is not allowed.");
 
                 bool duplicateCompany = await _context.Companies
