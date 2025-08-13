@@ -48,7 +48,6 @@ namespace QLN.Common.DTO_s
         public string? Availability { get; set; }
         public string? Duration { get; set; }
         public string? Reservation { get; set; }
-        public string? Slug { get; set; }
     }
     public class ServiceRequest : ServiceDto
     {
