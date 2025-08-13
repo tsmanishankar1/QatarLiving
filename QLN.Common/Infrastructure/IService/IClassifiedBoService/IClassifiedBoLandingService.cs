@@ -33,7 +33,7 @@ namespace QLN.Common.Infrastructure.IService.V2IClassifiedBoService
 
         Task<List<FeaturedStore>> GetFeaturedStores(Vertical vertical, CancellationToken cancellationToken = default);
 
-        Task<List<FeaturedStore>> GetSlottedFeaturedStores(Vertical vertical, CancellationToken cancellationToken = default);
+        Task<List<FeaturedStoreItem>> GetSlottedFeaturedStores(Vertical vertical, CancellationToken cancellationToken = default);
 
         Task<string> ReplaceSlotWithFeaturedStore(string userId, string userName, ReplaceFeaturedStoresSlotRequest dto, CancellationToken cancellationToken = default);
 

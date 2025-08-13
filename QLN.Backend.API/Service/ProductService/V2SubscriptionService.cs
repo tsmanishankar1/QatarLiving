@@ -137,7 +137,7 @@ namespace QLN.Backend.API.Service.ProductService
                     Quota = BuildSubscriptionQuotaFromProduct(product),
                     StartDate = DateTime.UtcNow,
                     EndDate = DateTime.UtcNow.Add(GetDurationFromProduct(product)),
-                    Status = SubscriptionStatus.Active,
+                    Status = SubscriptionStatus.Active, // this should likely be created in an PendingPayment status ?
                     CreatedAt = DateTime.UtcNow
                 };
 
@@ -169,7 +169,6 @@ namespace QLN.Backend.API.Service.ProductService
                 if (!actorResult) throw new Exception("Failed to save subscription to actor");
 
                 await transaction.CommitAsync(cancellationToken);
-                _logger.LogInformation("V2 Subscription purchased successfully: {Id} for user: {UserId}", subscriptionId);
                 return subscriptionId;
             }
             catch (Exception ex)

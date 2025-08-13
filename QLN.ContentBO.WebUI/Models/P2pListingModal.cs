@@ -30,19 +30,26 @@ namespace QLN.ContentBO.WebUI.Models
     public class DealsListingModal
     {
         public string Id {  get; set; }
-        public string AdId { get; set; } = string.Empty;
+        public long? AdId { get; set; } 
         public string DealTitle { get; set; } = string.Empty;
         public List<string> Location { get; set; } = new List<string>();
         public string ContactNumber {  get; set; } = string.Empty;
         public string WhatsappNumber { get; set; } = string.Empty;
+        public string? WhatsAppLeads { get; set; } = string.Empty;
+        public string? PhoneLeads { get; set; } = string.Empty;
         public string? WebUrl { get; set; }
         public string? SubscriptionType { get; set; } = string.Empty;
         public string Status { get; set; } = string.Empty;
+        public string? Price { get; set; } = string.Empty;
+        public string? Email { get; set; } = string.Empty;
+        public string? CreatedBy { get; set; } = string.Empty;
+        public string? UserName { get; set; } = string.Empty;
         public DateTime? StartDate { get; set; }
+        public DateTime? EndDate { get; set; }
         public DateTime? DateCreated { get; set; }
         public DateTime? ExpiryDate { get; set; }
         public List<ImageUpload>? ImageUpload { get; set; }
-        public string OrderId { get; set; } = string.Empty;
+        public long? OrderId { get; set; } 
         public int WebClick { get; set; }
         public int Views { get; set; }
         public int Impression {  get; set; }

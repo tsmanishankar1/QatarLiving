@@ -789,18 +789,18 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
             }
         }
 
-        public async Task<List<FeaturedStore>> GetSlottedFeaturedStores(Vertical vertical, CancellationToken cancellationToken = default)
+        public async Task<List<FeaturedStoreItem>> GetSlottedFeaturedStores(Vertical vertical, CancellationToken cancellationToken = default)
         {
             try
             {
-                var response = await _dapr.InvokeMethodAsync<List<FeaturedStore>>(
+                var response = await _dapr.InvokeMethodAsync<List<FeaturedStoreItem>>(
                     HttpMethod.Get,
                     SERVICE_APP_ID,
                     $"api/v2/classifiedbo/featured-stores/slotted?vertical={vertical}",
                     cancellationToken
                 );
 
-                return response ?? new List<FeaturedStore>();
+                return response ?? new List<FeaturedStoreItem>();
             }
             catch (Exception ex)
             {

@@ -1318,6 +1318,36 @@ namespace QLN.Common.Migrations
                     b.ToTable("Services");
                 });
 
+            modelBuilder.Entity("QLN.Common.Infrastructure.Model.Wishlist", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("AdId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Subvertical")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("Vertical")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Wishlists");
+                });
+
             modelBuilder.Entity("QLN.Common.DTO_s.ClassifiedsBo.ProductFeatures", b =>
                 {
                     b.HasOne("QLN.Common.DTO_s.ClassifiedsBo.StoreProducts", "StoreProduct")

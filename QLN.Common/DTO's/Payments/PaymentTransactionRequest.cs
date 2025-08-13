@@ -1,4 +1,5 @@
 ﻿using QLN.Common.Infrastructure.Subscriptions;
+using Swashbuckle.AspNetCore.Annotations;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -34,7 +35,10 @@ namespace QLN.Common.DTO_s.Payments
         [JsonPropertyName("vertical")]
         public Vertical? Vertical { get; set; }
 
-        [JsonPropertyName("subscriptionTypeId")]
-        public int? SubscriptionTypeId { get; set; }
+        [JsonPropertyName("subscription_category")]
+        public SubscriptionCategory? SubscriptionCategory { get; set; }
+
+        //[JsonPropertyName("subscriptionTypeId")]
+        //public int? SubscriptionTypeId { get; set; } // using category instead
     }
 }

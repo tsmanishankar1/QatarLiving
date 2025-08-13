@@ -89,6 +89,8 @@ app.UseHttpsRedirection();
 
 app.MapGroup("/api/classifieds")
    .MapClassifiedEndpoints();
+app.MapGroup("/api/classifieds")
+   .MapClassifiedFOStoresEndpoints();
 var ServiceGroup = app.MapGroup("/api/service");
 ServiceGroup.MapAllServiceConfiguration();
 var ClassifiedBo = app.MapGroup("/api/v2/classifiedbo");

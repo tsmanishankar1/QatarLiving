@@ -3,14 +3,19 @@
     public class FilterRequest
     {
         public string? Text { get; set; }
+        public string? SubscriptionType { get; set; }
         public Dictionary<string, string>? Filters { get; set; }
         public string? OrderBy { get; set; }
+        public string? SortField { get; set; } 
         public int? PageNumber { get; set; } = 1;
         public int? PageSize { get; set; } = 10;
         public int? Status { get; set; }
-        public string? SortField { get; set; }
+        public string? SortBy { get; set; }
         public DateTime? CreationDate { get; set; }
         public DateTime? PublishedDate { get; set; }
+        public DateTime? StartDate { get; set; }
+        public DateTime? EndDate { get; set; }
+
         public string? SortDirection { get; set; }
         public string? SearchText { get; set; }
         public bool? IsPromoted { get; set; }

@@ -16,9 +16,11 @@ namespace QLN.ContentBO.WebUI.Models
 
     public class CategoryField
     {
+        public long Id { get; set; }
         public string Name { get; set; } = default!;
-        public string Type { get; set; } = "text"; // "text", "number", "dropdown"
-        public List<string>? Options { get; set; } // only for dropdown
+        public string Type { get; set; } = "text"; 
+        public List<string>? Options { get; set; } 
+        public List<String>? Fields { get; set; } = new();
     }
 
     public class CategoryDtos

@@ -7,6 +7,7 @@ using QLN.Common.DTO_s.ClassifiedsBo;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.IService.IClassifiedBoService;
 using QLN.Common.Infrastructure.QLDbContext;
+using QLN.Common.Infrastructure.Subscriptions;
 using System.Xml.Serialization;
 namespace QLN.Classified.MS.Service.ClassifiedBoService
 {
@@ -26,7 +27,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
         }
 
         #region Stores back office end points
-        public async Task<ClassifiedBOPageResponse<StoresSubscriptionDto>> getStoreSubscriptions(string? subscriptionType, string? filterDate, int? Page, int? PageSize, string? Search, CancellationToken cancellationToken = default)
+        public async Task<ClassifiedBOPageResponse<ViewStoresSubscriptionDto>> getStoreSubscriptions(string? subscriptionType, string? filterDate, int? Page, int? PageSize, string? Search, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -50,7 +51,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                 }
                 var dateThreshold = filterDateParsed.AddDays(-90);
                 string searchLower = Search?.ToLower();
-                var filtered = await _context.StoresSubscriptions
+                var filtered = await _context.ViewStoresSubscriptions
      .AsNoTracking()
      .Where(x =>
          (string.IsNullOrEmpty(subscriptionType) || x.SubscriptionType == subscriptionType) &&
@@ -62,7 +63,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                 (x.UserName != null && x.UserName.ToLower().Contains(searchLower)) ||
                 (x.Email != null && x.Email.ToLower().Contains(searchLower)) ||
                 (x.Mobile != null && x.Mobile.ToLower().Contains(searchLower)) ||
-                (x.Status != null && x.Status.ToLower().Contains(searchLower))
+                (x.Status != null && Enum.GetName(typeof(Status), x.Status).ToString().ToLower().Contains(searchLower))
             )
          )
      .ToListAsync(cancellationToken);
@@ -81,12 +82,38 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                     .Take(itemsPerPage)
                     .ToList();
 
-                return new ClassifiedBOPageResponse<StoresSubscriptionDto>
+                List<ViewStoresSubscriptionDto> viewStoresSubscriptionDtos = new List<ViewStoresSubscriptionDto>();
+                if(paginated!=null && paginated.Count > 0)
+                {
+                    foreach (var item in paginated)
+                    {
+                        ViewStoresSubscriptionDto viewStoresSubscriptionDto=new ViewStoresSubscriptionDto();
+                        viewStoresSubscriptionDto.Amount = item.Amount;
+                        viewStoresSubscriptionDto.WebUrl=item.WebUrl;
+                        viewStoresSubscriptionDto.OrderId=item.OrderId;
+                        viewStoresSubscriptionDto.SubscriptionId = item.SubscriptionId.ToString();
+                        viewStoresSubscriptionDto.CompanyId = item.CompanyId.ToString();
+                        viewStoresSubscriptionDto.CompanyName = item.CompanyName;
+                        viewStoresSubscriptionDto.SubscriptionType = item.SubscriptionType;
+                        viewStoresSubscriptionDto.Whatsapp=item.Whatsapp;
+                        viewStoresSubscriptionDto.Email=item.Email;
+                        viewStoresSubscriptionDto.StartDate = item.StartDate;
+                        viewStoresSubscriptionDto.EndDate = item.EndDate;
+                        viewStoresSubscriptionDto.UserId = item.UserId;
+                        viewStoresSubscriptionDto.UserName = item.UserName;
+                        viewStoresSubscriptionDto.Mobile=item.Mobile;
+                        viewStoresSubscriptionDto.Status = Enum.GetName(typeof(Status), item.Status).ToString();
+                        viewStoresSubscriptionDtos.Add(viewStoresSubscriptionDto);
+                    }
+                }
+
+
+                return new ClassifiedBOPageResponse<ViewStoresSubscriptionDto>
                 {
                     Page = currentPage,
                     PerPage = itemsPerPage,
                     TotalCount = totalCount,
-                    Items = paginated
+                    Items = viewStoresSubscriptionDtos
                 };
 
             }

@@ -144,7 +144,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu
             var dialog = DialogService.Show<RejectVerificationDialog>("", parameters, options);
         }
 
-        protected void OnEdit(string adId)
+        protected void OnEdit(long? adId)
         {
             NavManager.NavigateTo($"/manage/classified/deals/edit/ad/{adId}");
         }

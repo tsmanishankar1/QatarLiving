@@ -64,7 +64,7 @@ namespace QLN.Common.Infrastructure.Model
 
         public int? LocationId { get; set; }
         [MaxLength(50)]
-        public string? SubscriptionId { get; set; }
+        public Guid? SubscriptionId { get; set; }
         [Required]
         [MaxLength(50)]
         public string ZoneId { get; set; } = string.Empty;

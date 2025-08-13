@@ -6,6 +6,7 @@ using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService;
 using QLN.Common.Infrastructure.Model;
+using QLN.Common.Infrastructure.Subscriptions;
 
 namespace QLN.DataMigration.Services
 {
@@ -156,12 +157,7 @@ namespace QLN.DataMigration.Services
         {
             throw new NotImplementedException();
         }
-
-        public Task<AdCreatedResponseDto> RefreshClassifiedItemsAd(SubVertical subVertical, long adId, string userId, CancellationToken cancellationToken)
-        {
-            throw new NotImplementedException();
-        }
-
+       
         public Task<bool> SaveSearch(SaveSearchRequestDto dto, string userId, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
@@ -218,6 +214,21 @@ namespace QLN.DataMigration.Services
         }
 
         public Task<AdCreatedResponseDto> RefreshClassifiedItemsAd(SubVertical subVertical, long adId, string userId, Guid subscriptionId, CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<string> Favourite(WishlistCreateDto dto, string userId, CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<List<Wishlist>> GetAllByUserFavouriteList(string userId, Vertical vertical, SubVertical subVertical, CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<string> UnFavourite(string userId, Vertical vertical, SubVertical subVertical, long adId, CancellationToken cancellationToken)
         {
             throw new NotImplementedException();
         }
