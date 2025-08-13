@@ -4,7 +4,10 @@ using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Logging;
+using QLN.Common.DTO_s;
 using QLN.Common.DTOs;
+using QLN.Common.Infrastructure.EventLogger;
+using QLN.Common.Infrastructure.IService.ISubscriptionService;
 using System.Security.Claims;
 using System.Text.Json;
 
@@ -48,7 +51,7 @@ public static class SubscriptionEndpoints
                 );
             }
         })
-        .RequireAuthorization(policy => policy.RequireRole("Admin")) 
+        //.RequireAuthorization(policy => policy.RequireRole("Admin")) 
         .WithName("CreateSubscription")
         .WithTags("Subscription")
         .WithSummary("Create a new subscription")
@@ -64,7 +67,7 @@ public static class SubscriptionEndpoints
     {
         group.MapGet("/getsubscription", async Task<IResult> (
             [FromQuery] int verticalTypeId,
-            [FromQuery] int categoryId,
+            [FromQuery] int? categoryId,
             [FromServices] IExternalSubscriptionService service,
             CancellationToken cancellationToken) =>
         {
@@ -360,8 +363,6 @@ public static class SubscriptionEndpoints
 
         return group;
     }
-
-
 }
 
 

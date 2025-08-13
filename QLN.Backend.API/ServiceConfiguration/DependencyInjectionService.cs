@@ -1,23 +1,28 @@
 ﻿using QLN.Backend.API.Service.AnalyticsService;
-using QLN.Backend.API.Service.BackOffice;
 using QLN.Backend.API.Service.BannerService;
+using QLN.Backend.API.Service.ClassifiedBoService;
 using QLN.Backend.API.Service.ClassifiedService;
+using QLN.Backend.API.Service.ClassifiedsService;
 using QLN.Backend.API.Service.CompanyService;
 using QLN.Backend.API.Service.ContentService;
+using QLN.Backend.API.Service.DrupalAuthService;
+using QLN.Backend.API.Service.ProductService;
 using QLN.Backend.API.Service.SearchService;
+using QLN.Backend.API.Service.ServiceBoService;
 using QLN.Backend.API.Service.Services;
-using QLN.Backend.API.Service.ServicesService;
 using QLN.Backend.API.Service.V2ClassifiedBoService;
 using QLN.Backend.API.Service.V2ContentService;
-using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.IService;
-using QLN.Common.Infrastructure.IService.IBackOfficeService;
+using QLN.Common.Infrastructure.IService.IAuth;
 using QLN.Common.Infrastructure.IService.IBannerService;
+using QLN.Common.Infrastructure.IService.IClassifiedBoService;
 using QLN.Common.Infrastructure.IService.ICompanyService;
 using QLN.Common.Infrastructure.IService.IContentService;
 using QLN.Common.Infrastructure.IService.IFileStorage;
+using QLN.Common.Infrastructure.IService.IProductService;
 using QLN.Common.Infrastructure.IService.ISearchService;
 using QLN.Common.Infrastructure.IService.IService;
+using QLN.Common.Infrastructure.IService.IServiceBoService;
 using QLN.Common.Infrastructure.IService.V2IClassifiedBoService;
 using QLN.Common.Infrastructure.IService.V2IContent;
 using QLN.Common.Infrastructure.Service.FileStorage;
@@ -26,12 +31,18 @@ namespace QLN.Backend.API.ServiceConfiguration
 {
     public static class DependencyInjectionService
     {
+        public static IServiceCollection FileServiceConfiguration(this IServiceCollection services, IConfiguration configuration)
+        {
+            services.AddScoped<IFileStorageBlobService, FileStorageBlobService>(); // need to inject in the Conenction string here rather
+
+            return services;
+        }
+
         public static IServiceCollection ClassifiedServicesConfiguration(this IServiceCollection services, IConfiguration configuration)
         {
             services.AddTransient<IClassifiedService, ExternalClassifiedService>();
-            services.AddTransient<IServicesService, ExternalServiceService>();
+            services.AddTransient<IClassifiedsFoService, ExternalClassifiedFoService>();
             services.AddScoped<IFileStorageBlobService, FileStorageBlobService>();
-            services.AddTransient<IBackOfficeService<LandingBackOfficeIndex>, ExternalLandingBackOfficeService>();
 
             return services;
         }
@@ -43,7 +54,7 @@ namespace QLN.Backend.API.ServiceConfiguration
         }
         public static IServiceCollection SearchServicesConfiguration(this IServiceCollection services, IConfiguration configuration)
         {
-            services.AddTransient<ISearchService, ExternalSearchService>();
+            services.AddScoped<ISearchService, ExternalSearchService>();
 
             return services;
         }
@@ -77,9 +88,38 @@ namespace QLN.Backend.API.ServiceConfiguration
             return services;
         }
 
+        public static IServiceCollection DrupalAuthConfiguration(this IServiceCollection services, IConfiguration configuration)
+        {
+            var drupalUrl = configuration.GetSection("BaseUrl")["LegacyDrupal"] ?? throw new ArgumentNullException("LegacyDrupal");
+
+            if (Uri.TryCreate(drupalUrl, UriKind.Absolute, out var drupalBaseUrl))
+            {
+                services.AddHttpClient<IDrupalAuthService, DrupalAuthService>(option =>
+                {
+                    option.BaseAddress = drupalBaseUrl;
+                });
+            }
+
+            return services;
+        }
+        public static IServiceCollection DrupalUserServicesConfiguration(this IServiceCollection services, IConfiguration configuration)
+        {
+            var drupalUrl = configuration.GetSection("BaseUrl")["LegacyDrupalUser"] ?? throw new ArgumentNullException("LegacyDrupalUser");
+
+            if (Uri.TryCreate(drupalUrl, UriKind.Absolute, out var drupalBaseUrl))
+            {
+                services.AddHttpClient<IDrupalUserService, ExternalDrupalUserService>(option =>
+                {
+                    option.BaseAddress = drupalBaseUrl;
+                });
+            }
+
+            return services;
+        }
+
         public static IServiceCollection CompanyConfiguration(this IServiceCollection services, IConfiguration config)
         {
-            services.AddTransient<ICompanyService, ExternalCompanyService>();
+            services.AddTransient<ICompanyProfileService, ExternalCompanyProfileService>();
             return services;
         }
         public static IServiceCollection EventConfiguration(this IServiceCollection services, IConfiguration config)
@@ -125,5 +165,24 @@ namespace QLN.Backend.API.ServiceConfiguration
             services.AddTransient<IClassifiedBoLandingService, ExternalClassifiedLandingService>();
             return services;
         }
+        public static IServiceCollection ServicesBo(this IServiceCollection services, IConfiguration config)
+        {
+            services.AddTransient<IServicesBoService,ExternalServicesBoService>();
+            return services;
+        }
+        public static IServiceCollection ClassifiedBoStoresConfiguration(this IServiceCollection services, IConfiguration config)
+        {
+            services.AddTransient<IClassifiedStoresBOService, ExternalClassifiedStoresBOService>();
+            services.AddTransient<IClassifiedPreLovedBOService, ExternalClassifiedPreLovedBOService>();
+            return services;
+        }
+
+        public static IServiceCollection ProductsConfiguration(this IServiceCollection services, IConfiguration config)
+        {
+            services.AddTransient<IProductService, ExternalProductService>();
+            services.AddTransient<IV2SubscriptionService, V2SubscriptionService>();
+            return services;
+        }
+
     }
 }

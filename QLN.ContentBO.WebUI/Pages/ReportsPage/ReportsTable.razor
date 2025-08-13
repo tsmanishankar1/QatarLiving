@@ -39,12 +39,12 @@ else
         <RowTemplate>
             <MudTd DataLabel="Number" Class="number-cell">@context.Number</MudTd>
             <MudTd DataLabel="Post">
-                <MudLink Href="@($"{PostDetailBaseURL}{context.Slug}")" Target="_blank" Class="post-title">@context.Post</MudLink>
+                <MudLink Href="@($"{NavigationPath.Value.ContentPostDetail}{context.Slug}")" Target="_blank" Class="post-title">@context.Post</MudLink>
             </MudTd>
 
             @if (Type != "community-posts")
             {
-                <MudTd DataLabel="Comment">@(!string.IsNullOrWhiteSpace(context.Comment) ? context.Comment : "-")</MudTd>
+                <MudTd DataLabel="Comment" title="@(string.IsNullOrWhiteSpace(context.Comment) ? "-" : context.Comment)" Class="truncate-text">@(!string.IsNullOrWhiteSpace(context.Comment) ? context.Comment : "-")</MudTd>
                 <MudTd DataLabel="Comment Date">@((context.CommentDate.HasValue) ? context.CommentDate.Value.ToQatarTime("dd-MM-yyyy") : "-")</MudTd>
             }
             else
@@ -54,7 +54,7 @@ else
 
             <MudTd DataLabel="Username">@(!string.IsNullOrWhiteSpace(context.UserName) ? context.UserName : "-")</MudTd>
             <MudTd DataLabel="Reporter">@(!string.IsNullOrWhiteSpace(context.Reporter) ? context.Reporter : "-")</MudTd>
-            <MudTd DataLabel="Report Date">@context.ReportDate.ToQatarTime("dd-MM-yyyy")</MudTd>
+            <MudTd DataLabel="Report Date"> @(context.ReportDate.HasValue ? context.ReportDate.Value.ToQatarTime("dd-MM-yyyy") : "-")</MudTd>
 
             <MudTd>
                 <MudMenu Icon="@Icons.Material.Filled.MoreVert" Color="Color.Default" Dense="true">
@@ -98,4 +98,11 @@ else
             color: #1976d2 !important; /* Material blue */
             text-decoration: underline;
         }
+
+    .truncate-text {
+        max-width: 200px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
 </style>

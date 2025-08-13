@@ -1,0 +1,70 @@
+@inherits ViewSubscriptionListingTableBase
+@using MudBlazor
+@using QLN.ContentBO.WebUI.Components.ToggleTabs
+@using QLN.ContentBO.WebUI.Components.PaginationFooter
+@using QLN.ContentBO.WebUI.Components.EmptyCard
+@using QLN.ContentBO.WebUI.Models
+
+<MudPaper Class="pa-4">
+    @if(Listings == null || !Listings.Any()){
+
+<EmptyCard Title="No View Subscriptions Available" Subtitle="Please check back later or explore other categories." />
+
+        
+    }
+    else{
+   <MudTable Items="Listings"
+          Hover="true"
+          Bordered="true"
+          Elevation="0"
+          Style="border-radius: 8px; border: 1px solid var(--color-background-secondary-grey-medium);
+    font-family: 'Public Sans', sans-serif;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);"
+          Class="mud-table event-custom-table">
+
+    <HeaderContent>
+        <MudTh class="header-cell">Ad ID</MudTh>
+        <MudTh class="header-cell">Order Id</MudTh>
+        <MudTh class="header-cell">Subscription Plan</MudTh>
+        <MudTh class="header-cell">Username</MudTh>
+        <MudTh class="header-cell">Email</MudTh>
+        <MudTh class="header-cell">Mobile</MudTh>
+        <MudTh class="header-cell">Whatsapp</MudTh>
+        <MudTh class="header-cell">Amount</MudTh>
+        <MudTh class="header-cell">Status</MudTh>
+        <MudTh class="header-cell">Start Date</MudTh>
+        <MudTh class="header-cell">End Date</MudTh>
+        <MudTh class="header-cell">Actions</MudTh>
+    </HeaderContent>
+
+    <RowTemplate>
+        <MudTd title="@(string.IsNullOrWhiteSpace(context.AddId.ToString()) ? "-" : context.AddId)"Class="truncate-text hover-title">@context.AddId</MudTd>
+        <MudTd title="@(string.IsNullOrWhiteSpace(context?.OrderId) ? "-" : context.OrderId)"Class="truncate-text hover-title">@context?.OrderId</MudTd>
+        <MudTd>@context.SubscriptionPlan</MudTd>
+        <MudTd title="@(string.IsNullOrWhiteSpace(context?.UserName) ? "-" : context?.UserName)"Class="truncate-text">@context.UserName</MudTd>
+        <MudTd title="@(string.IsNullOrWhiteSpace(context.EmailAddress) ? "-" : context.EmailAddress)"Class="truncate-text">@context.EmailAddress</MudTd>
+        <MudTd title="@(string.IsNullOrWhiteSpace(context.Mobile) ? "-" : context.Mobile)"Class="truncate-text">@context.Mobile</MudTd>
+        <MudTd title="@(string.IsNullOrWhiteSpace(context.WhatsappNumber) ? "-" : context.WhatsappNumber)"Class="truncate-text">@context.WhatsappNumber</MudTd>
+        <MudTd Class="truncate-text">@context.Amount</MudTd>
+        <MudTd>@((ServiceStatus)context.Status)</MudTd>
+        <MudTd Class="truncate-text">@context.StartDate</MudTd>
+        <MudTd Class="truncate-text">@context.EndDate</MudTd>
+        <MudTd>
+            <MudMenu Icon="@Icons.Material.Filled.MoreVert">
+                <MudMenuItem OnClick="() => OnEdit(context)">
+                    <MudIcon Icon="@Icons.Material.Filled.Edit" /> Edit
+                </MudMenuItem>
+                <MudMenuItem OnClick="() => OnPreview(context.AddId)">
+                    <MudIcon Icon="@Icons.Material.Filled.Visibility" /> Preview
+                </MudMenuItem>
+                <MudMenuItem Class="mud-text-error" @onclick="() => OpenRejectDialog(context.AddId)">
+                 <MudIcon Icon="@Icons.Material.Filled.Delete" /> Remove
+                </MudMenuItem>
+            </MudMenu>
+        </MudTd>
+    </RowTemplate>
+</MudTable>
+}
+     <PaginationFooter TotalItems="@TotalCount" CurrentPage="@currentPage" PageSize="@pageSize"
+                OnPageChange="@HandlePageChange" OnPageSizeChange="@HandlePageSizeChange" />
+</MudPaper>

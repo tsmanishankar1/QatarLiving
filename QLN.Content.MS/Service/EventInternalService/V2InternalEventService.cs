@@ -5,9 +5,9 @@ using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.CustomException;
 using QLN.Common.Infrastructure.EventLogger;
 using QLN.Common.Infrastructure.IService.IContentService;
+using QLN.Common.Infrastructure.Utilities;
 using System.Text;
 using System.Text.Json;
-using System.Text.RegularExpressions;
 using static QLN.Common.Infrastructure.Constants.ConstantValues;
 
 namespace QLN.Content.MS.Service.EventInternalService
@@ -17,6 +17,8 @@ namespace QLN.Content.MS.Service.EventInternalService
         private readonly DaprClient _dapr;
         private const string DailyStore = ConstantValues.V2Content.ContentStoreName;
         private readonly ILogger<IV2EventService> _log;
+
+        private readonly List<EventsCategory> _categoryLookup = new List<EventsCategory>();
         public V2InternalEventService(DaprClient dapr, ILogger<IV2EventService> log)
         {
             _dapr = dapr;
@@ -38,6 +40,28 @@ namespace QLN.Content.MS.Service.EventInternalService
                     if (dto.Price != null)
                         throw new ArgumentException("Price must not be entered for 'Free Access' or 'Open Registration' events.");
                 }
+
+/*                var allEventKeys = await _dapr.GetStateAsync<List<string>>(
+                ConstantValues.V2Content.ContentStoreName,
+                ConstantValues.V2Content.EventIndexKey,
+                cancellationToken: cancellationToken
+                ) ?? new List<string>();
+
+                foreach (var key in allEventKeys)
+                {
+                    var existingEvent = await _dapr.GetStateAsync<V2Events>(
+                        ConstantValues.V2Content.ContentStoreName,
+                        key,
+                        cancellationToken: cancellationToken
+                    );
+
+                    if (existingEvent != null
+                        && existingEvent.IsActive
+                        && existingEvent.EventTitle.Equals(dto.EventTitle, StringComparison.OrdinalIgnoreCase))
+                    {
+                        throw new ArgumentException($"An active event with the title '{dto.EventTitle}' already exists.");
+                    }
+                }*/
                 string categoryName = string.Empty;
 
                 var categoryKeys = await _dapr.GetStateAsync<List<string>>(
@@ -59,8 +83,10 @@ namespace QLN.Content.MS.Service.EventInternalService
                 }
 
                 ValidateEventSchedule(dto.EventSchedule);
-                var id = Guid.NewGuid();
-                var slug = GenerateSlug(dto.EventTitle);
+                var id = dto.Id == Guid.Empty ? Guid.NewGuid() : dto.Id; // check if the DTO already has a GUID assigned
+                                                                         // and only generate a new one if this is GUID.Empty.
+
+                var slug = ProcessingHelpers.GenerateSlug(dto.Slug);
                 var entity = new V2Events
                 {
                     Id = id,
@@ -111,6 +137,9 @@ namespace QLN.Content.MS.Service.EventInternalService
                         cancellationToken: cancellationToken
                     );
                 }
+
+                await PublishIndexUpsertAsync(entity, cancellationToken);
+
                 return "Event created successfully.";
             }
             catch (ArgumentException ex)
@@ -122,6 +151,166 @@ namespace QLN.Content.MS.Service.EventInternalService
                 throw new Exception("Error creating event", ex);
             }
         }
+
+        public async Task<string> BulkMigrateEvents(List<V2Events> events, CancellationToken cancellationToken = default)
+        {
+            var categoryKeys = await _dapr.GetStateAsync<List<string>>(
+                    ConstantValues.V2Content.ContentStoreName,
+                    ConstantValues.V2Content.EventCategoryIndexKey,
+                    cancellationToken: cancellationToken
+                ) ?? new List<string>();
+
+            foreach (var dto in events)
+            {
+                try
+                {
+                    string categoryName = string.Empty;
+                    Guid id = dto.Id;
+
+                    if (categoryKeys.Contains(dto.CategoryId.ToString()))
+                    {
+                        var selectedCategory = await _dapr.GetStateAsync<EventsCategory>(
+                            ConstantValues.V2Content.ContentStoreName,
+                            dto.CategoryId.ToString(),
+                            cancellationToken: cancellationToken
+                        );
+
+                        if (selectedCategory != null)
+                            categoryName = selectedCategory.CategoryName;
+                    }
+
+                    ValidateEventSchedule(dto.EventSchedule);
+
+                    await _dapr.SaveStateAsync(
+                        ConstantValues.V2Content.ContentStoreName,
+                        dto.Id.ToString(),
+                        dto,
+                        cancellationToken: cancellationToken
+                    );
+
+                    var keys = await _dapr.GetStateAsync<List<string>>(
+                        ConstantValues.V2Content.ContentStoreName,
+                        ConstantValues.V2Content.EventIndexKey,
+                        cancellationToken: cancellationToken
+                    ) ?? new List<string>();
+
+                    if (!keys.Contains(id.ToString()))
+                    {
+                        keys.Add(id.ToString());
+                        await _dapr.SaveStateAsync(
+                            ConstantValues.V2Content.ContentStoreName,
+                            ConstantValues.V2Content.EventIndexKey,
+                            keys,
+                            cancellationToken: cancellationToken
+                        );
+                    }
+
+                    await PublishIndexUpsertAsync(dto, cancellationToken);
+
+
+                }
+                catch (Exception ex)
+                {
+                    throw new Exception("Error creating event", ex);
+                }
+
+
+            }
+
+            return "Events created successfully.";
+
+        }
+
+        public async Task<string> MigrateEvent(V2Events dto, CancellationToken cancellationToken = default)
+        {
+            if (_categoryLookup.Count == 0)
+            {
+                var categoryKeysLookup = await _dapr.GetStateAsync<List<string>>(
+                    ConstantValues.V2Content.ContentStoreName,
+                    ConstantValues.V2Content.EventCategoryIndexKey,
+                    cancellationToken: cancellationToken
+                ) ?? new List<string>();
+
+                foreach (var key in categoryKeysLookup)
+                {
+                    var category = await _dapr.GetStateAsync<EventsCategory>(
+                        ConstantValues.V2Content.ContentStoreName,
+                        key,
+                        cancellationToken: cancellationToken
+                    );
+                    if (category != null)
+                    {
+                        _categoryLookup.Add(category);
+                    }
+                }
+            }
+
+            try
+            {
+                Guid id = dto.Id;
+
+                var selectedCategory = _categoryLookup.FirstOrDefault(x => x.Id == dto.CategoryId);
+
+                if (selectedCategory != null)
+                {
+                    dto.CategoryName = selectedCategory.CategoryName;
+                }
+
+                ValidateEventSchedule(dto.EventSchedule);
+
+                await _dapr.SaveStateAsync(
+                    ConstantValues.V2Content.ContentStoreName,
+                    dto.Id.ToString(),
+                    dto,
+                    cancellationToken: cancellationToken
+                );
+
+                var keys = await _dapr.GetStateAsync<List<string>>(
+                    ConstantValues.V2Content.ContentStoreName,
+                    ConstantValues.V2Content.EventIndexKey,
+                    cancellationToken: cancellationToken
+                ) ?? new List<string>();
+
+                if (!keys.Contains(id.ToString()))
+                {
+                    keys.Add(id.ToString());
+                    await _dapr.SaveStateAsync(
+                        ConstantValues.V2Content.ContentStoreName,
+                        ConstantValues.V2Content.EventIndexKey,
+                        keys,
+                        cancellationToken: cancellationToken
+                    );
+                }
+
+                var upsertRequest = await IndexEventToAzureSearch(dto, cancellationToken);
+                if (upsertRequest != null)
+                {
+                    var message = new IndexMessage
+                    {
+                        Action = "Upsert",
+                        Vertical = ConstantValues.IndexNames.ContentEventsIndex,
+                        UpsertRequest = upsertRequest
+                    };
+
+                    await _dapr.PublishEventAsync(
+                        pubsubName: ConstantValues.PubSubName,
+                        topicName: ConstantValues.PubSubTopics.IndexUpdates,
+                        data: message,
+                        cancellationToken: cancellationToken
+                    );
+                }
+
+
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error creating event", ex);
+            }
+
+            return "Event created successfully.";
+
+        }
+
         private async Task<string> HandleEventSlotShift(int desiredSlot, V2Events newEvent, CancellationToken cancellationToken)
         {
             const int MaxSlot = 6;
@@ -135,11 +324,13 @@ namespace QLN.Content.MS.Service.EventInternalService
                 existingInDesiredSlot.IsFeatured = false;
                 existingInDesiredSlot.FeaturedSlot = new();
                 await _dapr.SaveStateAsync(storeName, existingInDesiredSlot.Id.ToString(), existingInDesiredSlot, cancellationToken: cancellationToken);
+                await PublishIndexUpsertAsync(existingInDesiredSlot, cancellationToken);
             }
             newEvent.FeaturedSlot.Id = desiredSlot;
             newEvent.IsFeatured = true;
             await _dapr.SaveStateAsync(storeName, desiredSlotKey, newEvent, cancellationToken: cancellationToken);
             await _dapr.SaveStateAsync(storeName, newEvent.Id.ToString(), newEvent, cancellationToken: cancellationToken);
+            await PublishIndexUpsertAsync(newEvent, cancellationToken);
 
             return $"Event placed in slot {desiredSlot} successfully.";
         }
@@ -148,86 +339,23 @@ namespace QLN.Content.MS.Service.EventInternalService
             if (schedule == null)
                 throw new ArgumentException("EventSchedule is required.");
 
-            switch (schedule.TimeSlotType)
+            if (schedule.StartDate == default || schedule.EndDate == default)
+                throw new ArgumentException("StartDate and EndDate must be provided.");
+
+            if (schedule.StartDate > schedule.EndDate)
+                throw new ArgumentException("StartDate must not be later than EndDate.");
+
+            if (!string.IsNullOrWhiteSpace(schedule.GeneralTextTime) && schedule.GeneralTextTime.Length > 50)
+                throw new ArgumentException("GeneralTextTime must not exceed 50 characters.");
+
+            if (schedule.TimeSlots != null)
             {
-                case V2EventTimeType.PerDayTime:
-                    if (schedule.TimeSlots == null || !schedule.TimeSlots.Any())
-                        throw new ArgumentException("TimeSlots must be provided for 'PerDayTime' events.");
-
-                    if (schedule.StartTime != null || schedule.EndTime != null)
-                        throw new ArgumentException("StartTime and EndTime must be null for 'PerDayTime' events.");
-
-                    if (!string.IsNullOrEmpty(schedule.FreeTimeText))
-                        throw new ArgumentException("FreeTextTime must be null or empty for 'PerDayTime' events.");
-                    break;
-
-                case V2EventTimeType.FreeTimeText:
-                    if (string.IsNullOrWhiteSpace(schedule.FreeTimeText))
-                        throw new ArgumentException("FreeTextTime must be provided for 'FreeTimeText' events.");
-
-                    if (schedule.StartTime != null || schedule.EndTime != null)
-                        throw new ArgumentException("StartTime and EndTime must be null for 'FreeTimeText' events.");
-
-                    if (schedule.TimeSlots != null && schedule.TimeSlots.Any())
-                        throw new ArgumentException("TimeSlots must be empty for 'FreeTimeText' events.");
-                    break;
-
-                case V2EventTimeType.GeneralTime:
-                    if (schedule.StartDate > schedule.EndDate)
-                        throw new ArgumentException($"StartDate ({schedule.StartDate:dd.MM.yyyy}) cannot be after EndDate ({schedule.EndDate:dd.MM.yyyy}).");
-
-                    if (schedule.StartDate == null || schedule.EndDate == null)
-                        throw new ArgumentException("StartDate and EndDate must be provided for scheduled events.");
-
-                    if (schedule.StartTime == null || schedule.EndTime == null)
-                        throw new ArgumentException("StartTime and EndTime must be provided for scheduled events.");
-
-                    if (schedule.TimeSlots != null && schedule.TimeSlots.Any())
-                        throw new ArgumentException("TimeSlots must be empty for non-'PerDayTime' events.");
-
-                    if (!string.IsNullOrEmpty(schedule.FreeTimeText))
-                        throw new ArgumentException("FreeTextTime must be null or empty for 'GeneralTime' events.");
-                    break;
-
-                default:
-                    throw new ArgumentException("Invalid TimeSlotType value.");
-            }
-        }
-        private string GenerateSlug(string title)
-        {
-            if (string.IsNullOrWhiteSpace(title)) return string.Empty;
-            var slug = title.ToLowerInvariant().Trim();
-            slug = Regex.Replace(slug, @"[\s_]+", "-");
-            slug = Regex.Replace(slug, @"[^a-z0-9\-]", "");
-            slug = Regex.Replace(slug, @"-+", "-");
-            slug = slug.Trim('-');
-            return slug;
-        }
-        public async Task<List<V2Events>> GetAllEvents(CancellationToken cancellationToken)
-        {
-            var keys = await _dapr.GetStateAsync<List<string>>(
-                    ConstantValues.V2Content.ContentStoreName,
-                    ConstantValues.V2Content.EventIndexKey,
-                    cancellationToken: cancellationToken
-                ) ?? new List<string>();
-            if (keys.Count == 0)
-                return new List<V2Events>();
-            var items = await _dapr.GetBulkStateAsync(
-                ConstantValues.V2Content.ContentStoreName,
-                keys,
-                parallelism: null,
-                cancellationToken: cancellationToken
-            );
-
-            var events = items
-                .Select(i => JsonSerializer.Deserialize<V2Events>(i.Value, new JsonSerializerOptions
+                foreach (var slot in schedule.TimeSlots)
                 {
-                    PropertyNameCaseInsensitive = true
-                }))
-                .Where(e => e != null && e.IsActive == true)
-                .ToList();
-
-            return events ?? new List<V2Events>();
+                    if (!string.IsNullOrWhiteSpace(slot.TextTime) && slot.TextTime.Length > 50)
+                        throw new ArgumentException("Each TimeSlot.TextTime must not exceed 50 characters.");
+                }
+            }
         }
         public async Task<V2Events?> GetEventById(Guid id, CancellationToken cancellationToken = default)
         {
@@ -290,7 +418,31 @@ namespace QLN.Content.MS.Service.EventInternalService
                     if (dto.Price != null)
                         throw new ArgumentException("Price must not be entered for 'Free Access' or 'Open Registration' events.");
                 }
+               /* var allEventKeys = await _dapr.GetStateAsync<List<string>>(
+                   ConstantValues.V2Content.ContentStoreName,
+                   ConstantValues.V2Content.EventIndexKey,
+                   cancellationToken: cancellationToken
+                ) ?? new List<string>();
 
+                // this version isnt as slow as the other one, but in principle you are allowed to have the same title for an event ?
+                foreach (var key in allEventKeys)
+                {
+                    if (key.Equals(dto.Id.ToString(), StringComparison.OrdinalIgnoreCase))
+                        continue;
+
+                    var existingEvent = await _dapr.GetStateAsync<V2Events>(
+                        ConstantValues.V2Content.ContentStoreName,
+                        key,
+                        cancellationToken: cancellationToken
+                    );
+
+                    if (existingEvent != null
+                        && existingEvent.IsActive
+                        && existingEvent.EventTitle.Equals(dto.EventTitle, StringComparison.OrdinalIgnoreCase))
+                    {
+                        throw new ArgumentException($"An active event with the title '{dto.EventTitle}' already exists.");
+                    }
+                }*/
                 string categoryName = string.Empty;
                 var categoryKeys = await _dapr.GetStateAsync<List<string>>(
                     ConstantValues.V2Content.ContentStoreName,
@@ -318,11 +470,30 @@ namespace QLN.Content.MS.Service.EventInternalService
                     cancellationToken: cancellationToken);
 
                 if (existing == null)
-                    throw new KeyNotFoundException($"Event with ID {dto.Id} not found.");                
+                    throw new KeyNotFoundException($"Event with ID {dto.Id} not found.");
+                var endDate = dto.EventSchedule?.EndDate.ToDateTime(TimeOnly.MinValue).Date;
 
+                if (endDate < DateTime.UtcNow.Date)
+                {
+                    dto.Status = EventStatus.Expired;
+                    dto.PublishedDate = null;
+                }
+                else
+                {
+                    if (existing.Status == EventStatus.Expired)
+                    {
+                        dto.Status = EventStatus.Published;
+                        dto.PublishedDate = DateTime.UtcNow;
+                    }
+                    else
+                    {
+                        dto.Status = dto.Status;
+                        dto.PublishedDate = dto.Status == EventStatus.Published ? DateTime.UtcNow : null;
+                    }
+                }
                 if (existing.Status == EventStatus.Published && dto.Status == EventStatus.UnPublished)
                 {
-                    if(existing.IsFeatured == true)
+                    if (existing.IsFeatured == true)
                     {
                         throw new InvalidOperationException($"Cannot unpublish event {dto.Id}: It is currently featured.");
                     }
@@ -349,7 +520,7 @@ namespace QLN.Content.MS.Service.EventInternalService
 
                         throw new InvalidOperationException($"Cannot unpublish event {dto.Id}: It is used in Daily Top Section slot #{usedInTop.SlotNumber}");
                     }
-                    
+
                     var topicIds = await GetAllDailyTopicIdsAsync(cancellationToken);
                     foreach (var topicId in topicIds)
                     {
@@ -368,13 +539,12 @@ namespace QLN.Content.MS.Service.EventInternalService
                     }
                 }
 
-                var slug = GenerateSlug(dto.EventTitle);
-                var shouldUpdatePublishedDate = existing.Status == EventStatus.UnPublished && dto.Status == EventStatus.Published;
+                var slug = ProcessingHelpers.GenerateSlug(dto.EventTitle);
 
                 var updated = new V2Events
                 {
                     Id = dto.Id,
-                    Slug = dto.Slug,
+                    Slug = slug,
                     CategoryId = dto.CategoryId,
                     CategoryName = categoryName,
                     EventTitle = dto.EventTitle,
@@ -392,7 +562,11 @@ namespace QLN.Content.MS.Service.EventInternalService
                     IsFeatured = false,
                     FeaturedSlot = dto.FeaturedSlot,
                     Status = dto.Status,
-                    PublishedDate = shouldUpdatePublishedDate ? DateTime.UtcNow : existing.PublishedDate,
+                    PublishedDate = dto.Status == EventStatus.UnPublished || dto.Status == EventStatus.Expired
+                    ? null
+                    : dto.Status == EventStatus.Published
+                        ? DateTime.UtcNow
+                        : existing.PublishedDate,
                     IsActive = true,
                     CreatedBy = existing.CreatedBy,
                     CreatedAt = existing.CreatedAt,
@@ -406,9 +580,16 @@ namespace QLN.Content.MS.Service.EventInternalService
                     updated,
                     cancellationToken: cancellationToken);
 
+                await PublishIndexUpsertAsync(updated, cancellationToken);
+
                 _log.LogInformation("Event {EventId} updated successfully by user {UserId}", dto.Id, userId);
 
                 return "Event updated successfully";
+            }
+            catch (KeyNotFoundException ex)
+            {
+                _log.LogError(ex, "Event not found while updating: {EventId}", dto.Id);
+                throw new KeyNotFoundException($"Event with ID '{dto.Id}' not found.", ex);
             }
             catch (ArgumentException ex)
             {
@@ -426,8 +607,6 @@ namespace QLN.Content.MS.Service.EventInternalService
                 throw new Exception("Error updating events", ex);
             }
         }
-
-
         private async Task<List<Guid>> GetAllDailyTopicIdsAsync(CancellationToken ct)
         {
             try
@@ -530,6 +709,8 @@ namespace QLN.Content.MS.Service.EventInternalService
                 new StateOptions { Consistency = ConsistencyMode.Strong },
                 cancellationToken: cancellationToken);
 
+            await PublishIndexUpsertAsync(existing, cancellationToken);
+
             return "Event Soft Deleted Successfully";
         }
         public async Task<string> CreateCategory(EventsCategory category, CancellationToken cancellationToken)
@@ -538,7 +719,7 @@ namespace QLN.Content.MS.Service.EventInternalService
             {
                 if (category == null || string.IsNullOrWhiteSpace(category.CategoryName))
                 {
-                    throw new InvalidDataException("Category name is required."); 
+                    throw new InvalidDataException("Category name is required.");
                 }
                 await _dapr.SaveStateAsync(
                     ConstantValues.V2Content.ContentStoreName,
@@ -564,7 +745,7 @@ namespace QLN.Content.MS.Service.EventInternalService
                     );
                 }
 
-                return "Category created successfully."; 
+                return "Category created successfully.";
             }
             catch (Exception ex)
             {
@@ -597,299 +778,8 @@ namespace QLN.Content.MS.Service.EventInternalService
                 .Where(e => e != null)
                 .ToList();
 
-            return categories ?? new List<EventsCategory>(); 
+            return categories ?? new List<EventsCategory>();
         }
-        public async Task<EventsCategory?> GetEventCategoryById(int id, CancellationToken cancellationToken = default)
-        {
-            var result = await _dapr.GetStateAsync<EventsCategory>(
-                  ConstantValues.V2Content.ContentStoreName,
-                  id.ToString(),
-                  cancellationToken: cancellationToken);
-            if (result == null)
-                return null;
-            return result;
-        }
-        public async Task<PagedResponse<V2Events>> GetPagedEvents(GetPagedEventsRequest request, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                if (request.Page <= 0 || request.PerPage <= 0)
-                {
-                    throw new ArgumentException("Page and PerPage must be greater than zero.");
-                }
-                var allEvents = new List<V2Events>();
-                var eventIds = await _dapr.GetStateAsync<List<string>>(
-                    ConstantValues.V2Content.ContentStoreName,
-                    ConstantValues.V2Content.EventIndexKey,
-                    cancellationToken: cancellationToken);
-
-                if (eventIds == null || !eventIds.Any())
-                {
-                    return EmptyResponse(request.Page, request.PerPage);
-                }
-
-                var fetchTasks = eventIds.Select(async eventId =>
-                {
-                    try
-                    {
-                        var ev = await _dapr.GetStateAsync<V2Events>(
-                            ConstantValues.V2Content.ContentStoreName,
-                            eventId,
-                            cancellationToken: cancellationToken);
-                        return ev;
-                    }
-                    catch
-                    {
-                        return null;
-                    }
-                });
-
-                var fetchedEvents = await Task.WhenAll(fetchTasks);
-                allEvents = fetchedEvents.Where(e => e != null && e.IsActive).ToList();
-
-                if (!allEvents.Any())
-                {
-                    return EmptyResponse(request.Page, request.PerPage);
-                }
-
-                if (!string.IsNullOrWhiteSpace(request.Search))
-                {
-                    allEvents = allEvents
-                        .Where(e => !string.IsNullOrEmpty(e.EventTitle) &&
-                                    e.EventTitle.Contains(request.Search, StringComparison.OrdinalIgnoreCase))
-                        .ToList();
-                }
-
-                var today = DateOnly.FromDateTime(DateTime.UtcNow.Date);
-
-                foreach (var ev in allEvents)
-                {
-                    if (ev.EventSchedule.EndDate < today && ev.Status != EventStatus.Expired) 
-                    {
-                        ev.Status = EventStatus.Expired;
-                        await _dapr.SaveStateAsync<V2Events>(V2Content.ContentStoreName, ev.Id.ToString(), ev, cancellationToken: cancellationToken);
-                    }
-                }
-
-                if (request.Status.HasValue)
-                {
-                    allEvents = allEvents
-                        .Where(e => e.Status == request.Status.Value)
-                        .ToList();
-                }
-
-                if (request.CategoryId.HasValue)
-                {
-                    allEvents = allEvents
-                        .Where(e => e.CategoryId == request.CategoryId.Value)
-                        .ToList();
-                }
-                if (request.FromDate.HasValue || request.ToDate.HasValue)
-                {
-                    allEvents = allEvents
-                        .Where(e =>
-                        {
-                            var eventStart = e.EventSchedule.StartDate;
-                            var eventEnd = e.EventSchedule.EndDate;
-
-                            if (request.FromDate.HasValue && request.ToDate.HasValue)
-                                return eventStart >= request.FromDate && eventEnd <= request.ToDate;
-
-                            if (request.FromDate.HasValue)
-                                return eventEnd >= request.FromDate;
-
-                            if (request.ToDate.HasValue)
-                                return eventStart <= request.ToDate;
-
-                            return true;
-                        })
-                        .ToList();
-                }
-                if (!string.IsNullOrWhiteSpace(request.FilterType))
-                {
-                    switch (request.FilterType.ToLowerInvariant())
-                    {
-                        case "featured":
-                            allEvents = allEvents
-                                .Where(e => e.IsFeatured)
-                                .ToList();
-                            break;
-
-                        case "thisweek":
-                            var startOfWeek = today.AddDays(-(int)today.DayOfWeek);
-                            var endOfWeek = startOfWeek.AddDays(6);
-
-                            allEvents = allEvents
-                                .Where(e => e.EventSchedule.StartDate >= startOfWeek &&
-                                            e.EventSchedule.StartDate <= endOfWeek)
-                                .ToList();
-                            break;
-
-                        case "upcoming":
-                            allEvents = allEvents
-                                .Where(e => e.EventSchedule.StartDate >= today)
-                                .ToList();
-                            break;
-                    }
-                }
-                if (request.LocationId is { Count: > 0 })
-                {
-                    allEvents = allEvents
-                        .Where(e => e.LocationId != null && request.LocationId.Contains(e.LocationId.Value))
-                        .ToList();
-                }
-                if (request.FreeOnly == true)
-                {
-                    allEvents = allEvents
-                        .Where(e => e.EventType == V2EventType.FreeAcess || e.EventType == V2EventType.OpenRegistrations)
-                        .ToList();
-                }
-
-                if (!allEvents.Any())
-                    return EmptyResponse(request.Page, request.PerPage);
-
-                request.SortOrder = string.IsNullOrWhiteSpace(request.SortOrder) ? "asc" : request.SortOrder.ToLowerInvariant();
-                if (request.FeaturedFirst == true)
-                {
-                    allEvents = request.SortOrder switch
-                    {
-                        "desc" => allEvents
-                            .OrderByDescending(e => e.IsFeatured)
-                            .ThenByDescending(e => e.CreatedAt)
-                            .ToList(),
-                        _ => allEvents
-                            .OrderByDescending(e => e.IsFeatured)
-                            .ThenBy(e => e.CreatedAt)
-                            .ToList(),
-                    };
-                }
-                else
-                {
-                    allEvents = request.SortOrder switch
-                    {
-                        "desc" => allEvents.OrderByDescending(e => e.CreatedAt).ToList(),
-                        _ => allEvents.OrderBy(e => e.CreatedAt).ToList(),
-                    };
-                }
-                int currentPage = Math.Max(1, request.Page ?? 1);
-                int itemsPerPage = Math.Max(1, Math.Min(100, request.PerPage ?? 12));
-                int totalCount = allEvents.Count;
-                int totalPages = (int)Math.Ceiling((double)totalCount / itemsPerPage);
-
-                if (currentPage > totalPages && totalPages > 0)
-                    currentPage = totalPages;
-
-                var paginated = allEvents
-                    .Skip((currentPage - 1) * itemsPerPage)
-                    .Take(itemsPerPage)
-                    .ToList();
-                var featuredCount = allEvents.Count(e => e.IsFeatured);
-                var featuredInCurrentPage = paginated.Count(e => e.IsFeatured);
-                return new PagedResponse<V2Events>
-                {
-                    Page = currentPage,
-                    PerPage = itemsPerPage,
-                    TotalCount = totalCount,
-                    Items = paginated,
-                    FeaturedCount = featuredCount,
-                    FeaturedInCurrentPage = featuredInCurrentPage
-                };
-            }
-            catch(ArgumentException)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"Error occurred while retrieving events: {ex.Message}", ex);
-            }
-        }
-        private static PagedResponse<V2Events> EmptyResponse(int? page, int? perPage) => new()
-        {
-            Page = page ?? 1,
-            PerPage = perPage ?? 12,
-            TotalCount = 0,
-            Items = new List<V2Events>()
-        };
-        public async Task<List<V2Slot>> GetAllEventSlot(CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var slots = Enum.GetValues(typeof(V2EventSlot))
-                  .Cast<V2EventSlot>()
-                  .Select(s => new V2Slot
-                  {
-                      Id = (int)s,
-                      Name = s.ToString()
-                  })
-                  .ToList();
-                return await Task.FromResult(slots);
-            }
-            catch (Exception ex)
-            {
-                throw new Exception("Error occurred while retrieving event slots", ex);
-            }
-        }
-        public async Task<IEnumerable<V2Events>> GetExpiredEvents(CancellationToken cancellationToken)
-        {
-            try
-            {
-                var today = DateOnly.FromDateTime(DateTime.UtcNow);
-                var keys = await _dapr.GetStateAsync<List<string>>(
-                    ConstantValues.V2Content.ContentStoreName,
-                    ConstantValues.V2Content.EventIndexKey,
-                    cancellationToken: cancellationToken
-                ) ?? new List<string>();
-
-                if (!keys.Any())
-                {
-                    return Enumerable.Empty<V2Events>();
-                }
-                var items = await _dapr.GetBulkStateAsync(
-                    ConstantValues.V2Content.ContentStoreName,
-                    keys,
-                    parallelism: null,
-                    cancellationToken: cancellationToken
-                );
-
-                if (items == null || !items.Any())
-                {
-                    return Enumerable.Empty<V2Events>();
-                }
-                var allEvents = new List<V2Events>();
-                foreach (var item in items)
-                {
-                    try
-                    {
-                        if (!string.IsNullOrEmpty(item.Value))
-                        {
-                            var eventData = JsonSerializer.Deserialize<V2Events>(item.Value, new JsonSerializerOptions
-                            {
-                                PropertyNameCaseInsensitive = true
-                            });
-
-                            if (eventData != null)
-                            {
-                                allEvents.Add(eventData);
-                            }
-                        }
-                    }
-                    catch (JsonException)
-                    {
-                    }
-                }
-                var expired = allEvents
-                    .Where(e => e.EventSchedule != null && e.EventSchedule.EndDate < today)
-                    .ToList();
-
-                return expired;
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"Error occurred while retrieving expired events: {ex.Message}", ex);
-            }
-        }
-
         public async Task<string> ReorderEventSlotsAsync(EventSlotReorderRequest request, CancellationToken cancellationToken = default)
         {
             const int MaxSlot = 6;
@@ -931,6 +821,7 @@ namespace QLN.Content.MS.Service.EventInternalService
 
                 await _dapr.SaveStateAsync(storeName, slotKey, ev, cancellationToken: cancellationToken);
                 await _dapr.SaveStateAsync(storeName, ev.Id.ToString(), ev, cancellationToken: cancellationToken);
+                await PublishIndexUpsertAsync(ev, cancellationToken);
             }
 
             return "Slots updated successfully.";
@@ -938,162 +829,6 @@ namespace QLN.Content.MS.Service.EventInternalService
         private string GetEventSlotKey(int slotId)
         {
             return $"event-slot-{slotId}";
-        }
-        public async Task<List<V2Events>> GetEventsByStatus(EventStatus status, CancellationToken cancellationToken)
-        {
-            try
-            {
-                var today = DateOnly.FromDateTime(DateTime.UtcNow);
-
-                var keys = await _dapr.GetStateAsync<List<string>>(
-                    ConstantValues.V2Content.ContentStoreName,
-                    ConstantValues.V2Content.EventIndexKey,
-                    cancellationToken: cancellationToken
-                ) ?? new List<string>();
-
-                if (!keys.Any())
-                {
-                    return new List<V2Events>();
-                }
-
-                var items = await _dapr.GetBulkStateAsync(
-                    ConstantValues.V2Content.ContentStoreName,
-                    keys,
-                    parallelism: null,
-                    cancellationToken: cancellationToken
-                );
-
-                var resultEvents = new List<V2Events>();
-                var stateChanges = new List<StateTransactionRequest>();
-
-                foreach (var item in items)
-                {
-                    if (string.IsNullOrEmpty(item.Value))
-                        continue;
-
-                    try
-                    {
-                        var eventData = JsonSerializer.Deserialize<V2Events>(item.Value, new JsonSerializerOptions
-                        {
-                            PropertyNameCaseInsensitive = true
-                        });
-
-                        if (eventData == null || !eventData.IsActive)
-                            continue;
-
-                        if (eventData.EventSchedule?.EndDate < today && eventData.Status != EventStatus.Expired)
-                        {
-                            eventData.Status = EventStatus.Expired;
-
-                            var updatedValue = JsonSerializer.Serialize(eventData);
-                            stateChanges.Add(new StateTransactionRequest(
-                                item.Key,
-                                Encoding.UTF8.GetBytes(updatedValue),
-                                StateOperationType.Upsert));
-                        }
-                        if (eventData.Status == status)
-                        {
-                            resultEvents.Add(eventData);
-                        }
-                    }
-                    catch (JsonException)
-                    {
-                    }
-                }
-
-                if (stateChanges.Any())
-                {
-                    await _dapr.ExecuteStateTransactionAsync(
-                        ConstantValues.V2Content.ContentStoreName,
-                        stateChanges,
-                        cancellationToken: cancellationToken
-                    );
-                }
-
-                return resultEvents;
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"Error occurred while retrieving events by status: {ex.Message}", ex);
-            }
-        }
-        public async Task<List<V2Events>> GetEventStatus(EventStatus status, CancellationToken cancellationToken)
-        {
-            try
-            {
-                var today = DateOnly.FromDateTime(DateTime.UtcNow);
-
-                var keys = await _dapr.GetStateAsync<List<string>>(
-                    ConstantValues.V2Content.ContentStoreName,
-                    ConstantValues.V2Content.EventIndexKey,
-                    cancellationToken: cancellationToken
-                ) ?? new List<string>();
-
-                if (!keys.Any())
-                {
-                    return new List<V2Events>();
-                }
-
-                var items = await _dapr.GetBulkStateAsync(
-                    ConstantValues.V2Content.ContentStoreName,
-                    keys,
-                    parallelism: null,
-                    cancellationToken: cancellationToken
-                );
-
-                var resultEvents = new List<V2Events>();
-                var stateChanges = new List<StateTransactionRequest>();
-
-                foreach (var item in items)
-                {
-                    if (string.IsNullOrEmpty(item.Value))
-                        continue;
-
-                    try
-                    {
-                        var eventData = JsonSerializer.Deserialize<V2Events>(item.Value, new JsonSerializerOptions
-                        {
-                            PropertyNameCaseInsensitive = true
-                        });
-
-                        if (eventData == null || !eventData.IsActive || !eventData.IsFeatured)
-                            continue;
-
-                        if (eventData.EventSchedule?.EndDate < today && eventData.Status != EventStatus.Expired)
-                        {
-                            eventData.Status = EventStatus.Expired;
-
-                            var updatedValue = JsonSerializer.Serialize(eventData);
-                            stateChanges.Add(new StateTransactionRequest(
-                                item.Key,
-                                Encoding.UTF8.GetBytes(updatedValue),
-                                StateOperationType.Upsert));
-                        }
-                        if (eventData.Status == status)
-                        {
-                            resultEvents.Add(eventData);
-                        }
-                    }
-                    catch (JsonException)
-                    {
-                    }
-                }
-
-                if (stateChanges.Any())
-                {
-                    await _dapr.ExecuteStateTransactionAsync(
-                        ConstantValues.V2Content.ContentStoreName,
-                        stateChanges,
-                        cancellationToken: cancellationToken
-                    );
-                }
-
-                return resultEvents;
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"Error occurred while retrieving events by status: {ex.Message}", ex);
-            }
         }
         public async Task UpdateFeaturedEvent(UpdateFeaturedEvent dto, CancellationToken cancellationToken = default)
         {
@@ -1143,6 +878,7 @@ namespace QLN.Content.MS.Service.EventInternalService
                         dto.EventId.ToString(),
                         existingEvent,
                         cancellationToken: cancellationToken);
+                    await PublishIndexUpsertAsync(existingEvent, cancellationToken);
                 }
             }
             catch (InvalidDataException)
@@ -1210,7 +946,116 @@ namespace QLN.Content.MS.Service.EventInternalService
                 existing,
                 new StateOptions { Consistency = ConsistencyMode.Strong },
                 cancellationToken: cancellationToken);
+            await PublishIndexUpsertAsync(existing, cancellationToken);
             return "Event unfeatured and removed from slot successfully";
+        }
+
+        private async Task<CommonIndexRequest> IndexEventToAzureSearch(QLN.Common.DTO_s.V2Events dto, CancellationToken cancellationToken)
+        {
+
+            var indexDoc = new ContentEventsIndex
+            {
+                Id = dto.Id.ToString(),
+                EventTitle = dto.EventTitle,
+                EventType = dto.EventType.ToString(),
+                EventDescription = dto.EventDescription,
+                CategoryId = dto.CategoryId,
+                CategoryName = dto.CategoryName,
+                CoverImage = dto.CoverImage,
+                FeaturedSlot = new SlotIndex
+                {
+                    Id = dto.FeaturedSlot.Id,
+                    Name = dto.FeaturedSlot.Name
+                },
+                IsFeatured = dto.IsFeatured,
+                Latitude = dto.Latitude,
+                Longitude = dto.Longitude,
+                Location = dto.Location,
+                LocationId = dto.LocationId,
+                Price = dto.Price,
+                RedirectionLink = dto.RedirectionLink,
+                Status = dto.Status.ToString(),
+                Slug = dto.Slug,
+                PublishedDate = dto.PublishedDate,
+                IsActive = dto.IsActive,
+                CreatedBy = dto.CreatedBy,
+                CreatedAt = dto.CreatedAt,
+                UpdatedAt = dto.UpdatedAt,
+                UpdatedBy = dto.UpdatedBy,
+                EventSchedule = new EventScheduleIndex
+                {
+                    StartDate = dto.EventSchedule.StartDate.FromDateOnly(),
+                    EndDate = dto.EventSchedule.EndDate.FromDateOnly(),
+                    GeneralTextTime = dto.EventSchedule.GeneralTextTime,
+                    TimeSlotType = dto.EventSchedule.TimeSlotType.ToString(),
+                    TimeSlots = dto.EventSchedule.TimeSlots?.Select(i => new TimeSlotIndex
+                    {
+                        DayOfWeek = i.DayOfWeek.ToString(),
+                        TextTime = i.TextTime
+                    }).ToList()
+                }
+            };
+
+            var indexRequest = new CommonIndexRequest
+            {
+                IndexName = ConstantValues.IndexNames.ContentEventsIndex,
+                ContentEventsItem = indexDoc
+            };
+            return indexRequest;
+
+        }
+        private async Task PublishIndexUpsertAsync(V2Events ev, CancellationToken ct)
+        {
+            var upsertRequest = await IndexEventToAzureSearch(ev, ct);
+            if (upsertRequest == null) return;
+
+            var message = new IndexMessage
+            {
+                Action = "Upsert",
+                Vertical = ConstantValues.IndexNames.ContentEventsIndex,
+                UpsertRequest = upsertRequest
+            };
+
+            await _dapr.PublishEventAsync(
+                pubsubName: ConstantValues.PubSubName,
+                topicName: ConstantValues.PubSubTopics.IndexUpdates,
+                data: message,
+                cancellationToken: ct);
+        }
+
+        public Task<List<V2Events>> GetAllEvents(CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<EventsCategory?> GetEventCategoryById(int id, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<PagedResponse<V2Events>> GetPagedEvents(GetPagedEventsRequest request, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<List<V2Slot>> GetAllEventSlot(CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<IEnumerable<V2Events>> GetExpiredEvents(CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<List<V2Events>> GetEventsByStatus(EventStatus status, CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<List<V2Events>> GetEventStatus(EventStatus status, CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
         }
     }
 }

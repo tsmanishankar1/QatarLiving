@@ -38,21 +38,18 @@ namespace QLN.Common.DTO_s
     }
     public class EventSchedule
     {
-        [Required]
-        public DateOnly StartDate { get; set; }
-        [Required]
-        public DateOnly EndDate { get; set; }
-        public V2EventTimeType TimeSlotType { get; set; }
-        public string? FreeTimeText { get; set; }
-        public TimeOnly? StartTime { get; set; }
-        public TimeOnly? EndTime { get; set; }
-        public List<TimeSlot>? TimeSlots { get; set; } = [];
+    [Required]
+    public DateOnly StartDate { get; set; }
+    [Required]
+    public DateOnly EndDate { get; set; }
+    public V2EventTimeType TimeSlotType { get; set; }
+    public string? GeneralTextTime { get; set; }
+    public List<TimeSlot>? TimeSlots { get; set; } = [];
     }
     public class TimeSlot
     {
         public DayOfWeek? DayOfWeek { get; set; }
-        public TimeOnly? StartTime { get; set; }
-        public TimeOnly? EndTime { get; set; }
+        public string? TextTime { get; set; }
     }
     public class EventsCategory
     {
@@ -93,7 +90,8 @@ namespace QLN.Common.DTO_s
         public EventStatus? Status { get; set; }
         public string? Search { get; set; }
         public int? CategoryId { get; set; }
-        public string? SortOrder { get; set; }
+        public string? SortOrder { get; set; } 
+        public string? PriceSortOrder { get; set; }
         public DateOnly? FromDate { get; set; }
         public DateOnly? ToDate { get; set; }
         public string? FilterType { get; set; }

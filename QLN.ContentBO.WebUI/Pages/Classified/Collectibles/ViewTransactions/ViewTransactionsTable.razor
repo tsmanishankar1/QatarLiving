@@ -1,0 +1,95 @@
+@inherits ViewTransactionsTableBase
+@using QLN.ContentBO.WebUI.Components.ToggleTabs
+@using MudBlazor
+@using QLN.ContentBO.WebUI.Components.PaginationFooter
+@using QLN.ContentBO.WebUI.Components.TableSkeleton
+@using QLN.ContentBO.WebUI.Components.EmptyCard
+
+<MudPaper Class="pa-4">
+      <ToggleTabs Options="@tabOptions"
+                ActiveValue="@SelectedTab"
+                OnChange="@OnTabChangedInternal" />
+@if (IsLoading)
+{
+    <TableSkeleton Rows="10" />
+}
+else if (Transactions == null || Transactions.Count == 0)
+{
+    <div class="empty-card-wrapper">
+        <EmptyCard Title="@($"No {GetTabTitle()} Items yet.")" Subtitle="Please check back later or explore other categories." />
+    </div>
+}
+else
+{
+ 
+    <MudTable Items="Transactions"
+              Hover="true"
+              Bordered="true"
+              Elevation="0"
+              Class="mud-table event-custom-table">
+
+        <HeaderContent>
+            <MudTh class="header-cell">Ad ID</MudTh>
+            <MudTh class="header-cell">Order ID</MudTh>
+            <MudTh class="header-cell">User ID</MudTh>
+            <MudTh class="header-cell">User Name</MudTh>
+            <MudTh class="header-cell">User Email</MudTh>
+            <MudTh class="header-cell">Transaction Type</MudTh>
+            <MudTh class="header-cell">Product Type</MudTh>
+            <MudTh class="header-cell">Category</MudTh>
+            <MudTh class="header-cell">Status</MudTh>
+            <MudTh class="header-cell">Email</MudTh>
+            <MudTh class="header-cell">Mobile</MudTh>
+            <MudTh class="header-cell">WhatsApp</MudTh>
+            <MudTh class="header-cell">Account</MudTh>
+            <MudTh class="header-cell">Amount</MudTh>
+            <MudTh class="header-cell">Payment Method</MudTh>
+            <MudTh class="header-cell">Creation Date</MudTh>
+            <MudTh class="header-cell">Date Published</MudTh>
+            <MudTh class="header-cell">Start Date</MudTh>
+            <MudTh class="header-cell">End Date</MudTh>
+            <MudTh class="header-cell">Description</MudTh>
+            <MudTh class="header-cell">Actions</MudTh>
+        </HeaderContent>
+
+        <RowTemplate>
+             <MudTd>
+                <div class="d-flex align-center">
+                    <img src="/qln-images/arrow_up_icon.svg" class="menu-icon-style me-1" alt="Ad Icon" />
+                    <span>@context.AdId</span>
+                </div>
+            </MudTd>
+            <MudTd Class="truncate-text" title="@(string.IsNullOrWhiteSpace(context.OrderId) ? "-" : context.OrderId)">@context.OrderId</MudTd>
+            <MudTd Class="truncate-text" title="@(string.IsNullOrWhiteSpace(context.UserId) ? "-" : context.UserId)">@context.UserId</MudTd>
+            <MudTd Class="truncate-text" title="@(string.IsNullOrWhiteSpace(context.Username) ? "-" : context.Username)">@context.Username</MudTd>
+            <MudTd Class="truncate-text" title="@(string.IsNullOrWhiteSpace(context.UserEmail) ? "-" : context.UserEmail)">@context.UserEmail</MudTd>
+            <MudTd Class="truncate-text" title="@(string.IsNullOrWhiteSpace(context.TransactionType) ? "-" : context.TransactionType)">@context.TransactionType</MudTd>
+            <MudTd Class="truncate-text">@context.ProductType</MudTd>
+            <MudTd Class="truncate-text">@context.Category</MudTd>
+            <MudTd Class="truncate-text">@context.Status</MudTd>
+            <MudTd Class="truncate-text" title="@(string.IsNullOrWhiteSpace(context.Email) ? "-" : context.Email)">@context.Email</MudTd>
+            <MudTd Class="truncate-text"title="@(string.IsNullOrWhiteSpace(context.Mobile) ? "-" : context.Mobile)">@context.Mobile</MudTd>
+            <MudTd Class="truncate-text" title="@(string.IsNullOrWhiteSpace(context.Whatsapp) ? "-" : context.Whatsapp)">@context.Whatsapp</MudTd>
+            <MudTd Class="truncate-text" title="@(string.IsNullOrWhiteSpace(context.Account) ? "-" : context.Account)">@context.Account</MudTd>
+            <MudTd Class="truncate-text">@context.Amount</MudTd>
+            <MudTd Class="truncate-text">@context.PaymentMethod</MudTd>
+            <MudTd Class="truncate-text">@(!string.IsNullOrEmpty(context.CreationDate) ? context.CreationDate : "--")</MudTd>
+            <MudTd Class="truncate-text">@(!string.IsNullOrEmpty(context.PublishedDate) ? context.PublishedDate : "--")</MudTd>
+            <MudTd Class="truncate-text">@(!string.IsNullOrEmpty(context.StartDate) ? context.StartDate : "--")</MudTd>
+            <MudTd Class="truncate-text">@(!string.IsNullOrEmpty(context.EndDate) ? context.EndDate : "--")</MudTd>
+            <MudTd Class="truncate-text"title="@(string.IsNullOrWhiteSpace(context.Description) ? "-" : context.Description)">@context.Description</MudTd>
+            <MudTd>
+                <div @onclick="@(() => OnPreview(context))">
+                    <img src="/qln-images/preview_icon.svg" class="menu-icon-style" alt="Preview" />
+                </div>
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+    }
+
+   @if (Transactions != null && Transactions.Count > 0)
+    {
+         <PaginationFooter TotalItems="@TotalRecords" CurrentPage="@currentPage" PageSize="@pageSize"
+                OnPageChange="@HandlePageChange" OnPageSizeChange="@HandlePageSizeChange" />
+    }
+</MudPaper>

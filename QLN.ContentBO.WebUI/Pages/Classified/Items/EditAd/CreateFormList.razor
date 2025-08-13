@@ -1,0 +1,197 @@
+@inherits CreateFormListBase
+@using QLN.ContentBO.WebUI.Models;
+@using QLN.ContentBO.WebUI.Components.PhoneNumberInput;
+
+     <div class="create-form-list">
+        <h3 class="form-heading-f1">Ad Information</h3>
+ 
+        @* <h3 class="form-heading">Ad Information</h3> *@
+            <MudSelect T="string" Class="white-bg" Label="Category" Variant="Variant.Outlined"
+                Value="@Ad.CategoryId"
+                ValueChanged="@OnCategoryChanged"
+                For="@(() => Ad.CategoryId)"
+                FullWidth="true">
+             @if (IsLoadingCategories)
+            {
+                  <MudSelectItem T="string" Value="@("__loading__")" Disabled="true">Loading...</MudSelectItem>
+            }
+            else
+            {
+                @foreach (var cat in CategoryTrees)
+                {
+                    if (cat != null && cat.Id != null && cat.CategoryName != null)
+                    {
+                        <MudSelectItem T="string" Value="@cat.Id.ToString()">@cat.CategoryName</MudSelectItem>
+                    }
+                }
+            }
+        </MudSelect>
+
+
+        @if (!string.IsNullOrEmpty(Ad.CategoryId) && SelectedCategory?.Fields?.Any() == true)
+        {
+          <MudSelect T="string" Class="white-bg" Label="Subcategory" Variant="Variant.Outlined"
+                    Value="@Ad.L1CategoryId"
+                    ValueChanged="@OnSubCategoryChanged"
+                    For="@(() => Ad.L1CategoryId)"
+                    FullWidth="true">
+                @foreach (var sub in SelectedCategory?.Fields ?? Enumerable.Empty<ClassifiedsCategoryField>())
+                {
+                    if (sub?.Id != null && sub.CategoryName != null)
+                    {
+                        <MudSelectItem T="string" Value="@sub.Id.ToString()">@sub.CategoryName</MudSelectItem>
+                    }
+                }
+            </MudSelect>
+
+        }
+
+        @if (!string.IsNullOrEmpty(Ad.L1CategoryId) && SelectedSubcategory?.Fields?.Any() == true)
+        {
+            <MudSelect T="string"Class="white-bg" Label="Section" Variant="Variant.Outlined"
+                Value="@Ad.L2CategoryId"
+                ValueChanged="@OnSubSubCategoryChanged"
+                For="@(() => Ad.L2CategoryId)"
+                FullWidth="true">
+                 @foreach (var subsub in SelectedSubcategory?.Fields ?? Enumerable.Empty<ClassifiedsCategoryField>())
+                {
+                    if (subsub?.Id != null && subsub.CategoryName != null)
+                    {
+                        <MudSelectItem T="string" Value="@subsub.Id.ToString()">@subsub.CategoryName</MudSelectItem>
+                    }
+                }
+        </MudSelect>
+
+        }
+        @if (AvailableFields != null)
+        {
+            @foreach (var field in AvailableFields.Where(f => !ExcludedFields.Contains(f.CategoryName)))
+            {
+                if (!Ad.DynamicFields.ContainsKey(field.CategoryName))
+                {
+                    Ad.DynamicFields[field.CategoryName] = string.Empty;
+                }
+
+                <div class="mt-2">
+                    @if (field.Type == "dropdown" || field.Type == "Dropdown")
+                    {
+                        <MudSelect T="string"
+                                Label="@field.CategoryName"
+                                Variant="Variant.Outlined"
+                                @bind-Value="Ad.DynamicFields[field.CategoryName]"
+                                FullWidth="true"
+                                Class="white-bg"
+                                Immediate="true">
+                            @foreach (var option in field.Options)
+                            {
+                                <MudSelectItem T="string" Value="@option">@option</MudSelectItem>
+                            }
+                        </MudSelect>
+                    }
+                    else if (field.Type == "Free Text")
+                    {
+                        <MudTextField T="string"
+                                    Label="@field.CategoryName"
+                                    Variant="Variant.Outlined"
+                                    @bind-Value="Ad.DynamicFields[field.CategoryName]"
+                                    FullWidth="true"
+                                    Class="white-bg" />
+                    }
+
+                        @if (DynamicFieldErrors.TryGetValue(field.CategoryName, out var errors))
+                    {
+                        @foreach (var error in errors)
+                        {
+                            <div class="mud-input-error">@error</div>
+                        }
+                    }
+                </div>
+            }
+        }
+       <MudTextField Class="white-bg"  Immediate="true" Variant="Variant.Outlined"  MaxLength="20" T="int" Label="Price"
+                      @bind-Value="Ad.Price" For="@(() => Ad.Price)" FullWidth="true" />
+
+        <h3 class="form-heading">Description and Features</h3>
+        <MudTextField Class="white-bg"  Immediate="true" Variant="Variant.Outlined" MaxLength="50" T="string" Label="Title"
+                      @bind-Value="Ad.Title" For="@(() => Ad.Title)" FullWidth="true" />
+
+        <MudExRichTextEdit @bind-Value="Ad.Description" @ref="Editor"
+                           Height="350" Placeholder="Start Typing"
+                           For="@(() => Ad.Description)">
+        </MudExRichTextEdit>
+
+        <h3 class="form-heading">Contact Details</h3>
+        <div class="form-group">
+                <!-- Phone -->
+                    <PhoneNumberInput
+                        DefaultCountryCode="@DefaultSelectedPhoneCountry"
+                        SelectedCountry="@SelectedPhoneCountry"
+                        Placeholder="Phone Number"
+                        SelectedCountryChanged="@OnPhoneCountryChanged"
+                        PhoneNumber="@Ad.ContactNumber"
+                        PhoneNumberChanged="@OnPhoneChanged" />
+                <ValidationMessage For="@(() => Ad.ContactNumber)" />
+                </div>
+                <div class="form-group">
+                    <!-- WhatsApp -->
+                    <PhoneNumberInput
+                        DefaultCountryCode="@DefaultSelectedWhatsappCountry"
+                        SelectedCountry="@SelectedWhatsappCountry"
+                        Placeholder="WhatsApp Number"
+                        SelectedCountryChanged="@OnWhatsappCountryChanged"
+                        PhoneNumber="@Ad.WhatsappNumber"
+                        PhoneNumberChanged="@OnWhatsappChanged" />
+                <ValidationMessage For="@(() => Ad.WhatsappNumber)" />
+                </div>
+
+        <h3 class="form-heading">Location</h3>
+
+            <MudSelect T="string" Class="white-bg" Label="Zone" Variant="Variant.Outlined"
+                Value="@Ad.Zone"
+                Immediate="true"
+                ValueChanged="@OnZoneChanged"
+                For="@(() => Ad.Zone)"
+                FullWidth="true">
+
+             @if (IsLoadingZones)
+            {
+                  <MudSelectItem T="string" Value="@("__loading__")" Disabled="true">Loading...</MudSelectItem>
+            }
+            else
+            {
+                @foreach (var zone in Zones)
+                {
+                    <MudSelectItem T="string" Value="@zone.Id.ToString()">@zone.Name</MudSelectItem>
+                }
+            }
+        </MudSelect>
+        <MudTextField Class="white-bg" Variant="Variant.Outlined" T="string" Label="Street Number"
+                    Value="@Ad.StreetNumber"
+                    ValueChanged="@OnStreetNumberChanged"
+                    Immediate="true"
+                    For="@(() => Ad.StreetNumber)" FullWidth="true" />
+
+        <MudTextField Class="white-bg" Variant="Variant.Outlined" T="string" Label="Building Number"
+                    Value="@Ad.BuildingNumber"
+                    ValueChanged="@OnBuildingNumberChanged"
+                    Immediate="true"
+                    For="@(() => Ad.BuildingNumber)" FullWidth="true" />
+
+
+        <div id="map" style="height: 300px; width: 100%;"></div>
+
+         <div class="checkbox-section">
+            <div class="checkbox-left">
+                <MudCheckBox @bind-Value="Ad.IsAgreed" Color="Color.Primary" />
+            </div>
+            <div class="checkbox-right">
+                <span>
+                    I agree to the
+                    <a href="https://www.qatarliving.com/rules-advertising" target="_blank">Rules for Advertising</a>
+                    and the
+                    <a href="https://www.qatarliving.com/terms-of-use" target="_blank">Terms of Use</a>.
+                </span>
+            </div>
+        </div>
+        <ValidationMessage For="@(() => Ad.IsAgreed)" />
+    </div>

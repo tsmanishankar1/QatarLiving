@@ -1,11 +1,16 @@
 ﻿using Dapr.Client;
+using Microsoft.Extensions.Hosting;
 using QLN.Common.DTO_s;
+using QLN.Common.Infrastructure.Constants;
+using QLN.Common.Infrastructure.CustomException;
 using QLN.Common.Infrastructure.IService.V2IContent;
+using QLN.Common.Infrastructure.Utilities;
 using System.Text.Json;
-using static QLN.Common.DTO_s.CommunityBo;
 using System.Text.RegularExpressions;
+using System.Threading;
+using static QLN.Common.DTO_s.CommunityBo;
+using System.Linq;
 
- 
 namespace QLN.Content.MS.Service.CommunityInternalService
 {
     public class V2InternalCommunityPostService : IV2CommunityPostService
@@ -16,11 +21,15 @@ namespace QLN.Content.MS.Service.CommunityInternalService
         private const string StoreName = "contentstatestore";
         private const string IndexKey = "community-index";
 
+        private static readonly JsonSerializerOptions _jsonOpts =
+            new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+
         public V2InternalCommunityPostService(DaprClient dapr, ILogger<V2InternalCommunityPostService> logger)
         {
             _dapr = dapr;
             _logger = logger;
         }
+
         public async Task<string> CreateCommunityPostAsync(string userId, V2CommunityPostDto dto, CancellationToken ct = default)
         {
             if (dto == null) throw new ArgumentNullException(nameof(dto));
@@ -32,7 +41,8 @@ namespace QLN.Content.MS.Service.CommunityInternalService
             dto.UpdatedBy = userId;
             dto.UpdatedDate = DateTime.UtcNow;
             dto.DateCreated = DateTime.UtcNow;
-            dto.Slug = GenerateSlug(dto.Title);
+            dto.Slug = ProcessingHelpers.GenerateSlug(dto.Title);
+            NormalizeCommunityDto(dto);
             var key = GetKey(dto.Id);
 
             try
@@ -40,7 +50,9 @@ namespace QLN.Content.MS.Service.CommunityInternalService
                 var existing = await _dapr.GetStateAsync<object>(StoreName, key, cancellationToken: ct);
                 if (existing != null)
                     throw new InvalidOperationException($"Community post with key {key} already exists.");
+
                 await _dapr.SaveStateAsync(StoreName, key, dto, cancellationToken: ct);
+
                 var index = await _dapr.GetStateAsync<List<string>>(StoreName, IndexKey, cancellationToken: ct) ?? new();
                 if (!index.Contains(key))
                 {
@@ -48,8 +60,25 @@ namespace QLN.Content.MS.Service.CommunityInternalService
                     await _dapr.SaveStateAsync(StoreName, IndexKey, index, cancellationToken: ct);
                 }
 
-                return "Community post created successfully";
+                var upsertRequest = await IndexCommunityPostToAzureSearch(dto, cancellationToken: ct);
+                if (upsertRequest != null)
+                {
+                    var message = new IndexMessage
+                    {
+                        Action = "Upsert",
+                        Vertical = ConstantValues.IndexNames.ContentCommunityIndex,
+                        UpsertRequest = upsertRequest
+                    };
 
+                    await _dapr.PublishEventAsync(
+                        pubsubName: ConstantValues.PubSubName,
+                        topicName: ConstantValues.PubSubTopics.IndexUpdates,
+                        data: message,
+                        cancellationToken: ct
+                    );
+                }
+
+                return "Community post created successfully";
             }
             catch (InvalidOperationException ex) when (ex.Message.Contains("already exists"))
             {
@@ -64,7 +93,7 @@ namespace QLN.Content.MS.Service.CommunityInternalService
             catch (InvalidOperationException ex)
             {
                 _logger.LogError(ex, "Operation error while creating community post.");
-                throw;
+                throw new ConflictException(ex.Message);
             }
             catch (Exception ex)
             {
@@ -72,134 +101,96 @@ namespace QLN.Content.MS.Service.CommunityInternalService
                 throw new InvalidOperationException("An unexpected error occurred while creating the community post. Please try again later.", ex);
             }
         }
-        public async Task<PaginatedCommunityPostResponseDto> GetAllCommunityPostsAsync(string? categoryId = null,string? search = null, int? page = null, int? pageSize = null,string? sortDirection = null,CancellationToken ct = default)
-        {
-            _logger.LogInformation("Starting retrieval of all community posts...");
 
+        public async Task<string> BulkMigrateCommunityPostsAsync(List<V2CommunityPostDto> posts, CancellationToken ct = default)
+        {
+            foreach (var dto in posts)
+            {
+                try
+                {
+                    NormalizeCommunityDto(dto);
+                    var key = GetKey(dto.Id);
+
+                    await _dapr.SaveStateAsync(StoreName, key, dto, cancellationToken: ct);
+
+                    var index = await _dapr.GetStateAsync<List<string>>(StoreName, IndexKey, cancellationToken: ct) ?? new();
+
+                    if (!index.Contains(key))
+                    {
+                        index.Add(key);
+                        await _dapr.SaveStateAsync(StoreName, IndexKey, index, cancellationToken: ct);
+                    }
+
+                    var upsertRequest = await IndexCommunityPostToAzureSearch(dto, cancellationToken: ct);
+                    if (upsertRequest != null)
+                    {
+                        var message = new IndexMessage
+                        {
+                            Action = "Upsert",
+                            Vertical = ConstantValues.IndexNames.ContentCommunityIndex,
+                            UpsertRequest = upsertRequest
+                        };
+
+                        await _dapr.PublishEventAsync(
+                            pubsubName: ConstantValues.PubSubName,
+                            topicName: ConstantValues.PubSubTopics.IndexUpdates,
+                            data: message,
+                            cancellationToken: ct
+                        );
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogCritical(ex, "Unhandled error occurred during community post bulk migration.");
+                    throw new InvalidOperationException("An unexpected error occurred while creating the community post. Please try again later.", ex);
+                }
+            }
+
+            return "Community posts created successfully";
+        }
+
+        public async Task<string> MigrateCommunityPostAsync(V2CommunityPostDto dto, CancellationToken ct = default)
+        {
             try
             {
-                int currentPage = page ?? 1;
-                int currentPageSize = pageSize ?? 12;
+                var key = GetKey(dto.Id);
+
+                await _dapr.SaveStateAsync(StoreName, key, dto, cancellationToken: ct);
 
                 var index = await _dapr.GetStateAsync<List<string>>(StoreName, IndexKey, cancellationToken: ct) ?? new();
-                _logger.LogInformation("Retrieved {Count} community post keys from index.", index.Count);
 
-                if (index.Count == 0)
+                if (!index.Contains(key))
                 {
-                    _logger.LogWarning("No community post keys found in the index.");
-                    return new PaginatedCommunityPostResponseDto();
+                    index.Add(key);
+                    await _dapr.SaveStateAsync(StoreName, IndexKey, index, cancellationToken: ct);
                 }
 
-                var filteredPosts = new List<V2CommunityPostDto>();
-
-                foreach (var key in index)
+                var upsertRequest = await IndexCommunityPostToAzureSearch(dto, cancellationToken: ct);
+                if (upsertRequest != null)
                 {
-                    try
+                    var message = new IndexMessage
                     {
-                        var post = await _dapr.GetStateAsync<V2CommunityPostDto>(StoreName, key, cancellationToken: ct);
+                        Action = "Upsert",
+                        Vertical = ConstantValues.IndexNames.ContentCommunityIndex,
+                        UpsertRequest = upsertRequest
+                    };
 
-                        if (post == null || post.Id == Guid.Empty || string.IsNullOrWhiteSpace(post.Title))
-                            continue;
-
-                        if (!post.IsActive)
-                            continue;
-
-                        if (!string.IsNullOrWhiteSpace(categoryId) &&
-                            !string.Equals(post.CategoryId?.Trim(), categoryId.Trim(), StringComparison.OrdinalIgnoreCase))
-                            continue;
-
-                        if (!string.IsNullOrWhiteSpace(search))
-                        {
-                            var normalizedTitle = post.Title?.Trim().ToLowerInvariant() ?? "";
-                            var normalizedSearch = search.Trim().ToLowerInvariant();
-                            if (!normalizedTitle.Contains(normalizedSearch))
-                                continue;
-                        }
-
-                        // ✅ Fetch liked user IDs
-                        var likeIndexKey = $"like-index-{post.Id}";
-                        var likedUsers = await _dapr.GetStateAsync<List<string>>(StoreName, likeIndexKey, cancellationToken: ct) ?? new();
-                        post.LikeCount = likedUsers.Count;
-                        post.LikedUserIds = likedUsers;
-
-                        // ✅ Fetch comment count + commented user IDs
-                        var commentIndexKey = $"comment-index-{post.Id}";
-                        var commentIds = await _dapr.GetStateAsync<List<Guid>>(StoreName, commentIndexKey, cancellationToken: ct) ?? new();
-                        post.CommentCount = commentIds.Count;
-
-                        var commentedUserIds = new HashSet<string>();
-
-                        foreach (var commentId in commentIds)
-                        {
-                            var commentKey = $"comment-{post.Id}-{commentId}";
-                            var commentState = await _dapr.GetStateAsync<CommunityCommentDto>(StoreName, commentKey, cancellationToken: ct);
-
-                            if (commentState != null && commentState.IsActive && !string.IsNullOrWhiteSpace(commentState.UserId))
-                            {
-                                commentedUserIds.Add(commentState.UserId);
-                            }
-                        }
-
-                        post.CommentedUserIds = commentedUserIds.ToList();
-
-                        filteredPosts.Add(post);
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, "Error processing community post from key: {Key}", key);
-                    }
+                    await _dapr.PublishEventAsync(
+                        pubsubName: ConstantValues.PubSubName,
+                        topicName: ConstantValues.PubSubTopics.IndexUpdates,
+                        data: message,
+                        cancellationToken: ct
+                    );
                 }
-
-                var sort = (sortDirection ?? "desc").Trim().ToLowerInvariant();
-                filteredPosts = sort == "asc"
-                    ? filteredPosts.OrderBy(p => p.DateCreated).ToList()
-                    : filteredPosts.OrderByDescending(p => p.DateCreated).ToList();
-
-                int total = filteredPosts.Count;
-
-                var pagedPosts = filteredPosts
-                    .Skip((currentPage - 1) * currentPageSize)
-                    .Take(currentPageSize)
-                    .ToList();
-
-                _logger.LogInformation("Completed retrieval. Total filtered posts: {Total}, Page {Page} with size {PageSize}", total, currentPage, currentPageSize);
-
-                return new PaginatedCommunityPostResponseDto
-                {
-                    Total = total,
-                    Items = pagedPosts
-                };
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to retrieve community posts.");
-                throw new InvalidOperationException("An unexpected error occurred while retrieving community posts.", ex);
+                _logger.LogCritical(ex, "Unhandled error occurred during community post migration.");
+                throw new InvalidOperationException("An unexpected error occurred while creating the community post. Please try again later.", ex);
             }
+            return "Community posts created successfully";
         }
-        public async Task<V2CommunityPostDto?> GetCommunityPostByIdAsync(Guid id, CancellationToken ct = default)
-        {
-            try
-            {
-                var key = $"community-{id}";
-                var post = await _dapr.GetStateAsync<V2CommunityPostDto>(StoreName, key, cancellationToken: ct);
-                return (post != null && post.IsActive) ? post : null;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error fetching community posts");
-                throw;
-            }
-        }
-        private string GenerateSlug(string title)
-        {
-            if (string.IsNullOrWhiteSpace(title)) return string.Empty;
-            var slug = title.ToLowerInvariant().Trim();
-            slug = Regex.Replace(slug, @"[\s_]+", "-");
-            slug = Regex.Replace(slug, @"[^a-z0-9\-]", "");
-            slug = Regex.Replace(slug, @"-+", "-");
-            slug = slug.Trim('-');
-            return slug;
-        }
+
         public Task<ForumCategoryListDto> GetAllForumCategoriesAsync(CancellationToken cancellationToken = default)
         {
             var categories = new List<ForumCategoryDto>
@@ -246,6 +237,7 @@ namespace QLN.Content.MS.Service.CommunityInternalService
             };
             return Task.FromResult(new ForumCategoryListDto { ForumCategories = categories });
         }
+
         public async Task<bool> SoftDeleteCommunityPostAsync(Guid postId, string userId, CancellationToken ct = default)
         {
             var key = GetKey(postId);
@@ -260,8 +252,27 @@ namespace QLN.Content.MS.Service.CommunityInternalService
 
             await _dapr.SaveStateAsync(StoreName, key, post, cancellationToken: ct);
 
+            var upsertRequest = await IndexCommunityPostToAzureSearch(post, cancellationToken: ct);
+            if (upsertRequest != null)
+            {
+                var message = new IndexMessage
+                {
+                    Action = "Upsert",
+                    Vertical = ConstantValues.IndexNames.ContentCommunityIndex,
+                    UpsertRequest = upsertRequest
+                };
+
+                await _dapr.PublishEventAsync(
+                    pubsubName: ConstantValues.PubSubName,
+                    topicName: ConstantValues.PubSubTopics.IndexUpdates,
+                    data: message,
+                    cancellationToken: ct
+                );
+            }
+
             return true;
         }
+
         public async Task<bool> LikePostForUser(CommunityPostLikeDto dto, CancellationToken ct = default)
         {
             var key = $"like-{dto.CommunityPostId}-{dto.UserId}";
@@ -278,10 +289,13 @@ namespace QLN.Content.MS.Service.CommunityInternalService
                     await _dapr.DeleteStateAsync(StoreName, key, cancellationToken: ct);
 
                     userIndex.Remove(dto.UserId);
-                    await _dapr.SaveStateAsync(StoreName, indexKey, userIndex);
+                    await _dapr.SaveStateAsync(StoreName, indexKey, userIndex, cancellationToken: ct);
 
                     _logger.LogInformation("User {UserId} unliked post {PostId}", dto.UserId, dto.CommunityPostId);
-                    return false; // false means unliked
+
+                    // Update index counts
+                    await PublishCommunityIndexUpdateAsync(dto.CommunityPostId, ct);
+                    return false; // unliked
                 }
 
                 // Not liked → add like
@@ -296,14 +310,18 @@ namespace QLN.Content.MS.Service.CommunityInternalService
                 await _dapr.SaveStateAsync(StoreName, indexKey, userIndex, cancellationToken: ct);
 
                 _logger.LogInformation("User {UserId} liked post {PostId}", dto.UserId, dto.CommunityPostId);
-                return true; // true means liked
-            } 
+
+                // Update index counts
+                await PublishCommunityIndexUpdateAsync(dto.CommunityPostId, ct);
+                return true; // liked
+            }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error fetching community like posts");
+                _logger.LogError(ex, "Error toggling like for post {PostId}", dto.CommunityPostId);
                 throw;
             }
         }
+
         public async Task AddCommentToCommunityPostAsync(CommunityCommentDto dto, CancellationToken ct = default)
         {
             var key = $"comment-{dto.CommunityPostId}-{dto.CommentId}";
@@ -311,13 +329,19 @@ namespace QLN.Content.MS.Service.CommunityInternalService
 
             try
             {
-                await _dapr.SaveStateAsync(StoreName, key, dto);
+                await _dapr.SaveStateAsync(StoreName, key, dto, cancellationToken: ct);
 
-                var index = await _dapr.GetStateAsync<List<Guid>>(StoreName, indexKey) ?? new();
-                index.Add(dto.CommentId);
+                var index = await _dapr.GetStateAsync<List<Guid>>(StoreName, indexKey, cancellationToken: ct) ?? new();
+                if (!index.Contains(dto.CommentId))
+                {
+                    index.Add(dto.CommentId);
+                    await _dapr.SaveStateAsync(StoreName, indexKey, index, cancellationToken: ct);
+                }
 
-                await _dapr.SaveStateAsync(StoreName, indexKey, index);
                 _logger.LogInformation("Comment added to community post {PostId}", dto.CommunityPostId);
+
+                // Update index counts
+                await PublishCommunityIndexUpdateAsync(dto.CommunityPostId, ct);
             }
             catch (Exception ex)
             {
@@ -325,7 +349,8 @@ namespace QLN.Content.MS.Service.CommunityInternalService
                 throw;
             }
         }
-        public async Task<CommunityCommentListResponse> GetAllCommentsByPostIdAsync( Guid postId, int? page = null, int? perPage = null, CancellationToken ct = default)
+
+        public async Task<CommunityCommentListResponse> GetAllCommentsByPostIdAsync(Guid postId, string? userId, int? page = null, int? perPage = null, CancellationToken ct = default)
         {
             var indexKey = $"comment-index-{postId}";
 
@@ -353,14 +378,10 @@ namespace QLN.Content.MS.Service.CommunityInternalService
 
                     try
                     {
-                        var comment = JsonSerializer.Deserialize<CommunityCommentDto>(state.Value, new JsonSerializerOptions
-                        {
-                            PropertyNameCaseInsensitive = true
-                        });
+                        var comment = JsonSerializer.Deserialize<CommunityCommentDto>(state.Value, _jsonOpts);
 
                         if (comment != null && comment.IsActive && comment.CommentId != Guid.Empty)
                         {
-                            // Get liked user IDs
                             var likeIndexKey = $"comment-like-index-{comment.CommentId}";
                             var likedUsers = await _dapr.GetStateAsync<List<string>>(StoreName, likeIndexKey, cancellationToken: ct) ?? new();
                             comment.CommentsLikeCount = likedUsers.Count;
@@ -375,19 +396,16 @@ namespace QLN.Content.MS.Service.CommunityInternalService
                     }
                 }
 
-                // Pagination after filtering
                 int currentPage = page ?? 1;
                 int itemsPerPage = perPage ?? 10;
                 int skip = (currentPage - 1) * itemsPerPage;
 
-                // Group comments by parent
                 var grouped = allComments
                     .GroupBy(c => c.ParentCommentId ?? Guid.Empty)
                     .ToDictionary(g => g.Key, g => g.ToList());
 
                 var result = new List<CommunityCommentItem>();
 
-                // Recursive builder
                 List<CommunityCommentItem> BuildReplies(Guid parentId)
                 {
                     if (!grouped.ContainsKey(parentId))
@@ -404,12 +422,12 @@ namespace QLN.Content.MS.Service.CommunityInternalService
                             LikeCount = reply.CommentsLikeCount,
                             LikedUserIds = reply.LikedUserIds ?? new(),
                             CommentedUserId = reply.UserId,
+                            IsLiked = !string.IsNullOrEmpty(userId) && (reply.LikedUserIds?.Contains(userId) ?? false),
                             Replies = BuildReplies(reply.CommentId)
                         })
                         .ToList();
                 }
 
-                // Build paginated root-level comments
                 if (grouped.ContainsKey(Guid.Empty))
                 {
                     var rootParents = grouped[Guid.Empty]
@@ -429,6 +447,7 @@ namespace QLN.Content.MS.Service.CommunityInternalService
                             LikeCount = parent.CommentsLikeCount,
                             LikedUserIds = parent.LikedUserIds ?? new(),
                             CommentedUserId = parent.UserId,
+                            IsLiked = !string.IsNullOrEmpty(userId) && (parent.LikedUserIds?.Contains(userId) ?? false),
                             Replies = BuildReplies(parent.CommentId)
                         };
 
@@ -436,19 +455,12 @@ namespace QLN.Content.MS.Service.CommunityInternalService
                     }
                 }
 
-                var uniqueCommentedUserIds = allComments
-                    .Where(c => !string.IsNullOrWhiteSpace(c.UserId))
-                    .Select(c => c.UserId)
-                    .Distinct()
-                    .ToList();
-
                 return new CommunityCommentListResponse
                 {
                     TotalComments = grouped.ContainsKey(Guid.Empty) ? grouped[Guid.Empty].Count : 0,
                     PerPage = itemsPerPage,
                     CurrentPage = currentPage,
-                    Comments = result,
-                    //CommentedUserIds = uniqueCommentedUserIds
+                    Comments = result
                 };
             }
             catch (Exception ex)
@@ -457,10 +469,11 @@ namespace QLN.Content.MS.Service.CommunityInternalService
                 throw;
             }
         }
-        public async Task<bool> LikeCommentAsync(Guid commentId, string userId, Guid communityPostId, CancellationToken ct = default)
+
+        public async Task<bool> LikeCommentAsync(LikeCommentsDto likeCommentsDto, string userId, CancellationToken ct = default)
         {
-            var key = $"comment-like-{commentId}-{userId}";
-            var indexKey = $"comment-like-index-{commentId}";
+            var key = $"comment-like-{likeCommentsDto.CommentId}-{userId}";
+            var indexKey = $"comment-like-index-{likeCommentsDto.CommentId}";
 
             try
             {
@@ -473,7 +486,7 @@ namespace QLN.Content.MS.Service.CommunityInternalService
                     index.Remove(userId);
                     await _dapr.SaveStateAsync(StoreName, indexKey, index);
 
-                    _logger.LogInformation("User {UserId} unliked comment {CommentId}", userId, commentId);
+                    _logger.LogInformation("User {UserId} unliked comment {CommentId}", userId, likeCommentsDto.CommentId);
                     return false;
                 }
 
@@ -484,151 +497,16 @@ namespace QLN.Content.MS.Service.CommunityInternalService
 
                 await _dapr.SaveStateAsync(StoreName, indexKey, index);
 
-                _logger.LogInformation("User {UserId} liked comment {CommentId}", userId, commentId);
+                _logger.LogInformation("User {UserId} liked comment {CommentId}", userId, likeCommentsDto.CommentId);
                 return true;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error processing comment like for {CommentId}", commentId);
+                _logger.LogError(ex, "Error processing comment like for {CommentId}", likeCommentsDto.CommentId);
                 throw;
             }
         }
-        public async Task<V2CommunityPostDto?> GetCommunityPostBySlugAsync(string slug, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                Console.WriteLine($"[START] Looking for post with slug: {slug}");
 
-                var keys = await _dapr.GetStateAsync<List<string>>(StoreName, IndexKey, cancellationToken: cancellationToken) ?? new();
-
-                Console.WriteLine($"[INFO] Retrieved {keys.Count} keys from IndexKey = {IndexKey}");
-
-                if (keys.Count == 0)
-                {
-                    _logger.LogWarning("No community post keys found in the index.");
-                    return null;
-                }
-
-                var items = await _dapr.GetBulkStateAsync(StoreName, keys, parallelism: null, cancellationToken: cancellationToken);
-
-                foreach (var item in items)
-                {
-                    Console.WriteLine($"[LOOP] Checking key: {item.Key}");
-
-                    if (string.IsNullOrWhiteSpace(item.Value))
-                    {
-                        Console.WriteLine($"[SKIP] Empty value for key: {item.Key}");
-                        continue;
-                    }
-
-                    try
-                    {
-                        var post = JsonSerializer.Deserialize<V2CommunityPostDto>(item.Value, new JsonSerializerOptions
-                        {
-                            PropertyNameCaseInsensitive = true
-                        });
-
-                        if (post == null)
-                        {
-                            Console.WriteLine($"[SKIP] Null post after deserialization. Key: {item.Key}");
-                            continue;
-                        }
-
-                        if (!post.IsActive)
-                        {
-                            Console.WriteLine($"[SKIP] Post is not active. Key: {item.Key}");
-                            continue;
-                        }
-
-                        if (!string.Equals(post.Slug, slug, StringComparison.OrdinalIgnoreCase))
-                        {
-                            Console.WriteLine($"[SKIP] Slug mismatch. Found: {post.Slug}, Looking for: {slug}");
-                            continue;
-                        }
-
-                        Console.WriteLine($"[MATCH] Post matched. ID: {post.Id}");
-
-                        // Initialize collections
-                        post.LikedUserIds ??= new();
-                        post.CommentedUserIds ??= new();
-
-                        // Get liked users
-                        var likeIndexKey = $"like-index-{post.Id}";
-                        var likedUsers = await _dapr.GetStateAsync<List<string>>(StoreName, likeIndexKey, cancellationToken: cancellationToken);
-                        post.LikedUserIds = (likedUsers ?? new())
-                            .Where(uid => !string.IsNullOrWhiteSpace(uid) && uid != "string")
-                            .ToList();
-                        post.LikeCount = post.LikedUserIds.Count;
-
-                        Console.WriteLine($"[LIKE] {post.LikeCount} users liked the post.");
-
-                        // Get comments
-                        var commentIndexKey = $"comment-index-{post.Id}";
-                        var commentIds = await _dapr.GetStateAsync<List<string>>(StoreName, commentIndexKey, cancellationToken: cancellationToken);
-
-                        if (commentIds != null && commentIds.Count > 0)
-                        {
-                            Console.WriteLine($"[COMMENT] Found {commentIds.Count} comment IDs.");
-
-                            var commentKeys = commentIds.Select(cid => $"comment-{post.Id}-{cid}").ToList();
-                            var commentStates = await _dapr.GetBulkStateAsync(StoreName, commentKeys, null, cancellationToken: cancellationToken);
-
-                            foreach (var state in commentStates)
-                            {
-                                if (string.IsNullOrWhiteSpace(state.Value))
-                                    continue;
-
-                                try
-                                {
-                                    var comment = JsonSerializer.Deserialize<CommunityCommentDto>(state.Value, new JsonSerializerOptions
-                                    {
-                                        PropertyNameCaseInsensitive = true
-                                    });
-
-                                    if (comment is { IsActive: true } &&
-                                        !string.IsNullOrWhiteSpace(comment.UserId) &&
-                                        comment.UserId != "string")
-                                    {
-                                        post.CommentedUserIds.Add(comment.UserId);
-                                    }
-                                }
-                                catch (JsonException ex)
-                                {
-                                    _logger.LogWarning(ex, "Failed to deserialize comment for key: {Key}", state.Key);
-                                    Console.WriteLine($"[ERROR] Deserialization failed for comment key: {state.Key}");
-                                }
-                            }
-
-                            post.CommentedUserIds = post.CommentedUserIds
-                                .Where(uid => !string.IsNullOrWhiteSpace(uid) && uid != "string")
-                                .Distinct()
-                                .ToList();
-
-                            post.CommentCount = post.CommentedUserIds.Count;
-                            Console.WriteLine($"[COMMENT] Total valid unique commenters: {post.CommentCount}");
-                        }
-
-                        return post;
-                    }
-                    catch (JsonException ex)
-                    {
-                        _logger.LogWarning(ex, "Skipping item {Key} due to deserialization failure", item.Key);
-                        Console.WriteLine($"[ERROR] Post deserialization failed for key: {item.Key}");
-                        continue;
-                    }
-                }
-
-                _logger.LogInformation("No matching post found with slug: {Slug}", slug);
-                Console.WriteLine($"[INFO] No post found with slug: {slug}");
-                return null;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error retrieving community post by slug: {Slug}", slug);
-                Console.WriteLine($"[FATAL] Error fetching post by slug: {slug}, Exception: {ex.Message}");
-                throw new InvalidOperationException($"Error fetching community post by slug: {slug}", ex);
-            }
-        }
         public async Task<CommunityCommentApiResponse> SoftDeleteCommunityCommentAsync(Guid postId, Guid commentId, string userId, CancellationToken ct = default)
         {
             var commentKey = $"comment-{postId}-{commentId}";
@@ -669,7 +547,7 @@ namespace QLN.Content.MS.Service.CommunityInternalService
                 await _dapr.SaveStateAsync(StoreName, commentKey, comment, cancellationToken: ct);
                 _logger.LogInformation("Soft-deleted comment ID: {CommentId} from post {PostId}", commentId, postId);
 
-                // 🔁 Soft delete replies
+                // Soft delete replies
                 var indexKey = $"comment-index-{postId}";
                 var commentIds = await _dapr.GetStateAsync<List<Guid>>(StoreName, indexKey, cancellationToken: ct) ?? new();
 
@@ -684,6 +562,9 @@ namespace QLN.Content.MS.Service.CommunityInternalService
                         _logger.LogInformation("Also soft-deleted reply comment ID: {ChildCommentId}", childId);
                     }
                 }
+
+                // Update index counts
+                await PublishCommunityIndexUpdateAsync(postId, ct);
 
                 return new CommunityCommentApiResponse
                 {
@@ -701,6 +582,7 @@ namespace QLN.Content.MS.Service.CommunityInternalService
                 };
             }
         }
+
         public async Task<CommunityCommentApiResponse> EditCommunityCommentAsync(Guid postId, Guid commentId, string userId, string updatedText, CancellationToken ct = default)
         {
             var commentKey = $"comment-{postId}-{commentId}";
@@ -757,6 +639,9 @@ namespace QLN.Content.MS.Service.CommunityInternalService
 
                 _logger.LogInformation("Successfully updated comment {CommentId}", commentId);
 
+                // No count changes, so no index update required; call it if you want UpdatedDate freshness:
+                // await PublishCommunityIndexUpdateAsync(postId, ct);
+
                 return new CommunityCommentApiResponse
                 {
                     Status = "success",
@@ -774,12 +659,139 @@ namespace QLN.Content.MS.Service.CommunityInternalService
             }
         }
 
+        private async Task<CommonIndexRequest> IndexCommunityPostToAzureSearch(V2CommunityPostDto dto, CancellationToken cancellationToken)
+        {
+            var indexDoc = new ContentCommunityIndex
+            {
+                Id = dto.Id.ToString(),
+                UserName = dto.UserName,
+                Title = dto.Title,
+                Slug = dto.Slug,
+                Description = dto.Description,
+                Category = dto.Category,
+                CategoryId = dto.CategoryId,
+                CommentedUserIds = (dto.CommentedUserIds ?? new List<string>())
+                    .Where(s => !string.IsNullOrWhiteSpace(s) && s != "string").Distinct().ToList(),
+                CommentCount = dto.CommentCount,
+                LikedUserIds = (dto.LikedUserIds ?? new List<string>())
+                    .Where(s => !string.IsNullOrWhiteSpace(s) && s != "string").Distinct().ToList(),
+                LikeCount = dto.LikeCount,
+                ImageUrl = dto.ImageUrl,
+                UserId = dto.UserId,
+                IsActive = dto.IsActive,
+                DateCreated = dto.DateCreated,
+                UpdatedBy = dto.UpdatedBy,
+                UpdatedDate = dto.UpdatedDate
+            };
 
+            var indexRequest = new CommonIndexRequest
+            {
+                IndexName = ConstantValues.IndexNames.ContentCommunityIndex,
+                ContentCommunityItem = indexDoc
+            };
+            return indexRequest;
+        }
 
+        private static void NormalizeCommunityDto(V2CommunityPostDto dto)
+        {
+            dto.Title = dto.Title?.Trim() ?? string.Empty;
+            dto.Description ??= string.Empty;
 
+            dto.LikedUserIds = (dto.LikedUserIds ?? new List<string>())
+                .Where(s => !string.IsNullOrWhiteSpace(s) && s != "string")
+                .Distinct()
+                .ToList();
 
+            dto.CommentedUserIds = (dto.CommentedUserIds ?? new List<string>())
+                .Where(s => !string.IsNullOrWhiteSpace(s) && s != "string")
+                .Distinct()
+                .ToList();
 
+            dto.LikeCount = dto.LikedUserIds.Count;
+            dto.CommentCount = dto.CommentCount < 0 ? 0 : dto.CommentCount;
 
+            if (dto.DateCreated == default) dto.DateCreated = DateTime.UtcNow;
+            if (string.IsNullOrWhiteSpace(dto.Slug) && !string.IsNullOrWhiteSpace(dto.Title))
+                dto.Slug = ProcessingHelpers.GenerateSlug(dto.Title);
+        }
 
+        /// <summary>
+        /// Rebuilds post like/comment aggregates from state and publishes an index upsert so external reads (via search) stay fresh.
+        /// </summary>
+        private async Task PublishCommunityIndexUpdateAsync(Guid postId, CancellationToken ct)
+        {
+            var postKey = GetKey(postId);
+            var post = await _dapr.GetStateAsync<V2CommunityPostDto>(StoreName, postKey, cancellationToken: ct);
+            if (post is null) return;
+
+            // Rebuild likes
+            var likeIndexKey = $"like-index-{postId}";
+            var likedUsers = await _dapr.GetStateAsync<List<string>>(StoreName, likeIndexKey, cancellationToken: ct) ?? new();
+            post.LikedUserIds = likedUsers
+                .Where(u => !string.IsNullOrWhiteSpace(u) && u != "string")
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+            post.LikeCount = post.LikedUserIds.Count;
+
+            // Rebuild comments
+            var commentIndexKey = $"comment-index-{postId}";
+            var commentIds = await _dapr.GetStateAsync<List<Guid>>(StoreName, commentIndexKey, cancellationToken: ct) ?? new();
+
+            var commenters = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var activeCommentCount = 0;
+
+            if (commentIds.Count > 0)
+            {
+                var commentKeys = commentIds.Select(id => $"comment-{postId}-{id}").ToList();
+                var states = await _dapr.GetBulkStateAsync(StoreName, commentKeys, parallelism: null, cancellationToken: ct);
+                foreach (var s in states)
+                {
+                    if (string.IsNullOrWhiteSpace(s.Value)) continue;
+                    var c = JsonSerializer.Deserialize<CommunityCommentDto>(s.Value, _jsonOpts);
+                    if (c is { IsActive: true })
+                    {
+                        activeCommentCount++;
+                        if (!string.IsNullOrWhiteSpace(c.UserId) && c.UserId != "string")
+                            commenters.Add(c.UserId);
+                    }
+                }
+            }
+
+            post.CommentCount = activeCommentCount;
+            post.CommentedUserIds = commenters.ToList();
+            post.UpdatedDate = DateTime.UtcNow;
+
+            // Persist updated denorm if you want (optional)
+            await _dapr.SaveStateAsync(StoreName, postKey, post, cancellationToken: ct);
+
+            // Publish to search via pub/sub
+            var upsert = await IndexCommunityPostToAzureSearch(post, ct);
+            var msg = new IndexMessage
+            {
+                Action = "Upsert",
+                Vertical = ConstantValues.IndexNames.ContentCommunityIndex,
+                UpsertRequest = upsert
+            };
+            await _dapr.PublishEventAsync(
+                pubsubName: ConstantValues.PubSubName,
+                topicName: ConstantValues.PubSubTopics.IndexUpdates,
+                data: msg,
+                cancellationToken: ct);
+        }
+
+        public Task<PaginatedCommunityPostResponseDto> GetAllCommunityPostsAsync(string? categoryId = null, string? search = null, int? page = null, int? pageSize = null, string? sortDirection = null, CancellationToken ct = default)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<V2CommunityPostDto?> GetCommunityPostByIdAsync(Guid id, CancellationToken ct = default)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<V2CommunityPostDto?> GetCommunityPostBySlugAsync(string slug, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

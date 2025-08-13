@@ -27,6 +27,7 @@ namespace QLN.Common.DTOs
         public int adsbudget { get; set; }
         public int promotebudget { get; set; }
         public int refreshbudget { get; set; }
+        public int featurebudget { get; set; }
         public Vertical VerticalTypeId { get; set; }
         public Status StatusId { get; set; }
         public DateTime lastUpdated { get; set; }
@@ -75,12 +76,12 @@ namespace QLN.Common.DTOs
         public string VerticalName { get; set; }
         public int CategoryId { get; set; }
         public string CategoryName { get; set; }
-        public decimal? AdsBudgetTotal { get; set; }
-        public decimal? AdsBudgetUsage { get; set; }
-        public decimal? PromoteBudgetTotal { get; set; }
-        public decimal? PromoteBudgetUsage { get; set; }
-        public decimal? RefreshBudgetTotal { get; set; }
-        public decimal? RefreshBudgetUsage { get; set; }
+        public int? AdsBudgetTotal { get; set; }
+        public int? AdsBudgetUsage { get; set; }
+        public int? PromoteBudgetTotal { get; set; }
+        public int? PromoteBudgetUsage { get; set; }
+        public int? RefreshBudgetTotal { get; set; }
+        public int? RefreshBudgetUsage { get; set; }
 
 
 
@@ -118,13 +119,13 @@ namespace QLN.Common.DTOs
         public int promotebudget { get; set; }
         [Required]
         public int refreshbudget { get; set; }
-        [Required]
-
+      
+        public int featurebudget { get; set; }
         public string? Description { get; set; }
         [Required]
 
         public string? Currency { get; set; }
-        [Required]
+     
         public SubscriptionCategory CategoryId { get; set; }
         [Required]
         public Status StatusId { get; set; }
@@ -136,7 +137,7 @@ namespace QLN.Common.DTOs
         public int VerticalTypeId { get; set; }
         public string VerticalName { get; set; }
 
-        public int CategoryId { get; set; }
+        public int? CategoryId { get; set; }
         public string CategoryName { get; set; }
 
         public List<SubscriptionResponseDto> Subscriptions { get; set; } = new();
@@ -151,6 +152,10 @@ namespace QLN.Common.DTOs
         public decimal? Price { get; set; }
         public string? Description { get; set; }
         public string? Currency { get; set; }
+        public int AdsBudget { get; set; }
+        public int PromoteBudget { get; set; }
+        public int RefreshBudget { get; set; }
+        public int FeatureBudget { get; set; }
     }
 
 

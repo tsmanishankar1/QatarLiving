@@ -32,16 +32,6 @@ namespace QLN.Common.DTO_s
         MNC = 3,
         Government = 4
     }
-    public enum CompanyStatus
-    {
-        Active = 1,
-        Blocked = 2,
-        Suspended = 3,
-        Unblocked = 4,
-        PendingLicenseApproval = 5,
-        NeedChanges =6,
-        Rejected = 7
-    }
     public enum SubVertical
     {
         Items = 1,
@@ -50,10 +40,10 @@ namespace QLN.Common.DTO_s
         Preloved = 4,
         Collectibles = 5,
         Services = 6,
-        News=7,
-        Daily=8,
-        Events=9,
-        Community=10
+        News = 7,
+        Daily = 8,
+        Events = 9,
+        Community = 10
     }
     public enum NatureOfBusiness
     {
@@ -101,6 +91,6 @@ namespace QLN.Common.DTO_s
         VeterinaryAndPetServices = 42,
         WasteManagementAndRecycling = 43,
         WholesaleAndDistribution = 44,
-        Other = 45
+        Other = 9999
     }
 }

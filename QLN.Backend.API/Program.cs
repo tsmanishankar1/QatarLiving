@@ -1,34 +1,44 @@
 ﻿using Azure.Core.Serialization;
 using Dapr.Client;
+using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using QLN.Backend.API.ServiceConfiguration;
+using QLN.Common.DTO_s;
+using QLN.Common.Infrastructure.Auditlog;
+using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.CustomEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.AddonEndpoint;
 using QLN.Common.Infrastructure.CustomEndpoints.BannerEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints;
-using QLN.Common.Infrastructure.CustomEndpoints.LandingEndpoints;
+using QLN.Common.Infrastructure.CustomEndpoints.D365Endpoints;
+using QLN.Common.Infrastructure.CustomEndpoints.FatoraEndpoints;
+using QLN.Common.Infrastructure.CustomEndpoints.FileUploadService;
 using QLN.Common.Infrastructure.CustomEndpoints.PayToPublishEndpoint;
+using QLN.Common.Infrastructure.CustomEndpoints.ProductEndpoints;
+using QLN.Common.Infrastructure.CustomEndpoints.ServiceBOEndpoint;
 using QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints;
-using QLN.Common.Infrastructure.CustomEndpoints.ServicesEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.User;
 using QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints;
 using QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.Wishlist;
-using QLN.Common.Infrastructure.DbContext;
+using QLN.Common.Infrastructure.IService.IAuth;
 using QLN.Common.Infrastructure.Model;
+using QLN.Common.Infrastructure.QLDbContext;
 using QLN.Common.Infrastructure.ServiceConfiguration;
 using QLN.Common.Infrastructure.TokenProvider;
 using System.Security.Claims;
 using System.Text;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 var builder = WebApplication.CreateBuilder(args);
 
@@ -128,7 +138,17 @@ builder.Services.Configure<IdentityOptions>(options =>
 #endregion
 
 #region Database context
-builder.Services.AddDbContext<QatarlivingDevContext>(options =>
+builder.Services.AddDbContext<QLApplicationContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddDbContext<QLPaymentsContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddDbContext<QLClassifiedContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddDbContext<QLCompanyContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddDbContext<QLSubscriptionContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddDbContext<QLLogContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 #endregion
 
@@ -143,7 +163,7 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole<Guid>>(options =>
     options.Tokens.EmailConfirmationTokenProvider = "EmailVerification";
     options.Tokens.ChangePhoneNumberTokenProvider = "PhoneVerification";
 })
-.AddEntityFrameworkStores<QatarlivingDevContext>()
+.AddEntityFrameworkStores<QLApplicationContext>()
 .AddDefaultTokenProviders();
 
 WebApplicationBuilder builder1 = builder;
@@ -162,7 +182,7 @@ builder.Services.AddAuthentication(options =>
     options.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuer = true,
-        ValidateAudience = true,
+        ValidateAudience = false,
         ValidateLifetime = true,
         ValidateIssuerSigningKey = true,
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"])),
@@ -177,7 +197,78 @@ builder.Services.AddAuthentication(options =>
 
 #endregion
 
-builder.Services.AddAuthorization();
+//builder.Services.AddAuthorization();
+
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("RequireActiveBusinessAccount", policy =>
+        policy.RequireAssertion(context =>
+        {
+            var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user");
+            if (userClaim == null) return false;
+
+            try
+            {
+                var userJson = JsonDocument.Parse(userClaim.Value);
+                var root = userJson.RootElement;
+
+                // Check if roles array contains "business_account"
+                if (!root.TryGetProperty("roles", out var rolesProp) ||
+                    !rolesProp.EnumerateArray().Any(role => role.GetString() == "business_account"))
+                {
+                    return false;
+                }
+
+                // Once Subscription info is in we can verify completely against it
+                //// Check if subscription exists and is not expired
+                //if (!root.TryGetProperty("subscription", out var subscriptionProp))
+                //    return false;
+
+                //if (!subscriptionProp.TryGetProperty("expire_date", out var expireDateProp))
+                //    return false;
+
+                //if (!long.TryParse(expireDateProp.GetString(), out var expireUnix))
+                //    return false;
+
+                //var nowUnix = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                //if (expireUnix <= nowUnix)
+                //    return false;
+
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }));
+
+    options.AddPolicy("RequireNoBusinessAccount", policy =>
+        policy.RequireAssertion(context =>
+        {
+            var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user");
+            if (userClaim == null) return false;
+
+            try
+            {
+                var userJson = JsonDocument.Parse(userClaim.Value);
+                var root = userJson.RootElement;
+
+                // Fail if roles array contains "business_account"
+                if (root.TryGetProperty("roles", out var rolesProp) &&
+                    rolesProp.EnumerateArray().Any(role => role.GetString() == "business_account"))
+                {
+                    return false;
+                }
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }));
+});
+
+
 
 builder.Services.AddSingleton<TimeProvider>(TimeProvider.System);
 
@@ -199,6 +290,7 @@ builder.Services.ConfigureHttpJsonOptions(opts =>
 {
     opts.SerializerOptions.Converters
         .Add(new MicrosoftSpatialGeoJsonConverter());
+    opts.SerializerOptions.Converters.Add(new AttributesJsonConverter());
 });
 builder.Services.AddResponseCaching();
 builder.Services.AddResponseCompression(options =>
@@ -208,6 +300,7 @@ builder.Services.AddResponseCompression(options =>
     });
 
 
+builder.Services.FileServiceConfiguration(builder.Configuration);
 builder.Services.ServicesConfiguration(builder.Configuration);
 builder.Services.ServiceConfiguration(builder.Configuration);
 builder.Services.ClassifiedServicesConfiguration(builder.Configuration);
@@ -231,6 +324,13 @@ builder.Services.PayToPublishConfiguration(builder.Configuration);
 builder.Services.PayToFeatureConfiguration(builder.Configuration);
 builder.Services.AddonConfiguration(builder.Configuration);
 builder.Services.V2BannerConfiguration(builder.Configuration);
+builder.Services.DrupalAuthConfiguration(builder.Configuration);
+builder.Services.DrupalUserServicesConfiguration(builder.Configuration);
+builder.Services.AddScoped<AuditLogger>();
+builder.Services.PaymentsConfiguration(builder.Configuration);
+builder.Services.ProductsConfiguration(builder.Configuration);
+builder.Services.ClassifiedBoStoresConfiguration(builder.Configuration);
+builder.Services.ServicesBo(builder.Configuration);
 
 var app = builder.Build();
 #region DAPR Subscriptions
@@ -261,17 +361,20 @@ if (builder.Configuration.GetValue<bool>("EnableSwagger"))
 app.UseHttpsRedirection();
 app.UseAuthorization();
 
+
 var authGroup = app.MapGroup("/auth");
 authGroup.MapAuthEndpoints();
+var filesGroup = app.MapGroup("/files");
+filesGroup.MapFileUploadEndpoint();
+var paymentGroup = app.MapGroup("/api/pay");
+paymentGroup.MapD365Endpoints();
 var wishlistgroup = app.MapGroup("/api/wishlist");
 wishlistgroup.MapWishlist();
-var companyGroup = app.MapGroup("/api/companyprofile");
-companyGroup.MapCompanyEndpoints()
+var companyProfileGroup = app.MapGroup("/api/companyprofile");
+companyProfileGroup.MapCompanyProfile()
     .RequireAuthorization();
 var classifiedGroup = app.MapGroup("/api/classified");
 classifiedGroup.MapClassifiedsEndpoints();
-var servicesGroup = app.MapGroup("/api/services");
-servicesGroup.MapServicesEndpoints();
 var eventGroup = app.MapGroup("/api/v2/event");
 eventGroup.MapEventEndpoints()
     .RequireAuthorization();
@@ -284,12 +387,16 @@ var reportsGroup = app.MapGroup("/api/v2/report");
 reportsGroup.MapReportsEndpoints();
 var contentGroup = app.MapGroup("/api/content");
 contentGroup.MapContentLandingEndpoints();
-//var bannerGroup = app.MapGroup("/api/banner");
-//bannerGroup.MapBannerEndpoints();
 var analyticGroup = app.MapGroup("/api/analytics");
 analyticGroup.MapAnalyticsEndpoints();
 app.MapGroup("/api/subscriptions")
    .MapSubscriptionEndpoints();
+app.MapGroup("/api/v2/subscriptions")
+    .MapV2SubscriptionEndpoints()
+    .RequireAuthorization();
+
+var fatoraGroup = app.MapGroup("/api/fatora");
+fatoraGroup.MapFaturaEndpoints();
 
 app.MapGroup("/api/payments")
  .MapPaymentEndpoints();
@@ -300,6 +407,8 @@ app.MapGroup("/api/paytopublish")
 
 app.MapGroup("/api/addon")
  .MapAddonEndpoints();
+var quotaGroup = app.MapGroup("/api/userquota");
+quotaGroup.MapUserQuotaEndpoints();
 
 
 var newsGroup = app.MapGroup("/api/v2/news");
@@ -312,18 +421,20 @@ var locationGroup = app.MapGroup("/api/v2/location");
 locationGroup.MapLocationsEndpoints();
 var communityPostGroup = app.MapGroup("/api/v2/community");
 communityPostGroup.MapCommunityPostEndpoints();
-
+ var bannerGroup = app.MapGroup("/api/banner");
+bannerGroup.MapBannerEndpoints();
 var bannerPostGroup  = app.MapGroup("/api/v2/banner");
 bannerPostGroup.MapBannerPostEndpoints();
-//.RequireAuthorization();
-
-
 var ClassifiedBo = app.MapGroup("/api/v2/classifiedbo");
-ClassifiedBo.MapClassifiedboEndpoints();
+ClassifiedBo.MapClassifiedboEndpoints()
+    .RequireAuthorization();
 
+var ServicesBo = app.MapGroup("/api/servicebo");
+ServicesBo.MapAllServiceBoConfiguration();
 
-app.MapAllBackOfficeEndpoints();
-app.MapLandingPageEndpoints();
+var Product = app.MapGroup("/api/products");
+Product.MapProductEndpoints()
+    .RequireAuthorization();
 
 app.MapGet("/testauth", (HttpContext context) =>
 {
@@ -338,7 +449,7 @@ app.MapGet("/testauth", (HttpContext context) =>
     .WithName("TestAuth")
     .WithTags("AAAAuthentication")
     .WithDescription("Test authentication endpoint to verify JWT token claims.")
-    .RequireAuthorization();
+    .RequireAuthorization("RequireActiveBusinessAccount");
 
 app.MapPost("/testauth", (HttpContext context) =>
 {
@@ -353,6 +464,21 @@ app.MapPost("/testauth", (HttpContext context) =>
     .WithName("TestPostAuth")
     .WithTags("AAAAuthentication")
     .WithDescription("Test authentication endpoint to verify JWT token claims.")
-    .RequireAuthorization();
+    .RequireAuthorization("RequireNoBusinessAccount");
+
+app.MapPost("/drupallogin", async (
+    HttpContext context,
+    IDrupalAuthService drupalAuthService,
+    LoginRequest loginRequest,
+    CancellationToken cancellationToken
+    ) =>
+{
+    var drupalLogin = await drupalAuthService.LoginAsync(loginRequest.UsernameOrEmailOrPhone, loginRequest.Password, cancellationToken);
+
+    return Results.Ok(drupalLogin);
+})
+    .WithName("TestDrupalLogin")
+    .WithTags("AAAAuthentication")
+    .WithDescription("Test login to Drupal");
 
 app.Run();

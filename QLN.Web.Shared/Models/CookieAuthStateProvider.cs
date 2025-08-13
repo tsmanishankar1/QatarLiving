@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
+using QLN.Common.Infrastructure.Model;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net.Http.Headers;
 using System.Security.Claims;
@@ -93,8 +94,10 @@ namespace QLN.Web.Shared.Models
                                             identity.AddClaim(new Claim(ClaimTypes.Email, user.Email));
                                         if (user.IsAdmin != null)
                                             identity.AddClaim(new Claim("is_admin", user.IsAdmin.ToString()!));
-                                        /*   if (!string.IsNullOrEmpty(user.QlnextUserId))
-                                            identity.AddClaim(new Claim("qlnext_user_id", user.QlnextUserId));  Commenting this now for future use as suggested by Grant  */
+
+                                        // is this value parsable and is it greater than 0
+                                        if (!string.IsNullOrEmpty(user.QlnextUserId) && long.TryParse(user.QlnextUserId, out long qlnId) && qlnId > 0) 
+                                            identity.AddClaim(new Claim("qlnext_user_id", user.QlnextUserId));
 
                                         if (!string.IsNullOrEmpty(user.Alias))
                                             identity.AddClaim(new Claim("alias", user.Alias));
@@ -112,6 +115,10 @@ namespace QLN.Web.Shared.Models
                                             foreach (var role in user.Roles)
                                                 identity.AddClaim(new Claim(ClaimTypes.Role, role));
                                         }
+
+                                        // just checking if they have a subsctiption for now as the frontend likely doesnt need this here yet
+                                        if(user.Subscription != null)
+                                            identity.AddClaim(new Claim("hasSubscription", "true"));
                                     }
 
                                     //Console.WriteLine("Claims added to identity: {0}", string.Join(", ", identity.Claims.Select(c => $"{c.Type}: {c.Value}")));

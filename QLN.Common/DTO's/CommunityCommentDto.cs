@@ -18,7 +18,7 @@ namespace QLN.Common.DTO_s
         public bool IsActive { get; set; } = true;
         public DateTime UpdatedAt { get; set; }
         public int CommentsLikeCount { get; set; }
-        public List<string>? LikedUserIds { get; set; } // <-- added
+        public List<string>? LikedUserIds { get; set; }
     }
     public class CommunityCommentItem
     {
@@ -28,6 +28,7 @@ namespace QLN.Common.DTO_s
         public string Content { get; set; } = string.Empty;
         public DateTime CommentedAt { get; set; }
         public int LikeCount { get; set; }
+        public bool? IsLiked { get; set; }
         public List<string>? LikedUserIds { get; set; }
         public string CommentedUserId { get; set; } = string.Empty;
         public List<CommunityCommentItem> Replies { get; set; } = new();
@@ -46,6 +47,11 @@ namespace QLN.Common.DTO_s
         public Guid CommentId { get; set; }
         public string UserId { get; set; } = string.Empty;
         public string Content { get; set; } = string.Empty;
+    }
+    public class LikeCommentsDto
+    {
+        public Guid CommentId { get; set; }
+        public Guid CommunityPostId { get; set; }
     }
 
 }

@@ -260,54 +260,16 @@ namespace QLN.Web.Shared.Services
         }
 
 
-        public async Task<bool> ReportCommunityPostAsync(string postId)
-        {
-            try
-            {
-                var url = "/api/v2/report/createcommunitypost";
-
-                var body = new
-                {
-                    postId = postId
-                };
-
-                var json = JsonSerializer.Serialize(body, new JsonSerializerOptions
-                {
-                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                    WriteIndented = true
-                });
-
-                var content = new StringContent(json, Encoding.UTF8, "application/json");
-                var request = new HttpRequestMessage(HttpMethod.Post, url)
-                {
-                    Content = content
-                };
-
-                var response = await _httpClient.SendAsync(request);
-                return response.IsSuccessStatusCode;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogInformation($"Error reporting post: {ex.Message}");
-                return false;
-            }
-        }
-        public async Task<bool> ReportCommentAsync(string postId, string commentId)
+        public async Task<HttpResponseMessage?> ReportCommentAsync(string postId, string commentId)
         {
             try
             {
                 var url = "/api/v2/report/createcommunitycomments";
-
-                var payload = new
-                {
-                    postId = postId,
-                    commentId = commentId
-                };
+                var payload = new { postId, commentId };
 
                 var json = JsonSerializer.Serialize(payload, new JsonSerializerOptions
                 {
-                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                    WriteIndented = true
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
                 });
 
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
@@ -317,13 +279,40 @@ namespace QLN.Web.Shared.Services
                     Content = content
                 };
 
-                var response = await _httpClient.SendAsync(request);
-                return response.IsSuccessStatusCode;
+                return await _httpClient.SendAsync(request);
             }
             catch (Exception ex)
             {
                 _logger.LogInformation($"Error reporting comment: {ex.Message}");
-                return false;
+                return null;
+            }
+        }
+
+        public async Task<HttpResponseMessage?> ReportCommunityPostAsync(string postId)
+        {
+            try
+            {
+                var url = "/api/v2/report/createcommunitypost";
+                var body = new { postId };
+
+                var json = JsonSerializer.Serialize(body, new JsonSerializerOptions
+                {
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                });
+
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                var request = new HttpRequestMessage(HttpMethod.Post, url)
+                {
+                    Content = content
+                };
+
+                return await _httpClient.SendAsync(request);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogInformation($"Error reporting post: {ex.Message}");
+                return null;
             }
         }
         public async Task<bool> LikeCommunityPostAsync(string postId)

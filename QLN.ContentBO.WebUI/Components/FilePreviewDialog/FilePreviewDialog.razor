@@ -1,0 +1,15 @@
+@inherits FilePreviewDialogBase
+@using MudBlazor
+
+<MudDialog>
+    <DialogContent>
+        @* <iframe src="https://qlnfilesdev.blob.core.windows.net/services-images/15ac70a21f.pdf"
+                width="100%" 
+                height="600px" 
+                style="border: none;"></iframe> *@
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => MudDialog.Close())" Color="Color.Primary">Close</MudButton>
+    </DialogActions>
+</MudDialog>
+

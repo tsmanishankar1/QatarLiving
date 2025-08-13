@@ -1,0 +1,20 @@
+@page "/manage/classified/stores/edit/company/{CompanyName}"
+@using QLN.ContentBO.WebUI.Models
+@inherits EditCompanyBase
+
+ <button class="back-button" @onclick="GoBack">
+     <MudIcon Icon="@Icons.Material.Rounded.KeyboardArrowLeft" Class="back-icon" />
+        Back
+</button>
+<EditAdAction Company="@Company"/>
+<div class="create-form-container">
+    <MudGrid GutterSize="24px">
+        <MudItem xs="12" md="5">
+            <EditFormList Company="@Company" />
+        </MudItem>
+
+        <MudItem xs="12" md="6">
+            <CompanyLogo Company="@Company" />
+        </MudItem>
+    </MudGrid>
+</div>

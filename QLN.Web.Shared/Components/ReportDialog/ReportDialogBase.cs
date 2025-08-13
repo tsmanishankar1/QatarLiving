@@ -2,6 +2,7 @@
 using MudBlazor;
 using OneOf.Types;
 using QLN.Web.Shared.Contracts;
+using System.Net;
 
 namespace QLN.Web.Shared.Components.ReportDialog
 {
@@ -22,12 +23,13 @@ namespace QLN.Web.Shared.Components.ReportDialog
         {
             IsBtnDisabled = true;
             bool success = false;
+            HttpResponseMessage? response = null;
 
             //var success = await CommunityService.ReportCommunityPostAsync(PostId);
             switch (Type)
             {
                 case "Comment":
-                    success = await CommunityService.ReportCommentAsync(PostId, CommentId);
+                    response = await CommunityService.ReportCommentAsync(PostId, CommentId);
                     break;
 
                 //case "News":
@@ -35,19 +37,26 @@ namespace QLN.Web.Shared.Components.ReportDialog
                 //    break;
 
                 default:
-                    success = await CommunityService.ReportCommunityPostAsync(PostId);
+                    response = await CommunityService.ReportCommunityPostAsync(PostId);
                     break;
             }
-            if (success)
+            if (response == null)
+            {
+                Snackbar.Add("Failed to report due to an error.", Severity.Error);
+            }
+            else if (response.IsSuccessStatusCode)
             {
                 Snackbar.Add("Reported successfully.", Severity.Success);
                 MudDialog.Close(DialogResult.Ok(true));
+            }
+            else if (response.StatusCode == HttpStatusCode.Conflict)
+            {
+                Snackbar.Add("You have already reported this.", Severity.Warning);
             }
             else
             {
                 Snackbar.Add("Failed to report.", Severity.Error);
             }
-
             IsBtnDisabled = false;
         }
 

@@ -1,0 +1,76 @@
+@inherits SubscriptionAdsTableBase
+@using MudBlazor
+@using QLN.ContentBO.WebUI.Components.ToggleTabs
+@using QLN.ContentBO.WebUI.Components.EmptyCard
+@using QLN.ContentBO.WebUI.Components.PaginationFooter
+@using QLN.ContentBO.WebUI.Models;
+
+<MudPaper Class="pa-4">
+    @if(Listings == null || !Listings.Any()){
+  <EmptyCard Title="No Subscription Ads Available" Subtitle="Please check back later or explore other categories." />  
+    }
+    else{
+        <MudTable Items="Listings"
+          Hover="true"
+          Bordered="true"
+          Elevation="0"
+          Style="border-radius: 8px; border: 1px solid var(--color-background-secondary-grey-medium);
+    font-family: 'Public Sans', sans-serif;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);"
+          Class="mud-table event-custom-table">
+
+    <HeaderContent>
+        <MudTh class="header-cell">Item Image</MudTh>
+        <MudTh class="header-cell">Ad ID</MudTh>
+        <MudTh class="header-cell" >User ID</MudTh>
+        <MudTh class="header-cell">Ad Title</MudTh>
+        <MudTh class="header-cell">User Name</MudTh>
+        <MudTh class="header-cell">Category</MudTh>
+        <MudTh class="header-cell">Sub Category</MudTh>
+        <MudTh class="header-cell">Status</MudTh>
+        <MudTh class="header-cell">Creation Date</MudTh>
+        <MudTh class="header-cell">Date Published</MudTh>
+        <MudTh class="header-cell">Date Expiry</MudTh>
+        <MudTh class="header-cell">Favourites</MudTh>
+        <MudTh class="header-cell">Actions</MudTh>
+    </HeaderContent>
+
+    <RowTemplate>
+        <MudTd>
+            @if (context.ImageUpload != null && context.ImageUpload.Count > 0 && !string.IsNullOrWhiteSpace(context.ImageUpload[0].Url))
+            {
+                <img src="@context.ImageUpload[0].Url"
+                    style="width: 136px; height: 61px; object-fit: cover; border-radius: 4px;" />
+            }
+            else
+            {
+                <div style="width: 136px; height: 61px; background-color: #f0f0f0; border-radius: 4px; display: flex; align-items: center; justify-content: center;">
+                    No Image
+                </div>
+            }
+        </MudTd>
+        <MudTd title="@(context.Id == null ? "-" : context.Id.ToString())" class="truncate-text hover-title">@context.Id</MudTd>
+        <MudTd title="@(string.IsNullOrWhiteSpace(context.UserId?.ToString()) ? "-" : context.UserId)" class="truncate-text">@context.UserId</MudTd>
+        <MudTd title="@(string.IsNullOrWhiteSpace(context.AdTitle) ? "-" : context.AdTitle)" class="truncate-text hover-title">@context.AdTitle</MudTd>
+        <MudTd title="@(string.IsNullOrWhiteSpace(context.UserName) ? "-" : context.UserName)" class="truncate-text">@context.UserName</MudTd>
+        <MudTd title="@(string.IsNullOrWhiteSpace(context.Category) ? "-" : context.Category)" class="truncate-text hover-title">@context.Category</MudTd>
+        <MudTd title="@(string.IsNullOrWhiteSpace(context.SubCategory) ? "-" : context.SubCategory)" class="truncate-text hover-title">@context.SubCategory</MudTd>
+        <MudTd>@((ServiceStatus)context.Status)</MudTd>
+        <MudTd>@context.CreationDate.ToString("dd-MM-yyyy hh:mm tt")</MudTd>
+        <MudTd>@context.DatePublished?.ToString("dd-MM-yyyy hh:mm tt")</MudTd>
+        <MudTd>@context.DateExpiry?.ToString("dd-MM-yyyy hh:mm tt")</MudTd>
+        <MudTd>@context.Favorites</MudTd>
+        <MudTd>
+            <MudMenu Icon="@Icons.Material.Filled.MoreVert">
+                 <MudMenuItem OnClick="() => OnEdit(context)">
+                    <MudIcon Icon="@Icons.Material.Filled.Edit" /> Edit
+                </MudMenuItem>
+            </MudMenu>
+        </MudTd>
+    </RowTemplate>
+</MudTable>
+
+    }
+     <PaginationFooter TotalItems="@TotalCount" CurrentPage="@currentPage" PageSize="@pageSize"
+                OnPageChange="@HandlePageChange" OnPageSizeChange="@HandlePageSizeChange" />
+</MudPaper> 

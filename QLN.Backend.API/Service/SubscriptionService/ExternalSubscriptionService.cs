@@ -35,10 +35,10 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
             new ActorId(id.ToString()),
             "SubscriptionActor");
     }
-    public async Task<SubscriptionGroupResponseDto> GetSubscriptionsByVerticalAndCategoryAsync(
-     int verticalTypeId,
-     int categoryId,
-     CancellationToken cancellationToken = default)
+        public async Task<SubscriptionGroupResponseDto> GetSubscriptionsByVerticalAndCategoryAsync(
+         int verticalTypeId,
+         int? categoryId,
+         CancellationToken cancellationToken = default)
     {
         var resultList = new List<SubscriptionResponseDto>();
         var ids = _subscriptionIds.Keys.ToList();
@@ -52,11 +52,11 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
             var data = await actor.GetDataAsync(cancellationToken);
 
             if (data != null &&
-    data.VerticalTypeId == verticalEnum &&
-    data.CategoryId == categoryEnum &&
-    data.StatusId != Status.Expired)
+            data.VerticalTypeId == verticalEnum &&
+            data.CategoryId == categoryEnum &&
+            data.StatusId != Status.Expired)
             {
-                var duration = data.Duration; // Already a TimeSpan
+                var duration = data.Duration; 
 
                 resultList.Add(new SubscriptionResponseDto
                 {
@@ -65,6 +65,10 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
                     DurationName = DurationConverter.ConvertToReadableFormat(duration),
                     Price = data.price,
                     Currency = data.currency,
+                    AdsBudget=data.adsbudget,
+                    FeatureBudget=data.featurebudget,
+                    PromoteBudget=data.promotebudget,
+                    RefreshBudget=data.refreshbudget,
                     Description = data.description
                 });
             }
@@ -93,10 +97,16 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
                 90 => "3 Months",
                 180 => "6 Months",
                 365 => "1 Year",
-                _ => $"{(int)(totalDays / 30)} Months"
+                _ => FormatMonths((int)(totalDays / 30))
             };
         }
+
+        private static string FormatMonths(int months)
+        {
+            return months == 1 ? "1 Month" : $"{months} Months";
+        }
     }
+
 
     public async Task CreateSubscriptionAsync(SubscriptionRequestDto request, CancellationToken cancellationToken = default)
     {
@@ -115,6 +125,7 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
             adsbudget = request.adsbudget,
             promotebudget = request.promotebudget,
             refreshbudget = request.refreshbudget,
+            featurebudget=request.featurebudget,
             CategoryId = request.CategoryId,
             VerticalTypeId = request.VerticalTypeId,
             StatusId = request.StatusId,

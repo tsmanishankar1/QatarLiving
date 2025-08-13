@@ -1,5 +1,6 @@
 ﻿@using System.Globalization
 @inherits PostCardBaseV2
+@using QLN.Web.Shared.Extensions
 @using MudBlazor
 @using QLN.Web.Shared.Components.EmptyCard
 
@@ -42,7 +43,7 @@
 
                 <span class="post-meta">
 
-                    <span class="author">@Post.Author  • <span class="date-time">@Post.Time.ToString("MMM dd, yyyy - hh:mm tt")</span></span>
+                    <span class="author">@Post.Author  • <span class="date-time">@Post.Time.ToQatarTime("MMMM d, yyyy - HH:mm")</span></span>
                 </span>
 
             </div>
@@ -362,6 +363,13 @@
             color: #00426D !important;
             text-decoration: underline !important;
         }
+
+        .post-body-preview-details iframe {
+            height: revert-layer; /* This is will load the iframe in the correct height to override MudBlazor CSS */
+            max-width: 100%;
+            border: none;
+        }
+
 
     .post-footer {
         display: flex;

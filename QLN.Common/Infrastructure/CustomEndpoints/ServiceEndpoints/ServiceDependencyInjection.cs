@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Routing;
+using QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,7 +12,9 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
     {
         public static RouteGroupBuilder MapAllServiceConfiguration(this RouteGroupBuilder group)
         {
-            group.MapServiceCategoryEndpoints()
+            group
+                 .MapServiceSearch()
+                 .MapServiceCategoryEndpoints()
                  .MapServiceCategoryGetAllEndpoints()
                  .MapServiceCategoryGetByIdEndpoint()
                  .MapServiceCategoryUpdateEndpoints()
@@ -19,12 +22,18 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                  .MapServiceAdUpdateEndpoints()
                  .MapServiceGetAllEndpoints()
                  .MapServiceGetByIdEndpoint()
+                 .MapServiceGetBySlugEndpoint()
                  .MapServiceAdDeleteEndpoint()
-                 .MapGetServicesByStatusEndpoint()
+                 .MapGetAllWithPagination()
                  .MapPromoteEndpoint()
                  .MapFeatureEndpoint()
                  .MapRefreshEndpoint()
-                 .MapBulkActionsEndpoint();
+                 .MapPublishEndpoint()
+                 .MapDetailedGetByIdEndpoint()
+                 .MapBulkActionsEndpoint()
+                 .MapServicesFeaturedItemEndpoint()
+                 .MapServiceCountEndpoints()
+                 .MapServiceCountbySubverticalEndpoints();
             return group;
         }
     }

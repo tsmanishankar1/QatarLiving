@@ -7,7 +7,9 @@ namespace QLN.Common.Infrastructure.IService.IContentService
 {
     public interface IV2NewsService
     {
-        Task<WriterTagsResponse> GetWriterTagsAsync(CancellationToken cancellationToken = default);
+        Task<string> CreateWritertagAsync(Writertag dto, CancellationToken cancellationToken);
+        Task<List<Writertag>> GetAllWritertagsAsync(CancellationToken cancellationToken);
+        Task<string> DeleteTagName(Guid id, CancellationToken cancellationToken = default);
         Task<string> CreateNewsArticleAsync(string userId, V2NewsArticleDTO dto, CancellationToken cancellationToken = default);
         Task<PagedResponse<V2NewsArticleDTO>> GetAllNewsArticlesAsync(
            int? page, int? perPage, string? search, CancellationToken cancellationToken = default);
@@ -18,6 +20,7 @@ namespace QLN.Common.Infrastructure.IService.IContentService
                 int categoryId,
                 int subCategoryId,
                 ArticleStatus status,
+                string? search,
                 int? page,
                 int? pageSize,
                 CancellationToken cancellationToken);
@@ -46,6 +49,8 @@ namespace QLN.Common.Infrastructure.IService.IContentService
        int subCategoryId,
        CancellationToken cancellationToken = default
    );
+        Task<string> BulkMigrateNewsArticleAsync(List<V2NewsArticleDTO> articles, CancellationToken cancellationToken = default);
+        Task<string> MigrateNewsArticleAsync(V2NewsArticleDTO article, CancellationToken cancellationToken = default);
     }
 
 }

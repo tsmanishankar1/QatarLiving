@@ -1,0 +1,96 @@
+@using MudBlazor
+@inherits StoresSearchSortBarBase
+@using QLN.ContentBO.WebUI.Components.NewCustomSelect
+
+<div>
+    <div class="search-sort-container">
+        <div class="left-section">
+            <div class="search-wrapper">
+                <img src="/qln-images/search_icon.svg" alt="search" class="search-icon" />
+                <input type="text"
+                       placeholder="Search for Stores"
+                       class="search-input"
+                       @oninput="OnSearchChanged" />
+            </div>
+        </div>
+
+        <div class="right-section">
+            <button class="sort-button" @onclick="ShowConfirmationExport">
+                <img src="/qln-images/file_icon.svg" />
+                Export data
+            </button>
+            <button class="sort-button" @onclick="ToggleSort">
+                <MudIcon Icon="@SortIcon" />
+                Sort by
+            </button>
+        </div>
+    </div>
+
+    <!-- Filter row -->
+    <div class="filter-row">
+      <div class="subscription-types">
+       <NewCustomSelect TItem="string"
+                    Items="SubscriptionTypes"
+                    SelectedId="@SelectedSubscriptionType"
+                    SelectedIdChanged="OnSubscriptionChanged"
+                    GetId="item => item"
+                    GetLabel="item => item"
+                    Placeholder="Subscription type" />
+        </div>
+        <div class="custom-date-picker-container @(showDatePopover ? "active" : "")" @onclick="ToggleDatePopover">
+        <div class="label-and-value">
+        <div class="custom-label">Dates</div>
+        <div class="custom-value">
+            @if (_dateRange.Start.HasValue && _dateRange.End.HasValue)
+            {
+                 <text>@_dateRange.Start.Value.ToString("dd MMM yyyy") - @_dateRange.End.Value.ToString("dd MMM yyyy")</text>
+            }
+            else
+            {
+                <span class="date-placeholder">Choose</span>
+            }
+        </div>
+    </div>
+    <MudIcon Icon="@(showDatePopover ? Icons.Material.Filled.KeyboardArrowUp : Icons.Material.Filled.KeyboardArrowDown)"
+             Class="custom-date-icon" />
+              <MudPopover Open="@showDatePopover"
+                    AnchorOrigin="Origin.BottomCenter"
+                    TransformOrigin="Origin.TopCenter"
+                    Elevation="6"
+                    Class="popover-container"
+                    Style="padding:0;">
+            <div class="custom-range-picker-container">
+                <!-- Left: Calendar -->
+                <div class="range-calendar">
+                    <MudDateRangePicker 
+                        @bind-DateRange="_tempDateRange"
+                        PickerVariant="PickerVariant.Static"
+                        DisableToolbar="true"
+                        ShowToolbar="false"
+                        DisplayMonths="1"
+                        Class="event-custom-date-range"
+                        Style="min-width: 300px;" 
+                    />
+                </div>
+                <!-- Right: Range Info + Controls -->
+                <div class="range-sidebar">
+                <div class="range-header-col">
+                        <span class="date-value">
+                            @( _tempDateRange?.Start?.ToString("dd MMM yyyy") ?? "Start date" )
+                        </span>
+                        <span class="date-value">
+                            @( _tempDateRange?.End?.ToString("dd MMM yyyy") ?? "End date" )
+                       </span>
+                </div>
+                    <div class="range-footer">
+                        <MudButton Variant="Variant.Filled" Class="popover-button" OnClick="CancelDatePopover">Cancel</MudButton>
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="popover-button" OnClick="ApplyDatePopover">Apply</MudButton>
+                    </div>
+                </div>
+            </div>
+        </MudPopover>
+</div>
+        <button class="filter-button" @onclick="ClearFilters">Clear Filters</button>
+    </div>
+
+</div>

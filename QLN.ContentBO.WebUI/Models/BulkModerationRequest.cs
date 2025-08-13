@@ -1,0 +1,22 @@
+using System.ComponentModel.DataAnnotations;
+
+namespace QLN.ContentBO.WebUI.Models
+{
+    public class BulkModerationRequest
+    {
+        public List<long> AdIds { get; set; } = new();
+        public BulkModerationAction Action { get; set; }
+        public string? Reason { get; set; }
+        public string? UpdatedBy { get; set; }
+    }
+  public enum BulkModerationAction
+  {
+      Approve = 1,
+      Publish = 2,
+      Unpublish = 3,
+      UnPromote = 4,
+      feature = 5,
+      Remove = 6,
+      UnFeature = 7,
+  }
+}

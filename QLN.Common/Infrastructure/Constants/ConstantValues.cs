@@ -12,16 +12,17 @@ namespace QLN.Common.Infrastructure.Constants
         public const string ByPassEmail = "testuser@qatarliving.com";
         public const string ByPassMobile = "0000000000";
         public const string ByPass2FA = "000000";
-        //Company Constants
-        public const string CompanyStoreName = "companystatestore";
-        public const string CompanyIndexKey = "company-index";
-        public const string CompanyServiceAppId = "qln-company-ms";
         // Classifieds Constants
         public const string ClassifiedsVertical = "classifieds";
         public const string DocTypeStore = "Store";
         public const string DocTypeCategory = "Category";
         public const string DocTypeAd = "Ad";
         public const string DocTypeBanner = "Banner";
+        public const string SubscriptionPrefix = "qln-subscription-actor";
+
+        //Drupal user AutoComplete
+        public const string AutocompleteUserPath = "/qlnapi/user/autocomplete";
+
         //Index constants
         public static class IndexNames
         {
@@ -30,8 +31,12 @@ namespace QLN.Common.Infrastructure.Constants
             public const string ClassifiedsCollectiblesIndex = "classifiedscollectibles";
             public const string ClassifiedsDealsIndex = "classifiedsdeals";
             public const string ServicesIndex = "services";
+            public const string ContentNewsIndex = "contentnews";
+            public const string ContentEventsIndex = "contentevents";
+            public const string ContentCommunityIndex = "contentcommunity";
             public const string LandingBackOfficeIndex = "landingbackoffice";
             public const string AnalyticsIndex = "analytics";
+            public const string ClassifiedStoresIndex = "classifiedstores";
         }
 
         public const string PubSubName = "pubsub";
@@ -76,6 +81,7 @@ namespace QLN.Common.Infrastructure.Constants
         {
             public const string ClassifiedServiceApp = "qln-classified-ms";
             public const string SearchServiceApp = "qln-search-ms";
+            public const string SubscriptionApp = "qln-subscription-actor";
         }
         public static class StateStoreNames
         {
@@ -85,7 +91,10 @@ namespace QLN.Common.Infrastructure.Constants
             public const string LandingServiceBOIndex = "seasonal-pic-Services-index";
             public const string FeaturedStoreClassifiedsIndexKey = "featured-store-classifieds-index";
             public const string FeaturedStoreServicesIndexKey = "featured-store-services-index";
+            public const string FeaturedCategoryClassifiedIndex = "featured-category-classified-index";
+            public const string FeaturedCategoryServiceIndex = "featured-category-services-index";
             public const string UnifiedStore = "adstore";
+            public const string CommonStore = "commonstore";
             public const string UnifiedIndexKey = "ad-index";
             public const string ItemsIndexKey = "items-ad-index";
             public const string PrelovedIndexKey = "preloved-index";
@@ -95,10 +104,17 @@ namespace QLN.Common.Infrastructure.Constants
             public const string PrelovedCategoryIndexKey = "preloved-category-index";
             public const string CollectiblesCategoryIndexKey = "collectibles-category-index";
             public const string DealsCategoryIndexKey = "deals-category-index";
+            public const string SubscriptionStores = "subscriptionstores";
+            public const string SubscriptionStoresIndexKey= "subscription-stores-index";
         }
         public static class PubSubTopics
         {
             public const string IndexUpdates = "index-updates";
+            public const string ArticlesMigration = "articles-migration";
+            public const string EventsMigration = "events-migration";
+            public const string PostsMigration = "posts-migration";
+            public const string ItemsMigration = "items-migration";
+            public const string CollectablesMigration = "collectables-migration";
         }
         public static class Verticals
         {
@@ -109,8 +125,8 @@ namespace QLN.Common.Infrastructure.Constants
         {
             public const string ContentStoreName = "contentstatestore";
             public const string ContentServiceAppId = "qln-content-ms";
-            public const string NewsCommentPrefix = "news-comment"; 
-            public const string NewsCommentIndexPrefix = "news-comment-index-"; 
+            public const string NewsCommentPrefix = "news-comment";
+            public const string NewsCommentIndexPrefix = "news-comment-index-";
             public const string NewsIndexKey = "news-index";
             public const string NewsCategoryIndexKey = "newscategory-index";
             public const string EventIndexKey = "event-index";
@@ -123,14 +139,14 @@ namespace QLN.Common.Infrastructure.Constants
             public const string DailyTopicIndexKey = "daily-topic-index";
             public const string BannerTypeIndexKey = "banner-type-index";
             public const string BannerIndexKey = "banner-index";
-        }
 
+        }
         public static class V2ClassifiedBo
         {
             public const string ClassifiedBoStoreName = "contentstatestore";
             public const string ClassifiedBoServiceAppId = "qln-classifiedBo-ms";
 
-        }                  
+        }
         public static class Services
         {
             public const string StoreName = "servicestatestore";
@@ -138,6 +154,20 @@ namespace QLN.Common.Infrastructure.Constants
             public const string ServiceAppId = "qln-classified-ms";
             public const string ServicesIndexKey = "services-index";
         }
+        public static class Company
+        {
+            public const string CompanyStoreName = "companystatestore";
+            public const string CompanyIndexKey = "company-index";
+            public const string CompanyServiceAppId = "qln-company-ms";
+        }
+
+        public static class Subscriptions
+        {
+            public const string SubscriptionsEndpoint = "http://ql-migrate.westeurope.cloudapp.azure.com/subscriptions.php";
+        }
     }
 }
+
+
+
 

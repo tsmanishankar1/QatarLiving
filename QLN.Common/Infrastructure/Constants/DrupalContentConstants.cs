@@ -4,6 +4,7 @@
     {
         public const string LandingPath = "/qlnapi/landing";
         public const string EventsPath = "/qlnapi/events";
+        public const string NewsPath = "/qlnapi/articles";
         public const string CategoriesPath = "/qlnapi/categories";
         public const string CommunityPath = "/qlnapi/community";
         public const string CommentsSavePath = "/qlnapi/comment/save";
@@ -11,6 +12,7 @@
         public const string PostsSavePath = "/qlnapi/node/save";
         public const string ChangeLikeStatusPath = "/qlnapi/node/like";
         public const string BannerPath = "/q/api/rest-points/banners/qln_banners";
+        public const string LoginPath = "/api/v4/login";
 
         // News
         public const string QlnNewsNewsCommunity = "qln_news_news_community";

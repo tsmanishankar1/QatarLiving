@@ -1,0 +1,62 @@
+@inherits P2PTransactionTableBase
+@using MudBlazor
+@using QLN.ContentBO.WebUI.Components.ToggleTabs
+@using QLN.ContentBO.WebUI.Components.PaginationFooter
+@using QLN.ContentBO.WebUI.Components.EmptyCard
+@using QLN.ContentBO.WebUI.Models;
+
+<MudPaper Class="pa-4">
+     @if(Listings == null || !Listings.Any()){
+
+<EmptyCard Title="No P2P Transactions Available" Subtitle="Please check back later or explore other categories." />
+
+        
+    }
+    else{
+   <MudTable Items="Listings"
+          Hover="true"
+          Bordered="true"
+          Elevation="0"
+          Style="border-radius: 8px; border: 1px solid var(--color-background-secondary-grey-medium);
+    font-family: 'Public Sans', sans-serif;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);"
+          Class="mud-table event-custom-table">
+
+    <HeaderContent>
+        <MudTh class="header-cell">Ad ID</MudTh>
+        <MudTh class="header-cell">Order Id</MudTh>
+        <MudTh class="header-cell">Product Type</MudTh>
+        <MudTh class="header-cell">Username</MudTh>
+        <MudTh class="header-cell">Email</MudTh>
+        <MudTh class="header-cell">Mobile</MudTh>
+        <MudTh class="header-cell">Whatsapp</MudTh>
+        <MudTh class="header-cell">Amount</MudTh>
+        <MudTh class="header-cell">Status</MudTh>
+        <MudTh class="header-cell">Create Date</MudTh>
+        <MudTh class="header-cell">Publish Date</MudTh>
+        <MudTh class="header-cell">Start Date</MudTh>
+        <MudTh class="header-cell">End Date</MudTh>
+        <MudTh class="header-cell">Views</MudTh>
+    </HeaderContent>
+
+    <RowTemplate>
+        <MudTd title="@(string.IsNullOrWhiteSpace(context.Id.ToString()) ? "-" : context.Id)"Class="truncate-text hover-title">@context.Id</MudTd>
+        <MudTd title="@(string.IsNullOrWhiteSpace(context.OrderId) ? "-" : context.OrderId)"Class="truncate-text hover-title">@context.OrderId</MudTd>
+        <MudTd title="@(string.IsNullOrWhiteSpace(context.ProductType) ? "-" : context.ProductType)"Class="truncate-text hover-title">@context.ProductType</MudTd>
+        <MudTd title="@(string.IsNullOrWhiteSpace(context.UserName) ? "-" : context.UserName)"Class="truncate-text hover-title">@context.UserName</MudTd>
+        <MudTd title="@(string.IsNullOrWhiteSpace(context.Email) ? "-" : context.Email)"Class="truncate-text hover-title">@context.Email</MudTd>
+        <MudTd title="@(string.IsNullOrWhiteSpace(context.Mobile) ? "-" : context.Mobile)"Class="truncate-text hover-title">@context.Mobile</MudTd>
+        <MudTd title="@(string.IsNullOrWhiteSpace(context.Whatsapp) ? "-" : context.Whatsapp)"Class="truncate-text hover-title">@context.Whatsapp</MudTd>
+        <MudTd Class="truncate-text hover-title">@context.Amount</MudTd>
+         <MudTd Class="truncate-text">@((ServiceStatus)context.Status)</MudTd>
+        <MudTd Class="truncate-text">@context.CreationDate.ToString("dd-MM-yyyy hh:mmtt")</MudTd>
+        <MudTd Class="truncate-text">@context.DatePublished?.ToString("dd-MM-yyyy hh:mmtt")</MudTd>
+        <MudTd Class="truncate-text">@context.StartDate</MudTd>
+        <MudTd Class="truncate-text">@context.EndDate</MudTd>
+        <MudTd Class="truncate-text">@context.Views</MudTd>
+    </RowTemplate>
+</MudTable>
+     <PaginationFooter TotalItems="@TotalCount" CurrentPage="@currentPage" PageSize="@pageSize"
+                OnPageChange="@HandlePageChange" OnPageSizeChange="@HandlePageSizeChange" />
+                }
+</MudPaper>

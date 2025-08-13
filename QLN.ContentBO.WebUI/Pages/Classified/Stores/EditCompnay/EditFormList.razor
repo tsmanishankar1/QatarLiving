@@ -1,0 +1,216 @@
+@using QLN.ContentBO.WebUI.Components.PhoneNumberInput;
+@using QLN.ContentBO.WebUI.Models;
+@inherits EditFormListBase
+
+<div class="create-form-list">
+    <EditForm Model="Company" OnValidSubmit="SubmitForm">
+        <DataAnnotationsValidator />
+        <MudTextField Class="white-bg mt-4" Variant="Variant.Outlined" T="string" Label="Company Name"
+                      @bind-Value="Company.CompanyName" For="@(() => Company.CompanyName)" FullWidth="true" />
+
+        @foreach (var field in FieldOptions)
+        {
+            <MudSelect Class="white-bg" T="string" Variant="Variant.Outlined" Label="@field.Key" FullWidth="true">
+                @foreach (var option in field.Value)
+                {
+                    <MudSelectItem T="string" Value="@option">@option</MudSelectItem>
+                }
+            </MudSelect>
+        }
+
+        <MudFileUpload T="IBrowserFile" Accept="image/png,image/jpeg" Class="py-3"
+                       OnFilesChanged="@(e => HandleFilesChanged(e))"
+                       MaximumFileCount="1">
+            <ActivatorContent>
+                <div class="cover-upload-wrapper">
+                    <div class="cover-upload-box">
+                        @if (!string.IsNullOrEmpty(Company.CoverImage1))
+                        {
+                            <img src="@Company.CoverImage1"
+                                 alt="Cover Image Preview"
+                                 class="cover-image-preview" />
+                        }
+                        else
+                        {
+                            <div class="upload-placeholder">
+                                <img src="/qln-images/upload_icon.svg" alt="Upload" class="upload-icon" />
+                            </div>
+                            <MudText Class="upload-text">Upload image</MudText>
+                        }
+
+                        @if (!string.IsNullOrEmpty(Company.CoverImage1))
+                        {
+                            <div class="cover-logo-overlay">
+                                <MudIconButton Class="logo-action">
+                                    <img src="/qln-images/edit_icon.svg" alt="Edit" class="event-action-icon-style" />
+                                </MudIconButton>
+                                <MudIconButton Class="logo-action"
+                                               OnClick="RemoveCoverImage">
+
+                                    <img src="/qln-images/delete_icon.svg" alt="delete" class="event-action-icon-style" />
+                                </MudIconButton>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </ActivatorContent>
+        </MudFileUpload>
+
+
+        <div class="form-group mt-2">
+            <!-- Phone -->
+            <PhoneNumberInput SelectedCountry="@SelectedPhoneCountry"
+                              Placeholder="Phone Number*"
+                              SelectedCountryChanged="@OnPhoneCountryChanged"
+                              PhoneNumber="@Company.PhoneNumber"
+                              PhoneNumberChanged="@OnPhoneChanged" />
+        </div>
+        <div class="form-group mt-2">
+            <!-- WhatsApp -->
+            <PhoneNumberInput SelectedCountry="@SelectedWhatsappCountry"
+                              Placeholder="WhatsApp Number"
+                              SelectedCountryChanged="@OnWhatsappCountryChanged"
+                              PhoneNumber="@Company.WhatsAppNumber"
+                              PhoneNumberChanged="@OnWhatsappChanged" />
+        </div>
+        <MudTextField Class="white-bg mt-2"
+                      Variant="Variant.Outlined"
+                      T="string"
+                      Label="Email"
+                      @bind-Value="Company.Email"
+                      For="@(() => Company.Email)"
+                      FullWidth="true" />
+
+        <MudTextField Class="white-bg mt-2"
+                      Variant="Variant.Outlined"
+                      T="string"
+                      Placeholder="Website URL"
+                      @bind-Value="Company.WebsiteUrl"
+                      For="@(() => Company.WebsiteUrl)"
+                      FullWidth="true" />
+
+        <MudTextField Class="white-bg mt-2"
+                      Variant="Variant.Outlined"
+                      T="string"
+                      Placeholder="Facebook URL"
+                      @bind-Value="Company.FacebookUrl"
+                      For="@(() => Company.FacebookUrl)"
+                      FullWidth="true" />
+
+        <MudTextField Class="white-bg mt-2"
+                      Variant="Variant.Outlined"
+                      T="string"
+                      Placeholder="Instagram URL"
+                      @bind-Value="Company.InstagramUrl"
+                      For="@(() => Company.InstagramUrl)"
+                      FullWidth="true" />
+
+        <h3 class="form-heading form-padding">Operating Hours</h3>
+        <MudGrid GutterSize="8px" Class="compact-grid">
+            <MudItem xs="12" md="6">
+                <MudTextField Label="Start day"
+                              T="string"
+                              @bind-Date="Company.StartDay"
+                              Placeholder="eg: Sunday"
+                              Adornment="Adornment.End"
+                              AdornmentIcon="@Icons.Material.Filled.Event"
+                              Class="white-bg"
+                              Variant="Variant.Outlined" />
+            </MudItem>
+
+            <MudItem xs="12" md="6">
+                <MudTextField Label="End day"
+                              T="string"
+                              @bind-Date="Company.EndDay"
+                              Placeholder="eg: Thursday"
+                              Adornment="Adornment.End"
+                              AdornmentIcon="@Icons.Material.Filled.Event"
+                              Class="white-bg"
+                              Variant="Variant.Outlined" />
+            </MudItem>
+
+            <MudItem xs="12" md="6">
+                <MudTextField Label="Start hour"
+                              T="string"
+                              @bind-Time="Company.StartHour"
+                              Placeholder="eg: 8:00 AM"
+                              Adornment="Adornment.End"
+                              AdornmentIcon="@Icons.Material.Filled.AccessTime"
+                              Class="white-bg"
+                              Variant="Variant.Outlined" />
+            </MudItem>
+
+            <MudItem xs="12" md="6">
+                <MudTextField Label="End hour"
+                              T="string"
+                              @bind-Time="Company.EndHour"
+                              Placeholder="eg: 5:00 PM"
+                              Adornment="Adornment.End"
+                              AdornmentIcon="@Icons.Material.Filled.AccessTime"
+                              Class="white-bg"
+                              Variant="Variant.Outlined" />
+            </MudItem>
+        </MudGrid>
+        @foreach (var field in CompanyProfileOptions)
+        {
+            <MudSelect Class="white-bg" T="string" Variant="Variant.Outlined" Label="@field.Key" FullWidth="true">
+                @foreach (var option in field.Value)
+                {
+                    <MudSelectItem T="string" Value="@option">@option</MudSelectItem>
+                }
+            </MudSelect>
+        }
+
+        <MudTextField Class="white-bg" Variant="Variant.Outlined" T="string" Label="User Designation*"
+                      @bind-Value="Company.UserDesignation" For="@(() => Company.UserDesignation)" FullWidth="true" />
+
+
+
+        <MudExRichTextEdit @bind-Value="Company.BusinessDescription" @ref="Editor"
+                           Height="350" Placeholder="Start Typing"
+                           For="@(() => Company.BusinessDescription)">
+        </MudExRichTextEdit>
+        <h3 class="form-heading">License & Visibility</h3>
+        <MudTextField Class="white-bg" Variant="Variant.Outlined" T="long" Label="CR Number"
+                      @bind-Value="Company.CrNumber" For="@(() => Company.CrNumber)" FullWidth="true" />
+        <MudPaper Class="catification-upload-section">
+            <div class="catification-upload-info">
+                <h3 class="catification-upload-label">Certificate / Warranty*</h3>
+
+                @if (!string.IsNullOrEmpty(Company.TherapeuticCertificate))
+                {
+                    <div class="catification-file-info">
+                        <span class="catification-file-name">
+                            @ShortFileName(Company.TherapeuticCertificate, 10)
+                        </span>
+                        <MudIconButton Icon="@Icons.Material.Outlined.Close"
+                                       Size="Size.Small"
+                                       Color="Color.Error"
+                                       OnClick="ClearFile" />
+                    </div>
+                }
+            </div>
+
+            <MudFileUpload T="IBrowserFile"
+                           Accept=".pdf,.png,.jpg,.jpeg"
+                           MaxFileSize="10485760"
+                           FilesChanged="OnCrFileSelected">
+                <ActivatorContent>
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               Class="catification-upload-button">
+                        Upload
+                        <img src="/qln-images/upload_white_icon.svg" width="20" height="20" />
+                    </MudButton>
+                </ActivatorContent>
+            </MudFileUpload>
+        </MudPaper>
+        <MudText Typo="Typo.caption">Supported file formats: PDF, PNG, JPG. Max: 10MB</MudText>
+
+
+
+        <MudStack Row Justify="Justify.SpaceBetween" Class="mt-4" Style="width:100%">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" ButtonType="ButtonType.Submit" Style="width:100%">Submit</MudButton>
+        </MudStack>
+    </EditForm>
+</div>

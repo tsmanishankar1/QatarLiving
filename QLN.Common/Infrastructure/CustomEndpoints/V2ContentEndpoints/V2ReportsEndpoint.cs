@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Logging;
 using QLN.Common.DTO_s;
+using QLN.Common.Infrastructure.CustomException;
 using QLN.Common.Infrastructure.IService.V2IContent;
 using System.Text.Json;
 using static QLN.Common.DTO_s.V2ReportCommunityPost;
@@ -171,6 +172,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
          ForbidHttpResult,
          UnauthorizedHttpResult,
          BadRequest<ProblemDetails>,
+         Conflict<ProblemDetails>,
          ProblemHttpResult>>
      (
          V2ContentReportArticleDto dto,
@@ -196,7 +198,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                             Title = "Unauthorized",
                             Detail = "Authorization token is missing or invalid."
                         };
-                        return TypedResults.Problem(title: problem.Title,detail: problem.Detail,statusCode: problem.Status);
+                        return TypedResults.Problem(title: problem.Title, detail: problem.Detail, statusCode: problem.Status);
                     }
 
                     string uid;
@@ -217,6 +219,15 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                             });
                         }
                     }
+                    catch (ConflictException ex)
+                    {
+                        return TypedResults.Conflict(new ProblemDetails
+                        {
+                            Title = "Conflict Exception",
+                            Detail = ex.Message,
+                            Status = StatusCodes.Status409Conflict
+                        });
+                    }
                     catch (Exception ex)
                     {
                         logger.LogError(ex, "Failed to parse user claim or extract UID");
@@ -233,6 +244,15 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                     var result = await service.CreateReport(uid, dto, cancellationToken);
                     logger.LogInformation("Report created successfully for user: {UserId}", uid);
                     return TypedResults.Ok(result);
+                }
+                catch (ConflictException ex)
+                {
+                    return TypedResults.Conflict(new ProblemDetails
+                    {
+                        Title = "Conflict Exception",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status409Conflict
+                    });
                 }
                 catch (InvalidDataException ex)
                 {
@@ -260,6 +280,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
  .WithDescription("Creates a new report and sets the user ID from the token.")
  .Produces<string>(StatusCodes.Status200OK)
  .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+ .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
  .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized)
  .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
  .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
@@ -269,6 +290,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
             Ok<string>,
             ForbidHttpResult,
             BadRequest<ProblemDetails>,
+            Conflict<ProblemDetails>,
             ProblemHttpResult>>
             (
             V2ContentReportArticleDto dto,
@@ -297,6 +319,15 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                     logger.LogInformation("Report created successfully by user ID: {ReporterName}", dto.ReporterName);
                     return TypedResults.Ok(result);
                 }
+                catch (ConflictException ex)
+                {
+                    return TypedResults.Conflict(new ProblemDetails
+                    {
+                        Title = "Conflict Exception",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status409Conflict
+                    });
+                }
                 catch (InvalidDataException ex)
                 {
                     logger.LogError(ex, "Invalid data provided for creating report by user ID");
@@ -320,6 +351,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
             .WithDescription("Creates a new report with provided user ID.")
             .Produces<string>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             return group;
@@ -330,6 +362,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
      Ok<string>,
      ForbidHttpResult,
      BadRequest<ProblemDetails>,
+     Conflict<ProblemDetails>,
      ProblemHttpResult>>
  (
      V2ReportsCommunitycommentsDto dto,
@@ -371,6 +404,15 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                             });
                         }
                     }
+                    catch (ConflictException ex)
+                    {
+                        return TypedResults.Conflict(new ProblemDetails
+                        {
+                            Title = "Conflict Exception",
+                            Detail = ex.Message,
+                            Status = StatusCodes.Status409Conflict
+                        });
+                    }
                     catch (Exception ex)
                     {
                         logger.LogError(ex, "Failed to parse user claim or extract UID");
@@ -385,6 +427,15 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                     var result = await service.CreateCommunityCommentReport(uid, dto, cancellationToken);
                     logger.LogInformation("Community comment report created successfully for user: {UserId}", uid);
                     return TypedResults.Ok(result);
+                }
+                catch (ConflictException ex)
+                {
+                    return TypedResults.Conflict(new ProblemDetails
+                    {
+                        Title = "Conflict Exception",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status409Conflict
+                    });
                 }
                 catch (InvalidDataException ex)
                 {
@@ -412,6 +463,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
 .WithDescription("Creates a new report and sets the user ID from the token.")
 .Produces<string>(StatusCodes.Status200OK)
 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+.Produces<ProblemDetails>(StatusCodes.Status409Conflict)
 .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
@@ -419,6 +471,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
             Ok<string>,
             ForbidHttpResult,
             BadRequest<ProblemDetails>,
+            Conflict<ProblemDetails>,
             ProblemHttpResult>>
             (
             V2ReportsCommunitycommentsDto dto,
@@ -447,6 +500,15 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                     logger.LogInformation("Community comment report created successfully by user ID: {ReporterName}", dto.ReporterName);
                     return TypedResults.Ok(result);
                 }
+                catch (ConflictException ex)
+                {
+                    return TypedResults.Conflict(new ProblemDetails
+                    {
+                        Title = "Conflict Exception",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status409Conflict
+                    });
+                }
                 catch (InvalidDataException ex)
                 {
                     logger.LogError(ex, "Invalid data provided for creating community comment report by user ID");
@@ -470,6 +532,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
             .WithDescription("Creates a new report with provided user ID.")
             .Produces<string>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             return group;
@@ -480,6 +543,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
      Ok<string>,
      ForbidHttpResult,
      BadRequest<ProblemDetails>,
+     Conflict<ProblemDetails>,
      ProblemHttpResult>>
  (
      V2ReportCommunityPostDto dto,
@@ -521,6 +585,15 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                             });
                         }
                     }
+                    catch (ConflictException ex)
+                    {
+                        return TypedResults.Conflict(new ProblemDetails
+                        {
+                            Title = "Conflict Exception",
+                            Detail = ex.Message,
+                            Status = StatusCodes.Status409Conflict
+                        });
+                    }
                     catch (Exception ex)
                     {
                         logger.LogError(ex, "Failed to parse user claim or extract UID");
@@ -535,6 +608,15 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                     var result = await service.CreateCommunityReport(uid, dto, cancellationToken);
                     logger.LogInformation("Community post report created successfully for user: {UserId}", uid);
                     return TypedResults.Ok(result);
+                }
+                catch (ConflictException ex)
+                {
+                    return TypedResults.Conflict(new ProblemDetails
+                    {
+                        Title = "Conflict Exception",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status409Conflict
+                    });
                 }
                 catch (InvalidDataException ex)
                 {
@@ -562,6 +644,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
             .WithDescription("Creates a new report and sets the user ID from the token.")
             .Produces<string>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
             .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
@@ -569,6 +652,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
             Ok<string>,
             ForbidHttpResult,
             BadRequest<ProblemDetails>,
+            Conflict<ProblemDetails>,
             ProblemHttpResult>>
             (
             V2ReportCommunityPostDto dto,
@@ -597,6 +681,15 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                     logger.LogInformation("Community post report created successfully by user ID: {ReporterName}", dto.ReporterName);
                     return TypedResults.Ok(result);
                 }
+                catch (ConflictException ex)
+                {
+                    return TypedResults.Conflict(new ProblemDetails
+                    {
+                        Title = "Conflict Exception",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status409Conflict
+                    });
+                }
                 catch (InvalidDataException ex)
                 {
                     logger.LogError(ex, "Invalid data provided for creating community post report by user ID");
@@ -620,6 +713,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
             .WithDescription("Creates a new report with provided user ID.")
             .Produces<string>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             return group;
@@ -727,15 +821,15 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                 >> (
                 IV2ReportsService service,
                 int? pageNumber,
-                int? perPage,
-                string? searchTitle = null,
-                string? sortBy = null,
+                int? pageSize,
+                string? searchTerm = null,
+                string? sortOrder = null,
                 CancellationToken ct = default
                 ) =>
             {
                 try
                 {
-                    var result = await service.GetAllCommunityPostsWithPagination(pageNumber, perPage, searchTitle, sortBy, ct);
+                    var result = await service.GetAllCommunityPostsWithPagination(pageNumber, pageSize, searchTerm, sortOrder, ct);
                     return TypedResults.Ok(result);
                 }
                 catch (Exception ex)

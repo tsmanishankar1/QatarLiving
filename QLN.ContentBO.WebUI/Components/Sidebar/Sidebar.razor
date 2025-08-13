@@ -13,29 +13,32 @@
             <MudNavMenu Rounded="true" Margin="Margin.Dense" Color="Color.Secondary" Class="pa-2">
                 @foreach (var item in NavigationItems)
                 {
-                    var isActive = item.ActiveRoutePaths.Any(p => IsActive(p));
+                    bool isItemActive = IsActive(item);
+
 
                     if (!item.IsGroup)
                     {
                         <div @onclick="() => HandleRouterClick(item.Url)"
-                             class="non-group-link @(isActive ? "active-parent" : "inactive-parent")"
+                             class="non-group-link @(isItemActive ? "active-parent" : "inactive-parent")"
                              style="cursor: pointer;">
-                            <img src="@item.IconPath" class="nav-icon-style @(isActive ? "active-icon" : "")" />
-                            <span class="nav-item-text @(isActive ? "active-text" : "")">@item.Title</span>
+                            <img src="@item.IconPath" class="nav-icon-style @(isItemActive ? "active-icon-sidebar" : "")" />
+                            <span class="nav-item-text @(isItemActive ? "active-text" : "")">@item.Title</span>
                         </div>
                     }
                     else
                     {
-                       var isGroupExpanded = ExpandedGroups.Contains(item.Title);
-                       var isGroupActive = item.ActiveRoutePaths.Any(p => IsActive(p)) || 
-                       (item.Children?.Any(c => IsActive(c.Url)) ?? false);
+                        bool isGroupExpanded = ExpandedGroups.Contains(item.Title);
 
+                        // Active if any child or parent route is active
+                       bool isGroupActive =
+                            IsActive(item) ||
+                            (item.Children?.Any(c => IsActive(c)) ?? false);
 
                         <div class="expandable-group">
-                           <div class="expandable-header @(isGroupExpanded || isGroupActive ? "active" : "")"
-                             @onclick="() => ToggleGroup(item.Title)">
+                            <div class="expandable-header @(isGroupExpanded || isGroupActive ? "active" : "")"
+                                 @onclick="() => ToggleGroup(item.Title)">
                                 <div class="left-section">
-                                    <img src="@item.IconPath" class="nav-icon-style @(isGroupExpanded || isGroupActive ? "active-icon" : "")" />
+                                    <img src="@item.IconPath" class="nav-icon-style @(isGroupExpanded || isGroupActive ? "active-icon-sidebar" : "")" />
                                     <span class="nav-item @(isGroupExpanded || isGroupActive ? "active-text" : "")">@item.Title</span>
                                 </div>
                                 <MudIcon Icon="@((isGroupExpanded) ? Icons.Material.Filled.ExpandLess : Icons.Material.Filled.ExpandMore)"
@@ -46,7 +49,8 @@
                             <div class="expandable-content @(isGroupExpanded ? "expand-in" : "expand-out")">
                                 @foreach (var child in item.Children)
                                 {
-                                    var isChildActive = IsActive(child.Url);
+                                    var isChildActive = IsActive(child);
+
                                     <div @onclick="() => HandleRouterClick(child.Url)"
                                          class="@(isChildActive ? "active-news-link" : "inactive-news-link")"
                                          style="cursor: pointer;">
@@ -79,6 +83,7 @@
         </div>
     </MudPaper>
 </MudDrawer>
+
 <style>
      .sidebar-container {
         height: 100vh;
@@ -124,8 +129,8 @@
     color: white !important;
 }
 
-.active-icon {
-    filter: brightness(0) invert(1);
+.active-icon-sidebar {
+    filter: brightness(0) invert(1) !important;
 }
 
 .expandable-group {

@@ -1,4 +1,5 @@
 ﻿@using QLN.Web.Shared.Pages.Content.Community.Components.PaginationFooter
+@using QLN.Web.Shared.Extensions
 @inherits CommentSectionBaseV2
 
 @if (IsLoading)
@@ -14,7 +15,7 @@
         <!-- Comment list skeletons -->
         @for (var i = 0; i < 3; i++)
         {
-            <div class="comment-item" >
+            <div class="comment-item">
                 <div style="display: flex; gap: 0.75rem;">
                     <MudSkeleton Height="24px" Width="24px" Variant="Variant.Circle" Animation="Animation.Pulse" />
                     <div style="flex-grow: 1;">
@@ -50,7 +51,6 @@ else
                 <div class="comment-title">Comments</div>
 
                 <div class="comment-input-wrapper @(string.IsNullOrWhiteSpace(newComment) ? "" : "has-text")">
-
                     <MudTextField T="string"
                                   Value="@newComment"
                                   ValueChanged="@(val => { newComment = val; StateHasChanged(); })" Immediate="true"
@@ -60,12 +60,16 @@ else
                                   AutoGrow
                                   Class="comment-input no-underline"
                                   @ref="multilineReference"
-                                  OnAdornmentClick="@(() => multilineReference.SelectAsync())" />
+                                  OnAdornmentClick="@(() => multilineReference.SelectAsync())"
+                                  MaxLength="500" />
 
                     @if (!string.IsNullOrWhiteSpace(newComment))
                     {
                         <MudButton Class="comment-post-btn" OnClick="PostComment">Post</MudButton>
                     }
+                </div>
+                <div class="comment-helper-text">
+                    @($"{newComment?.Length ?? 0} / 500 characters")
                 </div>
 
                 <div class="empty-state">
@@ -93,13 +97,18 @@ else
                                   AutoGrow
                                   Class="comment-input no-underline"
                                   @ref="multilineReference"
-                                  OnAdornmentClick="@(() => multilineReference.SelectAsync())" />
+                                  OnAdornmentClick="@(() => multilineReference.SelectAsync())"
+                                  MaxLength="500"
+                                   />
+                  
                     @if (!string.IsNullOrWhiteSpace(newComment))
                     {
                         <MudButton Class="comment-post-btn" OnClick="PostComment">Post</MudButton>
                     }
                 </div>
-
+                <div class="comment-helper-text">
+                    @($"{newComment?.Length ?? 0} / 500 characters")
+                </div>
 
 
                 @foreach (var c in Comments)
@@ -111,7 +120,7 @@ else
                             <div class="comment-header">
                                 <div class="comment-meta">
                                     <span class="created-by">@c.UserName</span>  •
-                                    <span class="created-at">@c.CommentedAt.ToString("MMMM d, yyyy - HH:mm")</span>
+                                    <span class="created-at">@c.CommentedAt.ToQatarTime("MMMM d, yyyy - HH:mm")</span>
                                 </div>
 
                                 <MudMenu Dense="true" AnchorOrigin="Origin.BottomLeft"
@@ -125,13 +134,13 @@ else
                                     </ActivatorContent>
 
                                     <ChildContent>
-                                        <MudMenuItem OnClick="@(() => OnReport(Comment.Id, c.CommentId))">Report</MudMenuItem>
+                                        <MudMenuItem OnClick="@(() => OnReport(CurrentPost.Id, c.CommentId))">Report</MudMenuItem>
                                     </ChildContent>
                                 </MudMenu>
 
                             </div>
                             <div class="comment-description">@c.Content</div>
-                            <div class="like-wrapper" @onclick="@(() => ToggleLikeAsync(Comment.Id, c.CommentId))">
+                            <div class="like-wrapper" @onclick="@(() => ToggleLikeAsync(CurrentPost.Id, c.CommentId))">
 
                                 <img src="@($"qln-images/content/{(IsLiked ? "LikeFilled.svg" : "Like.svg")}")" class="comment-like-icon" />
                                 <span class="icon-text">@c.CommentsLikeCount</span>
@@ -145,13 +154,13 @@ else
                 }
                 @if (Comments?.Any() == true)
                 {
-                <div class="pagination-container">
-                    <PaginationFooter TotalItems="@TotalCount"
-                                      CurrentPage="@CurrentPage"
-                                      PageSize="@PageSize"
-                                      OnPageChange="HandlePageChange"
-                                      OnPageSizeChange="HandlePageSizeChange" />
-                </div>
+                    <div class="pagination-container">
+                        <PaginationFooter TotalItems="@TotalCount"
+                                          CurrentPage="@CurrentPage"
+                                          PageSize="@PageSize"
+                                          OnPageChange="HandlePageChange"
+                                          OnPageSizeChange="HandlePageSizeChange" />
+                    </div>
                 }
 
             </div>
@@ -200,6 +209,13 @@ else
         background: transparent;
     }
 
+    .comment-helper-text {
+        font-size: 12px;
+        color: #6c757d;
+        margin-top: 4px;
+        margin-left: 4px;
+    }
+
     .no-underline .mud-input-slot {
         border-bottom: none !important;
         box-shadow: none !important;
@@ -229,9 +245,9 @@ else
         margin-bottom: 0.5rem;
     }
 
-    .comment-like-icon{
-        height:14px;
-        width:14px;
+    .comment-like-icon {
+        height: 14px;
+        width: 14px;
     }
 
     .comment-item {
@@ -317,6 +333,9 @@ else
         color: #242424;
         word-break: break-word;
         white-space: pre-wrap;
+        max-height: 160px;
+        overflow-y: auto;
+        resize: none;
     }
 
     .comment-title {

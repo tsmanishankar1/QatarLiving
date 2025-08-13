@@ -1,14 +1,16 @@
 ﻿using Dapr.Client;
 using Microsoft.AspNetCore.Mvc;
 using QLN.Common.DTO_s;
+using QLN.Common.Infrastructure.Constants;
+using QLN.Common.Infrastructure.CustomException;
 using QLN.Common.Infrastructure.IService.IFileStorage;
+using QLN.Common.Infrastructure.IService.ISearchService;
 using QLN.Common.Infrastructure.IService.V2IContent;
 using QLN.Common.Infrastructure.Utilities;
 using System.Net;
 using System.Text;
 using System.Text.Json;
 using static QLN.Common.DTO_s.CommunityBo;
-
 
 namespace QLN.Backend.API.Service.V2ContentService
 {
@@ -17,17 +19,54 @@ namespace QLN.Backend.API.Service.V2ContentService
         private readonly DaprClient _dapr;
         private readonly IFileStorageBlobService _blobStorage;
         private readonly ILogger<V2ExternalCommunityPostService> _logger;
+        private readonly ISearchService _search;
 
         private const string InternalAppId = "qln-content-ms";
         private const string BlobContainer = "content-images";
+
         public V2ExternalCommunityPostService(
             DaprClient dapr,
             ILogger<V2ExternalCommunityPostService> logger,
-            IFileStorageBlobService blobStorage)
+            IFileStorageBlobService blobStorage,
+            ISearchService search)
         {
             _dapr = dapr;
             _logger = logger;
             _blobStorage = blobStorage;
+            _search = search;
+        }
+
+        private static string Escape(string s) => s.Replace("'", "''");
+
+        private static V2CommunityPostDto MapIndexToDto(ContentCommunityIndex i)
+        {
+            Guid.TryParse(i.Id, out var id);
+            return new V2CommunityPostDto
+            {
+                Id = id,
+                UserName = i.UserName,
+                Title = i.Title,
+                Slug = i.Slug,
+                Description = i.Description,
+                Category = i.Category,
+                CategoryId = i.CategoryId,
+                CommentedUserIds = (i.CommentedUserIds ?? new List<string>())
+                    .Where(x => !string.IsNullOrWhiteSpace(x) && x != "string")
+                    .Distinct()
+                    .ToList(),
+                CommentCount = i.CommentCount,
+                LikedUserIds = (i.LikedUserIds ?? new List<string>())
+                    .Where(x => !string.IsNullOrWhiteSpace(x) && x != "string")
+                    .Distinct()
+                    .ToList(),
+                LikeCount = i.LikeCount,
+                ImageUrl = i.ImageUrl,
+                UserId = i.UserId,
+                IsActive = i.IsActive,
+                DateCreated = i.DateCreated,
+                UpdatedBy = i.UpdatedBy,
+                UpdatedDate = i.UpdatedDate
+            };
         }
 
         public async Task<string> CreateCommunityPostAsync(string userId, V2CommunityPostDto dto, CancellationToken ct = default)
@@ -40,13 +79,12 @@ namespace QLN.Backend.API.Service.V2ContentService
                 dto.UserId = userId;
                 dto.UpdatedBy = userId;
 
-                // Upload image if present
                 if (!string.IsNullOrWhiteSpace(dto.ImageBase64))
                 {
                     var (ext, base64) = Base64ImageHelper.ParseBase64Image(dto.ImageBase64);
                     var fileName = $"{dto.Title}_{dto.Id}.{ext}";
                     dto.ImageUrl = await _blobStorage.SaveBase64File(base64, fileName, BlobContainer, ct);
-                    dto.ImageBase64 = null; // Security: Do not persist base64
+                    dto.ImageBase64 = null; // don't persist base64
                 }
 
                 var url = "/api/v2/community/createPostInternal";
@@ -67,7 +105,7 @@ namespace QLN.Backend.API.Service.V2ContentService
                     throw new InvalidDataException(errorMessage);
                 }
 
-                var json = await resp.Content.ReadAsStringAsync();
+                var json = await resp.Content.ReadAsStringAsync(ct);
                 return JsonSerializer.Deserialize<string>(json) ?? "Success";
             }
             catch (Exception ex)
@@ -77,77 +115,71 @@ namespace QLN.Backend.API.Service.V2ContentService
             }
         }
 
-        public async Task<PaginatedCommunityPostResponseDto> GetAllCommunityPostsAsync(string? categoryId = null, string? search = null, int? page = null, int? pageSize = null, string? sortDirection = null, CancellationToken ct = default)
+        public async Task<PaginatedCommunityPostResponseDto> GetAllCommunityPostsAsync(
+            string? categoryId = null,
+            string? search = null,
+            int? page = null,
+            int? pageSize = null,
+            string? sortDirection = null,
+            CancellationToken ct = default)
         {
-            try
+            var currentPage = Math.Max(1, page ?? 1);
+            var perPage = Math.Clamp(pageSize ?? 12, 1, 100);
+
+            var filters = new List<string> { "IsActive eq true" };
+            if (!string.IsNullOrWhiteSpace(categoryId))
             {
-                var queryParams = new Dictionary<string, string>();
-                if (!string.IsNullOrWhiteSpace(search))
-                    queryParams.Add("search", search);
-
-                if (!string.IsNullOrWhiteSpace(categoryId))
-                    queryParams.Add("categoryId", categoryId);
-
-                if (page.HasValue)
-                    queryParams.Add("page", page.Value.ToString());
-
-                if (pageSize.HasValue)
-                    queryParams.Add("pageSize", pageSize.Value.ToString());
-
-                if (!string.IsNullOrWhiteSpace(sortDirection))
-                    queryParams.Add("sortDirection", sortDirection);
-
-
-                var queryString = queryParams.Count > 0
-                    ? "?" + string.Join("&", queryParams.Select(kvp => $"{kvp.Key}={kvp.Value}"))
-                    : string.Empty;
-
-                var url = $"/api/v2/community/getAllPosts{queryString}";
-                var req = _dapr.CreateInvokeMethodRequest(HttpMethod.Get, InternalAppId, url);
-
-                var resp = await _dapr.InvokeMethodWithResponseAsync(req, ct);
-                resp.EnsureSuccessStatusCode();
-
-                var json = await resp.Content.ReadAsStringAsync();
-
-                var result = JsonSerializer.Deserialize<PaginatedCommunityPostResponseDto>(json, new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true
-                });
-
-                return result ?? new PaginatedCommunityPostResponseDto();
+                filters.Add($"CategoryId eq '{Escape(categoryId)}'");
             }
-            catch (Exception ex)
+
+            var orderBy = (sortDirection ?? "desc").Equals("asc", StringComparison.OrdinalIgnoreCase)
+                ? "DateCreated asc"
+                : "DateCreated desc";
+
+            var text = string.IsNullOrWhiteSpace(search) ? "*" : search!.Trim();
+
+            var req = new RawSearchRequest
             {
-                _logger.LogError(ex, "Error fetching community posts");
-                throw;
-            }
+                Filter = string.Join(" and ", filters),
+                OrderBy = orderBy,
+                Top = perPage,
+                Skip = (currentPage - 1) * perPage,
+                Text = text,
+                IncludeTotalCount = true
+            };
+
+            var res = await _search.SearchRawAsync<ContentCommunityIndex>(
+                ConstantValues.IndexNames.ContentCommunityIndex, req, ct);
+
+            var items = (res.Items ?? new List<ContentCommunityIndex>())
+                .Select(MapIndexToDto)
+                .ToList();
+
+            return new PaginatedCommunityPostResponseDto
+            {
+                Total = (int)res.TotalCount,
+                Items = items
+            };
         }
 
         public async Task<ForumCategoryListDto> GetAllForumCategoriesAsync(CancellationToken cancellationToken = default)
         {
             try
             {
-                // Dapr service invocation to internal MS
-                var result = await _dapr.InvokeMethodAsync<ForumCategoryListDto>(
+                return await _dapr.InvokeMethodAsync<ForumCategoryListDto>(
                     HttpMethod.Get,
                     InternalAppId,
                     "api/v2/community/getAllForumCategories",
                     cancellationToken
                 );
-                return result;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error occurred while invoking GetAllForumCategories from {AppId}", InternalAppId);
-                return new ForumCategoryListDto
-                {
-                    ForumCategories = new List<ForumCategoryDto>(),
-
-                };
+                return new ForumCategoryListDto { ForumCategories = new List<ForumCategoryDto>() };
             }
-
         }
+
         public async Task<bool> SoftDeleteCommunityPostAsync(Guid postId, string userId, CancellationToken ct = default)
         {
             try
@@ -159,88 +191,82 @@ namespace QLN.Backend.API.Service.V2ContentService
                 var resp = await _dapr.InvokeMethodWithResponseAsync(req, ct);
                 resp.EnsureSuccessStatusCode();
 
-                var json = await resp.Content.ReadAsStringAsync();
+                var json = await resp.Content.ReadAsStringAsync(ct);
                 return JsonSerializer.Deserialize<bool>(json);
             }
-            catch (Exception ex)
+            catch
             {
                 return false;
             }
         }
+
         public async Task<V2CommunityPostDto?> GetCommunityPostBySlugAsync(string slug, CancellationToken cancellationToken = default)
         {
-            var url = $"/api/v2/community/getBySlug/{slug}";
-            var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Get, InternalAppId, url);
-
-            var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
-
-            if (response.StatusCode == HttpStatusCode.NotFound)
-                return null;
-
-            if (!response.IsSuccessStatusCode)
+            var req = new RawSearchRequest
             {
-                var errorContent = await response.Content.ReadAsStringAsync(cancellationToken);
-                throw new Exception($"Failed to fetch community post. Status: {response.StatusCode}, Body: {errorContent}");
-            }
+                Filter = $"IsActive eq true and Slug eq '{Escape(slug)}'",
+                OrderBy = "DateCreated desc",
+                Top = 1,
+                Skip = 0,
+                Text = "*",
+                IncludeTotalCount = false
+            };
 
-            var rawJson = await response.Content.ReadAsStringAsync(cancellationToken);
+            var res = await _search.SearchRawAsync<ContentCommunityIndex>(
+                ConstantValues.IndexNames.ContentCommunityIndex, req, cancellationToken);
 
-            return JsonSerializer.Deserialize<V2CommunityPostDto>(rawJson, new JsonSerializerOptions
+            var current = res.Items?.FirstOrDefault();
+            if (current is null) return null;
+
+            var dto = MapIndexToDto(current);
+
+            var moreReq = new RawSearchRequest
             {
-                PropertyNameCaseInsensitive = true
-            });
+                Filter = $"IsActive eq true and Id ne '{current.Id}'",
+                OrderBy = "DateCreated desc",
+                Top = 3,
+                Skip = 0,
+                Text = "*",
+                IncludeTotalCount = false
+            };
+
+            var more = await _search.SearchRawAsync<ContentCommunityIndex>(
+                ConstantValues.IndexNames.ContentCommunityIndex, moreReq, cancellationToken);
+
+            dto.MoreArticles = (more.Items ?? new List<ContentCommunityIndex>())
+                .Select(MapIndexToDto)
+                .ToList();
+
+            return dto;
         }
 
         public async Task<V2CommunityPostDto?> GetCommunityPostByIdAsync(Guid communityId, CancellationToken ct = default)
         {
-            try
-            {
-                var url = $"/api/v2/community/getCommunityPostById/{communityId}";
-                var req = _dapr.CreateInvokeMethodRequest(HttpMethod.Get, InternalAppId, url);
+            var doc = await _search.GetByIdAsync<ContentCommunityIndex>(
+                ConstantValues.IndexNames.ContentCommunityIndex, communityId.ToString());
 
-                var resp = await _dapr.InvokeMethodWithResponseAsync(req, ct);
-                if (!resp.IsSuccessStatusCode)
-                {
-                    _logger.LogWarning("Failed to fetch community post with ID {Id}. Status: {Status}", communityId, resp.StatusCode);
-                    return null;
-                }
-
-                var json = await resp.Content.ReadAsStringAsync();
-
-                var result = JsonSerializer.Deserialize<V2CommunityPostDto>(json, new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true
-                });
-
-                return result;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error fetching community post with ID {Id}", communityId);
-                throw;
-            }
+            if (doc is null || !doc.IsActive) return null;
+            return MapIndexToDto(doc);
         }
+
         public async Task<bool> LikePostForUser(CommunityPostLikeDto dto, CancellationToken ct = default)
         {
             try
             {
                 var url = "/api/v2/community/likePost";
-
                 var req = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, InternalAppId, url, dto);
                 var resp = await _dapr.InvokeMethodWithResponseAsync(req, ct);
                 resp.EnsureSuccessStatusCode();
 
-                var json = await resp.Content.ReadAsStringAsync();
+                var json = await resp.Content.ReadAsStringAsync(ct);
                 if (!string.IsNullOrEmpty(json))
                 {
-                    var jsonDoc = JsonDocument.Parse(json);
+                    using var jsonDoc = JsonDocument.Parse(json);
                     if (jsonDoc.RootElement.TryGetProperty("status", out var statusElement))
                     {
-                        var status = statusElement.GetString();
-                        return status == "liked";
+                        return string.Equals(statusElement.GetString(), "liked", StringComparison.OrdinalIgnoreCase);
                     }
                 }
-
                 return false;
             }
             catch (Exception ex)
@@ -249,12 +275,12 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw;
             }
         }
+
         public async Task AddCommentToCommunityPostAsync(CommunityCommentDto dto, CancellationToken ct = default)
         {
             try
             {
                 var url = "/api/v2/community/addComment";
-
                 var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, InternalAppId, url, dto);
                 var response = await _dapr.InvokeMethodWithResponseAsync(request, ct);
                 response.EnsureSuccessStatusCode();
@@ -267,25 +293,24 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw;
             }
         }
-        public async Task<CommunityCommentListResponse> GetAllCommentsByPostIdAsync(Guid postId, int? page = null, int? perPage = null, CancellationToken ct = default)
+
+        public async Task<CommunityCommentListResponse> GetAllCommentsByPostIdAsync(Guid postId, string? userId, int? page = null, int? perPage = null, CancellationToken ct = default)
         {
             try
             {
-                var query = $"?page={page ?? 1}&perPage={perPage ?? 10}";
-                var url = $"/api/v2/community/getCommentsByPostId/{postId}{query}";
+                var query = $"?userId={userId}&page={page ?? 1}&perPage={perPage ?? 10}";
+                var url = $"/api/v2/community/getCommentsByPost/{postId}{query}";
 
                 var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Get, InternalAppId, url);
                 var response = await _dapr.InvokeMethodWithResponseAsync(request, ct);
                 response.EnsureSuccessStatusCode();
 
-                var json = await response.Content.ReadAsStringAsync();
+                var json = await response.Content.ReadAsStringAsync(ct);
 
-                var result = JsonSerializer.Deserialize<CommunityCommentListResponse>(json, new JsonSerializerOptions
+                return JsonSerializer.Deserialize<CommunityCommentListResponse>(json, new JsonSerializerOptions
                 {
                     PropertyNameCaseInsensitive = true
-                });
-
-                return result ?? new CommunityCommentListResponse();
+                }) ?? new CommunityCommentListResponse();
             }
             catch (Exception ex)
             {
@@ -293,27 +318,26 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw;
             }
         }
-        public async Task<bool> LikeCommentAsync(Guid commentId, string userId, Guid communityPostId, CancellationToken ct = default)
+
+        public async Task<bool> LikeCommentAsync(LikeCommentsDto likeCommentsDto, string userId, CancellationToken ct = default)
         {
             try
             {
-                var url = $"/api/v2/community/likeCommentInternal/{commentId}/{communityPostId}/{userId}";
-
+                var url = $"/api/v2/community/likeCommentInternal?userId={userId}";
                 var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, InternalAppId, url);
+                var jsonContent = JsonSerializer.Serialize(likeCommentsDto);
+                request.Content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
+
                 var response = await _dapr.InvokeMethodWithResponseAsync(request, ct);
                 response.EnsureSuccessStatusCode();
 
-                var json = await response.Content.ReadAsStringAsync();
-
+                var json = await response.Content.ReadAsStringAsync(ct);
                 if (!string.IsNullOrEmpty(json))
                 {
-                    var jsonDoc = JsonDocument.Parse(json);
+                    using var jsonDoc = JsonDocument.Parse(json);
                     if (jsonDoc.RootElement.TryGetProperty("status", out var statusElement))
-                    {
-                        return statusElement.GetString()?.ToLowerInvariant() == "liked";
-                    }
+                        return string.Equals(statusElement.GetString(), "liked", StringComparison.OrdinalIgnoreCase);
                 }
-
                 return false;
             }
             catch (Exception ex)
@@ -322,6 +346,7 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw;
             }
         }
+
         public async Task<CommunityCommentApiResponse> SoftDeleteCommunityCommentAsync(Guid postId, Guid commentId, string userId, CancellationToken ct = default)
         {
             try
@@ -329,18 +354,13 @@ namespace QLN.Backend.API.Service.V2ContentService
                 var encodedUserId = Uri.EscapeDataString(userId);
                 var url = $"/api/v2/community/comments/delete/byid/{postId}/{commentId}?userId={encodedUserId}";
 
-                var request = _dapr.CreateInvokeMethodRequest(
-                    HttpMethod.Post,
-                   InternalAppId, 
-                    url
-                );
-
+                var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, InternalAppId, url);
                 var response = await _dapr.InvokeMethodWithResponseAsync(request, ct);
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    var error = await response.Content.ReadAsStringAsync();
-                    Console.WriteLine($"[ERROR] Soft delete failed: StatusCode={response.StatusCode}, Content={error}");
+                    var error = await response.Content.ReadAsStringAsync(ct);
+                    _logger.LogError("Soft delete failed: StatusCode={Status}, Content={Content}", response.StatusCode, error);
 
                     return new CommunityCommentApiResponse
                     {
@@ -349,27 +369,19 @@ namespace QLN.Backend.API.Service.V2ContentService
                     };
                 }
 
-                var json = await response.Content.ReadAsStringAsync();
-
+                var json = await response.Content.ReadAsStringAsync(ct);
                 return JsonSerializer.Deserialize<CommunityCommentApiResponse>(json, new JsonSerializerOptions
                 {
                     PropertyNameCaseInsensitive = true
-                }) ?? new CommunityCommentApiResponse
-                {
-                    Status = "failed",
-                    Message = "No content received"
-                };
+                }) ?? new CommunityCommentApiResponse { Status = "failed", Message = "No content received" };
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[EXCEPTION] {ex.Message}");
-                return new CommunityCommentApiResponse
-                {
-                    Status = "failed",
-                    Message = $"Exception occurred: {ex.Message}"
-                };
+                _logger.LogError(ex, "Soft delete exception");
+                return new CommunityCommentApiResponse { Status = "failed", Message = $"Exception occurred: {ex.Message}" };
             }
         }
+
         public async Task<CommunityCommentApiResponse> EditCommunityCommentAsync(Guid postId, Guid commentId, string userId, string updatedText, CancellationToken ct = default)
         {
             try
@@ -377,23 +389,14 @@ namespace QLN.Backend.API.Service.V2ContentService
                 var encodedUserId = Uri.EscapeDataString(userId);
                 var url = $"/api/v2/community/comments/edit/byid/{postId}/{commentId}?userId={encodedUserId}";
 
-                var request = _dapr.CreateInvokeMethodRequest(
-                    HttpMethod.Post,
-                   InternalAppId,
-                    url
-                );
-
-                request.Content = new StringContent(
-                    JsonSerializer.Serialize(updatedText),
-                    Encoding.UTF8,
-                    "application/json"
-                );
+                var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, InternalAppId, url);
+                request.Content = new StringContent(JsonSerializer.Serialize(updatedText), Encoding.UTF8, "application/json");
 
                 var response = await _dapr.InvokeMethodWithResponseAsync(request, ct);
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    var errorContent = await response.Content.ReadAsStringAsync();
+                    var errorContent = await response.Content.ReadAsStringAsync(ct);
                     _logger.LogError("Internal edit call failed with status {StatusCode}. Error: {Error}", response.StatusCode, errorContent);
 
                     return new CommunityCommentApiResponse
@@ -403,27 +406,23 @@ namespace QLN.Backend.API.Service.V2ContentService
                     };
                 }
 
-                var json = await response.Content.ReadAsStringAsync();
-
+                var json = await response.Content.ReadAsStringAsync(ct);
                 return JsonSerializer.Deserialize<CommunityCommentApiResponse>(json, new JsonSerializerOptions
                 {
                     PropertyNameCaseInsensitive = true
-                }) ?? new CommunityCommentApiResponse
-                {
-                    Status = "failed",
-                    Message = "Empty response received from internal service"
-                };
+                }) ?? new CommunityCommentApiResponse { Status = "failed", Message = "Empty response received from internal service" };
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to edit community comment {CommentId} for post {PostId} by user {UserId}", commentId, postId, userId);
-
-                return new CommunityCommentApiResponse
-                {
-                    Status = "failed",
-                    Message = "Edit request failed"
-                };
+                return new CommunityCommentApiResponse { Status = "failed", Message = "Edit request failed" };
             }
         }
+
+        public Task<string> BulkMigrateCommunityPostsAsync(List<V2CommunityPostDto> posts, CancellationToken ct = default)
+            => throw new NotImplementedException();
+
+        public Task<string> MigrateCommunityPostAsync(V2CommunityPostDto post, CancellationToken ct = default)
+            => throw new NotImplementedException();
     }
 }

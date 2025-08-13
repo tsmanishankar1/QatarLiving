@@ -1,0 +1,112 @@
+@inherits ServicesEditSeasonPickModalBase
+@using MudBlazor
+
+<MudDialog MaxWidth="MaxWidth.Small" FullWidth="true">
+    <DialogContent>
+        <div class="classified-modal">
+            <div class="d-flex justify-center">
+                <img src="/qln-images/plus_icon.svg" alt="plus" />
+            </div>
+            <div class="d-flex justify-center">
+                <MudText Typo="Typo.h6" Align="Align.Center" Class="classified-add-title">
+                    @Title
+                </MudText>
+            </div>
+             <div class="mx-auto">
+            <MudTextField  Class="classified-text-field no-underline" T="string" Placeholder="Seasonal Pick Title*"
+                      @bind-Value="selectedSeasonalPick.Title"   />
+            </div>
+            <div class="mx-auto">
+                <MudSelect T="long?" Label="Category"
+                           Value="selectedSeasonalPick?.CategoryId"
+                           Class="classified-field no-underline"
+                           Required="true"
+                           RequiredError="Category is required"
+                           ValueChanged="OnCategoryChanged">
+                    @if (IsLoadingCategories)
+                    {
+                        <MudSelectItem T="long?" Value=null Disabled="true">
+                            <MudProgressCircular Size="Size.Small" Indeterminate="true" Color="Color.Primary" Class="mr-2" />
+                            Loading categories...
+                        </MudSelectItem>
+                    }
+                    else
+                    {
+                        <MudSelectItem T="long?" Value=null Disabled="true">Choose</MudSelectItem>
+                        @foreach (var category in CategoryTrees)
+                        {
+                            <MudSelectItem T="long?" Value="@category.Id">@category.CategoryName</MudSelectItem>
+                        }
+                    }
+                </MudSelect>
+            </div>
+            <div class="mx-auto">
+                <MudSelect T="long?" Label="Subcategory"
+                           Value="SelectedSubcategoryId"
+                           Disabled="!(selectedSeasonalPick?.CategoryId.HasValue ?? false)"
+                           Class="classified-field no-underline"
+                           Required="true"
+                           RequiredError="Subcategory is required"
+                           ValueChanged="OnSubcategoryChanged">
+                    <MudSelectItem T="long?" Value=null Disabled="true">Choose</MudSelectItem>
+                    @foreach (var sub in _selectedL1Categories)
+                    {
+                        <MudSelectItem T="long?" Value="@sub.Id">@sub.CategoryName</MudSelectItem>
+                    }
+                </MudSelect>
+            </div>
+            <div class="mx-auto">
+                <MudSelect T="long?" Label="Section"
+                           Value="SelectedSectionId"
+                           ValueChanged="OnSectionChanged"
+                           Disabled="@(!SelectedSubcategoryId.HasValue)"
+                           Class="classified-field no-underline"
+                           Required="true"
+                           RequiredError="Section is required">
+                    <MudSelectItem T="long?" Value=null Disabled="true">Choose</MudSelectItem>
+                    @foreach (var sec in _selectedL2Categories)
+                    {
+                        <MudSelectItem T="long?" Value="@sec.Id">@sec.CategoryName</MudSelectItem>
+                    }
+                </MudSelect>
+            </div>
+            <div class="mx-auto" style="width: 330px;">
+                <MudDateRangePicker Class="classified-datepicker-field no-underline" Style="border: 1px solid #D0D5DD; border-radius: 6px; padding: 10px;" @bind-DateRange="dateRange" Required="true" 
+                               MinDate="@DateTime.Today"DisplayMonths="1"/>
+            </div> 
+            <div class="mx-auto">
+              <MudFileUpload T="IBrowserFile" Accept="image/*" FilesChanged="OnLogoFileSelected" MaxFileSize="10485760">
+                <ActivatorContent>
+                <MudPaper Elevation="0" Class="classified-image-container mt-2">
+                    @if (!string.IsNullOrEmpty(ImagePreviewUrl))
+                    {
+                        <img src="@ImagePreviewUrl" style="max-width: 100%; max-height: 200px;" />
+                    }
+                    else
+                    {
+                        <img src="/qln-images/upload_icon.svg" alt="upload" />
+                        <MudButton Variant="Variant.Text">
+                            Upload
+                        </MudButton>
+                        <input type="file" @ref="fileInput" style="display: none;" accept="image/*" />
+                    }
+                </MudPaper>
+                    </ActivatorContent>
+
+                </MudFileUpload>
+                <MudText Typo="Typo.caption" Align="Align.Center" Class="mt-1">Recommended image size: 330 x 200 pixels</MudText>
+            </div>
+            <div class=" classified-button-wrapper mx-auto mt-2">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveAsync" Disabled="@(!IsFormValid())" Class="classified-button">
+                    Add
+                </MudButton>
+                <MudButton Variant="Variant.Outlined" Color="Color.Inherit" OnClick="Close" Class="classified-button mt-2">
+                    Close
+                </MudButton>
+            </div>
+        </div>
+    </DialogContent>
+</MudDialog>
+
+
+

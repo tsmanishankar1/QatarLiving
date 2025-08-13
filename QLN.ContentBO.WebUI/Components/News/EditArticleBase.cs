@@ -2,10 +2,12 @@
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.JSInterop;
 using MudBlazor;
-using MudExRichTextEditor;
+using PSC.Blazor.Components.MarkdownEditor;
+using PSC.Blazor.Components.MarkdownEditor.EventsArgs;
 using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Models;
 using System.Net;
+using System.Text.Json;
 
 namespace QLN.ContentBO.WebUI.Components.News
 {
@@ -20,21 +22,31 @@ namespace QLN.ContentBO.WebUI.Components.News
 
         protected List<NewsCategory> Categories = [];
         protected List<Slot> Slots = [];
-        protected List<string> WriterTags = [];
-
-        protected MudExRichTextEdit Editor;
+        protected List<Writertag> WriterTags = [];
 
         protected ArticleCategory Category { get; set; } = new();
 
         protected List<ArticleCategory> TempCategoryList { get; set; } = [];
 
-        public int MaxCategory { get; set; } = 2;
         public bool IsEditorReady { get; set; } = false;
 
         public bool IsLoading { get; set; } = false;
 
         public bool IsBtnDisabled { get; set; } = false;
 
+        protected ArticleCategory CategoryTwo { get; set; } = new();
+        protected List<NewsSubCategory> FilteredSubCategories = [];
+        protected List<NewsSubCategory> FilteredSubCategoriesTwo = [];
+        protected MudFileUpload<IBrowserFile> _fileUpload;
+
+
+        // Custom Markdown Editor Properties
+        protected MarkdownEditor MarkdownEditorRef;
+        protected MudFileUpload<IBrowserFile> _markdownfileUploadRef;
+        protected string UploadImageButtonName { get; set; } = "uploadImage";
+        protected string BlobContainerName { get; set; } = "content-images";
+
+        protected string[] HiddenIcons = ["fullscreen"];
         protected override async Task OnInitializedAsync()
         {
             try
@@ -54,37 +66,6 @@ namespace QLN.ContentBO.WebUI.Components.News
             }
         }
 
-        protected override async Task OnAfterRenderAsync(bool firstRender)
-        {
-            try
-            {
-                if (firstRender && !IsEditorReady)
-                {
-                    if (Editor is not null)
-                    {
-                        try
-                        {
-                            // Confirm Editor is fully ready via JSInterop
-                            var html = await Editor.GetHtml();
-                            if (html is not null)
-                            {
-                                IsEditorReady = true;
-                                StateHasChanged();
-                            }
-                        }
-                        catch (JSException jsEx)
-                        {
-                            Logger.LogWarning(jsEx, "MudEx Editor JS not ready yet");
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.LogWarning(ex, "OnAfterRenderAsync");
-            }
-        }
-
         protected async override Task OnParametersSetAsync()
         {
             try
@@ -100,43 +81,43 @@ namespace QLN.ContentBO.WebUI.Components.News
             }
         }
 
-        protected void AddCategory()
-        {
-            if (Category.CategoryId == 0 || Category.SubcategoryId == 0)
-            {
-                Snackbar.Add("Category and Sub Category is required", Severity.Error);
-                return;
-            }
-            if (TempCategoryList.Count >= MaxCategory)
-            {
-                Snackbar.Add("Maximum of 2 Category and Sub Category combinations are allowed", Severity.Error);
-                Category = new();
-                return;
-            }
-            if (TempCategoryList.Any(x => x.CategoryId == Category.CategoryId && x.SubcategoryId == Category.SubcategoryId))
-            {
-                Snackbar.Add("This Category and Sub Category combination already exists", Severity.Error);
-                return;
-            }
-            Category.SlotId = Category.SlotId == 0 ? 15 : Category.SlotId; // Defaults UnPublished.
-            TempCategoryList.Add(Category);
-            Category = new();
-        }
-
-        protected void RemoveCategory(ArticleCategory articleCategory)
-        {
-            if (TempCategoryList.Count > 0)
-            {
-                TempCategoryList.Remove(articleCategory);
-            }
-        }
-
         protected async Task HandleValidSubmit()
         {
             try
             {
                 IsBtnDisabled = true;
-                article.Categories = TempCategoryList;
+
+
+                if (!IsValidCategory(Category))
+                {
+                    ShowError("Category and Sub Category is required");
+                    return;
+                }
+                Category.SlotId = Category.SlotId == 0 ? 15 : Category.SlotId;
+
+                // Assign Category to article.Categories and add CategoryTwo if it has value
+                article.Categories = [Category];
+
+                if (CategoryTwo.CategoryId > 0 && CategoryTwo.SubcategoryId == 0)
+                {
+                    ShowError("Optional Sub Category is required");
+                    article.Categories = [];
+                    return;
+                }
+                else if (CategoryTwo.CategoryId > 0 && CategoryTwo.SubcategoryId > 0)
+                {
+                    CategoryTwo.SlotId = CategoryTwo.SlotId == 0 ? 15 : CategoryTwo.SlotId;
+
+                    if (IsDuplicate(Category, CategoryTwo))
+                    {
+                        ShowError("This Category and Sub Category combination already exists");
+                        article.Categories = [];
+                        return;
+                    }
+
+                    article.Categories.Add(CategoryTwo);
+                }
+
                 if (article.Categories.Count == 0)
                 {
                     Snackbar.Add("Select atleast one category", severity: Severity.Error);
@@ -146,12 +127,6 @@ namespace QLN.ContentBO.WebUI.Components.News
                 if (string.IsNullOrEmpty(article.CoverImageUrl))
                 {
                     Snackbar.Add("Image is required", severity: Severity.Error);
-                    IsBtnDisabled = false;
-                    return;
-                }
-                if (string.IsNullOrEmpty(article.Content) || string.IsNullOrWhiteSpace(article.Content) || article.Content == "<p></p>" || article.Content == "<p> </p>")
-                {
-                    Snackbar.Add("Article Content is required", severity: Severity.Error);
                     IsBtnDisabled = false;
                     return;
                 }
@@ -194,11 +169,12 @@ namespace QLN.ContentBO.WebUI.Components.News
                 var file = e.File;
                 if (file != null)
                 {
-                    using var stream = file.OpenReadStream(5 * 1024 * 1024); // 5MB limit
+                    using var stream = file.OpenReadStream(2 * 1024 * 1024); // 2MB limit
                     using var memoryStream = new MemoryStream();
                     await stream.CopyToAsync(memoryStream);
                     var base64 = Convert.ToBase64String(memoryStream.ToArray());
                     article.CoverImageUrl = $"data:{file.ContentType};base64,{base64}";
+                    _fileUpload?.ResetValidation();
                 }
             }
             catch (Exception ex)
@@ -258,16 +234,16 @@ namespace QLN.ContentBO.WebUI.Components.News
             }
         }
 
-        private async Task<List<string>> GetWriterTags()
+        private async Task<List<Writertag>> GetWriterTags()
         {
             try
             {
                 var apiResponse = await newsService.GetWriterTags();
                 if (apiResponse.IsSuccessStatusCode)
                 {
-                    var tagResponse = await apiResponse.Content.ReadFromJsonAsync<TagResponse>();
+                    var writerTagResponse = await apiResponse.Content.ReadFromJsonAsync<List<Writertag>>();
 
-                    return tagResponse?.Tags ?? [];
+                    return writerTagResponse ?? [];
                 }
 
                 return [];
@@ -309,9 +285,15 @@ namespace QLN.ContentBO.WebUI.Components.News
             }
         }
 
+        protected async void EditImage()
+        {
+            await _fileUpload.OpenFilePickerAsync();
+        }
+
         protected void RemoveImage()
         {
             article.CoverImageUrl = null;
+            _fileUpload?.ResetValidation();
         }
 
         private async Task LoadArticle()
@@ -334,11 +316,207 @@ namespace QLN.ContentBO.WebUI.Components.News
                 }
 
                 TempCategoryList = article?.Categories ?? [];
+
+                // First value of the TempCategoryList should be the primary category
+                if (TempCategoryList.Count > 0)
+                {
+                    Category = TempCategoryList[0];
+                    FilteredSubCategories = Categories
+                        .FirstOrDefault(c => c.Id == Category.CategoryId)?
+                        .SubCategories ?? [];
+                }
+                else
+                {
+                    Category = new ArticleCategory();
+                    FilteredSubCategories = [];
+                }
+
+                // Second value of the TempCategoryList should be the secondary category
+                if (TempCategoryList.Count > 1)
+                {
+                    CategoryTwo = TempCategoryList[1];
+                    FilteredSubCategoriesTwo = Categories
+                        .FirstOrDefault(c => c.Id == CategoryTwo.CategoryId)?
+                        .SubCategories ?? [];
+                }
+                else
+                {
+                    CategoryTwo = new ArticleCategory();
+                    FilteredSubCategoriesTwo = [];
+                }
             }
             catch (Exception ex)
             {
                 Logger.LogError(ex, "LoadArticle");
             }
         }
+
+        protected async Task OnCategoryChanged(int newCategoryId)
+        {
+            Category.CategoryId = newCategoryId;
+            Category.SubcategoryId = 0;
+            Category.SlotId = 0;
+
+            FilteredSubCategories = Categories
+                .FirstOrDefault(c => c.Id == newCategoryId)?
+                .SubCategories ?? [];
+
+            await InvokeAsync(StateHasChanged);
+        }
+
+        protected async Task OnCategoryTwoChanged(int newCategoryId)
+        {
+            CategoryTwo.CategoryId = newCategoryId;
+            CategoryTwo.SubcategoryId = 0;
+            CategoryTwo.SlotId = 0;
+
+            FilteredSubCategoriesTwo = Categories
+                .FirstOrDefault(c => c.Id == newCategoryId)?
+                .SubCategories ?? [];
+
+            await InvokeAsync(StateHasChanged);
+        }
+
+        private bool IsValidCategory(ArticleCategory category)
+        {
+            return category.CategoryId != 0 && category.SubcategoryId != 0;
+        }
+
+        private bool IsDuplicate(ArticleCategory categoryOne, ArticleCategory categoryTwo)
+        {
+            if (!ReferenceEquals(categoryOne, categoryTwo) && categoryOne?.CategoryId == categoryTwo?.CategoryId && categoryOne?.SubcategoryId == categoryTwo?.SubcategoryId)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        private void ShowError(string message)
+        {
+            Snackbar.Add(message, Severity.Error);
+            IsBtnDisabled = false;
+        }
+
+        #region Custom Markdown Editor
+
+        protected async Task<FileUploadResponse> FileUploadAsync(FileUploadModel fileUploadData)
+        {
+            try
+            {
+                var response = await FileUploadService.UploadFileAsync(fileUploadData);
+                var jsonString = await response.Content.ReadAsStringAsync();
+                if (response != null && response.IsSuccessStatusCode)
+                {
+                    FileUploadResponse? result = JsonSerializer.Deserialize<FileUploadResponse>(jsonString, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+                    return result ?? new();
+                }
+                else if (response?.StatusCode == HttpStatusCode.BadRequest)
+                {
+                    Snackbar.Add($"Bad Request: {jsonString}", Severity.Error);
+                }
+                else if (response?.StatusCode == HttpStatusCode.Unauthorized)
+                {
+                    Snackbar.Add("You are unauthorized to perform this action", Severity.Error);
+                }
+                else if (response?.StatusCode == HttpStatusCode.InternalServerError)
+                {
+                    Snackbar.Add("Internal API Error", Severity.Error);
+                }
+
+                return new();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "FileUploadAsync");
+                return new();
+            }
+        }
+
+        protected void TriggerCustomImageUpload()
+        {
+            _markdownfileUploadRef.OpenFilePickerAsync();
+        }
+
+        protected Task OnCustomButtonClicked(MarkdownButtonEventArgs eventArgs)
+        {
+            if (eventArgs.Name is not null)
+            {
+                if (eventArgs.Name == UploadImageButtonName)
+                {
+                    TriggerCustomImageUpload();
+                }
+
+                if (eventArgs.Name == "CustomPreview")
+                {
+                    ToggleMarkdownPreview();
+                }
+            }
+            return Task.CompletedTask;
+        }
+
+        protected async Task UploadFile(string base64)
+        {
+            try
+            {
+                var fileUploadData = new FileUploadModel
+                {
+                    Container = BlobContainerName,
+                    File = base64
+                };
+
+                var fileUploadResponse = await FileUploadAsync(fileUploadData);
+                if (fileUploadResponse?.IsSuccess == true)
+                {
+                    var imageMarkdown = $"\n![image-{fileUploadResponse.FileName}]({fileUploadResponse.FileUrl})";
+                    article.Content += imageMarkdown;
+                    await MarkdownEditorRef!.SetValueAsync(article.Content);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "UploadFile");
+            }
+        }
+
+        protected async Task HandleMarkdownFilesChanged(InputFileChangeEventArgs e)
+        {
+            try
+            {
+                var file = e.File;
+                if (file != null)
+                {
+                    using var stream = file.OpenReadStream(2 * 1024 * 1024); // 2MB limit
+                    using var memoryStream = new MemoryStream();
+                    await stream.CopyToAsync(memoryStream);
+                    var base64 = Convert.ToBase64String(memoryStream.ToArray());
+                    var uploadedImageBase64 = $"data:{file.ContentType};base64,{base64}";
+                    if (!string.IsNullOrWhiteSpace(uploadedImageBase64))
+                    {
+                        await UploadFile(uploadedImageBase64);
+                    }
+                    _markdownfileUploadRef?.ResetValidation();
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "HandleMarkdownFilesChanged");
+            }
+        }
+
+        protected async void ToggleMarkdownPreview()
+        {
+            if (MarkdownEditorRef != null)
+            {
+                await MarkdownEditorRef.TogglePreviewAsync();
+            }
+        }
+
+        #endregion
     }
 }
