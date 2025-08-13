@@ -332,7 +332,7 @@ namespace QLN.Backend.API.Service.V2ContentService
             }
         }
 
-        public async Task<List<V2BannerTypeDto>?> GetBannerTypesByFilterAsync(Vertical verticalId,SubVertical? subVerticalId,Guid pageId,CancellationToken cancellationToken)
+        public async Task<List<V2BannerTypeDto>?> GetBannerTypesByFilterAsync(Vertical verticalId,SubVertical? subVerticalId,BannerPageId pageId,CancellationToken cancellationToken)
         {
             try
             {
@@ -341,8 +341,9 @@ namespace QLN.Backend.API.Service.V2ContentService
                 if (subVerticalId.HasValue)
                     queryParams.Add($"subVerticalId={(int)subVerticalId.Value}");
 
-                if (pageId != Guid.Empty)
-                    queryParams.Add($"pageId={pageId}");
+               
+                if (pageId != 0)
+                    queryParams.Add($"pageId={(int)pageId}");  
 
                 var url = $"/api/v2/banner/getbyfilter?" + string.Join("&", queryParams);
 
@@ -357,7 +358,7 @@ namespace QLN.Backend.API.Service.V2ContentService
                 var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
                 var rawJson = await response.Content.ReadAsStringAsync(cancellationToken);
 
-                _logger.LogInformation(" Raw JSON from internal: {RawJson}", rawJson);
+                _logger.LogInformation("Raw JSON from internal: {RawJson}", rawJson);
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -371,7 +372,7 @@ namespace QLN.Backend.API.Service.V2ContentService
                     {
                         errorMessage = rawJson;
                     }
-                    throw new InvalidDataException("Internal API error: {errorMessage}");
+                    throw new InvalidDataException($"Internal API error: {errorMessage}");
                 }
 
                 var result = JsonSerializer.Deserialize<List<V2BannerTypeDto>>(rawJson,
@@ -441,7 +442,12 @@ namespace QLN.Backend.API.Service.V2ContentService
         }
 
 
-        public async Task<string> ReorderAsync(Vertical verticalId,SubVertical? subVerticalId,Guid pageId, List<Guid> banners, CancellationToken cancellationToken = default)
+        public async Task<string> ReorderAsync(
+      Vertical verticalId,
+      SubVertical? subVerticalId,
+      BannerPageId pageId,
+      List<Guid> banners,
+      CancellationToken cancellationToken = default)
         {
             try
             {
