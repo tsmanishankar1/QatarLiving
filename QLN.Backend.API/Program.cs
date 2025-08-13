@@ -332,6 +332,9 @@ builder.Services.ProductsConfiguration(builder.Configuration);
 builder.Services.ClassifiedBoStoresConfiguration(builder.Configuration);
 builder.Services.ServicesBo(builder.Configuration);
 
+// Putting this here as it could be used from the Backend API - but also in Classifieds Service
+builder.Services.ImplioConfiguration(builder.Configuration);
+
 var app = builder.Build();
 #region DAPR Subscriptions
 

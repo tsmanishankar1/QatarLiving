@@ -10,8 +10,9 @@ namespace QLN.Common.DTO_s
         public Guid BannerTypeId { get; set; }
         public Vertical VerticalId { get; set; }
         public SubVertical? SubVerticalId { get; set; }
-        public Guid PageId { get; set; }
+        public BannerPageId PageId { get; set; } 
     }
+
     public class V2CreateBannerDto
     {
         
@@ -59,10 +60,17 @@ namespace QLN.Common.DTO_s
     public class V2BannerPageLocationDto
     {
         public Guid Id { get; set; }
-        public string BannerPageName { get; set; }
-       public List<V2BannerLocationDto> bannertypes { get; set; }
+        public BannerPageId PageId { get; set; }
+        public List<V2BannerLocationDto> bannertypes { get; set; }
 
     }
+    public enum BannerPageId
+    {
+        DetailPage = 1,
+        SearchPage = 2,
+        LandingPage = 3
+    }
+
     public class V2BannerDto
     {
         public Guid Id { get; set; }
