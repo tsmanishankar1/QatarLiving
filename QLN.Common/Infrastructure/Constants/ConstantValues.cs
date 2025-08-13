@@ -113,6 +113,8 @@ namespace QLN.Common.Infrastructure.Constants
             public const string ArticlesMigration = "articles-migration";
             public const string EventsMigration = "events-migration";
             public const string PostsMigration = "posts-migration";
+            public const string ItemsMigration = "items-migration";
+            public const string CollectablesMigration = "collectables-migration";
         }
         public static class Verticals
         {

@@ -87,8 +87,6 @@ namespace QLN.Backend.API.Service.V2ContentService
         private static string OrList(string field, IEnumerable<int> values)
             => string.Join(" or ", values.Select(v => $"{field} eq {v}"));
 
-        private static string Escape(string s) => s.Replace("'", "''");
-
         public async Task<string> CreateEvent(string userId, V2Events dto, CancellationToken cancellationToken = default)
         {
             string? FileName = null;

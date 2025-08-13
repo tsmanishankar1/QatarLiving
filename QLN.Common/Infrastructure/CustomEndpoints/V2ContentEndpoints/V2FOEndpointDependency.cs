@@ -11,10 +11,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
     {
         public static RouteGroupBuilder MapFOEventEndpoints(this RouteGroupBuilder group)
         {
-            group.MapGetAllFOFeaturedEventEndpoints()
-                .MapGetFOEventEndpoints()
-                .MapGetEventBySlugEndpoint()
-                .MapGetFOPaginatedEvents();
+            group.MapGetEventBySlugEndpoint();
                 return group;
         }
     }

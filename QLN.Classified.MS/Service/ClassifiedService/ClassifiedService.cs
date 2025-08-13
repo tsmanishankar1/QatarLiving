@@ -24,6 +24,7 @@ using QLN.Common.Infrastructure.IService.ISearchService;
 using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.QLDbContext;
 using QLN.Common.Infrastructure.Service.FileStorage;
+using QLN.Common.Infrastructure.Subscriptions;
 using QLN.Common.Infrastructure.Utilities;
 using QLN.Common.Migrations.QLLog;
 using static Dapr.Client.Autogen.Grpc.v1.Dapr;
@@ -223,12 +224,42 @@ namespace QLN.Classified.MS.Service
             }
         }
 
+        public async Task<string> MigrateClassifiedItemsAd(Items dto, CancellationToken cancellationToken = default)
+        {
+
+            try
+            {
+                _logger.LogInformation("Starting MigrateClassifiedItemsAd for UserId={UserId}, Title='{Title}'", dto.UserId, dto.Title);
+
+                _logger.LogDebug("Adding Items ad to EF context...");
+                _context.Item.Add(dto);
+
+                await _context.SaveChangesAsync(cancellationToken);
+                _logger.LogInformation("Database save completed. New AdId={AdId}", dto.Id);
+
+                _logger.LogDebug("Indexing ad to Azure Search...");
+                await IndexItemsToAzureSearch(dto, cancellationToken);
+                _logger.LogInformation("Ad indexed to Azure Search successfully. AdId={AdId}", dto.Id);
+
+                return $"Completed adding {dto.Id}";
+            }
+            catch (Exception ex)
+            {
+                _logger.LogCritical(ex, "Unhandled error occurred during ad creation for UserId={UserId}, Title='{Title}'", dto.UserId, dto.Title);
+                throw new InvalidOperationException(
+                    "An unexpected error occurred while creating the Items ad. Please try again later.",
+                    ex
+                );
+            }
+        }
+
 
         public async Task<AdCreatedResponseDto> RefreshClassifiedItemsAd(
-            SubVertical subVertical,
-            long adId,
-            string userId,
-            CancellationToken cancellationToken)
+     SubVertical subVertical,
+     long adId,
+     string userId,
+     Guid subscriptionId,
+     CancellationToken cancellationToken)
         {
             _logger.LogInformation(
                 "RefreshClassifiedItemsAd called. SubVertical: {SubVertical}, AdId: {AdId}, UserId: {UserId}",
@@ -237,6 +268,7 @@ namespace QLN.Classified.MS.Service
             try
             {
                 string? adTitle;
+
                 object? adItem = subVertical switch
                 {
                     SubVertical.Items => await _context.Item.FirstOrDefaultAsync(i => i.Id == adId && i.IsActive, cancellationToken),
@@ -438,6 +470,33 @@ namespace QLN.Classified.MS.Service
             {
                 _logger.LogError(ex, "Operation error while creating classified Collectibles ad.");
                 throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogCritical(ex, "Unhandled error occurred during Collectibles ad creation.");
+                throw new InvalidOperationException("An unexpected error occurred while creating the Collectibles ad. Please try again later.", ex);
+            }
+        }
+
+        public async Task<string> MigrateClassifiedCollectiblesAd(Collectibles dto, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                _logger.LogInformation("Starting MigrateClassifiedItemsAd for UserId={UserId}, Title='{Title}'", dto.UserId, dto.Title);
+
+                _logger.LogDebug("Adding Items ad to EF context...");
+                _context.Collectible.Add(dto);
+
+                await _context.SaveChangesAsync(cancellationToken);
+                _logger.LogInformation("Database save completed. New AdId={AdId}", dto.Id);
+
+                _logger.LogDebug("Indexing ad to Azure Search...");
+                
+                await IndexCollectiblesToAzureSearch(dto, cancellationToken);
+
+                _logger.LogInformation("Ad indexed to Azure Search successfully. AdId={AdId}", dto.Id);
+                return $"Completed adding {dto.Id}";
+
             }
             catch (Exception ex)
             {
@@ -2260,6 +2319,92 @@ namespace QLN.Classified.MS.Service
                 throw new InvalidOperationException("Failed to promote the ad due to an unexpected error.", ex);
             }
         }
+
+        #region WishList
+
+        public async Task<string> Favourite(WishlistCreateDto dto, string userId, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var exists = await _context.Wishlists
+                    .AnyAsync(w => w.UserId == userId && w.Vertical == dto.Vertical && w.AdId == dto.AdId);
+
+                if (!exists)
+                {
+                    var wishlist = new Wishlist
+                    {
+                        UserId = userId,
+                        Vertical = dto.Vertical,
+                        Subvertical = dto.SubVertical,
+                        AdId = dto.AdId
+                    };
+                    _context.Wishlists.Add(wishlist);
+                    await _context.SaveChangesAsync();
+
+                    return "Added to favourites successfully.";
+                }
+                else
+                {
+                    return "Already exists in favourites.";
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("An error occurred while Favourite.", ex);
+            }
+        }
+
+        public async Task<List<Wishlist>> GetAllByUserFavouriteList(string userId, Vertical vertical, SubVertical subVertical, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var list = await _context.Wishlists
+                            .Where(w => w.UserId == userId && w.Vertical == vertical)
+                            .Select(w => new Wishlist
+                            {
+                                Id = w.Id,
+                                UserId = w.UserId,
+                                Vertical = w.Vertical,
+                                Subvertical = w.Subvertical,
+                                AdId = w.AdId,
+                                CreatedAt = w.CreatedAt,
+                                UpdatedAt = w.UpdatedAt
+                            }).ToListAsync();
+
+                return list;
+            }
+            catch(Exception ex)
+            {
+                throw new InvalidOperationException("An error occurred while retrieving the user's wishlist.", ex);
+                throw;
+            }
+        }
+
+        public async Task<string> UnFavourite(string userId, Vertical vertical, SubVertical subVertical, long adId, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var wishList = await _context.Wishlists
+                    .FirstOrDefaultAsync(w => w.UserId == userId && w.Vertical == vertical && w.AdId == adId);
+
+                if (wishList == null)
+                    return "Wishlist item not found.";
+
+                _context.Wishlists.Remove(wishList);
+                await _context.SaveChangesAsync();
+
+                return "Wishlist item removed successfully.";
+
+            }            
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Bulk publish/unpublish failed.");
+                throw new InvalidOperationException("An error occurred while removing the wishlist item", ex);
+            }
+        }
+
+        #endregion
+
 
     }
 }

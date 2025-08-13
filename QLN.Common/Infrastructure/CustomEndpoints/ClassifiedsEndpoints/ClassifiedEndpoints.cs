@@ -17,6 +17,7 @@ using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService;
 using QLN.Common.Infrastructure.IService.ISearchService;
 using QLN.Common.Infrastructure.Model;
+using QLN.Common.Infrastructure.Subscriptions;
 using QLN.Common.Infrastructure.Utilities;
 using System;
 using System.Collections.Generic;
@@ -701,9 +702,10 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
         HttpContext httpContext,
         [FromQuery] SubVertical subVertical,
         [FromQuery] long adId,
+        [FromQuery] Guid subscriptionId,
         IClassifiedService service,
         AuditLogger auditLogger,
-        CancellationToken token) =>
+        CancellationToken token) =>      
             {
                 string? uid = "unknown";
 
@@ -728,7 +730,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                     var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
                     uid = userData.GetProperty("uid").GetString();
 
-                    var result = await service.RefreshClassifiedItemsAd(subVertical, adId, uid, token);
+                    var result = await service.RefreshClassifiedItemsAd(subVertical, adId, uid, subscriptionId, token);
 
                     await auditLogger.LogAuditAsync(
                         module: "Classified",
@@ -752,70 +754,69 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                     );
                 }
             })
-    .RequireAuthorization()
-    .WithName("RefreshItemsAd")
-    .WithTags("Classified")
-    .WithSummary("Refresh the ad (authorized)")
-    .WithDescription("Refresh an ad by resetting CreatedDate and RefreshExpiryDate, requires login.")
-    .Produces(StatusCodes.Status200OK)
-    .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-    .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
-    .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+  .RequireAuthorization()
+  .WithName("RefreshItemsAd")
+  .WithTags("Classified")
+  .WithSummary("Refresh the ad (authorized)")
+  .WithDescription("Refresh an ad by resetting CreatedDate and RefreshExpiryDate, requires login.")
+  .Produces(StatusCodes.Status200OK)
+  .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+  .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+  .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
 
-            group.MapPut("/refreshed/{userId}/{adId}",
-    async Task<IResult> (
-        string userId,
-        long adId,
-        [FromQuery] SubVertical subVertical,
-        IClassifiedService service,
-        CancellationToken token) =>
-    {
-        try
-        {
-            if (string.IsNullOrWhiteSpace(userId))
+            group.MapPut("/items/refreshed/{userId}/{adId}", async Task<IResult> (
+                string userId,
+                long adId,
+                [FromQuery] SubVertical subVertical,
+                [FromQuery] Guid subscriptionId,       
+                IClassifiedService service,
+                CancellationToken token) =>
             {
-                return TypedResults.BadRequest(new ProblemDetails
+                try
                 {
-                    Title = "Validation Error",
-                    Detail = "UserId is required.",
-                    Status = StatusCodes.Status400BadRequest
-                });
-            }
+                    if (string.IsNullOrWhiteSpace(userId))
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "UserId is required.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
 
-            if (adId <= 0)
-            {
-                return TypedResults.BadRequest(new ProblemDetails
+                    if (adId <= 0)
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "AdId is required.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    var result = await service.RefreshClassifiedItemsAd(subVertical, adId, userId, subscriptionId, token);
+
+                    return TypedResults.Ok(result);
+                }
+                catch (Exception ex)
                 {
-                    Title = "Validation Error",
-                    Detail = "AdId is required.",
-                    Status = StatusCodes.Status400BadRequest
-                });
-            }
-
-            var result = await service.RefreshClassifiedItemsAd(subVertical, adId, userId, token);
-
-            return TypedResults.Ok(result);
-        }
-        catch (Exception ex)
-        {
-            return TypedResults.Problem(
-                title: "Error Refreshing Ad",
-                detail: ex.Message,
-                statusCode: StatusCodes.Status500InternalServerError
-            );
-        }
-    })
-    .ExcludeFromDescription()
-    .WithName("RefreshedItemsAd")
-    .WithTags("Classified")
-    .WithSummary("Refresh the ad (direct call)")
-    .WithDescription("Refresh an ad by resetting CreatedDate and RefreshExpiryDate, using explicit userId.")
-    .Produces(StatusCodes.Status200OK)
-    .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-    .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
-    .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-
+                    return TypedResults.Problem(
+                        title: "Error Refreshing Ad",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+            .ExcludeFromDescription()
+            .WithName("RefreshedItemsAd")
+            .WithTags("Classified")
+            .WithSummary("Refresh the ad (direct call)")
+            .WithDescription("Refresh an ad by resetting CreatedDate and RefreshExpiryDate, using explicit userId.")
+            .Produces(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
 
 
@@ -1241,8 +1242,10 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 HttpContext httpContext,
                 Preloveds dto,
                 IClassifiedService service,
+                AuditLogger auditLogger,
                 CancellationToken token) =>
             {
+                string uid = "unknown";
                 try
                 {
                     var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
@@ -1252,9 +1255,9 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                     }
 
                     var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                    var uid = userData.GetProperty("uid").GetString();
+                    uid = userData.GetProperty("uid").GetString();
 
-                    if (uid == null)
+                    if (string.IsNullOrEmpty(uid))
                     {
                         return TypedResults.BadRequest(new ProblemDetails
                         {
@@ -1268,10 +1271,21 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
                     var result = await service.UpdateClassifiedPrelovedAd(dto, token);
 
+                    await auditLogger.LogAuditAsync(
+                        module: "Classified",
+                        httpMethod: "PUT",
+                        apiEndpoint: "/api/classifieds/preloved/update",
+                        message: "Preloved ad updated successfully",
+                        createdBy: uid,
+                        payload: dto,
+                        cancellationToken: token
+                        );
+
                     return TypedResults.Ok(result);
                 }
                 catch (ArgumentNullException ex)
                 {
+                    await auditLogger.LogExceptionAsync("Classified", "/api/classifieds/preloved/update", ex, uid, token);
                     return Results.BadRequest(new ProblemDetails
                     {
                         Title = "Missing Input",
@@ -1281,6 +1295,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 }
                 catch (ArgumentException ex)
                 {
+                    await auditLogger.LogExceptionAsync("Classified", "/api/classifieds/preloved/update", ex, uid, token);
                     return Results.BadRequest(new ProblemDetails
                     {
                         Title = "Validation Error",
@@ -1290,6 +1305,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 }
                 catch (KeyNotFoundException ex)
                 {
+                    await auditLogger.LogExceptionAsync("Classified", "/api/classifieds/preloved/update", ex, uid, token);
                     return Results.NotFound(new ProblemDetails
                     {
                         Title = "Not Found",
@@ -1303,6 +1319,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 }
                 catch (InvalidOperationException ex)
                 {
+                    await auditLogger.LogExceptionAsync("Classified", "/api/classifieds/preloved/update", ex, uid, token);
                     return Results.Problem(new ProblemDetails
                     {
                         Title = "Operation Failed",
@@ -1312,6 +1329,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 }
                 catch (Exception ex)
                 {
+                    await auditLogger.LogExceptionAsync("Classified", "/api/classifieds/preloved/update", ex, uid, token);
                     return Results.Problem(new ProblemDetails
                     {
                         Title = "Unhandled Error",
@@ -1413,8 +1431,10 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                HttpContext httpContext,
                Collectibles dto,
                IClassifiedService service,
+               AuditLogger auditLogger,
                CancellationToken token) =>
             {
+                string uid = "unknown";
                 try
                 {
                     var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
@@ -1424,9 +1444,9 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                     }
 
                     var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                    var uid = userData.GetProperty("uid").GetString();
+                    uid = userData.GetProperty("uid").GetString();
 
-                    if (uid == null)
+                    if (string.IsNullOrEmpty(uid))
                     {
                         return TypedResults.BadRequest(new ProblemDetails
                         {
@@ -1440,10 +1460,21 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
                     var result = await service.UpdateClassifiedCollectiblesAd(dto, token);
 
+                    await auditLogger.LogAuditAsync(
+                        module: "Classified",
+                        httpMethod: "PUT",
+                        apiEndpoint: "/api/classifieds/collectibles/update",
+                        message: "collectibles ad updated successfully",
+                        createdBy: uid,
+                        payload: dto,
+                        cancellationToken: token
+                        );
+
                     return TypedResults.Ok(result);
                 }
                 catch (ArgumentNullException ex)
                 {
+                    await auditLogger.LogExceptionAsync("Classified", "/api/classifieds/collectibles/update", ex, uid, token);
                     return Results.BadRequest(new ProblemDetails
                     {
                         Title = "Missing Input",
@@ -1453,6 +1484,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 }
                 catch (ArgumentException ex)
                 {
+                    await auditLogger.LogExceptionAsync("Classified", "/api/classifieds/collectibles/update", ex, uid, token);
                     return Results.BadRequest(new ProblemDetails
                     {
                         Title = "Validation Error",
@@ -1462,6 +1494,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 }
                 catch (KeyNotFoundException ex)
                 {
+                    await auditLogger.LogExceptionAsync("Classified", "/api/classifieds/collectibles/update", ex, uid, token);
                     return Results.NotFound(new ProblemDetails
                     {
                         Title = "Not Found",
@@ -1475,6 +1508,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 }
                 catch (InvalidOperationException ex)
                 {
+                    await auditLogger.LogExceptionAsync("Classified", "/api/classifieds/collectibles/update", ex, uid, token);
                     return Results.Problem(new ProblemDetails
                     {
                         Title = "Operation Failed",
@@ -1484,6 +1518,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 }
                 catch (Exception ex)
                 {
+                    await auditLogger.LogExceptionAsync("Classified", "/api/classifieds/collectibles/update", ex, uid, token);
                     return Results.Problem(new ProblemDetails
                     {
                         Title = "Unhandled Error",
@@ -1585,8 +1620,10 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
              HttpContext httpContext,
              Deals dto,
              IClassifiedService service,
+             AuditLogger auditLogger,
              CancellationToken token) =>
             {
+                string uid = "unknown";
                 try
                 {
                     var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
@@ -1596,7 +1633,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                     }
 
                     var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                    var uid = userData.GetProperty("uid").GetString();
+                    uid = userData.GetProperty("uid").GetString();
 
                     if (uid == null)
                     {
@@ -1612,10 +1649,21 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
                     var result = await service.UpdateClassifiedDealsAd(dto, token);
 
+                    await auditLogger.LogAuditAsync(
+                        module: "Classified",
+                        httpMethod: "PUT",
+                        apiEndpoint: "/api/classifieds/deals/update",
+                        message: "Deals ad updated successfully",
+                        createdBy: uid,
+                        payload: dto,
+                        cancellationToken: token
+                        );
+
                     return TypedResults.Ok(result);
                 }
                 catch (ArgumentNullException ex)
                 {
+                    await auditLogger.LogExceptionAsync("Classified", "/api/classifieds/deals/update", ex, uid, token);
                     return Results.BadRequest(new ProblemDetails
                     {
                         Title = "Missing Input",
@@ -1625,6 +1673,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 }
                 catch (ArgumentException ex)
                 {
+                    await auditLogger.LogExceptionAsync("Classified", "/api/classifieds/deals/update", ex, uid, token);
                     return Results.BadRequest(new ProblemDetails
                     {
                         Title = "Validation Error",
@@ -1634,6 +1683,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 }
                 catch (KeyNotFoundException ex)
                 {
+                    await auditLogger.LogExceptionAsync("Classified", "/api/classifieds/deals/update", ex, uid, token);
                     return Results.NotFound(new ProblemDetails
                     {
                         Title = "Not Found",
@@ -1647,6 +1697,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 }
                 catch (InvalidOperationException ex)
                 {
+                    await auditLogger.LogExceptionAsync("Classified", "/api/classifieds/deals/update", ex, uid, token);
                     return Results.Problem(new ProblemDetails
                     {
                         Title = "Operation Failed",
@@ -1656,6 +1707,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 }
                 catch (Exception ex)
                 {
+                    await auditLogger.LogExceptionAsync("Classified", "/api/classifieds/deals/update", ex, uid, token);
                     return Results.Problem(new ProblemDetails
                     {
                         Title = "Unhandled Error",
@@ -1757,8 +1809,10 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 HttpContext httpContext,
                 ClassifiedsCollectablesDTO dto,
                 IClassifiedService service,
+                AuditLogger auditLogger,
                 CancellationToken token) =>
             {
+                string uid = "unknown";
                 try
                 {
                     var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
@@ -1769,7 +1823,17 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
                     var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
                     var name = userData.GetProperty("name").GetString();
-                    var uid = userData.GetProperty("uid").GetString();
+                    uid = userData.GetProperty("uid").GetString();
+
+                    if (string.IsNullOrEmpty(uid))
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "Authenticated user ID is missing or invalid.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
                     var request = new Collectibles
                     {
                         UserId = uid,
@@ -1826,23 +1890,25 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         Attributes = dto.Attributes,
 
                     };
-
-                    if (uid == null)
-                    {
-                        return TypedResults.BadRequest(new ProblemDetails
-                        {
-                            Title = "Validation Error",
-                            Detail = "Authenticated user ID is missing or invalid.",
-                            Status = StatusCodes.Status400BadRequest
-                        });
-                    }
+                   
                     var result = await service.CreateClassifiedCollectiblesAd(request, token);
+
+                    await auditLogger.LogAuditAsync(
+                        module: "Classified",
+                        httpMethod: "POST",
+                        apiEndpoint: "/api/classifieds/collectibles",
+                        message: "Collectibles ad created successfully",
+                        createdBy: uid,
+                        payload: request,
+                        cancellationToken: token
+        );
 
                     return TypedResults.Created(
                         $"/api/classifieds/collectibles/user-ads-by-id/{result.AdId}", result);
                 }
                 catch (ArgumentException ex)
                 {
+                    await auditLogger.LogExceptionAsync("Classified", "/api/classifieds/collectibles", ex, uid, token);
                     return TypedResults.BadRequest(new ProblemDetails
                     {
                         Title = "Validation Error",
@@ -1852,6 +1918,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 }
                 catch (Exception ex)
                 {
+                    await auditLogger.LogExceptionAsync("Classified", "/api/classifieds/collectibles", ex, uid, token);
                     return ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false)
                         ? TypedResults.NotFound(new ProblemDetails
                         {
@@ -1939,8 +2006,10 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 HttpContext httpContext,
                 ClassifiedsDealsDTO dto,
                 IClassifiedService service,
+                AuditLogger auditLogger,
                 CancellationToken token) =>
             {
+                string uid = "unknown";
                 try
                 {
                     var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
@@ -1951,7 +2020,17 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
                     var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
                     var name = userData.GetProperty("name").GetString();
-                    var uid = userData.GetProperty("uid").GetString();
+                    uid = userData.GetProperty("uid").GetString();
+
+                    if (string.IsNullOrEmpty(uid))
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "Authenticated user ID is missing or invalid.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
 
                     var request = new Deals {
                         UserId = uid,                        
@@ -1977,25 +2056,27 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         Offertitle = dto.Offertitle,
                         Images = dto.ImageUrl
                     }; 
-
-                    if (uid == null)
-                    {
-                        return TypedResults.BadRequest(new ProblemDetails
-                        {
-                            Title = "Validation Error",
-                            Detail = "Authenticated user ID is missing or invalid.",
-                            Status = StatusCodes.Status400BadRequest
-                        });
-                    }
+                    
 
                     //dto.UserId = uid;
                     var result = await service.CreateClassifiedDealsAd(request, token);
+
+                    await auditLogger.LogAuditAsync(
+                        module: "Classified",
+                        httpMethod: "POST",
+                        apiEndpoint: "/api/classifieds/deals",
+                        message: "Deals ad created successfully",
+                        createdBy: uid,
+                        payload: request,
+                        cancellationToken: token
+                        );
 
                     return TypedResults.Created($"/api/classifieds/deals/user-ads-by-id/{result.AdId}", result);
 
                 }
                 catch (ArgumentException ex)
                 {
+                    await auditLogger.LogExceptionAsync("Classified", "/api/classifieds/deals", ex, uid, token);
                     return TypedResults.BadRequest(new ProblemDetails
                     {
                         Title = "Validation Error",
@@ -2005,6 +2086,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 }
                 catch (InvalidOperationException ex)
                 {
+                    await auditLogger.LogExceptionAsync("Classified", "/api/classifieds/deals", ex, uid, token);
                     return TypedResults.Conflict(new ProblemDetails
                     {
                         Title = "Ad Creation Failed",
@@ -2014,6 +2096,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 }
                 catch (Exception ex)
                 {
+                    await auditLogger.LogExceptionAsync("Classified", "/api/classifieds/deals", ex, uid, token);
                     if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
                     {
                         return TypedResults.NotFound(new ProblemDetails
@@ -2127,6 +2210,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 SubVertical subVertical,
                 long adId,
                 IClassifiedService service,
+                AuditLogger auditLogger,
                 HttpContext context,
                 CancellationToken cancellationToken
                 ) =>
@@ -2160,10 +2244,22 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 try
                 {
                     var response = await service.DeleteClassifiedAd(subVertical, adId, uid, cancellationToken);
+
+                    await auditLogger.LogAuditAsync(
+                        module: "Classified",
+                        httpMethod: "DELETE",
+                        apiEndpoint: $"/api/classified/{subVertical}/{adId}",
+                        message: $"Deleted classified ad with ID {adId} in {subVertical}",
+                        createdBy: uid,
+                        payload: new { SubVertical = subVertical.ToString(), AdId = adId },
+                        cancellationToken: cancellationToken
+                        );
+
                     return TypedResults.Ok(response);
                 }
                 catch (KeyNotFoundException ex)
                 {
+                    await auditLogger.LogExceptionAsync("Classified", $"/api/classified/{subVertical}/{adId}", ex, uid, cancellationToken);
                     return TypedResults.NotFound(new ProblemDetails
                     {
                         Title = "Ad Not Found",
@@ -2174,6 +2270,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 }
                 catch (InvalidOperationException ex)
                 {
+                    await auditLogger.LogExceptionAsync("Classified", $"/api/classified/{subVertical}/{adId}", ex, uid, cancellationToken);
                     return TypedResults.BadRequest(new ProblemDetails
                     {
                         Title = "Invalid Operation",
@@ -2184,6 +2281,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 }
                 catch (Exception ex)
                 {
+                    await auditLogger.LogExceptionAsync("Classified", $"/api/classified/{subVertical}/{adId}", ex, uid, cancellationToken);
                     if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
                     {
                         return TypedResults.NotFound(new ProblemDetails
@@ -3746,8 +3844,10 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 HttpContext httpContext,
                 ClassifiedsPromoteDto dto,
                 IClassifiedService service,
+                AuditLogger auditLogger,
                 CancellationToken token) =>
             {
+                string uid = "unknown";
                 try
                 {
                     if (dto.AdId <= 0)
@@ -3767,9 +3867,19 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                     }
 
                     var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                    string userId = userData.GetProperty("uid").GetString();
+                    uid = userData.GetProperty("uid").GetString();
 
-                    await service.PromoteClassifiedAd(dto, userId, token);
+                    await service.PromoteClassifiedAd(dto, uid, token);
+
+                    await auditLogger.LogAuditAsync(
+                        module: "Classified",
+                        httpMethod: "PUT",
+                        apiEndpoint: "/api/classifieds/items/promote",
+                        message: $"Promoted classified ad with ID {dto.AdId}",
+                        createdBy: uid,
+                        payload: dto,
+                        cancellationToken: token
+                        );
 
                     return TypedResults.Ok(new
                     {
@@ -3779,6 +3889,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 }
                 catch (ArgumentException ex)
                 {
+                    await auditLogger.LogExceptionAsync("Classified", "/api/classifieds/items/promote", ex, uid, token);
                     return TypedResults.BadRequest(new ProblemDetails
                     {
                         Title = "Validation Error",
@@ -3788,6 +3899,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 }
                 catch (InvalidOperationException ex)
                 {
+                    await auditLogger.LogExceptionAsync("Classified", "/api/classifieds/items/promote", ex, uid, token);
                     return TypedResults.BadRequest(new ProblemDetails
                     {
                         Title = "Bad Request",
@@ -3797,6 +3909,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 }
                 catch (KeyNotFoundException ex)
                 {
+                    await auditLogger.LogExceptionAsync("Classified", "/api/classifieds/items/promote", ex, uid, token);
                     return TypedResults.NotFound(new ProblemDetails
                     {
                         Title = "Not Found",
@@ -3806,6 +3919,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 }
                 catch (Exception ex)
                 {
+                    await auditLogger.LogExceptionAsync("Classified", "/api/classifieds/items/promote", ex, uid, token);
                     return TypedResults.Problem(
                         title: "Internal Server Error",
                         detail: ex.Message,
@@ -3892,9 +4006,11 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             group.MapPut("/items/feature", async Task<IResult> (
               HttpContext httpContext,
              ClassifiedsPromoteDto dto,
+             AuditLogger auditLogger,
              IClassifiedService service,
              CancellationToken token) =>
             {
+                string uid = "unknown";
                 try
                 {
                     if (dto.AdId <= 0)
@@ -3914,8 +4030,19 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         return Results.Unauthorized();
                     }
                     var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                    string userId = userData.GetProperty("uid").GetString();
-                    await service.FeatureClassifiedAd(dto, userId, token);
+                    uid = userData.GetProperty("uid").GetString();
+                    await service.FeatureClassifiedAd(dto, uid, token);
+
+                    await auditLogger.LogAuditAsync(
+                        module: "Classified",
+                        httpMethod: "PUT",
+                        apiEndpoint: "/api/classifieds/items/feature",
+                        message: $"Featured classified ad with ID {dto.AdId}",
+                        createdBy: uid,
+                        payload: dto,
+                        cancellationToken: token
+                        );
+
                     return TypedResults.Ok(new
                     {
                         AdId = dto.AdId,
@@ -3924,6 +4051,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 }
                 catch (ArgumentException ex)
                 {
+                    await auditLogger.LogExceptionAsync("Classified", "/api/classifieds/items/feature", ex, uid, token);
                     return TypedResults.BadRequest(new ProblemDetails
                     {
                         Title = "Validation Error",
@@ -3933,6 +4061,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 }
                 catch (InvalidOperationException ex)
                 {
+                    await auditLogger.LogExceptionAsync("Classified", "/api/classifieds/items/feature", ex, uid, token);
                     return TypedResults.BadRequest(new ProblemDetails
                     {
                         Title = "Bad Request",
@@ -3942,6 +4071,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 }
                 catch (KeyNotFoundException ex)
                 {
+                    await auditLogger.LogExceptionAsync("Classified", "/api/classifieds/items/feature", ex, uid, token);
                     return TypedResults.NotFound(new ProblemDetails
                     {
                         Title = "Not Found",
@@ -3951,6 +4081,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 }
                 catch (Exception ex)
                 {
+                    await auditLogger.LogExceptionAsync("Classified", "/api/classifieds/items/feature", ex, uid, token);
                     return TypedResults.Problem(
                         title: "Internal Server Error",
                         detail: ex.Message,
@@ -4038,28 +4169,27 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-
-
            
-
             group.MapPost("user-dashboard/bulk-action", async Task<IResult> (
                 HttpContext context,
                 [FromQuery] int subVertical,
                 [FromQuery] bool isPublished,
                 [FromBody] List<long> adIds,
                 IClassifiedService service,
+                AuditLogger auditLogger,
                 CancellationToken token) =>
                     {
-                        var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                        if (string.IsNullOrEmpty(userClaim))
-                        {
-                            return Results.Unauthorized();
-                        }
-
+                        string uid = "unknown";
                         try
                         {
+                            var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                            if (string.IsNullOrEmpty(userClaim))
+                            {
+                                return Results.Unauthorized();
+                            }
+
                             var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                            var uid = userData.GetProperty("uid").GetString();
+                            uid = userData.GetProperty("uid").GetString();
 
                             if (string.IsNullOrEmpty(uid))
                             {
@@ -4078,10 +4208,21 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                                 isPublished,
                                 token);
 
+                            await auditLogger.LogAuditAsync(
+                                module: "Classified",
+                                httpMethod: "POST",
+                                apiEndpoint: "/api/classifieds/user-dashboard/bulk-action",
+                                message: $"{(isPublished ? "Published" : "Unpublished")} {adIds.Count} classified ads",
+                                createdBy: uid,
+                                payload: new { subVertical, adIds, isPublished },
+                                cancellationToken: token
+                                );
+
                             return TypedResults.Ok(result);
                         }
                         catch (InvalidOperationException ex)
                         {
+                            await auditLogger.LogExceptionAsync("Classified", "/api/classifieds/user-dashboard/bulk-action", ex, uid, token);
                             return TypedResults.Conflict(new ProblemDetails
                             {
                                 Title = isPublished ? "Publish Failed" : "Unpublish Failed",
@@ -4091,6 +4232,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         }
                         catch (Exception ex)
                         {
+                            await auditLogger.LogExceptionAsync("Classified", "/api/classifieds/user-dashboard/bulk-action", ex, uid, token);
                             return TypedResults.Problem(
                                 title: "Internal Server Error",
                                 detail: ex.Message,
@@ -4161,6 +4303,385 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
         .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
         .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
         .ExcludeFromDescription();
+
+
+            #region Wishlist
+            group.MapPost("wishlist/favourite", async Task<IResult> (
+                HttpContext httpContext,
+                WishlistCreateDto dto,
+                IClassifiedService service,
+                AuditLogger auditLogger,
+                CancellationToken token) =>
+            {
+                string? uid = null;
+                try
+                {
+                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                    if (string.IsNullOrEmpty(userClaim))
+                    {
+                        return Results.Unauthorized();
+                    }
+
+                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                    uid = userData.GetProperty("uid").GetString();
+
+                    if (string.IsNullOrEmpty(uid))
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "Authenticated user ID is missing or invalid.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    await service.Favourite(dto, uid, token);
+
+                    await auditLogger.LogAuditAsync(
+                        module: "Wishlist",
+                        httpMethod: "POST",
+                        apiEndpoint: "/api/wishlist/favourite",
+                        message: $"Item favourited successfully. AdId: {dto.AdId}",
+                        createdBy: uid,
+                        payload: dto,
+                        cancellationToken: token
+                    );
+
+                    return TypedResults.Ok(new { Message = "Added to favourites successfully." });
+                }
+                catch (ArgumentException ex)
+                {
+                    await auditLogger.LogExceptionAsync("Wishlist", "/api/wishlist/favourite", ex, uid, token);
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (Exception ex)
+                {
+                    await auditLogger.LogExceptionAsync("Wishlist", "/api/wishlist/favourite", ex, uid, token);
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+                .WithName("FavouriteWithAuthUser")
+                .WithTags("Wishlist")
+                .WithSummary("Add item to favourites for authenticated user")
+                .WithDescription("Takes user ID from JWT token and adds an item to the user's wishlist.")
+                .Produces(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
+                .RequireAuthorization();
+
+            group.MapPost("wishlist/favourite-by-id", async Task<IResult> (
+                WishlistCreateDto dto,
+                string userId,
+                IClassifiedService service,
+                CancellationToken token) =>
+            {
+                try
+                {
+                    if (string.IsNullOrEmpty(userId))
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "User ID must not be empty.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    await service.Favourite(dto, userId, token);
+
+                    return TypedResults.Ok(new { Message = "Added to favourites successfully." });
+                }
+                catch (ArgumentException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+                .WithName("FavouriteByExplicitUserId")
+                .WithTags("Wishlist")
+                .WithSummary("Add item to favourites using provided UserId")
+                .WithDescription("For admin/service scenarios where the UserId is passed explicitly.")
+                .Produces(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
+                .ExcludeFromDescription();
+
+            group.MapGet("wishlist/list", async Task<IResult> (
+                HttpContext httpContext,
+                Vertical vertical,
+                SubVertical subVertical,
+                IClassifiedService service,
+                AuditLogger auditLogger,
+                CancellationToken token) =>
+            {
+                string? uid = null;
+                try
+                {
+                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                    if (string.IsNullOrEmpty(userClaim))
+                    {
+                        return Results.Unauthorized();
+                    }
+
+                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                    uid = userData.GetProperty("uid").GetString();
+
+                    if (string.IsNullOrEmpty(uid))
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "Authenticated user ID is missing or invalid.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    var list = await service.GetAllByUserFavouriteList(uid, vertical, subVertical, token);
+
+                    await auditLogger.LogAuditAsync(
+                        module: "Wishlist",
+                        httpMethod: "GET",
+                        apiEndpoint: "/api/wishlist/list",
+                        message: $"Retrieved {list.Count} favourite items.",
+                        createdBy: uid,
+                        payload: new { Vertical = vertical, SubVertical = subVertical },
+                        cancellationToken: token
+                    );
+
+                    return TypedResults.Ok(list);
+                }
+                catch (ArgumentException ex)
+                {
+                    await auditLogger.LogExceptionAsync("Wishlist", "/api/wishlist/list", ex, uid, token);
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (Exception ex)
+                {
+                    await auditLogger.LogExceptionAsync("Wishlist", "/api/wishlist/list", ex, uid, token);
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+                .WithName("GetUserFavouriteList")
+                .WithTags("Wishlist")
+                .WithSummary("Get favourites for authenticated user")
+                .WithDescription("Retrieves the wishlist items for the authenticated user based on their JWT token.")
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
+                .RequireAuthorization();
+
+
+            group.MapGet("wishlist/list-by-id", async Task<IResult> (
+                string userId,
+                Vertical vertical,
+                SubVertical subVertical,
+                IClassifiedService service,
+                CancellationToken token) =>
+            {
+                try
+                {
+                    if (string.IsNullOrEmpty(userId))
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "User ID must not be empty.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    var list = await service.GetAllByUserFavouriteList(userId, vertical, subVertical, token);
+
+                    return TypedResults.Ok(list);
+                }
+                catch (ArgumentException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+                .WithName("GetUserFavouriteListById")
+                .WithTags("Wishlist")
+                .WithSummary("Get favourites using explicit UserId")
+                .WithDescription("Retrieves the wishlist items for the specified UserId. Intended for admin/service scenarios.")
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
+                .ExcludeFromDescription();
+
+
+
+            group.MapDelete("wishlist/unfavourite", async Task<IResult> (
+                HttpContext httpContext,
+                Vertical vertical,
+                SubVertical subVertical,
+                long adId,
+                IClassifiedService service,
+                AuditLogger auditLogger,
+                CancellationToken token) =>
+            {
+                string? uid = null;
+                try
+                {
+                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                    if (string.IsNullOrEmpty(userClaim))
+                    {
+                        return Results.Unauthorized();
+                    }
+
+                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                    uid = userData.GetProperty("uid").GetString();
+
+                    if (string.IsNullOrEmpty(uid))
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "Authenticated user ID is missing or invalid.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    var message = await service.UnFavourite(uid, vertical, subVertical, adId, token);
+
+                    await auditLogger.LogAuditAsync(
+                        module: "Wishlist",
+                        httpMethod: "DELETE",
+                        apiEndpoint: "/api/wishlist/unfavourite",
+                        message: message,
+                        createdBy: uid,
+                        payload: new { Vertical = vertical, SubVertical = subVertical, AdId = adId },
+                        cancellationToken: token
+                    );
+
+                    return TypedResults.Ok(new { Message = message });
+                }
+                catch (ArgumentException ex)
+                {
+                    await auditLogger.LogExceptionAsync("Wishlist", "/api/wishlist/unfavourite", ex, uid, token);
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (Exception ex)
+                {
+                    await auditLogger.LogExceptionAsync("Wishlist", "/api/wishlist/unfavourite", ex, uid, token);
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+                .WithName("UnFavouriteWithAuthUser")
+                .WithTags("Wishlist")
+                .WithSummary("Remove item from favourites for authenticated user")
+                .WithDescription("Takes user ID from JWT token and removes the specified item from the user's wishlist.")
+                .Produces(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
+                .RequireAuthorization();
+
+            group.MapDelete("wishlist/unfavourite-by-id", async Task<IResult> (
+                string userId,
+                Vertical vertical,
+                SubVertical subVertical,
+                long adId,
+                IClassifiedService service,
+                CancellationToken token) =>
+            {
+                try
+                {
+                    if (string.IsNullOrEmpty(userId))
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "User ID must not be empty.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    var message = await service.UnFavourite(userId, vertical, subVertical, adId, token);
+
+                    return TypedResults.Ok(new { Message = message });
+                }
+                catch (ArgumentException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+                .WithName("UnFavouriteByExplicitUserId")
+                .WithTags("Wishlist")
+                .WithSummary("Remove item from favourites using provided UserId")
+                .WithDescription("For admin/service scenarios where the UserId is passed explicitly.")
+                .Produces(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
+                .ExcludeFromDescription();
+
+
+
+            #endregion
 
             return group;
         }
@@ -4376,6 +4897,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             .ProducesProblem(StatusCodes.Status500InternalServerError);
             return group;
         }
+
+       
 
     }
 }

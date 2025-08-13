@@ -1,34 +1,38 @@
 using Microsoft.AspNetCore.Components;
-using System;
 using QLN.ContentBO.WebUI.Components.ToggleTabs;
 using QLN.ContentBO.WebUI.Models;
 using MudBlazor;
 using QLN.ContentBO.WebUI.Components.ConfirmationDialog;
 using QLN.ContentBO.WebUI.Components.RejectVerificationDialog;
+using QLN.ContentBO.WebUI.Components;
 
 namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved
 {
-    public partial class PrelovedSubscriptionTableBase : ComponentBase
+    public partial class PrelovedSubscriptionTableBase : QLComponentBase
     {
         [Inject] public IDialogService DialogService { get; set; }
+        [Parameter] public List<PrelovedSubscriptionItem> Listings { get; set; } = new();
+        [Parameter] public bool IsLoading { get; set; }
+        [Parameter] public bool IsEmpty { get; set; }
+        [Parameter] public int TotalCount { get; set; }
+        [Parameter] public EventCallback<int> OnPageChanged { get; set; }
+        [Parameter] public EventCallback<int> OnPageSizeChanged { get; set; }
 
-        [Parameter]
-        public List<SubscriptionListingModal> Listings { get; set; } = new();
+        protected List<ToggleTabs.TabOption> tabOptions =
+        [
+            new() { Label = "Pending Approval", Value = "pendingApproval" },
+            new() { Label = "Published", Value = "published" },
+            new() { Label = "Unpublished", Value = "unpublished" },
+            new() { Label = "P2P", Value = "p2p" },
+            new() { Label = "Promoted", Value = "promoted" },
+            new() { Label = "Featured", Value = "featured" }
+        ];
 
-        [Parameter]
-        public bool IsLoading { get; set; }
-        [Parameter]
-        public bool IsEmpty { get; set; }
-        protected HashSet<SubscriptionListingModal> SelectedListings { get; set; } = new();
+        protected HashSet<PrelovedSubscriptionItem> SelectedListings { get; set; } = new();
         protected int currentPage = 1;
         protected int pageSize = 12;
-        [Parameter]
-        public int TotalCount { get; set; }
-        [Parameter]
-        public EventCallback<int> OnPageChanged { get; set; }
 
-        [Parameter]
-        public EventCallback<int> OnPageSizeChanged { get; set; }
+        protected string selectedTab = "pendingApproval";
 
         protected async Task HandlePageChange(int newPage)
         {
@@ -43,19 +47,6 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved
             await OnPageSizeChanged.InvokeAsync(newSize);
         }
 
-
-
-        protected string selectedTab = "pendingApproval";
-
-        protected List<ToggleTabs.TabOption> tabOptions = new()
-        {
-            new() { Label = "Pending Approval", Value = "pendingApproval" },
-            new() { Label = "Published", Value = "published" },
-            new() { Label = "Unpublished", Value = "unpublished" },
-            new() { Label = "P2P", Value = "p2p" },
-            new() { Label = "Promoted", Value = "promoted" },
-            new() { Label = "Featured", Value = "featured" }
-        };
         protected async Task OnTabChanged(string newTab)
         {
             selectedTab = newTab;
@@ -69,6 +60,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved
             };
 
         }
+
         protected async Task ShowConfirmation(string title, string description, string buttonTitle, Func<Task> onConfirmedAction)
         {
             var parameters = new DialogParameters
@@ -86,11 +78,12 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved
                 FullWidth = true
             };
 
-            var dialog = DialogService.Show<ConfirmationDialog>("", parameters, options);
+            var dialog = await DialogService.ShowAsync<ConfirmationDialog>("", parameters, options);
             var result = await dialog.Result;
 
         }
-        private void OpenRejectDialog()
+
+        private async void OpenRejectDialog()
         {
             var parameters = new DialogParameters
             {
@@ -105,21 +98,18 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved
                 MaxWidth = MaxWidth.Small,
                 FullWidth = true
             };
-            var dialog = DialogService.Show<RejectVerificationDialog>("", parameters, options);
+            var dialog = await DialogService.ShowAsync<RejectVerificationDialog>("", parameters, options);
         }
 
-        [Inject]
-        public NavigationManager NavigationManager { get; set; } = default!;
-
-        protected void OnEdit(SubscriptionListingModal item)
+        protected void OnEdit(PrelovedSubscriptionItem item)
         {
-            var name = "Rashid";
-            NavigationManager.NavigateTo($"/manage/classified/deals/createform/{name}");
+            var name = item.UserName;
+            NavManager.NavigateTo($"/manage/classified/deals/createform/{name}");
         }
 
-        protected void OnPreview(SubscriptionListingModal item)
+        protected void OnPreview(PrelovedSubscriptionItem item)
         {
-            Console.WriteLine($"Preview clicked: {item.Id}");
+            Console.WriteLine($"Preview clicked: {item.AdId}");
         }
 
         protected Task ApproveSelected() => Task.Run(() => Console.WriteLine("Approved Selected"));
@@ -132,11 +122,13 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved
         protected Task Approve(SubscriptionListingModal item) => Task.Run(() => Console.WriteLine($"Approved: {item.Id}"));
         protected Task Publish(SubscriptionListingModal item) => Task.Run(() => Console.WriteLine($"Published: {item.Id}"));
         protected Task Unpublish(SubscriptionListingModal item) => Task.Run(() => Console.WriteLine($"Unpublished: {item.Id}"));
-        protected Task OnRemove(SubscriptionListingModal item) => Task.Run(() => Console.WriteLine($"Removed: {item.Id}"));
+        protected Task OnRemove(PrelovedSubscriptionItem item) => Task.Run(() => Console.WriteLine($"Removed: {item.AdId}"));
+        
         private void HandleRejection(string reason)
         {
             Console.WriteLine("Rejection Reason: " + reason);
         }
+
         protected Task RequestChanges(SubscriptionListingModal item)
         {
             Console.WriteLine($"Requested changes for: {item.Id}");
