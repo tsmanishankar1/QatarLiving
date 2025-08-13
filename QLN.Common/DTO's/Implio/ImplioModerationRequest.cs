@@ -14,7 +14,7 @@ namespace QLN.Common.DTO_s.Implio
         public required string Id { get; set; }
 
         [JsonPropertyName("customerSpecific")]
-        public ImplioCustomerSpecific? CustomerSpecific { get; set; } // not sure what can get populated into this field, so making it nullable
+        public Dictionary<string, string> CustomerSpecific { get; set; } = new Dictionary<string, string>();
 
         [JsonPropertyName("content")]
         public ImplioContent Content { get; set; }
