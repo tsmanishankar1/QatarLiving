@@ -248,7 +248,7 @@ namespace QLN.Backend.API.Service.Services
         {
             try
             {
-                var url = $"/api/service/getbyslug";
+                var url = $"/api/service/getbyslug/{Uri.EscapeDataString(slug)}";
                 return await _dapr.InvokeMethodAsync<object?, QLN.Common.Infrastructure.Model.Services>(
                     HttpMethod.Get,
                     ConstantValues.Services.ServiceAppId,
