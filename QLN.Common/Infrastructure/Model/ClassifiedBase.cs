@@ -18,6 +18,8 @@ namespace QLN.Common.Infrastructure.Model
         public AdTypeEnum AdType { get; set; }
         [Required, MaxLength(255)]
         public string Title { get; set; } = string.Empty;
+        [MaxLength(200)]
+        public string? Slug { get; set; }
         [MaxLength(255)]
         public string? Description { get; set; }
         public double? Price { get; set; }

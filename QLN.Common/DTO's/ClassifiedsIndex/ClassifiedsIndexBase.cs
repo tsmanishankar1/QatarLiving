@@ -16,6 +16,9 @@ namespace QLN.Common.DTO_s
         public string SubVertical { get; set; }
 
         [SearchableField(IsFilterable = true)]
+        public string? Slug { get; set; }
+
+        [SearchableField(IsFilterable = true)]
         public string AdType { get; set; }
 
         [SearchableField(IsFilterable = true, IsFacetable = true)]
