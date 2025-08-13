@@ -172,7 +172,8 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
             try
             {
-               
+                subscriptionId = Guid.Parse("5a024f96-7414-4473-80b8-f5d70297e262");
+
                 if (subscriptionId != Guid.Empty)
                 {
                     var canUse = await _subscriptionContext.ValidateSubscriptionUsageAsync(
@@ -955,7 +956,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-        public async Task<string> PromoteClassifiedAd(ClassifiedsPromoteDto dto, string userId, CancellationToken cancellationToken = default)
+        public async Task<string> PromoteClassifiedAd(ClassifiedsPromoteDto dto, string userId,Guid subscriptionid, CancellationToken cancellationToken = default)
         {
             if (dto.AdId <= 0)
             {
@@ -966,11 +967,13 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
             try
             {
-               
-                if (dto.subscriptionid != Guid.Empty)
+                subscriptionid = Guid.Parse("5a024f96-7414-4473-80b8-f5d70297e262");
+                
+
+                if (subscriptionid != Guid.Empty)
                 {
                     var canUse = await _subscriptionContext.ValidateSubscriptionUsageAsync(
-                        dto.subscriptionid,
+                        subscriptionid,
                         "Promote",
                         1,
                         cancellationToken
@@ -979,15 +982,15 @@ namespace QLN.Backend.API.Service.ClassifiedService
                     if (!canUse)
                     {
                         _log.LogWarning(
-                            "Subscription {SubscriptionId} has insufficient quota for promotion.", GuidToLong(dto.subscriptionid)
+                            "Subscription {SubscriptionId} has insufficient quota for promotion.", GuidToLong(subscriptionid)
                         );
                         throw new InvalidOperationException("Insufficient subscription quota for promotion.");
                     }
                 }
 
-                // --- 2. Call internal service via Dapr ---
+               
                 var subVerticalStr = ((int)dto.SubVertical).ToString();
-                var url = $"/api/classifieds/promoted/{userId}/{dto.AdId}?subVertical={subVerticalStr}";
+                var url = $"/api/classifieds/promoted/{userId}/{dto.AdId}?subVertical={subVerticalStr}&subscriptionId={subscriptionid}";
                 var serviceRequest = _dapr.CreateInvokeMethodRequest(HttpMethod.Put, SERVICE_APP_ID, url);
                 serviceRequest.Content = new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
 
@@ -1020,10 +1023,10 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 }
 
                 
-                if (dto.subscriptionid != Guid.Empty)
+                if (subscriptionid != Guid.Empty)
                 {
                     var success = await _subscriptionContext.RecordSubscriptionUsageAsync(
-                        dto.subscriptionid,
+                        subscriptionid,
                         "Promote",
                         1,
                         cancellationToken
@@ -1033,7 +1036,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                     {
                         _log.LogWarning(
                             "Failed to record subscription usage for SubscriptionId {SubscriptionId}",
-                           GuidToLong(dto.subscriptionid)
+                           GuidToLong(subscriptionid)
                         );
                     }
                 }
@@ -1080,7 +1083,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
 
 
-        public async Task<string> FeatureClassifiedAd(ClassifiedsPromoteDto dto, string userId, CancellationToken cancellationToken = default)
+        public async Task<string> FeatureClassifiedAd(ClassifiedsPromoteDto dto, string userId, Guid subscriptionId, CancellationToken cancellationToken = default)
         {
             if (dto.AdId <= 0)
             {
@@ -1091,11 +1094,12 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
             try
             {
-                
-                if (dto.subscriptionid != Guid.Empty)
+               var subscriptionid = Guid.Parse("5a024f96-7414-4473-80b8-f5d70297e262");
+
+                if (subscriptionid != Guid.Empty)
                 {
                     var canUse = await _subscriptionContext.ValidateSubscriptionUsageAsync(
-                        dto.subscriptionid,
+                        subscriptionid,
                         "feature",
                         1,
                         cancellationToken
@@ -1105,7 +1109,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                     {
                         _log.LogWarning(
                             "Subscription {SubscriptionId} has insufficient quota for feature.",
-                            GuidToLong(dto.subscriptionid)
+                            GuidToLong(subscriptionid)
                         );
                         throw new InvalidOperationException("Insufficient subscription quota for feature.");
                     }
@@ -1120,7 +1124,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 var queryString = "?" + string.Join("&", queryParams.Select(kv =>
                     $"{Uri.EscapeDataString(kv.Key)}={Uri.EscapeDataString(kv.Value)}"));
 
-                var url = $"/api/classifieds/featured/{queryString}";
+                var url = $"/api/classifieds/featured/{queryString}&subscriptionId={subscriptionid}";
 
 
 
@@ -1159,10 +1163,10 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 }
 
                 
-                if (dto.subscriptionid != Guid.Empty)
+                if (subscriptionid != Guid.Empty)
                 {
                     var success = await _subscriptionContext.RecordSubscriptionUsageAsync(
-                        dto.subscriptionid,
+                        subscriptionid,
                         "feature",
                         1,
                         cancellationToken
@@ -1172,7 +1176,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                     {
                         _log.LogWarning(
                             "Failed to record subscription usage for SubscriptionId {SubscriptionId}",
-                            GuidToLong(dto.subscriptionid)
+                            GuidToLong(subscriptionid)
                         );
                     }
                 }
@@ -1306,7 +1310,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
         {
             throw new NotImplementedException();
         }
-
+          
         public Task<string> MigrateClassifiedCollectiblesAd(Collectibles dto, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();

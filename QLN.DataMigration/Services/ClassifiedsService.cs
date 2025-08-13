@@ -77,7 +77,7 @@ namespace QLN.DataMigration.Services
             throw new NotImplementedException();
         }
 
-        public Task<string> FeatureClassifiedAd(ClassifiedsPromoteDto dto, string userId, CancellationToken cancellationToken)
+        public Task<string> FeatureClassifiedAd(ClassifiedsPromoteDto dto, string userId,Guid subscriptionid, CancellationToken cancellationToken)
         {
             throw new NotImplementedException();
         }
@@ -218,6 +218,16 @@ namespace QLN.DataMigration.Services
         }
 
         public Task<AdCreatedResponseDto> RefreshClassifiedItemsAd(SubVertical subVertical, long adId, string userId, Guid subscriptionId, CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<string> FeatureClassifiedAd(ClassifiedsPromoteDto dto, string userId, CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<string> PromoteClassifiedAd(ClassifiedsPromoteDto dto, string userId, Guid subscriptionid, CancellationToken cancellationToken)
         {
             throw new NotImplementedException();
         }

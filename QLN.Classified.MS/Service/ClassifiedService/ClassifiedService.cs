@@ -48,18 +48,20 @@ namespace QLN.Classified.MS.Service
         private const string DealsCategoryIndexKey = ConstantValues.StateStoreNames.DealsCategoryIndexKey;
         private readonly QLClassifiedContext _context;
         private readonly QLCompanyContext _companyContext;
+        private readonly QLSubscriptionContext _subscriptionContext;
 
         private readonly ILogger<ClassifiedService> _logger;
         private readonly string itemJsonPath = Path.Combine("ClassifiedMockData", "itemsAdsMock.json");
         private readonly string prelovedJsonPath = Path.Combine("ClassifiedMockData", "prelovedAdsMock.json");
         private readonly string CollectablesonPath = Path.Combine("ClassifiedMockData", "collectables.json");
-        public ClassifiedService(Dapr.Client.DaprClient dapr, ILogger<ClassifiedService> logger, IWebHostEnvironment env, QLClassifiedContext context, QLCompanyContext companyContext)
+        public ClassifiedService(Dapr.Client.DaprClient dapr, ILogger<ClassifiedService> logger, IWebHostEnvironment env, QLClassifiedContext context, QLCompanyContext companyContext, QLSubscriptionContext subscriptionContext)
         {
             _dapr = dapr ?? throw new ArgumentNullException(nameof(dapr));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _env = env;
             _context = context;
             _companyContext = companyContext;
+            _subscriptionContext = subscriptionContext;
         }
 
         public async Task<bool> SaveSearchById(SaveSearchRequestByIdDto dto, CancellationToken cancellationToken = default)
@@ -266,6 +268,8 @@ namespace QLN.Classified.MS.Service
 
             try
             {
+                subscriptionId = Guid.Parse("5a024f96-7414-4473-80b8-f5d70297e262");
+                //var subcription = await _subscriptionContext.Subscriptions.AsNoTracking().FirstOrDefaultAsync(s => s.SubscriptionId == subscriptionid,cancellationToken);
                 string? adTitle;
 
                 object? adItem = subVertical switch
@@ -2054,10 +2058,12 @@ namespace QLN.Classified.MS.Service
         }
         #endregion
                
-        public async Task<string> FeatureClassifiedAd(ClassifiedsPromoteDto dto, string userId, CancellationToken cancellationToken)
+        public async Task<string> FeatureClassifiedAd(ClassifiedsPromoteDto dto, string userId,Guid subscriptionId, CancellationToken cancellationToken)
         {
             try
             {
+                 var subscriptionid = Guid.Parse("5a024f96-7414-4473-80b8-f5d70297e262");
+               // var subcription = await _subscriptionContext.Subscriptions.AsNoTracking().FirstOrDefaultAsync(s => s.SubscriptionId == subscriptionId, cancellationToken);
                 if (dto is null) throw new ArgumentNullException(nameof(dto));
                 if (dto.AdId <= 0) throw new ArgumentException("AdId must be a positive number.", nameof(dto.AdId));
                 if (string.IsNullOrWhiteSpace(userId)) throw new ArgumentException("UserId must not be empty.", nameof(userId));
@@ -2191,12 +2197,15 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-        public async Task<string> PromoteClassifiedAd(ClassifiedsPromoteDto dto, string userId, CancellationToken cancellationToken)
+        public async Task<string> PromoteClassifiedAd(ClassifiedsPromoteDto dto, string userId, Guid subscriptionid, CancellationToken cancellationToken)
         {
             _logger.LogInformation("PromoteClassifiedAd called. SubVertical: {SubVertical}, AdId: {AdId}, UserId: {UserId}", dto.SubVertical, dto.AdId, userId);
 
             try
             {
+                subscriptionid = Guid.Parse("5a024f96-7414-4473-80b8-f5d70297e262");
+                //var subcription = await _subscriptionContext.Subscriptions.AsNoTracking().FirstOrDefaultAsync(s => s.SubscriptionId == subscriptionid,cancellationToken);
+                
                 object? adItem = null;
 
                 _logger.LogDebug("Fetching ad from database for SubVertical: {SubVertical}", dto.SubVertical);

@@ -55,7 +55,7 @@ namespace QLN.Common.Infrastructure.IService
      List<long> adIds,
      bool isPublished,
      CancellationToken cancellationToken = default);
-        Task<string> FeatureClassifiedAd(ClassifiedsPromoteDto dto, string userId, CancellationToken cancellationToken);
-        Task<string> PromoteClassifiedAd(ClassifiedsPromoteDto dto, string userId, CancellationToken cancellationToken);
+        Task<string> FeatureClassifiedAd(ClassifiedsPromoteDto dto, string userId,Guid subscriptionid, CancellationToken cancellationToken);
+        Task<string> PromoteClassifiedAd(ClassifiedsPromoteDto dto, string userId,Guid subscriptionid, CancellationToken cancellationToken);
     }
 }

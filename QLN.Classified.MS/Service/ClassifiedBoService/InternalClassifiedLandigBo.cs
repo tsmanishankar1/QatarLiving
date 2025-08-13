@@ -1142,12 +1142,14 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
             }
         }
 
-        public async Task<string> BulkItemsAction(BulkActionRequest request, string userId, CancellationToken ct)
+        public async Task<string> BulkItemsAction(BulkActionRequest request, string userId,  CancellationToken ct)
         {
-            // Fetch all ads in one query instead of looping and hitting DB individually
+            
             var ads = await _context.Item
                 .Where(ad => request.AdIds.Contains(ad.Id) && ad.IsActive == true)
                 .ToListAsync(ct);
+
+           
 
             if (!ads.Any())
             {
@@ -1167,6 +1169,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                         {
                             ad.Status = AdStatus.Published;
                             shouldUpdate = true;
+                            ad.UpdatedAt = DateTime.UtcNow;
                         }
                         else
                         {
@@ -1179,6 +1182,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                         {
                             ad.Status = AdStatus.NeedsModification;
                             shouldUpdate = true;
+                            ad.UpdatedAt = DateTime.UtcNow;
                         }
                         else
                         {
@@ -1191,6 +1195,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                         {
                             ad.Status = AdStatus.Published;
                             shouldUpdate = true;
+                            ad.UpdatedAt = DateTime.UtcNow;
                         }
                         else
                         {
@@ -1203,6 +1208,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                         {
                             ad.Status = AdStatus.Unpublished;
                             shouldUpdate = true;
+                            ad.UpdatedAt = DateTime.UtcNow;
                         }
                         else
                         {
@@ -1215,6 +1221,8 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                         {
                             ad.IsPromoted = false;
                             shouldUpdate = true;
+                            ad.UpdatedAt = DateTime.UtcNow;
+                            
                         }
                         else
                         {
@@ -1227,6 +1235,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                         {
                             ad.IsFeatured = false;
                             shouldUpdate = true;
+                            ad.UpdatedAt = DateTime.UtcNow;
                         }
                         else
                         {
@@ -1239,6 +1248,8 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                         {
                             ad.IsPromoted = true;
                             shouldUpdate = true;
+                            ad.UpdatedAt = DateTime.UtcNow;
+                            ad.PromotedExpiryDate = DateTime.UtcNow;
                         }
                         else
                         {
@@ -1251,6 +1262,8 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                         {
                             ad.IsFeatured = true;
                             shouldUpdate = true;
+                            ad.UpdatedAt = DateTime.UtcNow;
+                            ad.FeaturedExpiryDate = DateTime.UtcNow;
                         }
                         else
                         {
