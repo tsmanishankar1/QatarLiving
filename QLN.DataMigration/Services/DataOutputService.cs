@@ -27,7 +27,6 @@
         private readonly IV2NewsService _newsService;
         private readonly IV2CommunityPostService _communityPostService;
         private readonly IClassifiedService _classifiedsService;
-        private readonly IV2ReportsService _reportsService;
         private readonly DaprClient _daprClient;
 
         public DataOutputService(
@@ -35,7 +34,6 @@
             IV2EventService eventService,
             IV2NewsService newsService,
             IV2CommunityPostService communityPostService,
-            IV2ReportsService reportsService,
             DaprClient daprClient
             )
         {
@@ -43,7 +41,6 @@
             _eventService = eventService;
             _newsService = newsService;
             _communityPostService = communityPostService;
-            _reportsService = reportsService;
             _daprClient = daprClient;
         }
 
