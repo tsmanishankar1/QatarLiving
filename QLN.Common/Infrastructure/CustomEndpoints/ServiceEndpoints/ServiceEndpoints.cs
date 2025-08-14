@@ -655,7 +655,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
 
             return group;
         }
-
         public static RouteGroupBuilder MapDetailedGetByIdEndpoint(this RouteGroupBuilder group)
         {
             group.MapGet("/getbyserviceid/{id:long}", async Task<Results<

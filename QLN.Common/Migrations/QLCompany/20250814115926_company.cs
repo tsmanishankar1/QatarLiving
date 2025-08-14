@@ -8,7 +8,7 @@ using QLN.Common.DTO_s;
 namespace QLN.Common.Migrations.QLCompany
 {
     /// <inheritdoc />
-    public partial class Company : Migration
+    public partial class company : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -50,11 +50,15 @@ namespace QLN.Common.Migrations.QLCompany
                     BusinessDescription = table.Column<string>(type: "character varying(300)", maxLength: 300, nullable: false),
                     CRNumber = table.Column<int>(type: "integer", nullable: false),
                     CRDocument = table.Column<string>(type: "character varying(150)", maxLength: 150, nullable: false),
+                    UploadFeed = table.Column<string>(type: "character varying(150)", maxLength: 150, nullable: false),
+                    XMLFeed = table.Column<string>(type: "character varying(150)", maxLength: 150, nullable: false),
+                    CompanyVerificationStatus = table.Column<int>(type: "integer", nullable: true),
                     Status = table.Column<int>(type: "integer", nullable: true),
                     Vertical = table.Column<int>(type: "integer", nullable: false),
                     SubVertical = table.Column<int>(type: "integer", nullable: true),
                     UserId = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
                     IsBasicProfile = table.Column<bool>(type: "boolean", nullable: true),
+                    Slug = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false, defaultValue: true),
                     CreatedBy = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     CreatedUtc = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "now() at time zone 'utc'"),

@@ -123,6 +123,9 @@ namespace QLN.Common.Infrastructure.Model
 
         public bool? IsBasicProfile { get; set; }
 
+        [MaxLength(200)]
+        public string? Slug { get; set; }
+
         public bool IsActive { get; set; } = true;
 
         [Required, MaxLength(100)]

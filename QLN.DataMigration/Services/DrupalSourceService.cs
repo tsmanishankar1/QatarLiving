@@ -85,7 +85,7 @@
             }
         }
 
-        public async Task<DrupalItemsCategories?> GetCategoriesAsync(string environment, CancellationToken cancellationToken)
+        public async Task<DrupalItemsMobileDevices?> GetMobileDevicesAsync(string environment, CancellationToken cancellationToken)
         {
 
             var formData = new List<KeyValuePair<string, string>>
@@ -110,7 +110,7 @@
 
             try
             {
-                var categories = JsonSerializer.Deserialize<DrupalItemsCategories>(json, new JsonSerializerOptions
+                var categories = JsonSerializer.Deserialize<DrupalItemsMobileDevices>(json, new JsonSerializerOptions
                 {
                     PropertyNameCaseInsensitive = true
                 });
@@ -152,7 +152,7 @@
             page ??= 1;
             page_size ??= 30;
 
-            string requestUri = $"{DrupalContentConstants.CommunityPath}?page={page}&page_size={page_size}";
+            string requestUri = $"{DrupalContentConstants.CommunityMigrationPath}?page={page}&page_size={page_size}";
 
             return await _httpClient.GetFromJsonAsync<CommunitiesResponse>(requestUri, cancellationToken);
         }
@@ -171,6 +171,22 @@
 
 
             return await _httpClient.GetFromJsonAsync<ArticleResponse>(requestUri, cancellationToken);
+        }
+
+        public async Task<GetCommentsResponse?> GetCommentsByIdAsync(
+            string postId,
+            CancellationToken cancellationToken,
+            int? page = null,
+            int? page_size = null
+            )
+        {
+            page ??= 1;
+            page_size ??= 30;
+
+            string requestUri = $"{DrupalContentConstants.CommentsGetPath}/{postId}?page={page}&page_size={page_size}";
+
+
+            return await _httpClient.GetFromJsonAsync<GetCommentsResponse>(requestUri, cancellationToken);
         }
     }
 }

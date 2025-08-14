@@ -580,9 +580,5 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw new InvalidDataException($"Unexpected error: {ex.Message}", ex);
             }
         }
-
-
-
-
     }
 }

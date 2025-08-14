@@ -519,7 +519,7 @@ namespace QLN.Classified.MS.Service.Services
                     );
                 }
 
-                await _dapr.PublishEventAsync("pubsub", "notifications-email", new NotificationRequest
+                await _dapr.PublishEventAsync("pubsub", "notifications-email", new NotificationEntity
                 {
                     Destinations = new List<string> { "email" },
                     Recipients = new List<RecipientDto>

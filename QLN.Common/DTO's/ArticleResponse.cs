@@ -44,6 +44,9 @@ namespace QLN.Common.DTO_s
 
         [JsonPropertyName("description")]
         public string Description { get; set; }
+
+        [JsonPropertyName("comment_count")]
+        public string CommentCount { get; set; }
     }
 
     public class ArticleResponse
