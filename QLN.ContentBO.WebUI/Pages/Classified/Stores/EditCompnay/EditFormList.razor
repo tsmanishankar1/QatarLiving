@@ -9,21 +9,30 @@
         <MudTextField Class="white-bg mt-4" Variant="Variant.Outlined" T="string" Label="Company Name"
             @bind-Value="Company.CompanyName" For="@(() => Company.CompanyName)" FullWidth="true" />
 
-        <MudSelect @bind-Value="Company.Country" T="string" Variant="Variant.Outlined" Label="Country" FullWidth="true"
-            Class="white-bg" SearchFunc="@SearchCountries" ToStringFunc="@(c => c)" Clearable="true">
-
-            @foreach (var country in FilteredCountries)
-            {
-                <MudSelectItem T="string" Value="@country">@country</MudSelectItem>
-            }
+       <MudSelect T="string"
+              Class="white-bg mt-2"
+           Label="Select Country"
+           Variant="Variant.Outlined"
+           Value="@selectedCountry"
+           ValueChanged="OnCountryChanged"
+           Searchable="true"
+           SearchFunc="@((string searchTerm) =>
+               countries
+                   .Where(c => string.IsNullOrWhiteSpace(searchTerm) 
+                            || c.Country_Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
+                   .Select(c => c.Country_Name)
+           )">
+        @foreach (var country in countries)
+        {
+            <MudSelectItem Value="@country.Country_Name">@country.Country_Name</MudSelectItem>
+        }
         </MudSelect>
-        <MudSelect @bind-Value="Company.City" T="string" Variant="Variant.Outlined" Label="City" FullWidth="true"
-            Class="white-bg" ToStringFunc="@(c => c)" Clearable="true">
 
-            @foreach (var country in FilteredCountries)
-            {
-                <MudSelectItem T="string" Value="@country">@country</MudSelectItem>
-            }
+        <MudSelect Class="white-bg mt-2" T="string" Variant="Variant.Outlined"  Label="Select City" Value="@selectedCity" Disabled="@(!filteredCities.Any())">
+        @foreach (var city in filteredCities)
+        {
+             <MudSelectItem Value="@city.City">@city.City</MudSelectItem>
+        }
         </MudSelect>
 
 
@@ -34,9 +43,9 @@
             <ActivatorContent>
                 <div class="cover-upload-wrapper">
                     <div class="cover-upload-box">
-                        @if (!string.IsNullOrEmpty(Company.CoverImage1))
+                        @if (!string.IsNullOrEmpty(tempCoverImage))
                         {
-                            <img src="@Company.CoverImage1" alt="Cover Image Preview" class="cover-image-preview" />
+                            <img src="@tempCoverImage" alt="Cover Image Preview" class="cover-image-preview" />
                         }
                         else
                         {
@@ -46,7 +55,7 @@
                             <MudText Class="upload-text">Upload image</MudText>
                         }
 
-                        @if (!string.IsNullOrEmpty(Company.CoverImage1))
+                        @if (!string.IsNullOrEmpty(tempCoverImage))
                         {
                             <div class="cover-logo-overlay">
                                 <MudIconButton Class="logo-action">
@@ -81,13 +90,13 @@
         <MudTextField Class="white-bg mt-2" Variant="Variant.Outlined" T="string" Label="Email"
             @bind-Value="Company.Email" For="@(() => Company.Email)" FullWidth="true" />
 
-        <MudTextField Class="white-bg mt-2" Variant="Variant.Outlined" T="string" Placeholder="Website URL"
+        <MudTextField Class="white-bg mt-2" Variant="Variant.Outlined" T="string" Label="Website URL"
             @bind-Value="Company.WebsiteUrl" For="@(() => Company.WebsiteUrl)" FullWidth="true" />
 
-        <MudTextField Class="white-bg mt-2" Variant="Variant.Outlined" T="string" Placeholder="Facebook URL"
+        <MudTextField Class="white-bg mt-2" Variant="Variant.Outlined" T="string" Label="Facebook URL"
             @bind-Value="Company.FacebookUrl" For="@(() => Company.FacebookUrl)" FullWidth="true" />
 
-        <MudTextField Class="white-bg mt-2" Variant="Variant.Outlined" T="string" Placeholder="Instagram URL"
+        <MudTextField Class="white-bg mt-2" Variant="Variant.Outlined" T="string" Label="Instagram URL"
             @bind-Value="Company.InstagramUrl" For="@(() => Company.InstagramUrl)" FullWidth="true" />
 
         <h3 class="form-heading form-padding">Operating Hours</h3>
@@ -123,20 +132,7 @@
                     AmPm="true" />
             </MudItem>
         </MudGrid>
-        @* <MudSelect T="int" Label="Nature of Business" MultiSelection="true" @bind-SelectedValues="NatureOfBusinesValues"
-            SearchFunc="SearchNatureOfBusiness" Dense="true" Variant="Variant.Outlined">
-            @foreach (var option in NatureOfBusinessOptions)
-            {
-                <MudSelectItem T="int" Value="@option.Key">@option.Value</MudSelectItem>
-            }
-        </MudSelect> *@
-        @* <MudSelect T="double" Label="Price (Datatype: double)" MultiSelection="true"
-           @bind-SelectedValues="SelectedPrices" Clearable="true" Required="true">
-    @foreach (var price in prices)
-    {
-        <MudSelectItem T="double" Value="@price">@price</MudSelectItem>
-    }
-</MudSelect> *@
+       
         @foreach (var field in CompanyProfileOptions)
         {
             <MudSelect T="int" Class="white-bg" Variant="Variant.Outlined" Label="@field.Key"

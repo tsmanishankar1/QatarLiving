@@ -4,7 +4,8 @@ using QLN.ContentBO.WebUI.Models;
 using QLN.ContentBO.WebUI.Components.SuccessModal;
 using Microsoft.AspNetCore.Components.Forms;
 using QLN.ContentBO.WebUI.Interfaces;
-using System.Net;          
+using System.Net;   
+using System.Text.Json;
 using System.Net.Http;
 using MudBlazor;
 
@@ -65,24 +66,41 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.EditCompnay
         {
             LocalLogoBase64 = fileOrBase64;
         }
-        protected async Task SubmitForm()
+        protected async Task SubmitForm(CompanyProfileItem company)
         {
             try
             {
+
                 if (IsBase64String(LocalLogoBase64))
                 {
-                    CompanyDetails.CompanyLogo = await UploadImageAsync(LocalLogoBase64);
+                    company.CompanyLogo = await UploadImageAsync(LocalLogoBase64);
                 }
-                var response = await ClassifiedService.UpdateCompanyProfile(CompanyDetails);
-                Console.WriteLine($"Status Code: {response.StatusCode}");
-
-                // Print raw content as string
-                var content = await response.Content.ReadAsStringAsync();
-                Console.WriteLine("Response Content:");
-                Console.WriteLine(content);
+                var response = await ClassifiedService.UpdateCompanyProfile(company);
                 if (response != null && response.IsSuccessStatusCode)
                 {
                     await ShowSuccessModal("Company Updated Successfully");
+                }
+                else if (response.StatusCode == HttpStatusCode.BadRequest)
+                {
+                    var errorDetailJson = await response.Content.ReadAsStringAsync();
+
+                    try
+                    {
+                        var errorObj = JsonSerializer.Deserialize<Dictionary<string, object>>(errorDetailJson);
+                        if (errorObj != null && errorObj.ContainsKey("detail"))
+                        {
+                            Snackbar.Add(errorObj["detail"]?.ToString() ?? "Bad Request", Severity.Error);
+                        }
+                        else
+                        {
+                            Snackbar.Add("Bad Request", Severity.Error);
+                        }
+                    }
+                    catch
+                    {
+                        Snackbar.Add("Bad Request", Severity.Error);
+                    }
+    
                 }
                 else if (response.StatusCode == HttpStatusCode.Unauthorized)
                 {
@@ -93,7 +111,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.EditCompnay
                     Snackbar.Add("Internal API Error");
                 }
                 else
-                { 
+                {
                     Snackbar.Add("Failed to update company profile", Severity.Error);
                 }
 

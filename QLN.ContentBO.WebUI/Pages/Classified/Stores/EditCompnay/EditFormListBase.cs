@@ -19,9 +19,15 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.EditCompnay
         [Parameter] public CompanyProfileItem Company { get; set; } = new();
         [Inject] private IJSRuntime JS { get; set; }
         protected MudExRichTextEdit Editor;
+        protected List<CountryTypeModel> countries = new();
+        protected List<CityTypeModel> allCities = new();
+        protected List<CityTypeModel> filteredCities = new();
+        protected string selectedCountry;
+        protected string selectedCity;
         [Parameter]
-        public EventCallback OnSubmitForm { get; set; }
+        public EventCallback<CompanyProfileItem> OnSubmitForm { get; set; }
         public string tempCoverImage { get; set; } = string.Empty;
+        public string? tempCoverBase64Image { get; set; } = null;
         public string tempLicense { get; set; } = string.Empty;
         protected List<string> DaysOfWeek = new()
         {
@@ -72,6 +78,9 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.EditCompnay
         {
             try
             {
+                countries = await LoadCountriesAsync();
+                allCities = await LoadCitiesAsync();
+                filteredCities = allCities;
                 CompanyProfileOptions = new Dictionary<string, List<(int, string)>>()
         {
             { "Company Size", GetEnumOptions<CompanySize>() },
@@ -88,10 +97,6 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.EditCompnay
                         SelectedProfileValues[key] = 0;
                     }
                 }
-
-
-                Countries = await FetchCountryNamesAsync();
-                FilteredCountries = Countries;
             }
             catch (Exception ex)
             {
@@ -103,11 +108,31 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.EditCompnay
             if (Company != null)
             {
                 tempCoverImage = Company.CoverImage1 ?? string.Empty;
+                tempCoverBase64Image = Company.CoverImage1 ?? string.Empty;
                 tempLicense = Company.CrDocument ?? string.Empty;
+                selectedCountry = Company.Country ?? string.Empty;
+                selectedCity = Company.City ?? string.Empty;
+                 var selectedCountryObj = countries
+                ?.FirstOrDefault(c => c.Country_Name.Equals(selectedCountry, StringComparison.OrdinalIgnoreCase));
+            filteredCities = allCities
+                .Where(c => c.Country_Id == selectedCountryObj?.Id)
+                .ToList();
                 SelectedProfileValues["Company Size"] = Company.CompanySize;
                 SelectedProfileValues["Company Type"] = Company.CompanyType;
             }
         }
+        protected void OnCountryChanged(string country)
+        {
+            selectedCountry = country;
+            var selectedCountryObj = countries
+                ?.FirstOrDefault(c => c.Country_Name.Equals(country, StringComparison.OrdinalIgnoreCase));
+            filteredCities = allCities
+                .Where(c => c.Country_Id == selectedCountryObj?.Id)
+                .ToList();
+        }
+
+
+
         protected bool SearchNatureOfBusiness(string searchText, int optionValue)
         {
             if (string.IsNullOrWhiteSpace(searchText))
@@ -140,17 +165,6 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.EditCompnay
                        .ToList();
         }
 
-        protected Task<IEnumerable<string>> SearchCountries(string value)
-        {
-            if (string.IsNullOrWhiteSpace(value))
-                FilteredCountries = Countries;
-            else
-                FilteredCountries = Countries
-                    .Where(c => c.Contains(value, StringComparison.OrdinalIgnoreCase))
-                    .ToList();
-
-            return Task.FromResult(FilteredCountries.AsEnumerable());
-        }
 
         protected string ShortFileName(string name, int max)
         {
@@ -275,7 +289,6 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.EditCompnay
             tempLicense = Convert.ToBase64String(ms.ToArray());
         }
 
-        protected List<string> Countries = new();
 
         public Dictionary<string, List<string>> FieldOptions { get; set; } = new()
         {
@@ -305,20 +318,21 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.EditCompnay
                 Snackbar.Add("Phone number is required.", Severity.Error);
                 return;
             }
-             if (IsBase64String(tempCoverImage))
-                {
-                    Company.CompanyLogo = await UploadImageAsync(tempCoverImage);
-                }
-                if (IsBase64String(tempLicense))
-                {
+             if (!string.IsNullOrEmpty(tempCoverBase64Image) && IsBase64String(tempCoverBase64Image))
+            {
+                Snackbar.Add("It is base 64", Severity.Error);
+                    Company.CoverImage1 = await UploadImageAsync(tempCoverBase64Image);
+            }
+            if (IsBase64String(tempLicense))
+            {
                     Company.CrDocument = await UploadCertificateAsync();
-                }
+            }
 
 
 
             if (OnSubmitForm.HasDelegate)
             {
-                await OnSubmitForm.InvokeAsync();
+                await OnSubmitForm.InvokeAsync(Company);
             }
         }
         private async Task<string?> UploadImageAsync(string fileOrBase64, string containerName = "services-images")
@@ -357,43 +371,38 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.EditCompnay
                 using var stream = file.OpenReadStream(5 * 1024 * 1024);
                 using var memoryStream = new MemoryStream();
                 await stream.CopyToAsync(memoryStream);
-                var base64 = Convert.ToBase64String(memoryStream.ToArray());
-                Company.CoverImage1 = $"data:{file.ContentType};base64,{base64}";
+                tempCoverBase64Image = Convert.ToBase64String(memoryStream.ToArray());
+                tempCoverImage = $"data:{file.ContentType};base64,{tempCoverBase64Image}";
+
                 _coverImageError = null;
             }
         }
-        private async Task<List<string>> FetchCountryNamesAsync()
+        private async Task<List<CountryTypeModel>> LoadCountriesAsync()
         {
-            try
+            var baseUri = Navigation.BaseUri;
+            var json = await Http.GetStringAsync($"{baseUri}data/country.json");
+            var countries = JsonSerializer.Deserialize<List<CountryTypeModel>>(json, new JsonSerializerOptions
             {
-                var baseUri = Navigation.BaseUri;
-                var json = await Http.GetStringAsync($"{baseUri}data/countries.json");
+                PropertyNameCaseInsensitive = true
+            });
 
-                var countriesJson = JsonSerializer.Deserialize<List<JsonElement>>(json);
-                var countryNames = new List<string>();
-
-                foreach (var country in countriesJson!)
-                {
-                    if (country.TryGetProperty("name", out var nameDict) &&
-                        nameDict.TryGetProperty("common", out var nameElement))
-                    {
-                        string name = nameElement.GetString() ?? "Unknown";
-                        countryNames.Add(name);
-                    }
-                }
-                countryNames.Sort();
-                return countryNames;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error loading countries: {ex.Message}");
-                return new List<string>();
-            }
+            return countries ?? new List<CountryTypeModel>();
         }
+        private async Task<List<CityTypeModel>> LoadCitiesAsync()
+        {
+            var baseUri = Navigation.BaseUri;
+            var json = await Http.GetStringAsync($"{baseUri}data/city.json");
+            var countries = JsonSerializer.Deserialize<List<CityTypeModel>>(json, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
 
+            return countries ?? new List<CityTypeModel>();
+        }
         protected void RemoveCoverImage()
         {
             Company.CoverImage1 = null;
+            tempCoverBase64Image = tempCoverImage;
             StateHasChanged();
         }
 
