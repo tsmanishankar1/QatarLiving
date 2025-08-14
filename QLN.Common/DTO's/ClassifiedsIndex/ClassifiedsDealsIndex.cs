@@ -19,6 +19,8 @@ namespace QLN.Common.DTO_s
 
         [SearchableField]
         public string? BranchNames { get; set; }
+        [SearchableField]
+        public string? Slug { get; set; }
 
         [SearchableField(IsFilterable = true)]
         public string? BusinessType { get; set; }        
