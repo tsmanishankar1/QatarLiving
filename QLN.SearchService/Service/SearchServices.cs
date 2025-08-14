@@ -107,6 +107,12 @@ namespace QLN.SearchService.Service
                        regularFilters, jsonFilters,
                        (response, items) => response.ContentCommunityItems = items),
 
+                    ConstantValues.IndexNames.CompanyProfileIndex => await HandleSearchWithJsonFilters<CompanyProfileIndex>(
+                       indexName, req,
+                       new List<string> { "IsActive eq true" },
+                       regularFilters, jsonFilters,
+                       (response, items) => response.CompanyProfile = items),
+
                     _ => throw new NotSupportedException($"Unknown indexName '{indexName}'")
                 };
             }
@@ -259,6 +265,11 @@ namespace QLN.SearchService.Service
                        new List<string> { "IsActive eq true" },
                        regularFilters, jsonFilters,
                        (response, items) => response.ContentCommunityItems = items),
+                    ConstantValues.IndexNames.CompanyProfileIndex => await HandleSearchWithJsonFilters<CompanyProfileIndex>(
+                       indexName, req,
+                       new List<string> { "IsActive eq true" },
+                       regularFilters, jsonFilters,
+                       (response, items) => response.CompanyProfile = items),
 
                     _ => throw new NotSupportedException($"Unknown indexName '{indexName}'")
                 };
@@ -679,6 +690,7 @@ namespace QLN.SearchService.Service
                 ConstantValues.IndexNames.ContentNewsIndex => typeof(ContentNewsIndex),
                 ConstantValues.IndexNames.ContentEventsIndex => typeof(ContentEventsIndex),
                 ConstantValues.IndexNames.ContentCommunityIndex => typeof(ContentCommunityIndex),
+                ConstantValues.IndexNames.CompanyProfileIndex => typeof(CompanyProfileIndex),
                 _ => null
             };
         }
@@ -825,6 +837,7 @@ namespace QLN.SearchService.Service
                 "ContentNewsIndex" => new List<string> { "PublishedDate desc", "CreatedAt desc" },
                 "ContentEventsIndex" => new List<string> { "PublishedDate desc", "CreatedAt desc" },
                 "ContentCommunityIndex" => new List<string> { "DateCreated desc" },
+                "CompanyProfileIndex" => new List<string> { "CreatedUtc desc" },
 
                 _ => new List<string> { "CreatedAt desc" }
             };
@@ -968,6 +981,10 @@ namespace QLN.SearchService.Service
                         var community = request.ContentCommunityItem
                                ?? throw new ArgumentException("CommunityItem is required for content.", nameof(request.ContentCommunityItem));
                         return await _repo.UploadAsync<ContentCommunityIndex>(index, community);
+                    case ConstantValues.IndexNames.CompanyProfileIndex:
+                        var company = request.CompanyProfile
+                               ?? throw new ArgumentException("Company is required for content.", nameof(request.CompanyProfile));
+                        return await _repo.UploadAsync<CompanyProfileIndex>(index, company);
 
                     default:
                         throw new ArgumentException($"Unsupported Index: '{index}'", nameof(request.IndexName));

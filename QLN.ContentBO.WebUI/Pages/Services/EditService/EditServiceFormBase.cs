@@ -3,6 +3,8 @@ using QLN.ContentBO.WebUI.Models;
 using Microsoft.JSInterop;
 using Microsoft.AspNetCore.Components.Forms;
 using MudBlazor;
+using PSC.Blazor.Components.MarkdownEditor;
+using PSC.Blazor.Components.MarkdownEditor.EventsArgs;
 using MudExRichTextEditor;
 using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Components.SuccessModal;
@@ -23,9 +25,14 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
         [Inject] public IDialogService DialogService { get; set; }
         [Inject] public NavigationManager Navigation { get; set; }
         [Parameter] public EventCallback OnCommentDialogClose { get; set; }
+        protected MudFileUpload<IBrowserFile> _markdownfileUploadRef;
         [Inject] public IClassifiedService ClassifiedService { get; set; }
         protected bool _priceOnRequest = false;
         protected bool IsLoadingCategories { get; set; } = true;
+        protected string[] HiddenIcons = ["fullscreen"];
+        protected string UploadImageButtonName { get; set; } = "uploadImage";
+        protected MarkdownEditor MarkdownEditorRef;
+
         protected List<LocationZoneDto> Zones { get; set; } = new();
         public bool IsAgreed { get; set; } = true;
         protected string? ErrorMessage { get; set; }
@@ -92,6 +99,33 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
             {
                 Logger.LogError(ex, "OnParametersSetAsync");
             }
+        }
+        protected void TriggerCustomImageUpload()
+        {
+            _markdownfileUploadRef.OpenFilePickerAsync();
+        }
+        protected async void ToggleMarkdownPreview()
+        {
+            if (MarkdownEditorRef != null)
+            {
+                await MarkdownEditorRef.TogglePreviewAsync();
+            }
+        }
+        protected Task OnCustomButtonClicked(MarkdownButtonEventArgs eventArgs)
+        {
+            if (eventArgs.Name is not null)
+            {
+                if (eventArgs.Name == UploadImageButtonName)
+                {
+                    TriggerCustomImageUpload();
+                }
+
+                if (eventArgs.Name == "CustomPreview")
+                {
+                    ToggleMarkdownPreview();
+                }
+            }
+            return Task.CompletedTask;
         }
 
         protected void OnCategoryChanged(long categoryId)

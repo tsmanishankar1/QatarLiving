@@ -1,11 +1,11 @@
 using Microsoft.AspNetCore.Components;
-using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
 using MudBlazor;
 using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Components;
 using QLN.ContentBO.WebUI.Pages.Classified.Modal;
 using static QLN.ContentBO.WebUI.Models.ClassifiedLanding;
+using QLN.ContentBO.WebUI.Models;
 
 namespace QLN.ContentBO.WebUI.Pages.Classified.Landing
 {
@@ -28,7 +28,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Landing
         public EventCallback<string> OnDelete { get; set; }
         [Inject]
         public IClassifiedService ClassifiedService { get; set; }
-         [Parameter]
+        [Parameter]
         public EventCallback ReloadData { get; set; }
 
         // Services and injections
@@ -37,34 +37,30 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Landing
         [Inject] protected IEventsService EventsService { get; set; }
         [Inject] protected ILogger<LandingPageComponentBase> Logger { get; set; }
 
-        // Private fields
-        private string UserId => CurrentUserId.ToString();
-        private bool shouldInitializeSortable = false;
-        private List<Slot> featuredEventSlots = new();
 
+        private bool shouldInitializeSortable = false;
+
+        protected List<IndexedLandingItem> IndexedItems { get; set; } = [];
 
         protected override async Task OnInitializedAsync()
         {
             await AuthorizedPage();
             await base.OnInitializedAsync();
-
-            if (Items != null && Items.Any())
-            {
-                featuredEventSlots = Items.Select((item, index) => new Slot
-                {
-                    SlotNumber = index + 1,
-                    Event = item
-                }).ToList();
-            }
         }
 
         protected override async Task OnParametersSetAsync()
         {
             await base.OnParametersSetAsync();
 
-            if (Items != null && Items.Any())
+            if (Items != null && Items.Count != 0)
             {
                 shouldInitializeSortable = true;
+                IndexedItems = [.. Items
+                .Select((item, index) => new IndexedLandingItem
+                {
+                    Item = item,
+                    Index = index + 1
+                })];
             }
         }
 
@@ -201,18 +197,18 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Landing
             }
         }
         protected string GetCurrentTabAddButtonText()
-    {
-        return ItemType switch
         {
-            LandingPageItemType.FeaturedCategory => "Featured Category",
-            LandingPageItemType.SeasonalPick => "Seasonal Pick",
-            LandingPageItemType.FeaturedStore => "Featured Store",
-            _ => "Item"
-        };
-    }
+            return ItemType switch
+            {
+                LandingPageItemType.FeaturedCategory => "Featured Category",
+                LandingPageItemType.SeasonalPick => "Seasonal Pick",
+                LandingPageItemType.FeaturedStore => "Featured Store",
+                _ => "Item"
+            };
+        }
 
 
-         protected async Task NavigateToAddItem(string Id)
+        protected async Task NavigateToAddItem(string Id)
         {
             var title = $"Edit {GetCurrentTabAddButtonText()}";
             var options = new DialogOptions

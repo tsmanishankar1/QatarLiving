@@ -10,9 +10,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.EditCompnay
     {
         [Inject] public IDialogService DialogService { get; set; }
         [Parameter] public CompanyProfileItem Company { get; set; } = new();
-        [Parameter] public string CompanyName { get; set; } = "Lulu Store";
-        [Parameter] public int AdId { get; set; } = 21660;
-        [Parameter] public int OrderId { get; set; } = 24578;
+        protected VerifiedStatus CurrentStatus => (VerifiedStatus)Company.Status;
         protected async Task NeedChangesAsync()
         {
             await ShowReasonDialog(
@@ -21,8 +19,6 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.EditCompnay
                 "Submit",
                 async (reason) =>
                 {
-                    Console.WriteLine($"✏️ Need Changes Reason: {reason}");
-                    // Your need changes logic
                     await Task.CompletedTask;
                 });
         }
