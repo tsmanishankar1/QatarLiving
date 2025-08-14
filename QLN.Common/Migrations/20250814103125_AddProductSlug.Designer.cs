@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using QLN.Common.DTO_s;
@@ -10,12 +11,14 @@ using QLN.Common.Infrastructure.QLDbContext;
 
 #nullable disable
 
-namespace QLN.Common.Migrations
+namespace QLN.Common.Migrations.ClassifiedDev
 {
     [DbContext(typeof(QLClassifiedContext))]
-    partial class QLClassifiedContextModelSnapshot : ModelSnapshot
+    [Migration("20250814103125_AddProductSlug")]
+    partial class AddProductSlug
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -606,19 +609,10 @@ namespace QLN.Common.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
-                    b.Property<string>("CompanyLogo")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
                     b.Property<string>("ContactNumber")
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
-
-                    b.Property<string>("CoverImage")
-                        .IsRequired()
-                        .HasMaxLength(250)
-                        .HasColumnType("character varying(250)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -650,6 +644,10 @@ namespace QLN.Common.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
+                    b.Property<List<ImageInfo>>("Images")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
@@ -658,6 +656,10 @@ namespace QLN.Common.Migrations
 
                     b.Property<bool>("IsPromoted")
                         .HasColumnType("boolean");
+
+                    b.Property<LocationsDtos>("Locations")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
 
                     b.Property<string>("Offertitle")
                         .HasMaxLength(100)
