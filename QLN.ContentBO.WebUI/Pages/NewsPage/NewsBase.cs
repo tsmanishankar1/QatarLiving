@@ -342,6 +342,10 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
         {
             try
             {
+                // Skip execution for default or min DateTime
+                if (givenUtcTime == DateTime.MinValue)
+                    return "-";
+
                 var now = DateTime.UtcNow.ToQatarTime();
                 var diff = now - givenUtcTime.ToQatarTime();
 
