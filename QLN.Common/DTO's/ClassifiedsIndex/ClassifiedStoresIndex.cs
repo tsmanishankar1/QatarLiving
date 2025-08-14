@@ -21,6 +21,9 @@ namespace QLN.Common.DTO_s
         [SearchableField(IsFilterable = true)]
         public string? CompanyName { get; set; }
 
+        [SearchableField(IsFilterable = true, IsFacetable = true)]
+        public string? StoreSlug { get; set; }
+
         [SimpleField]
         public string? ContactNumber { get; set; }
         [SearchableField]
@@ -42,6 +45,10 @@ namespace QLN.Common.DTO_s
 
         [SearchableField(IsFilterable = true, IsFacetable = true)]
         public string? ProductName { get; set; }
+
+        [SearchableField(IsFilterable = true, IsFacetable = true)]
+        public string? ProductSlug { get; set; }
+
 
         [SimpleField]
         public string? ProductLogo { get; set; }
@@ -83,6 +90,7 @@ namespace QLN.Common.DTO_s
         public string? Email { get; set; }
         public string? WebsiteUrl { get; set; }
         public string? BranchLocations { get; set; }
+        public string? StoreSlug { get; set; }
         public List<string>? Locations { get; set; } = new List<string>();
     }
 }

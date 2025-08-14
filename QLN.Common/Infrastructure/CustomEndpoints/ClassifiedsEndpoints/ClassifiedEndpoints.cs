@@ -5522,7 +5522,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             store.ImageUrl,
             store.BannerUrl,
             store.WebsiteUrl,
-            store.Locations
+            store.Locations,
+            store.StoreSlug
         })
         .Select(group => new StoresGroup
         {
@@ -5536,6 +5537,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             WebsiteUrl = group.Key.WebsiteUrl,
             Locations = group.Key.Locations,
             ProductCount = group.Count(),
+             StoreSlug=group.Key.StoreSlug,
             Products = group.Select(g => new ProductInfo
             {
                 ProductId = Guid.Parse(g.ProductId),
@@ -5546,7 +5548,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 ProductSummary = g.ProductSummary,
                 ProductDescription = g.ProductDescription,
                 Features = g.Features,
-                Images = g.Images
+                Images = g.Images,
+                 ProductSlug=g.ProductSlug
             }).ToList()
         })
         .ToList()
@@ -5743,6 +5746,424 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status404NotFound)
             .ProducesProblem(StatusCodes.Status500InternalServerError);
+
+
+            //group.MapPost("/stores-search-products", async (
+            //    [FromBody] ClassifiedsSearchRequest req,
+            //    [FromQuery] string? ProductName,
+            //    [FromQuery] string? CompanyId,
+            //    [FromServices] ISearchService svc,
+            //    [FromServices] ILoggerFactory logFac
+            //) =>
+            //{
+            //    var logger = logFac.CreateLogger("ClassifiedStoresEndpoints");
+
+            //    var validationContext = new ValidationContext(req);
+            //    var validationResults = new List<ValidationResult>();
+            //    if (!Validator.TryValidateObject(req, validationContext, validationResults, validateAllProperties: true))
+            //    {
+            //        var errorMessages = string.Join("; ", validationResults.Select(v => v.ErrorMessage));
+            //        logger.LogWarning("Validation failed: {Errors}", errorMessages);
+
+            //        return Results.BadRequest(new ProblemDetails
+            //        {
+            //            Title = "Validation Failed",
+            //            Detail = errorMessages,
+            //            Status = StatusCodes.Status400BadRequest,
+            //            Instance = $"/api/v2/classifiedfo/stores-search-products"
+            //        });
+            //    }
+
+            //    string indexName = ConstantValues.IndexNames.ClassifiedStoresIndex;
+
+            //    var request = new CommonSearchRequest
+            //    {
+            //        Text = req.Text,
+            //        Filters = req.Filters,
+            //        OrderBy = req.OrderBy,
+            //        PageNumber = req.PageNumber,
+            //        PageSize = req.PageSize
+            //    };
+            //    if (indexName == null)
+            //    {
+            //        return Results.BadRequest(new ProblemDetails
+            //        {
+            //            Title = "Invalid SubVertical",
+            //            Detail = $"Unsupported subVertical value: '{req.SubVertical}'",
+            //            Status = StatusCodes.Status400BadRequest,
+            //            Instance = $"/api/v2/classifiedfo/stores-search"
+            //        });
+            //    }
+
+            //    try
+            //    {
+            //        var results = await svc.GetAllAsync(indexName, request);
+            //        if (results == null)
+            //            return Results.NoContent();
+            //        if (results.ClassifiedStores != null)
+            //        {
+            //            var response = new ClassifiedStoresProducts
+            //            {
+            //                Products = results.ClassifiedStores
+            //                            .Where(x =>
+            //                                (string.IsNullOrEmpty(CompanyId) || x.CompanyId == CompanyId) &&
+            //                                 (string.IsNullOrEmpty(ProductName) || x.ProductName.ToLower().Contains(ProductName.ToLower()))
+
+            //                            )
+            //                            .ToList()
+            //            };
+
+            //            response.Products = req.OrderBy?.ToLower() switch
+            //            {
+            //                "desc" => response.Products.OrderByDescending(t => t.ProductPrice).ToList(),
+            //                "asc" => response.Products.OrderBy(t => t.ProductPrice).ToList(),
+            //                _ => response.Products.OrderBy(t => t.ProductPrice).ToList()
+            //            };
+
+            //            int currentPage = Math.Max(1, req.PageNumber);
+            //            int itemsPerPage = Math.Max(1, Math.Min(100, req.PageSize));
+            //            int totalCount = response.Products.Count;
+            //            int totalPages = (int)Math.Ceiling((double)totalCount / itemsPerPage);
+
+            //            if (currentPage > totalPages && totalPages > 0)
+            //                currentPage = totalPages;
+
+            //            var paginated = response.Products
+            //                .Skip((currentPage - 1) * itemsPerPage)
+            //                .Take(itemsPerPage)
+            //                .ToList();
+
+
+            //            return Results.Ok(new ClassifiedBOPageResponse<ClassifiedStoresIndex>
+            //            {
+            //                Page = currentPage,
+            //                PerPage = itemsPerPage,
+            //                TotalCount = totalCount,
+            //                Items = paginated
+            //            });
+            //        }
+            //        else
+            //        {
+            //            return Results.NotFound();
+            //        }
+
+            //    }
+            //    catch (ArgumentException ex)
+            //    {
+            //        logger.LogWarning(ex, "Invalid search request");
+            //        return Results.BadRequest(new ProblemDetails
+            //        {
+            //            Title = "Invalid Request",
+            //            Detail = ex.Message,
+            //            Status = StatusCodes.Status400BadRequest,
+            //            Instance = $"/api/v2/classifiedfo/stores-search-products"
+            //        });
+            //    }
+            //    catch (Exception ex)
+            //    {
+            //        logger.LogError(ex, "Unhandled exception during search");
+            //        return Results.Problem(
+            //            title: "Search Error",
+            //            detail: ex.Message,
+            //            statusCode: StatusCodes.Status500InternalServerError,
+            //            instance: $"/api/classifieds/stores-search-products"
+            //        );
+            //    }
+            //})
+            //.WithName("SearchClassifiedsStoresProducts")
+            //.WithTags("Classified")
+            //.WithSummary("Classified stores search products")
+            //.Produces(StatusCodes.Status200OK)
+            //.Produces(StatusCodes.Status204NoContent)
+            //.Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            //.Produces(StatusCodes.Status404NotFound)
+            //.ProducesProblem(StatusCodes.Status500InternalServerError);
+
+            group.MapPost("/stores-search-product-list/{StoreSlug}", async (
+                [FromRoute] string? StoreSlug,
+    
+       [FromQuery] string? OrderBy,
+       [FromQuery] int PageNumber,
+       [FromQuery] int PageSize,
+     [FromServices] ISearchService svc,
+     [FromServices] ILoggerFactory logFac
+ ) =>
+            {
+
+                ClassifiedsSearchRequest req = new ClassifiedsSearchRequest()
+                {
+                    Text = "*",
+                    Filters = new Dictionary<string, object>()
+    {
+         { "StoreSlug", StoreSlug }
+    }, OrderBy=OrderBy, PageNumber=PageNumber,PageSize=PageSize,SubVertical="stores"
+                };
+                var logger = logFac.CreateLogger("ClassifiedStoresEndpoints");
+
+                var validationContext = new ValidationContext(req);
+                var validationResults = new List<ValidationResult>();
+                if (!Validator.TryValidateObject(req, validationContext, validationResults, validateAllProperties: true))
+                {
+                    var errorMessages = string.Join("; ", validationResults.Select(v => v.ErrorMessage));
+                    logger.LogWarning("Validation failed: {Errors}", errorMessages);
+
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Failed",
+                        Detail = errorMessages,
+                        Status = StatusCodes.Status400BadRequest,
+                        Instance = $"/api/v2/classifiedfo/stores-search-product-list/{StoreSlug}"
+                    });
+                }
+
+                string indexName = ConstantValues.IndexNames.ClassifiedStoresIndex;
+
+                var request = new CommonSearchRequest
+                {
+                    Text = req.Text,
+                    Filters = req.Filters,
+                  //  OrderBy = req.OrderBy,
+                    PageNumber = req.PageNumber,
+                    PageSize = req.PageSize,
+                    
+                };
+                if (indexName == null)
+                {
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid SubVertical",
+                        Detail = $"Unsupported subVertical value: '{req.SubVertical}'",
+                        Status = StatusCodes.Status400BadRequest,
+                        Instance = $"/api/v2/classifiedfo/stores-search-product-list/{StoreSlug}"
+                    });
+                }
+
+                try
+                {
+                    var results = await svc.GetAllAsync(indexName, request);
+                    if (results == null)
+                        return Results.NoContent();
+                    if (results.ClassifiedStores != null)
+                    {
+                        var response = new ClassifiedStoresProducts
+                        {
+                            Products = results.ClassifiedStores
+                                        .Where(x =>
+                                            (string.IsNullOrEmpty(StoreSlug) || x.StoreSlug.ToLower().Contains(StoreSlug.ToLower()))
+                                        )
+                                        .ToList()
+                        };
+
+                        response.Products = req.OrderBy?.ToLower() switch
+                        {
+                            "desc" => response.Products.OrderByDescending(t => t.ProductPrice).ToList(),
+                            "asc" => response.Products.OrderBy(t => t.ProductPrice).ToList(),
+                            _ => response.Products.OrderBy(t => t.ProductPrice).ToList()
+                        };
+
+                        int currentPage = Math.Max(1, req.PageNumber);
+                        int itemsPerPage = Math.Max(1, Math.Min(100, req.PageSize));
+                        int totalCount = response.Products.Count;
+                        int totalPages = (int)Math.Ceiling((double)totalCount / itemsPerPage);
+
+                        if (currentPage > totalPages && totalPages > 0)
+                            currentPage = totalPages;
+
+                        var paginated = response.Products
+                            .Skip((currentPage - 1) * itemsPerPage)
+                            .Take(itemsPerPage)
+                            .ToList();
+
+
+                        return Results.Ok(new ClassifiedBOPageResponse<ClassifiedStoresIndex>
+                        {
+                            Page = currentPage,
+                            PerPage = itemsPerPage,
+                            TotalCount = totalCount,
+                            Items = paginated
+                        });
+                    }
+                    else
+                    {
+                        return Results.NotFound();
+                    }
+
+                }
+                catch (ArgumentException ex)
+                {
+                    logger.LogWarning(ex, "Invalid search request");
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid Request",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest,
+                        Instance = $"/api/v2/classifiedfo/stores-search-product-list/{StoreSlug}"
+                    });
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "Unhandled exception during search");
+                    return Results.Problem(
+                        title: "Search Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        instance: $"/api/classifieds//stores-search-product-list/{StoreSlug}"
+                    );
+                }
+            })
+           .WithName("SearchClassifiedsStoresProductList")
+           .WithTags("Classified")
+           .WithSummary("Classified stores search products list")
+           .Produces(StatusCodes.Status200OK)
+           .Produces(StatusCodes.Status204NoContent)
+           .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+           .Produces(StatusCodes.Status404NotFound)
+           .ProducesProblem(StatusCodes.Status500InternalServerError);
+
+            group.MapPost("/stores-search-product-details/{ProductSlug}", async ( 
+      [FromRoute] string ProductSlug,
+      [FromQuery] string? OrderBy,
+      [FromQuery] int PageNumber,
+      [FromQuery] int PageSize,
+    [FromServices] ISearchService svc,
+    [FromServices] ILoggerFactory logFac
+) =>
+            {
+
+                ClassifiedsSearchRequest req = new ClassifiedsSearchRequest()
+                {
+                    Text = "*",
+                    Filters = new Dictionary<string, object>()
+    {
+         { "ProductSlug", ProductSlug }
+    },
+                    OrderBy = OrderBy,
+                    PageNumber = PageNumber,
+                    PageSize = PageSize,
+                    SubVertical = "stores"
+                };
+                var logger = logFac.CreateLogger("ClassifiedStoresEndpoints");
+
+                var validationContext = new ValidationContext(req);
+                var validationResults = new List<ValidationResult>();
+                if (!Validator.TryValidateObject(req, validationContext, validationResults, validateAllProperties: true))
+                {
+                    var errorMessages = string.Join("; ", validationResults.Select(v => v.ErrorMessage));
+                    logger.LogWarning("Validation failed: {Errors}", errorMessages);
+
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Failed",
+                        Detail = errorMessages,
+                        Status = StatusCodes.Status400BadRequest,
+                        Instance = $"/api/v2/classifiedfo/stores-search-product-details/{ProductSlug}"
+                    });
+                }
+
+                string indexName = ConstantValues.IndexNames.ClassifiedStoresIndex;
+
+                var request = new CommonSearchRequest
+                {
+                    Text = req.Text,
+                    Filters = req.Filters,
+                    OrderBy = req.OrderBy,
+                    PageNumber = req.PageNumber,
+                    PageSize = req.PageSize
+                };
+                if (indexName == null)
+                {
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid SubVertical",
+                        Detail = $"Unsupported subVertical value: '{req.SubVertical}'",
+                        Status = StatusCodes.Status400BadRequest,
+                        Instance = $"/api/v2/classifiedfo/stores-search-product-details/{ProductSlug}"
+                    });
+                }
+
+                try
+                {
+                    var results = await svc.GetAllAsync(indexName, request);
+                    if (results == null)
+                        return Results.NoContent();
+                    if (results.ClassifiedStores != null)
+                    {
+                        var response = new ClassifiedStoresProducts
+                        {
+                            Products = results.ClassifiedStores
+                                        .Where(x =>
+
+                                             (string.IsNullOrEmpty(ProductSlug) || x.ProductSlug.ToLower().Contains(ProductSlug.ToLower()))
+                                        )
+                                        .ToList()
+                        };
+
+                        response.Products = req.OrderBy?.ToLower() switch
+                        {
+                            "desc" => response.Products.OrderByDescending(t => t.ProductPrice).ToList(),
+                            "asc" => response.Products.OrderBy(t => t.ProductPrice).ToList(),
+                            _ => response.Products.OrderBy(t => t.ProductPrice).ToList()
+                        };
+
+                        int currentPage = Math.Max(1, req.PageNumber);
+                        int itemsPerPage = Math.Max(1, Math.Min(100, req.PageSize));
+                        int totalCount = response.Products.Count;
+                        int totalPages = (int)Math.Ceiling((double)totalCount / itemsPerPage);
+
+                        if (currentPage > totalPages && totalPages > 0)
+                            currentPage = totalPages;
+
+                        var paginated = response.Products
+                            .Skip((currentPage - 1) * itemsPerPage)
+                            .Take(itemsPerPage)
+                            .ToList();
+
+
+                        return Results.Ok(new ClassifiedBOPageResponse<ClassifiedStoresIndex>
+                        {
+                            Page = currentPage,
+                            PerPage = itemsPerPage,
+                            TotalCount = totalCount,
+                            Items = paginated
+                        });
+                    }
+                    else
+                    {
+                        return Results.NotFound();
+                    }
+
+                }
+                catch (ArgumentException ex)
+                {
+                    logger.LogWarning(ex, "Invalid search request");
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid Request",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest,
+                        Instance = $"/api/v2/classifiedfo/stores-search-product-details/{ProductSlug}"
+                    });
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "Unhandled exception during search");
+                    return Results.Problem(
+                        title: "Search Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        instance: $"/api/classifieds/stores-search-product-details/{ProductSlug}"
+                    );
+                }
+            })
+          .WithName("SearchClassifiedsStoresProductDetails")
+          .WithTags("Classified")
+          .WithSummary("Classified stores search product details.")
+          .Produces(StatusCodes.Status200OK)
+          .Produces(StatusCodes.Status204NoContent)
+          .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+          .Produces(StatusCodes.Status404NotFound)
+          .ProducesProblem(StatusCodes.Status500InternalServerError);
+
 
             group.MapGet("/stores-dashboard-header", async Task<Results<
           Ok<List<StoresDashboardHeaderDto>>,
