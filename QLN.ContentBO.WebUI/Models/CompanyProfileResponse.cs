@@ -45,11 +45,12 @@ namespace QLN.ContentBO.WebUI.Models
         public string BusinessDescription { get; set; } = string.Empty;
         public long CrNumber { get; set; }
         public string CrDocument { get; set; } = string.Empty;
+        public int? CompanyVerificationStatus { get; set; }
         public int Status { get; set; }
         public int Vertical { get; set; }
         public int SubVertical { get; set; }
         public string UserId { get; set; } = string.Empty;
-        public bool IsBasicProfile { get; set; }
+        public bool? IsBasicProfile { get; set; }
         public bool IsActive { get; set; }
         public string CreatedBy { get; set; } = string.Empty;
         public DateTime? CreatedUtc { get; set; }
