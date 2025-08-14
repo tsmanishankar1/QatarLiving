@@ -18,14 +18,14 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewListing
         [Inject] public IDialogService DialogService { get; set; }
         [Parameter] public bool IsLoading { get; set; }
         [Inject] public ILogger<ViewListingTableBase> Logger { get; set; }
-        [Parameter] public List<ClassifiedItemViewListing> Items { get; set; } = new();
+        [Parameter] public List<ClassifiedItemViewListing> Items { get; set; } = [];
         [Parameter] public int TotalCount { get; set; }
         [Parameter]
         public EventCallback<string> OnTabChange { get; set; }
         [Parameter] public EventCallback<int> OnPageChanged { get; set; }
         [Parameter] public EventCallback<int> OnPageSizeChanged { get; set; }
         [Parameter] public EventCallback OnAddClicked { get; set; }
-        protected HashSet<ClassifiedItemViewListing> SelectedListings { get; set; } = new();
+        protected HashSet<ClassifiedItemViewListing> SelectedListings { get; set; } = [];
         protected int currentPage = 1;
         protected int pageSize = 12;
         protected bool isBulkActionLoading = false;
@@ -224,6 +224,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewListing
             OpenRejectDialog(item.Id);
             return Task.CompletedTask;
         }
+
         private string GetSuccessMessage(AdBulkActionType action)
         {
             return action switch
@@ -238,11 +239,12 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewListing
                 _ => "Action performed successfully."
             };
         }
+
         private async Task PerformBulkAction(AdBulkActionType action, string reason = "", List<long?> adIds = null)
         {
             isBulkActionLoading = adIds == null; // only bulk shows spinner
 
-            adIds ??= SelectedListings.Select(x => x.Id).ToList();
+            adIds ??= [.. SelectedListings.Select(x => x.Id)];
 
             if (adIds.Count == 0)
                 return;
@@ -270,9 +272,31 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewListing
                 }
                 else
                 {
-                    // Logger.LogWarning("Bulk action failed. StatusCode: {StatusCode}, Payload: {@Payload}",
-                    //     response?.StatusCode, payload);
-                    Snackbar.Add("Something went wrong while performing the action.", Severity.Error);
+                    string errorMessage = "Something went wrong.";
+
+                    if (response != null)
+                    {
+                        try
+                        {
+                            var errorJson = await response.Content.ReadAsStringAsync();
+
+                            var errorObj = JsonSerializer.Deserialize<ProblemDetails>(errorJson, new JsonSerializerOptions
+                            {
+                                PropertyNameCaseInsensitive = true
+                            });
+
+                            if (!string.IsNullOrWhiteSpace(errorObj?.Detail))
+                            {
+                                errorMessage = errorObj.Detail;
+                            }
+                        }
+                        catch
+                        {
+                            errorMessage = $"Error {response.StatusCode}";
+                        }
+                    }
+
+                    Snackbar.Add(errorMessage, Severity.Error);
                 }
             }
             catch (Exception ex)
@@ -284,7 +308,6 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewListing
             {
                 isBulkActionLoading = false;
                 singleItemLoadingId = null;
-                StateHasChanged();
             }
         }
     }
