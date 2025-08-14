@@ -72,7 +72,7 @@ namespace QLN.Common.DTO_s
         public string? offertitle { get; set; }
 
         [SearchableField]
-        public List<ImageInfo> Images { get; set; } = new List<ImageInfo>();
+        public string CoverImage { get; set; }
 
         [SimpleField(IsFilterable = true, IsSortable = true)]
         public DateTime? ExpiryDate { get; set; }
