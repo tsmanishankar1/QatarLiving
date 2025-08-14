@@ -46,6 +46,6 @@ namespace QLN.Common.DTO_s.Payments
         public string CompanyId { get; set; }
 
         [JsonPropertyName("addId")]
-        public string? AddId { get; set; }
+        public long? AddId { get; set; }
     }
 }

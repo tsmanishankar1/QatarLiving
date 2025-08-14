@@ -24,11 +24,11 @@ namespace QLN.Common.Infrastructure.Service.Payments
             _httpClient = httpClient;
             _logger = logger;
         }
-        public async Task<PaymentResponse> CreatePaymentAsync(ExternalPaymentRequest request, string username, Vertical vertical, SubVertical? subVertical, string? email, string? mobile, string? platform, CancellationToken cancellationToken = default)
+        public async Task<PaymentResponse> CreatePaymentAsync(ExternalPaymentRequest request, string username,string productCode, Vertical vertical, SubVertical? subVertical, string? email, string? mobile, string? platform, CancellationToken cancellationToken = default)
         {
             try
             {
-                var paymentDetails = BuildPaymentCheckoutPayload(request, username, vertical, subVertical, email, mobile, platform);
+                var paymentDetails = BuildPaymentCheckoutPayload(request, username,productCode, vertical, subVertical, email, mobile, platform);
 
                 using var httpRequest = new HttpRequestMessage(HttpMethod.Post, $"{_fatoraConfig.ApiUrl}/checkout")
                 {
@@ -105,10 +105,10 @@ namespace QLN.Common.Infrastructure.Service.Payments
             };
         }
 
-        private FatoraPaymentRequest BuildPaymentCheckoutPayload(ExternalPaymentRequest request, string username, Vertical vertical, SubVertical? subVertical, string? email, string? mobile, string? platform = "web")
+        private FatoraPaymentRequest BuildPaymentCheckoutPayload(ExternalPaymentRequest request, string username, string productCode, Vertical vertical, SubVertical? subVertical, string? email, string? mobile, string? platform = "web")
         {
 
-            var query = $"?platform={Uri.EscapeDataString(platform ?? "web")}&vertical={Uri.EscapeDataString(vertical.ToString())}&subvertical={Uri.EscapeDataString(subVertical?.ToString() ?? string.Empty)}";
+            var query = $"?platform={Uri.EscapeDataString(platform ?? "web")}&vertical={Uri.EscapeDataString(vertical.ToString())}&subvertical={Uri.EscapeDataString(subVertical?.ToString() ?? string.Empty)}&product_code={Uri.EscapeDataString(productCode)}";
 
             var successUrl = $"{_fatoraConfig.BaseUrl}/{_fatoraConfig.SuccessUrl}{query}";
             var failureUrl = $"{_fatoraConfig.BaseUrl}/{_fatoraConfig.FailureUrl}{query}";

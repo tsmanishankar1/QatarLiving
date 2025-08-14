@@ -119,7 +119,7 @@ namespace QLN.Backend.API.Service.ProductService
                 if (product == null)
                     throw new InvalidOperationException($"Product with code {request.ProductCode} not found or inactive");
 
-                if (product.ProductType != ProductType.SUBSCRIPTION || product.ProductType != ProductType.PUBLISH)
+                if (product.ProductType != ProductType.SUBSCRIPTION && product.ProductType != ProductType.PUBLISH)
                     throw new InvalidOperationException($"Product {request.ProductCode} is not a subscription or P2P product");
 
                 var subscriptionId = Guid.NewGuid();
