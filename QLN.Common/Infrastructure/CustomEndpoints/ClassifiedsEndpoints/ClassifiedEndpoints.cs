@@ -2076,14 +2076,14 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         IsActive = true,
                         CreatedBy = name,
                         CreatedAt = DateTime.UtcNow,
-                        FlyerFileUrl = dto.FlyerFileUrl,                        
+                        FlyerFileUrl = dto.FlyerFileUrl,   
                         StartDate = dto.StartDate,
                         EndDate= dto.EndDate,
                         DataFeedUrl=dto.DataFeedUrl,
                         WebsiteUrl = dto.WebsiteUrl,
                         ContactNumber = dto.PhoneNumber,
                         WhatsappNumber = dto.WhatsAppNumber,
-                        Locations = dto.Locations,
+                        CoverImage = dto.CoverImage,
                         ExpiryDate = dto.ExpiryDate,
                         FeaturedExpiryDate = null,
                         IsFeatured = false,
@@ -2092,7 +2092,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         SubscriptionId = null,
                         XMLlink = dto.XMLlink,
                         Offertitle = dto.Offertitle,
-                        Images = dto.ImageUrl
                     }; 
                     
 

@@ -395,7 +395,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
             if (dto.UserId == null) throw new ArgumentException("UserId is required.");
             if (string.IsNullOrWhiteSpace(dto.Offertitle)) throw new ArgumentException("Title is required.");
-            if (dto.Images == null || dto.Images.Count == 0)
+            if (string.IsNullOrWhiteSpace(dto.CoverImage))
                 throw new ArgumentException("Ad image is required.");
             if (string.IsNullOrWhiteSpace(dto.FlyerFileUrl)) throw new ArgumentException("FlyerFile image is required.");
             
