@@ -13,7 +13,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.ViewListing
 {
     public partial class ViewListingTableBase : QLComponentBase
     {
-        [Inject] public IClassifiedService ClassifiedService { get; set; }
+        [Inject] public ICollectiblesService CollectiblesService { get; set; }
         [Inject] public ISnackbar Snackbar { get; set; }
         [Parameter] public bool IsLoading { get; set; }
         [Inject] public ILogger<ViewListingTableBase> Logger { get; set; }
@@ -266,7 +266,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.ViewListing
             {
                 var payloadJson = JsonSerializer.Serialize(payload);
                 Logger.LogInformation("Performing bulk action: {Payload}", payloadJson);
-                var response = await ClassifiedService.PerformBulkActionAsync("bulk-collectibles-action", payload);
+                var response = await CollectiblesService.BulkActionAsync(adIds, (int)action, reason);
 
                 if (response?.IsSuccessStatusCode == true)
                 {
@@ -278,7 +278,31 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.ViewListing
                 }
                 else
                 {
-                    Snackbar.Add("Something went wrong while performing the action.", Severity.Error);
+                    string errorMessage = "Something went wrong.";
+
+                    if (response != null)
+                    {
+                        try
+                        {
+                            var errorJson = await response.Content.ReadAsStringAsync();
+
+                            var errorObj = JsonSerializer.Deserialize<ProblemDetails>(errorJson, new JsonSerializerOptions
+                            {
+                                PropertyNameCaseInsensitive = true
+                            });
+
+                            if (!string.IsNullOrWhiteSpace(errorObj?.Detail))
+                            {
+                                errorMessage = errorObj.Detail;
+                            }
+                        }
+                        catch
+                        {
+                            errorMessage = $"Error {response.StatusCode}";
+                        }
+                    }
+
+                    Snackbar.Add(errorMessage, Severity.Error);
                 }
             }
             catch (Exception ex)

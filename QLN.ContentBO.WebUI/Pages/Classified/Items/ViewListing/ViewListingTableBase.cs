@@ -103,7 +103,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewListing
             var result = await dialog.Result;
 
         }
-        private void OpenRejectDialog(long? itemId)
+        private async void OpenRejectDialog(long? itemId)
         {
             rejectionTargetItemId = itemId;
             var parameters = new DialogParameters
@@ -119,7 +119,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewListing
                 MaxWidth = MaxWidth.Small,
                 FullWidth = true
             };
-            var dialog = DialogService.Show<RejectVerificationDialog>("", parameters, options);
+            var dialog = await DialogService.ShowAsync<RejectVerificationDialog>("", parameters, options);
         }
 
         private async void OpenRemoveReasonDialog()
@@ -266,9 +266,8 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewListing
                 {
                     SelectedListings.Clear();
                     // Remove from Items list directly
-                    Items = Items.Where(i => !adIds.Contains(i.Id)).ToList();
+                    Items = [.. Items.Where(i => !adIds.Contains(i.Id))];
                     Snackbar.Add(GetSuccessMessage(action), Severity.Success);
-
                 }
                 else
                 {
