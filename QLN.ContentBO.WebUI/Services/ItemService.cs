@@ -18,7 +18,7 @@ namespace QLN.ContentBO.WebUI.Services
             _logger = Logger;
         }
 
-        public async Task<HttpResponseMessage?> BulkItemsActionAsync(List<long> adIds, int action, string? reason = null, string? comments = null)
+        public async Task<HttpResponseMessage?> BulkItemsActionAsync(List<long?> adIds, int action, string? reason = null, string? comments = null)
         {
             try
             {
