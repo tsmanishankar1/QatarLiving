@@ -104,6 +104,7 @@ namespace QLN.Common.DTO_s.ClassifiedsBo
         public string WebsiteUrl { get; set; } = string.Empty;
         public List<string> Locations { get; set; } = new();
         public int ProductCount { get; set; }
+        public string? StoreSlug { get; set; }
         public List<ProductInfo> Products { get; set; } = new();
     }
 
@@ -111,6 +112,7 @@ namespace QLN.Common.DTO_s.ClassifiedsBo
     {
         public Guid ProductId { get; set; }
         public string ProductName { get; set; } = string.Empty;
+        public string? ProductSlug { get; set; } = string.Empty;
         public string ProductLogo { get; set; } = string.Empty;
         public double ProductPrice { get; set; }
         public string Currency { get; set; } = string.Empty;
@@ -121,4 +123,17 @@ namespace QLN.Common.DTO_s.ClassifiedsBo
        
     }
 
+    public class StoreCompanyDto
+    {
+        public Guid Id { get; set; }
+        public string CompanyName { get; set; } = string.Empty;
+        public string CompanyLogo { get; set; } = string.Empty;
+        public string? CoverImage1 { get; set; }
+        public string PhoneNumber { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string? WebsiteUrl { get; set; }
+        public List<string>? BranchLocations { get; set; }
+        public string? Slug { get; set; }
+
+    }
 }
