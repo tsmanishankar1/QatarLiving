@@ -136,6 +136,10 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
         {
             try
             {
+                // Skip execution for default or min DateTime
+                if (givenUtcTime == DateTime.MinValue)
+                    return "-";
+
                 var now = DateTime.UtcNow.ToQatarTime();
                 var diff = now - givenUtcTime.ToQatarTime();
                 var isFuture = diff.TotalSeconds < 0;
