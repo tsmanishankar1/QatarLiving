@@ -259,6 +259,47 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
 
             return group;
         }
+        public static RouteGroupBuilder MapGetBySlugCompanyProfile(this RouteGroupBuilder group)
+        {
+            group.MapGet("/getcompanybyslug", async Task<IResult> (
+            [FromQuery] string? slug,
+            [FromServices] ICompanyProfileService service) =>
+            {
+                try
+                {
+                    var result = await service.GetCompanyBySlug(slug);
+                    if (result == null)
+                        throw new KeyNotFoundException($"Company with not found.");
+                    return TypedResults.Ok(result);
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    return TypedResults.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                          title: "Internal Server Error",
+                          detail: "An unexpected error occurred.",
+                          statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+            .WithName("GetCompanyProfileSlug")
+            .WithTags("Company")
+            .WithSummary("Get a company profile")
+            .WithDescription("Retrieves a company profile by Slug.")
+            .Produces<object>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            return group;
+        }
         public static RouteGroupBuilder MapUpdateCompanyProfile(this RouteGroupBuilder group)
         {
             group.MapPut("/updatecompanyprofile", async Task<Results<

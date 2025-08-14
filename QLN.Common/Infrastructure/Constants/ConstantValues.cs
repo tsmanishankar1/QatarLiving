@@ -37,6 +37,7 @@ namespace QLN.Common.Infrastructure.Constants
             public const string LandingBackOfficeIndex = "landingbackoffice";
             public const string AnalyticsIndex = "analytics";
             public const string ClassifiedStoresIndex = "classifiedstores";
+            public const string CompanyIndex = "companyindex";
         }
 
         public const string PubSubName = "pubsub";
