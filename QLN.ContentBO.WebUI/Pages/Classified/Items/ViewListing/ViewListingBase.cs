@@ -4,13 +4,13 @@ using QLN.ContentBO.WebUI.Models;
 using QLN.ContentBO.WebUI.Components.AutoSelectDialog;
 using MudBlazor;
 using QLN.ContentBO.WebUI.Enums;
+using QLN.ContentBO.WebUI.Components;
 
 namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewListing
 {
-    public partial class ViewListingBase : ComponentBase
+    public partial class ViewListingBase : QLComponentBase
     {
         [Inject] protected IDialogService DialogService { get; set; } = default!;
-        [Inject] protected NavigationManager NavManager { get; set; } = default!;
         [Inject] public IItemService ItemService { get; set; }
         [Inject] private ILogger<ViewListingBase> Logger { get; set; } = default!;
         protected string SearchTerm { get; set; } = string.Empty;
@@ -33,10 +33,10 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewListing
                 "pendingApproval" => new() { { "status", (int)AdStatus.PendingApproval } },
                 "published" => new() { { "status", (int)AdStatus.Published } },
                 "unpublished" => new() { { "status", (int)AdStatus.Unpublished } },
-                "p2p" => new() { { "adType", (int)AdType.P2P  } },
+                "p2p" => new() { { "adType", (int)AdType.P2P } },
                 "needChanges" => new() { { "status", (int)AdStatus.NeedsModification } },
-                "removed" => new() { { "status", (int)AdStatus.Rejected  } },
-                _ => new()
+                "removed" => new() { { "status", (int)AdStatus.Rejected } },
+                _ => []
             };
         }
 
@@ -151,13 +151,13 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewListing
                 }
 
                 // Fallback if no results or error
-                ClassifiedItems = new List<ClassifiedItemViewListing>();
+                ClassifiedItems = [];
                 TotalCount = 0;
             }
             catch (Exception ex)
             {
                 Logger.LogError(ex, "Error loading classifieds.");
-                ClassifiedItems = new List<ClassifiedItemViewListing>();
+                ClassifiedItems = [];
                 TotalCount = 0;
             }
             finally
@@ -165,7 +165,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewListing
                 IsLoading = false;
             }
         }
-          protected async Task HandleAddClicked()
+        protected async Task HandleAddClicked()
         {
             var parameters = new DialogParameters
         {
@@ -175,11 +175,10 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewListing
             { "OnSelect", EventCallback.Factory.Create<DropdownItem>(this, HandleSelect) }
         };
 
-            DialogService.Show<AutoSelectDialog>("", parameters);
+            await DialogService.ShowAsync<AutoSelectDialog>("", parameters);
         }
 
-
-         private Task HandleSelect(DropdownItem selected)
+        private Task HandleSelect(DropdownItem selected)
         {
             if (selected == null || string.IsNullOrWhiteSpace(selected.Label))
             {
@@ -189,7 +188,5 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewListing
             NavManager.NavigateTo(targetUrl);
             return Task.CompletedTask;
         }
-
-        
     }
 }
