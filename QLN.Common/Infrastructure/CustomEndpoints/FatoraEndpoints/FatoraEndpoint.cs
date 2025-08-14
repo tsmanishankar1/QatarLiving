@@ -21,7 +21,7 @@ public static class FatoraEndpoints
 {
     public static RouteGroupBuilder MapPaymentCheckout(this RouteGroupBuilder group)
     {
-        group.MapPost("/payments/checkout", async Task<IResult> (
+        group.MapPost("/checkout", async Task<IResult> (
             [FromServices] IPaymentService payments,
             [FromBody] ExternalPaymentRequest request,
             HttpContext http,

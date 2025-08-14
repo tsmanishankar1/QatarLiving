@@ -132,13 +132,13 @@ namespace QLN.Common.Infrastructure.Service.Payments
                         UserId = request.User.UserId,
                     };
 
-                   /* // Create the subscription
+                    // Create the subscription
                     var subscriptionId = await _subscriptionService.PurchaseSubscriptionAsync(subscriptionRequest, cancellationToken);
 
                     // After subscription is created, update PaymentEntity with subscription info
                     dbResult.Entity.UserSubscriptionId = subscriptionId;
 
-                    _dbContext.SaveChanges(); // Update the payment entity in the database with subscription info*/
+                    _dbContext.SaveChanges(); // Update the payment entity in the database with subscription info
 
                     return await _fatoraService.CreatePaymentAsync(request, request.User.UserName, request.Vertical, request.SubVertical, request.User.Email, request.User.Mobile, platform, cancellationToken);
 
@@ -173,13 +173,13 @@ namespace QLN.Common.Infrastructure.Service.Payments
                         UserId = request.User.UserId,
                     };
 
-                   /* // Create the subscription
+                    // Create the subscription
                     var pubsubscriptionId = await _subscriptionService.PurchaseSubscriptionAsync(publishRequest, cancellationToken);
 
                     // After subscription is created, update PaymentEntity with subscription info
                     publishDbResult.Entity.UserSubscriptionId = pubsubscriptionId;
 
-                    _dbContext.SaveChanges(); // Update the payment entity in the database with subscription info*/
+                    _dbContext.SaveChanges(); // Update the payment entity in the database with subscription info
 
                     return await _fatoraService.CreatePaymentAsync(request, request.User.UserName, request.Vertical, request.SubVertical, request.User.Email, request.User.Mobile, platform, cancellationToken);
 
@@ -216,13 +216,13 @@ namespace QLN.Common.Infrastructure.Service.Payments
                         SubscriptionId = request.SubscriptionId ?? Guid.Empty,
                     };
 
-                   /* // Create the addon
+                    // Create the addon
                     var addonId = await _subscriptionService.PurchaseAddonAsync(addonRequest, cancellationToken);
 
                     // After addon is created, update PaymentEntity with addon info
                     addonDbResult.Entity.UserAddonId = addonId;
 
-                    _dbContext.SaveChanges(); // Update the payment entity in the database with addon info*/
+                    _dbContext.SaveChanges(); // Update the payment entity in the database with addon info
 
                     return await _fatoraService.CreatePaymentAsync(request, request.User.UserName, request.Vertical, request.SubVertical, request.User.Email, request.User.Mobile, platform, cancellationToken);
 
