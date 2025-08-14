@@ -9,6 +9,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
             group
                 .MapCreateProfile()
                 .MapGetByCompanyProfile()
+                .MapGetBySlugCompanyProfile()
                 .MapUpdateCompanyProfile()
                 .MapGetAllCompanyProfiles()
                 .MapDeleteCompanyProfile()

@@ -63,7 +63,10 @@
                 </MudChip>
             }
             <MudText Typo="Typo.body1" Color="Color.Primary">
-            @group.BannerPageName
+            @{
+                var pageEnum = (BannerPageId)group.PageId;
+            }
+            @pageEnum.ToString()  
             </MudText>
             </div>
 
@@ -73,7 +76,7 @@
                              Color="Color.Primary"
                              Label="@item.BannerTypeName"
                              Value="@IsChecked(item)"
-                             ValueChanged="val => OnCheckedChanged(item, val, group.VerticalId, group.SubVerticalId, group.Id)" />
+                             ValueChanged="val => OnCheckedChanged(item, val, group.VerticalId, group.SubVerticalId, group.PageId)" />
             }
         }
     }

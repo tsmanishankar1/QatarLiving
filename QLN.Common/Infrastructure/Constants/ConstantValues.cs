@@ -37,6 +37,7 @@ namespace QLN.Common.Infrastructure.Constants
             public const string LandingBackOfficeIndex = "landingbackoffice";
             public const string AnalyticsIndex = "analytics";
             public const string ClassifiedStoresIndex = "classifiedstores";
+            public const string CompanyIndex = "companyindex";
         }
 
         public const string PubSubName = "pubsub";
@@ -114,6 +115,8 @@ namespace QLN.Common.Infrastructure.Constants
             public const string EventsMigration = "events-migration";
             public const string PostsMigration = "posts-migration";
             public const string ItemsMigration = "items-migration";
+            public const string NewsCommentsMigration = "news-comments-migration";
+            public const string CommunityCommentsMigration = "community-comments-migration";
             public const string CollectablesMigration = "collectables-migration";
         }
         public static class Verticals

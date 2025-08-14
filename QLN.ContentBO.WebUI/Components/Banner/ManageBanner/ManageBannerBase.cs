@@ -146,7 +146,7 @@ namespace QLN.ContentBO.WebUI.Components.Banner
                 return [];
             }
         }
-        protected async Task ReOrderBanners((List<string> NewOrder, int Vertical, int SubVertical, string PageId) args)
+        protected async Task ReOrderBanners((List<string> NewOrder, int Vertical, int SubVertical, int PageId) args)
         {
             var (newOrder, vertical, subVertical, pageId) = args;
             try

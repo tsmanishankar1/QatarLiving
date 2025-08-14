@@ -141,7 +141,7 @@ namespace QLN.ContentBO.WebUI.Services
             }
         }
 
-        public async Task<HttpResponseMessage> ReorderBanner(List<string> newOrder, int verticalId, int subVerticalId, string pageId)
+        public async Task<HttpResponseMessage> ReorderBanner(List<string> newOrder, int verticalId, int subVerticalId, int pageId)
         {
             try
             {

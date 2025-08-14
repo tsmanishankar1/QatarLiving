@@ -22,7 +22,7 @@ namespace QLN.DataMigration.Models
         [JsonPropertyName("models")]
         public List<Model> Models { get; set; }
 
-        public static explicit operator ItemsCategories(DrupalItemsCategories itemsCategories)
+        public static explicit operator ItemsCategories(DrupalItemsMobileDevices itemsCategories)
         {
             var models = new List<Model>();
 

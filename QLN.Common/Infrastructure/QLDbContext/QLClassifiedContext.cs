@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Identity.Client;
 using QLN.Common.DTO_s.ClassifiedsBo;
 using QLN.Common.DTO_s.ClassifiedsFo;
 using QLN.Common.Infrastructure.Model;
@@ -13,6 +14,8 @@ namespace QLN.Common.Infrastructure.QLDbContext
             : base(options)
         {
         }
+
+        public DbSet<SaveSearch> saveSearches { get; set; }
         public DbSet<StoresSubscriptionDto> StoresSubscriptions { get; set; }
         public DbSet<ViewStoresSubscription> ViewStoresSubscriptions { get; set; }
         public DbSet<StoreStatus> StoreStatuses { get; set; }
@@ -31,6 +34,8 @@ namespace QLN.Common.Infrastructure.QLDbContext
         public DbSet<FeaturedCategory> FeaturedCategories { get; set; }
         public DbSet<StoresDashboardHeader> StoresDashboardHeaderItems { get; set; }
         public DbSet<StoresDashboardSummary> StoresDashboardSummaryItems { get; set; }
+
+        public DbSet<Wishlist> Wishlists { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<StoreFlyers>()

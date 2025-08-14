@@ -32,9 +32,13 @@ Content-Type: application/json
 GET https://www.qatarliving.com/qlnapi/events?page=1&page_size=100
 Content-Type: application/json
 
-### Migrate community
-GET https://www.qatarliving.com/qlnapi/community?page=1&page_size=100
+### Migrate community - https://test.qatarliving.com/qlnapi/migrate/community?page_size=2&forum_id=20000006&from=20190101&page=1'
+GET https://test.qatarliving.com/qlnapi/migrate/community?page=1&page_size=100
 Content-Type: application/json
+
+###
+GET https://test.qatarliving.com/qlnapi/comments/20486043?page=1&page_size=10
+Accept: application/json
 
 ### Migrate categrories
 GET https://test.qatarliving.com/qlnapi/categories

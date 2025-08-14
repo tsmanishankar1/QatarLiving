@@ -19,6 +19,8 @@ namespace QLN.Common.DTO_s
 
         [SearchableField]
         public string? BranchNames { get; set; }
+        [SearchableField]
+        public string? Slug { get; set; }
 
         [SearchableField(IsFilterable = true)]
         public string? BusinessType { get; set; }        
@@ -72,7 +74,7 @@ namespace QLN.Common.DTO_s
         public string? offertitle { get; set; }
 
         [SearchableField]
-        public List<ImageInfo> Images { get; set; } = new List<ImageInfo>();
+        public string CoverImage { get; set; }
 
         [SimpleField(IsFilterable = true, IsSortable = true)]
         public DateTime? ExpiryDate { get; set; }
@@ -90,7 +92,7 @@ namespace QLN.Common.DTO_s
         public DateTime? PromotedExpiryDate { get; set; }
 
         [SimpleField(IsFilterable = true)]
-        public string? SubscriptionId { get; set; }
+        public Guid? SubscriptionId { get; set; }
         public List<string> Locations { get; set; } = new List<string>();
     }
 }
