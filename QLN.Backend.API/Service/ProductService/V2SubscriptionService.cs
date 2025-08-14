@@ -1,17 +1,13 @@
 ﻿using Dapr.Actors.Client;
 using Dapr.Actors;
-using Microsoft.Extensions.Logging;
 using QLN.Common.Infrastructure.IService.IProductService;
 using QLN.Common.Infrastructure.QLDbContext;
 using QLN.Common.Infrastructure.Subscriptions;
 using Microsoft.EntityFrameworkCore;
 using QLN.Common.Infrastructure.Model;
 using QLN.Common.DTO_s.Subscription;
-using System;
-using System.Linq;
 using QLN.Common.DTO_s.Payments;
 using QLN.Common.DTO_s;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace QLN.Backend.API.Service.ProductService
 {
