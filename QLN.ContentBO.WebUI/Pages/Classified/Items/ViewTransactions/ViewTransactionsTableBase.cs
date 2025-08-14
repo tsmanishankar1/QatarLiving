@@ -1,8 +1,6 @@
 using Microsoft.AspNetCore.Components;
-using System;
 using QLN.ContentBO.WebUI.Components.ToggleTabs;
 using QLN.ContentBO.WebUI.Components.AdHistoryDialog;
-using System.Collections.Generic;
 using QLN.ContentBO.WebUI.Models;
 using MudBlazor;
 
@@ -11,7 +9,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewTransactions
     public partial class ViewTransactionsTableBase : ComponentBase
     {
         [Parameter] public bool IsLoading { get; set; }
-        [Parameter] public List<ItemViewTransaction> Transactions { get; set; } = new();
+        [Parameter] public List<ItemTransactionItem> Transactions { get; set; } = new();
         [Parameter] public int TotalRecords { get; set; }
         [Inject] public IDialogService DialogService { get; set; }
         public string SelectedTab { get; set; } = "paytopublish";
@@ -20,6 +18,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewTransactions
         [Parameter] public EventCallback<int> OnPageSizeChanged { get; set; }
         protected int currentPage = 1;
         protected int pageSize = 12;
+
         protected async void HandlePageChange(int newPage)
         {
             currentPage = newPage;
@@ -32,7 +31,8 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewTransactions
             currentPage = 1;
             await OnPageSizeChanged.InvokeAsync(pageSize);
         }
-         private void OpenAdDialog(ItemViewTransaction item)
+
+        private async void OpenAdDialog(ItemTransactionItem item)
         {
             int adId = int.TryParse(item.AdId, out var parsedId) ? parsedId : 0;
 
@@ -58,10 +58,10 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewTransactions
                 FullWidth = true
             };
 
-            DialogService.Show<AdHistoryDialog>("", parameters, options);
+            await DialogService.ShowAsync<AdHistoryDialog>("", parameters, options);
         }
 
-       protected List<ToggleTabs.TabOption> tabOptions = new()
+        protected List<ToggleTabs.TabOption> tabOptions = new()
         {
             new() { Label = "Pay To Publish", Value = "paytopublish" },
             new() { Label = "Pay To Promote", Value = "paytopromote" },
@@ -80,14 +80,14 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewTransactions
                 _ => "Classified Items"
             };
         }
-         protected async Task OnTabChangedInternal(string newTab)
+        protected async Task OnTabChangedInternal(string newTab)
         {
             SelectedTab = newTab;
             await OnTabChanged.InvokeAsync(newTab);
         }
 
-     
-        protected void OnPreview(ItemViewTransaction item)
+
+        protected void OnPreview(ItemTransactionItem item)
         {
             OpenAdDialog(item);
             Console.WriteLine($"Preview clicked: {item.AdId}");

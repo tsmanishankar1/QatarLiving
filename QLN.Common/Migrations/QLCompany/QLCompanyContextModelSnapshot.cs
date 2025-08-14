@@ -74,6 +74,9 @@ namespace QLN.Common.Migrations.QLCompany
                     b.Property<int>("CompanyType")
                         .HasColumnType("integer");
 
+                    b.Property<int?>("CompanyVerificationStatus")
+                        .HasColumnType("integer");
+
                     b.Property<string>("Country")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -145,6 +148,10 @@ namespace QLN.Common.Migrations.QLCompany
                         .IsRequired()
                         .HasMaxLength(10)
                         .HasColumnType("character varying(10)");
+
+                    b.Property<string>("Slug")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
 
                     b.Property<string>("StartDay")
                         .HasMaxLength(20)

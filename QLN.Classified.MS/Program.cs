@@ -15,6 +15,7 @@ using QLN.Common.Infrastructure.IService;
 using QLN.Common.Infrastructure.IService.V2IContent;
 using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.QLDbContext;
+using QLN.Common.Infrastructure.ServiceConfiguration;
 using static QLN.Common.Infrastructure.Constants.ConstantValues;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -48,6 +49,9 @@ builder.Services.AddSwaggerGen(opts => {
 builder.Services.AddAuthorization();
 builder.Services.AddDaprClient();
 builder.Services.ClassifiedInternalServicesConfiguration(builder.Configuration);
+
+// Putting this here as it could be used from the Classifieds Service but also from the Backend API
+builder.Services.ImplioConfiguration(builder.Configuration);
 builder.Services.AddScoped<AuditLogger>();
 
 #region DbContext
@@ -69,6 +73,8 @@ builder.Services.AddDbContext<QLPaymentsContext>(options =>
 builder.Services.AddDbContext<QLSubscriptionContext>(options =>
     options.UseNpgsql(dataSource));
 builder.Services.AddDbContext<QLLogContext>(options =>
+    options.UseNpgsql(dataSource));
+builder.Services.AddDbContext<QLNotificationContext>(options =>
     options.UseNpgsql(dataSource));
 #endregion
 var app = builder.Build();

@@ -7,6 +7,7 @@ namespace QLN.Common.Infrastructure.IService.ICompanyService
     {
         Task<string> CreateCompany(string uid, string userName, CompanyProfile dto, CancellationToken cancellationToken = default);
         Task<Company?> GetCompanyById(Guid id, CancellationToken cancellationToken = default);
+        Task<Company?> GetCompanyBySlug(string? slug, CancellationToken cancellationToken = default);
         Task<CompanyPaginatedResponse<Company>> GetAllVerifiedCompanies(CompanyProfileFilterRequest filter, CancellationToken cancellationToken = default);
         Task<string> UpdateCompany(Company dto, CancellationToken cancellationToken = default);
         Task DeleteCompany(DeleteCompanyRequest request, CancellationToken cancellationToken = default);

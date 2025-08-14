@@ -87,6 +87,7 @@ namespace QLN.Common.DTO_s
         public string? Email { get; set; }
         public string? WebsiteUrl { get; set; }
         public string? BranchLocations { get; set; }
+        public string? StoreSlug { get; set; }
         public List<string>? Locations { get; set; } = new List<string>();
     }
 }

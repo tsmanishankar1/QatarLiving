@@ -13,9 +13,14 @@ namespace QLN.Common.Infrastructure.IService.V2IContent
         Task<V2BannerDto?> GetBannerByIdAsync(Guid id, CancellationToken cancellationToken = default);
         Task<string> CreateBannerTypeAsync(V2BannerTypeDto dto, CancellationToken cancellationToken = default);
         Task<List<V2BannerTypeDto>> GetAllBannerTypesAsync(CancellationToken cancellationToken = default);
-        Task<List<V2BannerTypeDto>?> GetBannerTypesByFilterAsync(Vertical verticalId,SubVertical? subVerticalId,Guid pageId,CancellationToken cancellationToken);
+        Task<List<V2BannerTypeDto>?> GetBannerTypesByFilterAsync(Vertical verticalId, SubVertical? subVerticalId, BannerPageId pageId, CancellationToken cancellationToken);
         Task<List<V2BannerTypeDto>> GetBannerTypesWithBannersByStatusAsync(Vertical? verticalId,bool? status,CancellationToken cancellationToken);
-        Task<string> ReorderAsync(Vertical verticalId, SubVertical? subVerticalId, Guid pageId, List<Guid> banners, CancellationToken cancellationToken = default);
+       Task <string> ReorderAsync(
+      Vertical verticalId,
+      SubVertical? subVerticalId,
+      BannerPageId pageId,
+      List<Guid> banners,
+      CancellationToken cancellationToken = default);
     }
        
 }

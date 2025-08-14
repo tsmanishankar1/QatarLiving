@@ -6,7 +6,6 @@ using QLN.ContentBO.WebUI.Components.News;
 using QLN.ContentBO.WebUI.Extensions;
 using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Models;
-using QLN.ContentBO.WebUI.Services;
 using System.Net;
 using System.Text.Json;
 using static QLN.ContentBO.WebUI.Components.ToggleTabs.ToggleTabs;
@@ -46,12 +45,12 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
         protected MudTextField<string> subCategoryInputRef;
         protected bool shouldFocusInput { get; set; } = false;
 
-        protected List<TabOption> tabOptions = new()
-        {
+        protected List<TabOption> tabOptions =
+        [
             new() { Label = "Live", Value = "live" },
             new() { Label = "Published", Value = "published" },
             new() { Label = "Unpublished", Value = "unpublished" }
-        };
+        ];
 
         protected string selectedTab = "live";
 
@@ -343,6 +342,10 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
         {
             try
             {
+                // Skip execution for default or min DateTime
+                if (givenUtcTime == DateTime.MinValue)
+                    return "-";
+
                 var now = DateTime.UtcNow.ToQatarTime();
                 var diff = now - givenUtcTime.ToQatarTime();
 

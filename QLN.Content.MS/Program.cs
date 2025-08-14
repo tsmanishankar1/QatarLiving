@@ -30,7 +30,6 @@ builder.Services.AddScoped<IV2NewsService, V2InternalNewsService>();
 builder.Services.AddScoped<IV2ReportsService, V2InternalReportsService>();
 builder.Services.AddScoped<IV2ContentDailyService, DailyInternalService>();
 builder.Services.AddScoped<V2IContentLocation, V2InternalLocationService>();
-builder.Services.AddScoped<IV2ReportsService, V2InternalReportsService>();
 builder.Services.AddScoped<IV2BannerService, V2BannerInternalService>();
 builder.Services.AddScoped<IV2CommunityPostService, V2InternalCommunityPostService>();
 builder.Services.AddSwaggerGen(opts =>
@@ -128,6 +127,47 @@ app.MapPost("/api/v2/news/bulkMigrate",
 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
+app.MapPost("/api/v2/news/comment/bulkMigrate",
+    [Topic(PubSubName, PubSubTopics.NewsCommentsMigration)]
+async Task<Results<
+             Ok<NewsCommentApiResponse>,
+             BadRequest<ProblemDetails>,
+             ProblemHttpResult>>
+         (
+             V2NewsCommentDto comment,
+             IV2NewsService service,
+             CancellationToken cancellationToken
+         ) =>
+    {
+        try
+        {
+
+            var result = await service.SaveNewsCommentAsync(comment, cancellationToken);
+
+            return TypedResults.Ok(result);
+        }
+        catch (InvalidDataException ex)
+        {
+            return TypedResults.BadRequest(new ProblemDetails
+            {
+                Title = "Invalid Data",
+                Detail = ex.Message,
+                Status = StatusCodes.Status400BadRequest
+            });
+        }
+        catch (Exception ex)
+        {
+            return TypedResults.Problem("Internal Server Error", ex.Message);
+        }
+    }).ExcludeFromDescription()
+.WithName("BulkMigrateNewsComments")
+.WithTags("News")
+.WithSummary("Bulk Migrate News Comment")
+.WithDescription("Bulk Migrate News Comment")
+.Produces<string>(StatusCodes.Status200OK)
+.Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+.Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
 app.MapPost("/api/v2/events/bulkMigrate",
     [Topic(PubSubName, PubSubTopics.EventsMigration)] 
             async Task<Results<
@@ -187,6 +227,37 @@ app.MapPost("/api/v2/community/bulkMigrate",
 .WithTags("V2Community")
 .WithSummary("Bulk Migrate Community Posts")
 .WithDescription("Bulk Migrate Community Posts")
+.Produces<string>(StatusCodes.Status200OK)
+.Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+.Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+app.MapPost("/api/v2/community/comments/bulkMigrate",
+    [Topic(PubSubName, PubSubTopics.CommunityCommentsMigration)]
+async Task<Results<
+                Ok<string>,
+                BadRequest<ProblemDetails>,
+                ProblemHttpResult>>
+            (
+                CommunityCommentDto comment,
+                IV2CommunityPostService service,
+                CancellationToken ct
+            ) =>
+    {
+        try
+        {
+
+            await service.AddCommentToCommunityPostAsync(comment, ct);
+            return TypedResults.Ok($"Comment {comment.CommentId} Added");
+        }
+        catch (Exception ex)
+        {
+            return TypedResults.Problem("Internal Server Error", ex.Message);
+        }
+    }).ExcludeFromDescription()
+.WithName("BulkMigrateCommunityComments")
+.WithTags("V2Community")
+.WithSummary("Bulk Migrate Community Comments")
+.WithDescription("Bulk Migrate Community Comments")
 .Produces<string>(StatusCodes.Status200OK)
 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);

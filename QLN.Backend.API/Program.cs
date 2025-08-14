@@ -152,6 +152,8 @@ builder.Services.AddDbContext<QLSubscriptionContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddDbContext<QLLogContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddDbContext<QLNotificationContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 #endregion
 
 #region Identity configuration
@@ -382,6 +384,9 @@ builder.Services.PaymentsConfiguration(builder.Configuration);
 builder.Services.ProductsConfiguration(builder.Configuration);
 builder.Services.ClassifiedBoStoresConfiguration(builder.Configuration);
 builder.Services.ServicesBo(builder.Configuration);
+
+// Putting this here as it could be used from the Backend API - but also in Classifieds Service
+builder.Services.ImplioConfiguration(builder.Configuration);
 
 builder.Services.AddSingleton<D365Config>(provider =>
 {

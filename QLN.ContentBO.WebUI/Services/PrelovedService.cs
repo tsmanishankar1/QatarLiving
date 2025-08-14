@@ -23,6 +23,7 @@ namespace QLN.ContentBO.WebUI.Services
             {
                 var queryParams = new Dictionary<string, string?>
                 {
+                    { "status", query.Status },
                     { "createdDate", query.CreatedDate },
                     { "publishedDate", query.PublishedDate },
                     { "Page", query.Page.ToString() },
