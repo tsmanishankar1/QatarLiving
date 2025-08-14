@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Components;
 using QLN.ContentBO.WebUI.Components.ConfirmationDialog;
 using QLN.ContentBO.WebUI.Components.RejectVerificationDialog;
+using QLN.ContentBO.WebUI.Models;
 using MudBlazor;
 
 namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.UserProfile.VerificationPreview
@@ -9,23 +10,34 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.UserProfile.Verification
     {
         [Inject] public IDialogService DialogService { get; set; }
         [Inject] public NavigationManager NavigationManager { get; set; }
+        [Parameter] public EventCallback<CompanyUpdateActions> OnCompanyAction { get; set; }
+        [Parameter]
+        public CompanyProfileItem CompanyDetails { get; set; } = new();
+        public VerifiedStatus CurrentStatus
+        {
+            get => (VerifiedStatus)CompanyDetails.CompanyVerificationStatus;
+            set => CompanyDetails.CompanyVerificationStatus = (int)value;
+        }
         protected void GoBack()
         {
             NavigationManager.NavigateTo("/manage/classified/collectibles/user/verification/profile");
         }
 
-
         protected async Task ApproveAsync()
         {
+            var companyUpdateAction = new CompanyUpdateActions
+            {
+                CompanyId = CompanyDetails.Id, 
+                Status = (VerifiedStatus)CompanyDetails.CompanyVerificationStatus,
+                CompanyVerificationStatus = VerifiedStatus.Approved 
+            };
             await ShowConfirmation(
                 "Approve Verification",
-                "Are you sure you want to approve this request?",
+                "Are you sure you want to approve this User Profile?",
                 "Approve",
                 async () =>
                 {
-                    Console.WriteLine("✅ Approved");
-                    // Your approve logic
-                    await Task.CompletedTask;
+                    await OnCompanyAction.InvokeAsync(companyUpdateAction);
                 });
         }
 
@@ -37,11 +49,16 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.UserProfile.Verification
                 "Submit",
                 async (reason) =>
                 {
-                    Console.WriteLine($"✏️ Need Changes Reason: {reason}");
-                    // Your need changes logic
-                    await Task.CompletedTask;
+                    var companyUpdateAction = new CompanyUpdateActions
+                    {
+                        CompanyId = CompanyDetails.Id, 
+                        Status = (VerifiedStatus)CompanyDetails.CompanyVerificationStatus,
+                        CompanyVerificationStatus = VerifiedStatus.NeedChanges 
+                    };
+                   await OnCompanyAction.InvokeAsync(companyUpdateAction);
                 });
         }
+
 
         protected async Task RejectAsync()
         {
@@ -51,9 +68,13 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.UserProfile.Verification
                 "Reject",
                 async (reason) =>
                 {
-                    Console.WriteLine($"❌ Rejected Reason: {reason}");
-                    // Your reject logic
-                    await Task.CompletedTask;
+                     var companyUpdateAction = new CompanyUpdateActions
+                    {
+                        CompanyId = CompanyDetails.Id, 
+                        Status = (VerifiedStatus)CompanyDetails.CompanyVerificationStatus,
+                        CompanyVerificationStatus = VerifiedStatus.Rejected
+                    };
+                   await OnCompanyAction.InvokeAsync(companyUpdateAction);
                 });
         }
 

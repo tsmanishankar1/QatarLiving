@@ -13,7 +13,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.ViewListing
         [Inject] protected IDialogService DialogService { get; set; } = default!;
         [Inject] public ICollectiblesService CollectiblesService { get; set; }
         [Inject] private ILogger<ViewListingBase> Logger { get; set; } = default!;
-        protected string SearchTerm { get; set; } = string.Empty;
+        protected string? SearchTerm { get; set; }
         protected bool Ascending { get; set; } = true;
         protected List<CollectibleItem> ClassifiedItems { get; set; } = [];
         protected int TotalCount { get; set; }

@@ -12,8 +12,8 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved
     {
         [Inject]
         protected NavigationManager Navigation { get; set; }
-        [Parameter]
-        public List<BusinessVerificationItem> Listings { get; set; }
+       [Parameter]
+        public List<CompanyProfileItem> Listings { get; set; } = new();
         [Parameter]
         public bool IsLoading { get; set; }
         [Parameter]
@@ -24,64 +24,26 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved
         public int TotalCount { get; set; }
         [Parameter]
         public EventCallback<int> OnPageChanged { get; set; }
-        [Parameter]
-        public string SelectedTab { get; set; }
-        [Parameter]
-        public EventCallback<int> OnPageSizeChanged { get; set; }
-        [Parameter]
-        public EventCallback<string> OnTabChanged { get; set; }
-        protected string _activeTab;
-        [Parameter]
-        public EventCallback<string> selectedTabChanged { get; set; }
-
-        protected async Task HandleTabChanged(string newTab)
-        {
-            if (_activeTab != newTab)
-            {
-                _activeTab = newTab;
-                await OnTabChanged.InvokeAsync(newTab);
-                await selectedTabChanged.InvokeAsync(newTab); // Notify parent of change
-            }
-        }
-        protected string _activeProfileTab = ((int)VerifiedStatus.Pending).ToString();
-        protected override void OnParametersSet()
-        {
-            if (!string.IsNullOrEmpty(SelectedTab))
-            {
-                _activeTab = SelectedTab;
-            }
-            else
-            {
-                _activeTab = ((int)AdStatusEnum.PendingApproval).ToString();
-            }
-        }
-        protected List<ToggleTabs.TabOption> profileTabOptions = new()
-        {
-            new() { Label = "Verification Request", Value = ((int)VerifiedStatus.Pending).ToString() },
-            new() { Label = "Approved", Value = ((int)VerifiedStatus.Approved).ToString() },
-            new() { Label = "Rejected", Value = ((int)VerifiedStatus.Rejected).ToString() }
-        };
+        [Parameter] public EventCallback<int> OnPageSizeChange { get; set; }
+        [Parameter] public EventCallback<int> OnPageChange { get; set; }
         protected int currentPage = 1;
         protected int pageSize = 12;
-        protected void HandlePageChange(int newPage)
+        protected async void HandlePageChange(int newPage)
         {
             currentPage = newPage;
+            await OnPageChange.InvokeAsync(currentPage);
             StateHasChanged();
         }
 
-        protected void HandlePageSizeChange(int newPageSize)
+        protected async void HandlePageSizeChange(int newPageSize)
         {
             pageSize = newPageSize;
-            currentPage = 1; 
+            await OnPageSizeChange.InvokeAsync(pageSize);
             StateHasChanged();
         }
-
-
-       
-
-        protected void ShowPreview(BusinessVerificationItem item)
+        protected void ShowPreview(Guid id)
         {
-            Navigation.NavigateTo($"/manage/classified/preloved/verification/preview/{item.UserId}");
+            Navigation.NavigateTo($"/manage/classified/items/verification/preview/{id}");
         }
     }
 }
