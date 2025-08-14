@@ -250,7 +250,6 @@ namespace QLN.Classified.MS.Service.Services
 
             return category;
         }
-
         public async Task<string> CreateServiceAd(string uid, string userName, ServiceDto dto, CancellationToken cancellationToken = default)
         {
             try
