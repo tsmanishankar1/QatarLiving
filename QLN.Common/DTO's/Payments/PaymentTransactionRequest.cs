@@ -33,12 +33,9 @@ namespace QLN.Common.DTO_s.Payments
         public string? Platform { get; set; }
 
         [JsonPropertyName("vertical")]
-        public Vertical? Vertical { get; set; }
+        public Vertical Vertical { get; set; }
 
-        [JsonPropertyName("subscription_category")]
-        public SubscriptionCategory? SubscriptionCategory { get; set; }
-
-        //[JsonPropertyName("subscriptionTypeId")]
-        //public int? SubscriptionTypeId { get; set; } // using category instead
+        [JsonPropertyName("subvertical")]
+        public SubVertical? SubVertical { get; set; }
     }
 }

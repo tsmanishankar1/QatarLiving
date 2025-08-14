@@ -20,6 +20,11 @@ namespace QLN.Common.Infrastructure.Service.Payments
         private readonly HttpClient _httpClient;
         private readonly D365Config _d365Config;
         private readonly QLPaymentsContext _dbContext;
+        private readonly IConfidentialClientApplication _msalApp;
+        private readonly SemaphoreSlim _tokenSemaphore = new(1, 1);
+        private string? _cachedToken;
+        private DateTime _tokenExpiry = DateTime.MinValue;
+
 
         public D365Service(
             ILogger<D365Service> logger,
@@ -35,16 +40,58 @@ namespace QLN.Common.Infrastructure.Service.Payments
 
             // Acquire Bearer token using MSAL
             var authority = $"https://login.microsoftonline.com/{_d365Config.TenantId}";
-            var app = ConfidentialClientApplicationBuilder.Create(_d365Config.ClientId)
+            _msalApp = ConfidentialClientApplicationBuilder.Create(_d365Config.ClientId)
                 .WithClientSecret(_d365Config.ClientSecret)
                 .WithAuthority(new Uri(authority))
                 .Build();
+        }
 
-            var scopes = new[] { $"{_d365Config.D365Url}/.default" };
-            var tokenResult = app.AcquireTokenForClient(scopes).ExecuteAsync().GetAwaiter().GetResult();
+        private async Task<string> GetAccessTokenAsync(CancellationToken cancellationToken = default)
+        {
+            // Check if we have a valid cached token
+            if (!string.IsNullOrEmpty(_cachedToken) && DateTime.UtcNow < _tokenExpiry.AddMinutes(-5))
+            {
+                return _cachedToken;
+            }
 
+            await _tokenSemaphore.WaitAsync(cancellationToken);
+            try
+            {
+                // Double-check after acquiring the lock
+                if (!string.IsNullOrEmpty(_cachedToken) && DateTime.UtcNow < _tokenExpiry.AddMinutes(-5))
+                {
+                    return _cachedToken;
+                }
+
+                _logger.LogInformation("Acquiring new D365 access token");
+
+                var scopes = new[] { $"{_d365Config.D365Url}/.default" };
+                var result = await _msalApp.AcquireTokenForClient(scopes)
+                    .ExecuteAsync(cancellationToken);
+
+                _cachedToken = result.AccessToken;
+                _tokenExpiry = result.ExpiresOn.DateTime;
+
+                _logger.LogInformation("D365 access token acquired successfully, expires at {ExpiryTime}", _tokenExpiry);
+                return _cachedToken;
+            }
+            catch (MsalException ex)
+            {
+                _logger.LogError(ex, "Failed to acquire D365 access token. Error: {Error}, ErrorDescription: {ErrorDescription}",
+                    ex.ErrorCode, ex.Message);
+                throw;
+            }
+            finally
+            {
+                _tokenSemaphore.Release();
+            }
+        }
+
+        private async Task EnsureAuthenticatedAsync(CancellationToken cancellationToken = default)
+        {
+            var token = await GetAccessTokenAsync(cancellationToken);
             _httpClient.DefaultRequestHeaders.Authorization =
-                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", tokenResult.AccessToken);
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
         }
 
 
@@ -76,11 +123,11 @@ namespace QLN.Common.Infrastructure.Service.Payments
             try
             {
                 // Use PostAsJsonAsync for cleaner serialization and posting
-                var response = await _httpClient.PostAsJsonAsync(_d365Config.InvoicePath, data, cancellationToken);
+           /*     var response = await _httpClient.PostAsJsonAsync(_d365Config.InvoicePath, data, cancellationToken);
 
                 response.EnsureSuccessStatusCode();
 
-                _logger.LogInformation("Interim sales order created and invoiced successfully for user: {UserId}", order.User.Id);
+                _logger.LogInformation("Interim sales order created and invoiced successfully for user: {UserId}", order.User.Id);*/
 
                 return true;
 
@@ -285,7 +332,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
 
             var orderItems = new OrderItem
             {
-                QLUserId = order.User.Id.ToString(),
+                QLUserId = order.User.Id,
                 QLUserName = order.User.Name,
                 Email = order.User.Email,
                 Mobile = order.User.Mobile,

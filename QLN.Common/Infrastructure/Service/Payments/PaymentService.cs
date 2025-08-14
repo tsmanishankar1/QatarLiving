@@ -2,10 +2,12 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using QLN.Common.DTO_s;
 using QLN.Common.DTO_s.Payments;
 using QLN.Common.DTO_s.Payments.QLN.Common.DTO_s.Payments;
 using QLN.Common.DTO_s.Subscription;
 using QLN.Common.DTOs;
+using QLN.Common.Infrastructure.IService.IAuth;
 using QLN.Common.Infrastructure.IService.IPayments;
 using QLN.Common.Infrastructure.IService.IProductService;
 using QLN.Common.Infrastructure.QLDbContext;
@@ -42,6 +44,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
             _dbContext = dbContext;
             _configuration = configuration;
             _subscriptionService = subscriptionService;
+
         }
 
         public async Task<PaymentResponse> PayAsync(ExternalPaymentRequest request, CancellationToken cancellationToken = default)
@@ -52,14 +55,9 @@ namespace QLN.Common.Infrastructure.Service.Payments
             // 3. If the product type is supported, create a payment request using the Fatora service.
             // 4. If the product type is not supported, log an error and return a failure response.
 
+            var platform = "web";
 
-            var username = string.Empty; // You might want to get this from the request context or user claims
-            var userId = string.Empty; // You might want to get this from the request context or user claims
-            var email = string.Empty; // You might want to get this from the request context or user claims
-            var mobile = string.Empty; // You might want to get this from the request context or user claims
-            var platform = "web"; // Defaulting to web, you might want to get this from the request context or user claims
-
-            if(string.IsNullOrEmpty(username) || string.IsNullOrEmpty(userId))
+            if (string.IsNullOrEmpty(request.User.UserName) || string.IsNullOrEmpty(request.User.UserId))
             {
                 _logger.LogError("Username is null or empty");
                 // Return a failure response
@@ -74,7 +72,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
                 };
             }
 
-            if (string.IsNullOrEmpty(email) && string.IsNullOrEmpty(mobile))
+            if (string.IsNullOrEmpty(request.User.Email) && string.IsNullOrEmpty(request.User.Mobile))
             {
                 _logger.LogError("Both Email and Mobile are null or empty");
                 // Return a failure response
@@ -104,22 +102,17 @@ namespace QLN.Common.Infrastructure.Service.Payments
                 };
             }
 
-
-            // this could be used in conjunction with a switch statement to handle different product codes or
-            // in this case product types
-            // Below is just an example of how you might handle different product types and an example payment process
             switch (request.ProductType)
             {
                 case ProductType.SUBSCRIPTION:
                     _logger.LogInformation("Processing Order payment for Order ID: {OrderId}", request.OrderId);
-                    // 
                     var dbResult = _dbContext.Payments.Add(new PaymentEntity
                     {
                         ProductType = request.ProductType ?? ProductType.FREE,
-                        UserSubscriptionId = request.UserSubscriptionId,
                         Status = PaymentStatus.Pending,
                         Fee = request.Amount ?? 0,
-                        PaidByUid = username,
+                        PaidByUid = request.User.UserId,
+                        Date = DateTime.UtcNow,
                         Source = platform == "web" ? Source.Web : Source.Mobile,
                         Gateway = Gateway.FATORA,
                         Vertical = request.Vertical,
@@ -128,45 +121,116 @@ namespace QLN.Common.Infrastructure.Service.Payments
 
                     _dbContext.SaveChanges();
 
-                    request.OrderId = dbResult.Entity.PaymentId; // Assuming PaymentId is the OrderId
+                    request.OrderId = dbResult.Entity.PaymentId;
 
                     _logger.LogInformation("Created PaymentEntity with ID: {PaymentId}", dbResult.Entity.PaymentId);
 
-                    // then create the subscription in an unpaid state
-
-                    // I am assuming these are wrong but just wanted to have an example
                     var subscriptionRequest = new V2SubscriptionPurchaseRequestDto
                     {
                         PaymentId = dbResult.Entity.PaymentId,
-                        CompanyId = Guid.TryParse(request.UserSubscriptionId, out var companyId) ? companyId : Guid.NewGuid(),
-                        ProductCode = request.ProductType.ToString()
+                        ProductCode = request.ProductCode,
+                        UserId = request.User.UserId,
                     };
 
-                    await _subscriptionService.PurchaseSubscriptionAsync(subscriptionRequest, username, cancellationToken);
+                    // Create the subscription
+                    var subscriptionId = await _subscriptionService.PurchaseSubscriptionAsync(subscriptionRequest, cancellationToken);
 
-                    // and then create the payment request using the Fatora service
+                    // After subscription is created, update PaymentEntity with subscription info
+                    dbResult.Entity.UserSubscriptionId = subscriptionId;
 
-                    // this is just to give an example of how to create a payment request
-                    return await _fatoraService.CreatePaymentAsync(request, username, email, mobile, platform, cancellationToken);
+                    _dbContext.SaveChanges(); // Update the payment entity in the database with subscription info
 
-                case ProductType.ADDON_REFRESH:
-                    _logger.LogInformation("Processing Addon Refresh payment for Order ID: {OrderId}", request.OrderId);
-                    // Handle Addon Refresh payment logic here
-                    break;
-                case ProductType.ADDON_FEATURE:
-                    _logger.LogInformation("Processing Addon Feature payment for Order ID: {OrderId}", request.OrderId);
-                    // Handle Addon Feature payment logic here
-                    break;
+                    return await _fatoraService.CreatePaymentAsync(request, request.User.UserName, request.Vertical, request.SubVertical, request.User.Email, request.User.Mobile, platform, cancellationToken);
+
                 case ProductType.PUBLISH:
                     _logger.LogInformation("Processing Pay to Publish payment for Order ID: {OrderId}", request.OrderId);
-                    // Handle Pay to Publish payment logic here
-                    break;
+                    var publishDbResult = _dbContext.Payments.Add(new PaymentEntity
+                    {
+                        AdId = request.AdId,
+                        SubVertical = request.SubVertical ?? null,
+                        ProductType = request.ProductType ?? ProductType.FREE,
+                        UserSubscriptionId = request.SubscriptionId,
+                        Status = PaymentStatus.Pending,
+                        Fee = request.Amount ?? 0,
+                        PaidByUid = request.User.UserId,
+                        Date = DateTime.UtcNow,
+                        Source = platform == "web" ? Source.Web : Source.Mobile,
+                        Gateway = Gateway.FATORA,
+                        Vertical = request.Vertical,
+                        TriggeredSource = platform == "web" ? TriggeredSource.Web : TriggeredSource.Cron,
+                    });
+
+                    _dbContext.SaveChanges();
+
+                    request.OrderId = publishDbResult.Entity.PaymentId;
+
+                    _logger.LogInformation("Created PaymentEntity with ID: {PaymentId}", publishDbResult.Entity.PaymentId);
+
+                    var publishRequest = new V2SubscriptionPurchaseRequestDto
+                    {
+                        PaymentId = publishDbResult.Entity.PaymentId,
+                        ProductCode = request.ProductCode,
+                        UserId = request.User.UserId,
+                    };
+
+                    // Create the subscription
+                    var pubsubscriptionId = await _subscriptionService.PurchaseSubscriptionAsync(publishRequest, cancellationToken);
+
+                    // After subscription is created, update PaymentEntity with subscription info
+                    publishDbResult.Entity.UserSubscriptionId = pubsubscriptionId;
+
+                    _dbContext.SaveChanges(); // Update the payment entity in the database with subscription info
+
+                    return await _fatoraService.CreatePaymentAsync(request, request.User.UserName, request.Vertical, request.SubVertical, request.User.Email, request.User.Mobile, platform, cancellationToken);
+
+                case ProductType.ADDON_COMBO:
+                case ProductType.ADDON_FEATURE:
+                case ProductType.ADDON_REFRESH:
+                    _logger.LogInformation("Processing Addon payment for Order ID: {OrderId}", request.OrderId);
+                    var addonDbResult = _dbContext.Payments.Add(new PaymentEntity
+                    {
+                        ProductType = request.ProductType ?? ProductType.FREE,
+                        Status = PaymentStatus.Pending,
+                        UserSubscriptionId = request.SubscriptionId,
+                        Fee = request.Amount ?? 0,
+                        PaidByUid = request.User.UserId,
+                        Date = DateTime.UtcNow,
+                        Source = platform == "web" ? Source.Web : Source.Mobile,
+                        Gateway = Gateway.FATORA,
+                        Vertical = request.Vertical,
+                        SubVertical = request.SubVertical,
+                        TriggeredSource = platform == "web" ? TriggeredSource.Web : TriggeredSource.Cron,
+                    });
+
+                    _dbContext.SaveChanges();
+
+                    request.OrderId = addonDbResult.Entity.PaymentId;
+
+                    _logger.LogInformation("Created PaymentEntity with ID: {PaymentId}", addonDbResult.Entity.PaymentId);
+
+                    var addonRequest = new V2UserAddonPurchaseRequestDto
+                    {
+                        PaymentId = addonDbResult.Entity.PaymentId,
+                        ProductCode = request.ProductCode,
+                        UserId = request.User.UserId,
+                        SubscriptionId = request.SubscriptionId ?? Guid.Empty,
+                    };
+
+                    // Create the addon
+                    var addonId = await _subscriptionService.PurchaseAddonAsync(addonRequest, cancellationToken);
+
+                    // After addon is created, update PaymentEntity with addon info
+                    addonDbResult.Entity.UserAddonId = addonId;
+
+                    _dbContext.SaveChanges(); // Update the payment entity in the database with addon info
+
+                    return await _fatoraService.CreatePaymentAsync(request, request.User.UserName, request.Vertical, request.SubVertical, request.User.Email, request.User.Mobile, platform, cancellationToken);
+
                 default:
                     _logger.LogError("Unsupported ProductType: {ProductType}", request.ProductType);
                     break;
             }
 
-            // Return a failure response
             return new PaymentResponse
             {
                 Status = "failure",
@@ -188,7 +252,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
             // 5. Save the changes to the database.
             // 6. Send the payment information to D365 with the operation set to Failure.
 
-            string baseRedirectUrl = GenerateRedirectURLBase(request.SubscriptionCategory);
+            string baseRedirectUrl = GenerateRedirectURLBase(request.Vertical, request.SubVertical);
 
             if (!int.TryParse(request.OrderId, out var orderId)) return $"{baseRedirectUrl}?paymentSuccess=false";
 
@@ -240,7 +304,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
             // 4. Send the payment information to D365.
             // 5. Return a success URL with the payment status and product type.
 
-            string baseRedirectUrl = GenerateRedirectURLBase(request.SubscriptionCategory);
+            string baseRedirectUrl = GenerateRedirectURLBase(request.Vertical, request.SubVertical);
 
             if (!int.TryParse(request.OrderId, out var orderId)) return $"{baseRedirectUrl}?paymentSuccess=false";
 
@@ -285,6 +349,13 @@ namespace QLN.Common.Infrastructure.Service.Payments
             {
                 PaymentInfo = payment,
                 Operation = D365PaymentOperations.SUCCESS,
+                User = new()
+                {
+                    Id = payment.PaidByUid,
+                    Email = string.Empty,
+                    Mobile = string.Empty,
+                    Name = string.Empty
+                }
             };
 
             // Send payment information to D365
@@ -296,29 +367,41 @@ namespace QLN.Common.Infrastructure.Service.Payments
             return $"{baseRedirectUrl}?paymentSuccess=${paymentConfirmation.Status}&productType=${payment.ProductType}"; // this is just an example, you might want to return a more meaningful URL 
         }
 
-        // helper method to know how to gernerate the base redirect URL based on the subscription category - needs IConfiguration import for these various base URLs
-        private string GenerateRedirectURLBase(SubscriptionCategory? category)
+        private string GenerateRedirectURLBase(Vertical vertical, SubVertical? subVertical)
         {
+            var baseUrls = _configuration.GetSection("BaseUrl").GetChildren()
+                                         .ToDictionary(x => x.Key, x => x.Value);
+
             string baseRedirectUrl = string.Empty;
 
-            switch (category)
+            if (baseUrls.TryGetValue(vertical.ToString(), out var verticalBaseUrl))
             {
-                case SubscriptionCategory.Items:
-                case SubscriptionCategory.Deals:
-                case SubscriptionCategory.Collectibles:
-                case SubscriptionCategory.Preloved:
-                case SubscriptionCategory.Stores:
-                    baseRedirectUrl = "https://qlc-dev.qatarliving.com";
-                    break;
-                case SubscriptionCategory.Services:
-                    baseRedirectUrl = "https://qls-dev.qatarliving.com";
-                    break;
-                default:
-                    baseRedirectUrl = _configuration.GetSection("BaseUrl")["LegacyDrupal"] ?? throw new ArgumentNullException("LegacyDrupal"); ; // Default URL, you might want to change this
-                    break;
+                if (vertical == Vertical.Classifieds && subVertical.HasValue)
+                {
+                    var subVerticalKey = subVertical.ToString();
+                    var classifiedBaseUrls = _configuration.GetSection("BaseUrl:Classifieds").GetChildren()
+                                                          .ToDictionary(x => x.Key, x => x.Value);
+                    if (classifiedBaseUrls.TryGetValue(subVerticalKey, out var subVerticalUrl))
+                    {
+                        return subVerticalUrl + "/dashboard";
+                    }
+                    else
+                    {
+                        baseRedirectUrl = classifiedBaseUrls.GetValueOrDefault("Default", verticalBaseUrl);
+                    }
+                }
+                else if(vertical == Vertical.Services)
+                {
+                    var servicesBaseUrls = _configuration.GetSection("BaseUrl:Services").ToString();
+                    baseRedirectUrl = servicesBaseUrls;
+                }
+            }
+            else
+            {
+                baseRedirectUrl = _configuration.GetSection("BaseUrl")["LegacyDrupal"] ?? "https://default-legacy-url.com";
             }
 
-            return baseRedirectUrl;
+            return baseRedirectUrl + "/dashboard";
         }
     }
 }

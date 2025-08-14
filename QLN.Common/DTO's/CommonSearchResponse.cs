@@ -1,5 +1,4 @@
-﻿
-using QLN.Common.DTO_s;
+﻿using QLN.Common.DTO_s;
 using QLN.Common.DTO_s.Index;
 using QLN.Common.DTOs;
 using System.Text.Json.Serialization;
@@ -49,6 +48,7 @@ namespace QLN.Common.DTO_s
         public ContentCommunityIndex? ContentCommunityItem { get; set; }
         [JsonPropertyName("classifiedStores")]
         public ClassifiedStoresIndex? ClassifiedStores { get; set; }
+
         [JsonPropertyName("company")]
         public CompanyProfileIndex? CompanyProfile { get; set; }
     }

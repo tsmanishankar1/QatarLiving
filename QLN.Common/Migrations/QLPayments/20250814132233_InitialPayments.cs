@@ -7,7 +7,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace QLN.Common.Migrations.QLPayments
 {
     /// <inheritdoc />
-    public partial class InitialSchema : Migration
+    public partial class InitialPayments : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -72,10 +72,10 @@ namespace QLN.Common.Migrations.QLPayments
                     PaymentId = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     ProductType = table.Column<int>(type: "integer", nullable: false),
-                    UserSubscriptionId = table.Column<string>(type: "text", nullable: true),
-                    SubscriptionFeaturedAddonsId = table.Column<string>(type: "text", nullable: true),
-                    SubscriptionRefreshedAddonsId = table.Column<string>(type: "text", nullable: true),
+                    UserSubscriptionId = table.Column<Guid>(type: "uuid", nullable: true),
+                    UserAddonId = table.Column<Guid>(type: "uuid", nullable: true),
                     Vertical = table.Column<int>(type: "integer", nullable: false),
+                    SubVertical = table.Column<int>(type: "integer", nullable: true),
                     AdId = table.Column<string>(type: "text", nullable: true),
                     Status = table.Column<int>(type: "integer", nullable: false),
                     Fee = table.Column<decimal>(type: "numeric", nullable: false),
@@ -85,10 +85,10 @@ namespace QLN.Common.Migrations.QLPayments
                     CardType = table.Column<int>(type: "integer", nullable: true),
                     Source = table.Column<int>(type: "integer", nullable: false),
                     Gateway = table.Column<int>(type: "integer", nullable: false),
-                    TransactionId = table.Column<string>(type: "text", nullable: false),
-                    AttachedPaymentId = table.Column<int>(type: "integer", nullable: false),
+                    TransactionId = table.Column<string>(type: "text", nullable: true),
+                    AttachedPaymentId = table.Column<int>(type: "integer", nullable: true),
                     GatewayResponse = table.Column<int>(type: "integer", nullable: true),
-                    Comments = table.Column<string>(type: "text", nullable: false),
+                    Comments = table.Column<string>(type: "text", nullable: true),
                     TriggeredSource = table.Column<int>(type: "integer", nullable: false),
                     Points = table.Column<decimal>(type: "numeric(10,1)", nullable: false)
                 },
