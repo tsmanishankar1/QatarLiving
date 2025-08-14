@@ -45,7 +45,7 @@ namespace QLN.ContentBO.WebUI.Services
         {
             try
             {
-                var requestUrl = "/api/v2/classifiedbo/getall-items";
+                var requestUrl = "/api/v2/classifiedbo/getall-collectibles";
                 var content = new StringContent(JsonSerializer.Serialize(itemsRequest), Encoding.UTF8, "application/json");
                 return await _httpClient.PostAsync(requestUrl, content);
             }
