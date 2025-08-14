@@ -2105,7 +2105,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
 
-            group.MapPost("/bulk-items-action-userid", async Task<Results<
+            group.MapPost("/bulk-items-action-userid/{userId}", async Task<Results<
                Ok<string>,
                BadRequest<ProblemDetails>,
                Conflict<ProblemDetails>,

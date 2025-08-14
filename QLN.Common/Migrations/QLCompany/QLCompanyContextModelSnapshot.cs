@@ -74,6 +74,9 @@ namespace QLN.Common.Migrations.QLCompany
                     b.Property<int>("CompanyType")
                         .HasColumnType("integer");
 
+                    b.Property<int?>("CompanyVerificationStatus")
+                        .HasColumnType("integer");
+
                     b.Property<string>("Country")
                         .IsRequired()
                         .HasMaxLength(100)

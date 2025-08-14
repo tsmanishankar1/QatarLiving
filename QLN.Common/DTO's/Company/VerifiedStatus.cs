@@ -13,6 +13,8 @@ namespace QLN.Common.DTO_s.Company
         NeedChanges = 3,
         Rejected = 4,
         Removed = 5,
-        OnHold = 6
+        OnHold = 6,
+        NotVerified = 7,
+        Verified = 8
     }
 }

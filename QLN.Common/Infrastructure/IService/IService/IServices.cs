@@ -17,6 +17,7 @@ namespace QLN.Common.Infrastructure.IService.IService
         Task<string> CreateServiceAd(string uid, string userName, ServiceDto dto, CancellationToken cancellationToken = default);
         Task<string> UpdateServiceAd(string userId, Services dto, CancellationToken cancellationToken = default);
         Task<Services?> GetServiceAdById(long id, CancellationToken cancellationToken = default);
+        Task<Services?> GetServiceAdBySlug(string? slug, CancellationToken cancellationToken = default);
         Task<ServicesPagedResponse<QLN.Common.Infrastructure.Model.Services>> GetAllServicesWithPagination(BasePaginationQuery? dto, CancellationToken cancellationToken = default);
         Task<string> DeleteServiceAdById(string userId, long id, CancellationToken cancellationToken = default);
         Task<Services> PromoteService(PromoteServiceRequest request, string? uid, CancellationToken ct);

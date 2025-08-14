@@ -6,6 +6,7 @@ using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService;
 using QLN.Common.Infrastructure.Model;
+using QLN.Common.Infrastructure.Subscriptions;
 
 namespace QLN.DataMigration.Services
 {
@@ -77,7 +78,7 @@ namespace QLN.DataMigration.Services
             throw new NotImplementedException();
         }
 
-        public Task<string> FeatureClassifiedAd(ClassifiedsPromoteDto dto, string userId, CancellationToken cancellationToken)
+        public Task<string> FeatureClassifiedAd(ClassifiedsPromoteDto dto, string userId,Guid subscriptionid, CancellationToken cancellationToken)
         {
             throw new NotImplementedException();
         }
@@ -156,12 +157,7 @@ namespace QLN.DataMigration.Services
         {
             throw new NotImplementedException();
         }
-
-        public Task<AdCreatedResponseDto> RefreshClassifiedItemsAd(SubVertical subVertical, long adId, string userId, CancellationToken cancellationToken)
-        {
-            throw new NotImplementedException();
-        }
-
+       
         public Task<bool> SaveSearch(SaveSearchRequestDto dto, string userId, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
@@ -218,6 +214,51 @@ namespace QLN.DataMigration.Services
         }
 
         public Task<AdCreatedResponseDto> RefreshClassifiedItemsAd(SubVertical subVertical, long adId, string userId, Guid subscriptionId, CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<string> Favourite(WishlistCreateDto dto, string userId, CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<List<Wishlist>> GetAllByUserFavouriteList(string userId, Vertical vertical, SubVertical subVertical, CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<string> UnFavourite(string userId, Vertical vertical, SubVertical subVertical, long adId, CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<string> FeatureClassifiedAd(ClassifiedsPromoteDto dto, string userId, CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<string> PromoteClassifiedAd(ClassifiedsPromoteDto dto, string userId, Guid subscriptionid, CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<Items> GetItemAdBySlug(string slug, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<Preloveds> GetPrelovedAdBySlug(string slug, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<Collectibles> GetCollectiblesAdBySlug(string slug, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<Deals> GetDealsAdBySlug(string slug, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }

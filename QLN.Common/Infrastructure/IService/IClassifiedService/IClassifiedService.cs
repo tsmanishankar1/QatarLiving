@@ -3,6 +3,7 @@ using QLN.Common.DTO_s.Classifieds;
 using QLN.Common.DTO_s.ClassifiedsBo;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.Model;
+using QLN.Common.Infrastructure.Subscriptions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -30,10 +31,14 @@ namespace QLN.Common.Infrastructure.IService
         Task<AdCreatedResponseDto> CreateClassifiedDealsAd(Deals dto, CancellationToken cancellationToken = default);       
         Task<DeleteAdResponseDto> DeleteClassifiedAd(SubVertical subVertical, long adId, string userId, CancellationToken cancellationToken = default);
         Task<Items> GetItemAdById(long adId, CancellationToken cancellationToken = default);
+        Task<Items> GetItemAdBySlug(string slug, CancellationToken cancellationToken = default);
         Task<List<Items>> GetAllItemsAdByUser(string userId, CancellationToken cancellationToken = default);
         Task<List<Preloveds>> GetAllPrelovedAdByUser(string userId, CancellationToken cancellationToken = default);
+        Task<Preloveds> GetPrelovedAdBySlug(string slug, CancellationToken cancellationToken = default);
         Task<List<Collectibles>> GetAllCollectiblesAdByUser(string userId, CancellationToken cancellationToken = default);
+        Task<Collectibles> GetCollectiblesAdBySlug(string slug, CancellationToken cancellationToken = default);
         Task<List<Deals>> GetAllDealsAdByUser(string userId, CancellationToken cancellationToken = default);
+        Task<Deals> GetDealsAdBySlug(string slug, CancellationToken cancellationToken = default);
         Task<Preloveds> GetPrelovedAdById(long adId, CancellationToken cancellationToken = default);
         Task<Deals> GetDealsAdById(long adId, CancellationToken cancellationToken = default);
         Task<Collectibles> GetCollectiblesAdById(long adId, CancellationToken cancellationToken = default);
@@ -55,7 +60,11 @@ namespace QLN.Common.Infrastructure.IService
      List<long> adIds,
      bool isPublished,
      CancellationToken cancellationToken = default);
-        Task<string> FeatureClassifiedAd(ClassifiedsPromoteDto dto, string userId, CancellationToken cancellationToken);
-        Task<string> PromoteClassifiedAd(ClassifiedsPromoteDto dto, string userId, CancellationToken cancellationToken);
+        Task<string> FeatureClassifiedAd(ClassifiedsPromoteDto dto, string userId,Guid subscriptionid, CancellationToken cancellationToken);
+        Task<string> PromoteClassifiedAd(ClassifiedsPromoteDto dto, string userId,Guid subscriptionid, CancellationToken cancellationToken);
+       
+        Task<string> Favourite(WishlistCreateDto dto, string userId, CancellationToken cancellationToken);
+        Task<List<Wishlist>> GetAllByUserFavouriteList(string userId, Vertical vertical, SubVertical subVertical, CancellationToken cancellationToken);
+        Task<string> UnFavourite(string userId, Vertical vertical, SubVertical subVertical, long adId, CancellationToken cancellationToken);
     }
 }

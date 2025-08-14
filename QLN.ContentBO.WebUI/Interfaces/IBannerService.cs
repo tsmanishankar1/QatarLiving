@@ -41,7 +41,7 @@ namespace QLN.ContentBO.WebUI.Interfaces
         /// <returns>An HTTP response indicating the result of the operation.</returns>
         Task<HttpResponseMessage> DeleteBanner(Guid bannerId);
         Task<HttpResponseMessage> GetBannerByVerticalAndStatus(int? verticalId, bool? status);
-        Task<HttpResponseMessage> ReorderBanner(List<string> newOrder, int verticalId, int subVerticalId, string pageId);
+        Task<HttpResponseMessage> ReorderBanner(List<string> newOrder, int verticalId, int subVerticalId, int pageId);
         
     }
 }

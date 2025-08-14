@@ -302,9 +302,10 @@ namespace QLN.Classified.MS.Service.Services
                     throw new ConflictException("You already have an active ad in this category. Please unpublish or remove it before posting another.");
                 }
                 dto.Status = GetAdStatus(dto.L1CategoryName, dto.AdType);
-
-                var entity = new QLN.Common.Infrastructure.Model.Services
+                var slug = SlugHelper.GenerateSlug(dto.Title, dto.CategoryName, "Services", Guid.NewGuid());
+                var entity = new Common.Infrastructure.Model.Services
                 {
+                    Slug = slug,
                     CategoryId = dto.CategoryId,
                     L1CategoryId = dto.L1CategoryId,
                     L2CategoryId = dto.L2CategoryId,
@@ -488,11 +489,12 @@ namespace QLN.Classified.MS.Service.Services
                 if (hasActiveAd)
                     throw new ConflictException("You already have an active ad in this category. Please unpublish or remove it before posting another.");
                 dto.Status = GetAdStatus(dto.L1CategoryName, dto.AdType);
-
+                var slug = SlugHelper.GenerateSlug(dto.Title, dto.CategoryName, "Services", Guid.NewGuid());
                 ValidateCommon(dto);
 
                 dto.UpdatedAt = DateTime.UtcNow;
                 dto.UpdatedBy = userId;
+                dto.Slug = slug;
                 AdUpdateHelper.ApplySelectiveUpdates(existing, dto);
 
                 _dbContext.Services.Update(existing);
@@ -598,6 +600,7 @@ namespace QLN.Classified.MS.Service.Services
                 CreatedAt = dto.CreatedAt,
                 UpdatedAt = dto.UpdatedAt,
                 UpdatedBy = dto.UpdatedBy,
+                Slug = dto.Slug,
                 Images = dto.PhotoUpload.Select(i => new ImageInfo
                 {
                     Url = i.Url,
@@ -622,6 +625,14 @@ namespace QLN.Classified.MS.Service.Services
             var ad = await _dbContext.Services
                 .AsNoTracking()
                 .FirstOrDefaultAsync(s => s.Id == id && s.IsActive, cancellationToken);
+
+            return ad;
+        }
+        public async Task<Common.Infrastructure.Model.Services?> GetServiceAdBySlug(string? slug, CancellationToken cancellationToken = default)
+        {
+            var ad = await _dbContext.Services
+                .AsNoTracking()
+                .FirstOrDefaultAsync(s => s.Slug == slug && s.IsActive, cancellationToken);
 
             return ad;
         }

@@ -35,7 +35,7 @@ namespace QLN.ContentBO.WebUI.Models
         public Guid BannerTypeId { get; set; }
         public Vertical VerticalId { get; set; }
         public SubVertical? SubVerticalId { get; set; }
-        public Guid PageId { get; set; }
+        public int PageId { get; set; }
     }
 
     public class BannerLocationDto
@@ -49,9 +49,10 @@ namespace QLN.ContentBO.WebUI.Models
 
     public class BannerPageLocationDto
     {
-        public Guid Id { get; set; }
+        public int PageId { get; set; }
+        public Guid? Id { get; set; }
         public int? VerticalId { get; set; }
-       public int? SubVerticalId { get; set; }
+        public int? SubVerticalId { get; set; }
         public string BannerPageName { get; set; }
         public List<BannerLocationDto> bannertypes { get; set; }
     }
@@ -78,4 +79,11 @@ namespace QLN.ContentBO.WebUI.Models
         Events = 9,
         Community = 10
     }
+    public enum BannerPageId
+    {
+        DetailPage = 1,
+        SearchPage = 2,
+        LandingPage = 3
+    }
+
 }
