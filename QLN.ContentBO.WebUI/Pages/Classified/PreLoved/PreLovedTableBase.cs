@@ -28,12 +28,12 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved
         [Parameter] public EventCallback<string> OnTabChanged { get; set; }
 
         protected bool isBulkActionLoading = false;
-        protected string? singleItemLoadingId = null;
-        protected string rejectionTargetItemId = null;
-        protected string removeTargetItemId = null;
+        protected int? singleItemLoadingId = null;
+        protected int rejectionTargetItemId = 0;
+        protected int removeTargetItemId = 0;
         protected bool isBulkRemove = false;
 
-        protected HashSet<PrelovedP2PSubscriptionItem> SelectedListings { get; set; } = new();
+        protected HashSet<PrelovedP2PSubscriptionItem> SelectedListings { get; set; } = [];
         protected int currentPage = 1;
         protected int pageSize = 12;
         protected string _activeTab;
@@ -106,7 +106,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved
 
         }
 
-        private void OpenRejectDialog()
+        private async void OpenRejectDialog()
         {
             var parameters = new DialogParameters
             {
@@ -121,10 +121,10 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved
                 MaxWidth = MaxWidth.Small,
                 FullWidth = true
             };
-            var dialog = DialogService.Show<RejectVerificationDialog>("", parameters, options);
+            var dialog = await DialogService.ShowAsync<RejectVerificationDialog>("", parameters, options);
         }
 
-        protected void OnEdit(SubscriptionListingModal item)
+        protected void OnEdit(PrelovedP2PSubscriptionItem item)
         {
             var name = "Rashid";
             NavManager.NavigateTo($"/manage/classified/deals/createform/{item.UserName}");
@@ -153,18 +153,18 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved
         protected Task UnpromoteSelected() => PerformBulkAction(BulkActionEnum.UnPromote);
         protected Task UnfeatureSelected() => PerformBulkAction(BulkActionEnum.UnFeature);
 
-        protected Task Approve(P2pListingModal item) => RunSingleAction(item.Id, BulkActionEnum.Approve);
-        protected Task Publish(P2pListingModal item) => RunSingleAction(item.Id, BulkActionEnum.Publish);
-        protected Task Unpublish(P2pListingModal item) => RunSingleAction(item.Id, BulkActionEnum.Unpublish);
+        protected Task Approve(PrelovedP2PSubscriptionItem item) => RunSingleAction(item.AdId, BulkActionEnum.Approve);
+        protected Task Publish(PrelovedP2PSubscriptionItem item) => RunSingleAction(item.AdId, BulkActionEnum.Publish);
+        protected Task Unpublish(PrelovedP2PSubscriptionItem item) => RunSingleAction(item.AdId, BulkActionEnum.Unpublish);
 
-        protected async Task OnRemove(P2pListingModal item)
+        protected async Task OnRemove(PrelovedP2PSubscriptionItem item)
         {
-            removeTargetItemId = item.Id;
+            removeTargetItemId = item.AdId;
             isBulkRemove = false;
             await OpenRemoveReasonDialog();
         }
 
-        private async Task RunSingleAction(string itemId, BulkActionEnum action)
+        private async Task RunSingleAction(int itemId, BulkActionEnum action)
         {
             singleItemLoadingId = itemId;
             await PerformBulkAction(action, "", [itemId]);
@@ -194,14 +194,14 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved
         {
             Console.WriteLine($"Rejection Reason: {reason}");
 
-            if (string.IsNullOrWhiteSpace(rejectionTargetItemId))
+            if (rejectionTargetItemId == 0)
                 return;
 
             singleItemLoadingId = rejectionTargetItemId;
 
-            await PerformBulkAction(BulkActionEnum.NeedChanges, reason, new List<string> { rejectionTargetItemId });
+            await PerformBulkAction(BulkActionEnum.NeedChanges, reason, [rejectionTargetItemId]);
 
-            rejectionTargetItemId = null;
+            rejectionTargetItemId = 0;
         }
 
         private async Task HandleRemoveWithReason(string reason)
@@ -213,22 +213,22 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved
             {
                 await PerformBulkAction(BulkActionEnum.Remove, reason);
             }
-            else if (!string.IsNullOrWhiteSpace(removeTargetItemId))
+            else if (removeTargetItemId == 0)
             {
                 singleItemLoadingId = removeTargetItemId;
                 await PerformBulkAction(BulkActionEnum.Remove, reason, [removeTargetItemId]);
-                removeTargetItemId = null;
+                removeTargetItemId = 0;
             }
 
             isBulkRemove = false;
         }
 
-        protected async Task RequestChanges(P2pListingModal item)
+        protected async Task RequestChanges(PrelovedP2PSubscriptionItem item)
         {
-            await OpenRejectDialog(item.Id);
+            await OpenRejectDialog(item.AdId);
         }
 
-        private async Task OpenRejectDialog(string itemId)
+        private async Task OpenRejectDialog(int itemId)
         {
             rejectionTargetItemId = itemId;
             var parameters = new DialogParameters
