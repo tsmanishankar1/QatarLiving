@@ -174,6 +174,7 @@ namespace QLN.Backend.API.ServiceConfiguration
         {
             services.AddTransient<IClassifiedStoresBOService, ExternalClassifiedStoresBOService>();
             services.AddTransient<IClassifiedPreLovedBOService, ExternalClassifiedPreLovedBOService>();
+            services.AddTransient<IV2SubscriptionService, V2SubscriptionService>();
             return services;
         }
 

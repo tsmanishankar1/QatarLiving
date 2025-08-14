@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using QLN.Common.DTO_s;
@@ -10,12 +11,14 @@ using QLN.Common.Infrastructure.QLDbContext;
 
 #nullable disable
 
-namespace QLN.Common.Migrations
+namespace QLN.Common.Migrations.ClassifiedDev
 {
     [DbContext(typeof(QLClassifiedContext))]
-    partial class QLClassifiedContextModelSnapshot : ModelSnapshot
+    [Migration("20250813115110_ClassifiedsBaseUpdateWithSlug")]
+    partial class ClassifiedsBaseUpdateWithSlug
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -662,10 +665,6 @@ namespace QLN.Common.Migrations
                     b.Property<DateTime?>("PromotedExpiryDate")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("Slug")
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
                     b.Property<string>("SocialMediaLinks")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
@@ -676,9 +675,9 @@ namespace QLN.Common.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 
-                    b.Property<Guid?>("SubscriptionId")
+                    b.Property<string>("SubscriptionId")
                         .HasMaxLength(50)
-                        .HasColumnType("uuid");
+                        .HasColumnType("character varying(50)");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");

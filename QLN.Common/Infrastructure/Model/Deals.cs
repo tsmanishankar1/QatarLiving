@@ -16,7 +16,7 @@ namespace QLN.Common.Infrastructure.Model
         public long Id { get; set; }
 
         [MaxLength(50)]
-        public string? SubscriptionId { get; set; }
+        public Guid? SubscriptionId { get; set; }
 
         [Required]
         [MaxLength(100)]
@@ -29,7 +29,8 @@ namespace QLN.Common.Infrastructure.Model
 
         [MaxLength(100)]
         public string? BusinessType { get; set; }
-
+        [MaxLength(200)]
+        public string? Slug { get; set; }
         [MaxLength(300)]
         public string? Description { get; set; }
         public DateTime? StartDate { get; set; }
