@@ -108,7 +108,7 @@ namespace QLN.Backend.API.Service.CompanyService
                 throw;
             }
         }
-        public async Task<QLN.Common.Infrastructure.Model.Company?> GetCompanyById(Guid id, CancellationToken cancellationToken = default)
+        public async Task<Common.Infrastructure.Model.Company?> GetCompanyById(Guid id, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -130,6 +130,29 @@ namespace QLN.Backend.API.Service.CompanyService
                 throw;
             }
         }
+        public async Task<Common.Infrastructure.Model.Company?> GetCompanyBySlug(string? slug, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var url = $"/api/companyprofile/getcompanybyslug?slug={slug}";
+                return await _dapr.InvokeMethodAsync<Common.Infrastructure.Model.Company>(
+                    HttpMethod.Get,
+                    ConstantValues.Company.CompanyServiceAppId,
+                    url,
+                    cancellationToken);
+            }
+            catch (InvocationException ex) when (ex.Response?.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                _logger.LogWarning(ex, "Company with ID {slug} not found.", slug);
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving company profile", slug);
+                throw;
+            }
+        }
+
         public async Task<CompanyPaginatedResponse<QLN.Common.Infrastructure.Model.Company>> GetAllVerifiedCompanies(CompanyProfileFilterRequest filter, CancellationToken cancellationToken = default)
         {
             try

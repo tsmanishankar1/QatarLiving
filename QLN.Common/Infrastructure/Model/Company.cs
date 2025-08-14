@@ -122,6 +122,7 @@ namespace QLN.Common.Infrastructure.Model
         public string? UserId { get; set; }
 
         public bool? IsBasicProfile { get; set; }
+
         [MaxLength(200)]
         public string? Slug { get; set; }
 

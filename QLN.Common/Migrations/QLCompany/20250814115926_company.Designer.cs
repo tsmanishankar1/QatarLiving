@@ -14,8 +14,8 @@ using QLN.Common.Infrastructure.QLDbContext;
 namespace QLN.Common.Migrations.QLCompany
 {
     [DbContext(typeof(QLCompanyContext))]
-    [Migration("20250811075626_Company3")]
-    partial class Company3
+    [Migration("20250814115926_company")]
+    partial class company
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -75,6 +75,9 @@ namespace QLN.Common.Migrations.QLCompany
                         .HasColumnType("integer");
 
                     b.Property<int>("CompanyType")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("CompanyVerificationStatus")
                         .HasColumnType("integer");
 
                     b.Property<string>("Country")
@@ -148,6 +151,10 @@ namespace QLN.Common.Migrations.QLCompany
                         .IsRequired()
                         .HasMaxLength(10)
                         .HasColumnType("character varying(10)");
+
+                    b.Property<string>("Slug")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
 
                     b.Property<string>("StartDay")
                         .HasMaxLength(20)
