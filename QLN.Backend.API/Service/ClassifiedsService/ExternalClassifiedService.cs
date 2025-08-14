@@ -48,6 +48,88 @@ namespace QLN.Backend.API.Service.ClassifiedService
             _searchService = searchService ?? throw new ArgumentNullException(nameof(searchService));
             _subscriptionContext = subscriptionService;
         }
+
+        public async Task<bool> SaveSearchByVertical(SaveSearchRequestDto dto, string userId, CancellationToken cancellationToken = default)
+        {
+            try
+            {             
+                if (dto.SearchQuery == null || string.IsNullOrWhiteSpace(dto.SearchQuery.Text))
+                {
+                    _log.LogError("Search query is invalid. Text is required.");
+                    return false;
+                }
+
+               
+                var searchDto = new SaveSearchRequestByIdDto
+                {
+                    UserId = userId,
+                    Name = dto.Name,
+                    CreatedAt = dto.CreatedAt,
+                    SearchQuery = dto.SearchQuery,
+                    Vertical = dto.Vertical,        
+                    SubVertical = dto.SubVertical   
+                };
+                
+                var result = await _dapr.InvokeMethodAsync<SaveSearchRequestByIdDto, string>(
+                    HttpMethod.Post,
+                    SERVICE_APP_ID,
+                    $"api/{Vertical}/savesearchinternal", 
+                    searchDto,
+                    cancellationToken
+                );
+
+                if (string.IsNullOrWhiteSpace(result))
+                {
+                    _log.LogError("Failed to save search by vertical. The result from the internal service is empty.");
+                    return false;
+                }
+
+                _log.LogError(userId);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _log.LogError("An error occurred while saving the search by vertical for user {UserId}");
+                return false;
+            }
+        }
+
+        public async Task<List<SavedSearchResponseDto>> GetSearches(string userId, Vertical vertical, SubVertical? subVertical = null, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(userId))
+                    throw new ArgumentException("User ID is required", nameof(userId));
+
+                var queryParams = new List<string>
+                {
+                    $"userId={Uri.EscapeDataString(userId)}",
+                    $"vertical={vertical}"
+                };
+
+                if (subVertical.HasValue)
+                    queryParams.Add($"subVertical={subVertical.Value}");
+
+                var queryString = string.Join("&", queryParams);
+
+                var result = await _dapr.InvokeMethodAsync<List<SavedSearchResponseDto>>(
+                    HttpMethod.Get,
+                    SERVICE_APP_ID,
+                    $"api/classifieds/search/save-by-id?{queryString}",
+                    cancellationToken
+                );
+
+                return result ?? new List<SavedSearchResponseDto>();
+            }
+            catch (DaprException dex)
+            {               
+                throw new InvalidOperationException("Failed to retrieve saved searches due to external service error.", dex);
+            }
+            catch (Exception ex)
+            {                
+                throw;
+            }
+        }
         public async Task<bool> SaveSearch(SaveSearchRequestDto dto, string userId, CancellationToken cancellationToken = default)
         {
             try
@@ -75,35 +157,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 _log.LogException(ex);
                 throw;
             }
-        }
-
-        public async Task<List<SavedSearchResponseDto>> GetSearches(string userId, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                if (string.IsNullOrWhiteSpace(userId))
-                    throw new ArgumentException("User ID is required", nameof(userId));
-
-                var result = await _dapr.InvokeMethodAsync<List<SavedSearchResponseDto>>(
-                    HttpMethod.Get,
-                    SERVICE_APP_ID,
-                    $"api/{Vertical}/search/save-by-id?userId={userId}",
-                    cancellationToken
-                );
-
-                return result ?? new List<SavedSearchResponseDto>();
-            }
-            catch (DaprException dex)
-            {
-                _log.LogException(dex);
-                throw;
-            }
-            catch (Exception ex)
-            {
-                _log.LogException(ex);
-                throw;
-            }
-        }
+        }   
 
         public Task<bool> SaveSearchById(SaveSearchRequestByIdDto dto, CancellationToken cancellationToken = default)
         {
