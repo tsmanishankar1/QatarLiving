@@ -6,7 +6,7 @@ namespace QLN.DataMigration.Services
 {
     public interface IDrupalSourceService
     {
-        Task<DrupalItemsCategories?> GetCategoriesAsync(string environment, CancellationToken cancellationToken);
+        Task<DrupalItemsMobileDevices?> GetMobileDevicesAsync(string environment, CancellationToken cancellationToken);
         Task<DrupalItems?> GetItemsAsync(
             string environment,
             //int categoryId,
@@ -20,5 +20,6 @@ namespace QLN.DataMigration.Services
         Task<ArticleResponse?> GetNewsFromDrupalAsync(string sourceCategory, CancellationToken cancellationToken, int? page = null, int? page_size = null);
         Task<ContentEventsResponse?> GetEventsFromDrupalAsync(CancellationToken cancellationToken, int? page = null, int? page_size = null);
         Task<CategoriesResponse?> GetCategoriesFromDrupalAsync(CancellationToken cancellationToken);
+        Task<GetCommentsResponse?> GetCommentsByIdAsync(string postId, CancellationToken cancellationToken, int? page = null, int? page_size = null);
     }
 }
