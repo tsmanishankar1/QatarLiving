@@ -65,6 +65,109 @@ namespace QLN.Classified.MS.Service
             _subscriptionContext = subscriptionContext;
         }
 
+        public async Task<bool> SaveSearchByVertical(SaveSearchRequestDto dto, string userId, CancellationToken cancellationToken = default)
+        {
+            try
+            {                
+                var actualUserId = !string.IsNullOrWhiteSpace(dto.UserId) ? dto.UserId : userId;
+
+                if (string.IsNullOrWhiteSpace(actualUserId))
+                {
+                    _logger.LogError("UserId is required to save search");
+                    return false;
+                }
+
+                bool isValidSubVertical = ValidateVerticalAndSubVertical(dto.Vertical, dto.SubVertical);
+                if (!isValidSubVertical)
+                {
+                    _logger.LogError("Invalid SubVertical {SubVertical} for Vertical {Vertical}", dto.SubVertical, dto.Vertical);
+                    return false;
+                }
+
+                var saveSearch = new SaveSearch
+                {
+                    Name = dto.Name,
+                    SubVertical = dto.SubVertical,
+                    Vertical = dto.Vertical,
+                    SearchQuery = dto.SearchQuery,
+                    CreatedAt = DateTime.UtcNow, 
+                    UserId = actualUserId
+                };
+
+                _context.saveSearches.Add(saveSearch);
+                await _context.SaveChangesAsync(cancellationToken);
+
+                _logger.LogInformation("Search '{SearchName}' saved successfully for user {UserId}", dto.Name, actualUserId);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to save the search '{SearchName}' for user {UserId}", dto.Name, userId);
+                throw new InvalidOperationException("Failed to save the search", ex);
+            }
+        }
+
+        private bool ValidateVerticalAndSubVertical(Vertical vertical, SubVertical? subVertical)
+        {
+            if ((int)vertical == 3) 
+            {
+                return subVertical == SubVertical.Items ||
+                       subVertical == SubVertical.Deals ||
+                       subVertical == SubVertical.Stores ||
+                       subVertical == SubVertical.Preloved ||
+                       subVertical == SubVertical.Collectibles;
+            }
+
+            if ((int)vertical == 4) 
+            {
+                return subVertical == null;
+            }
+            return false;
+        }
+
+        public async Task<List<SavedSearchResponseDto>> GetSearches(string userId, Vertical vertical, SubVertical? subVertical = null, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(userId))
+                    throw new ArgumentException("UserId is required.", nameof(userId));
+                
+                var query = _context.saveSearches
+                    .Where(s => s.UserId == userId && s.Vertical == vertical);
+
+                if (subVertical.HasValue)
+                {
+                    query = query.Where(s => s.SubVertical == subVertical.Value);
+                }
+
+                var savedSearches = await query
+                    .OrderByDescending(s => s.CreatedAt)
+                    .ToListAsync(cancellationToken);
+
+                var responseDto = savedSearches.Select(s => new SavedSearchResponseDto
+                {
+                    Id = s.Id,
+                    Name = s.Name,
+                    Vertical = s.Vertical,
+                    SubVertical = s.SubVertical,
+                    SearchQuery = s.SearchQuery,
+                    CreatedAt = s.CreatedAt,
+                    UserId = s.UserId
+                }).ToList();
+
+                //_logger.LogInformation("Retrieved {Count} saved searches from database for user {UserId}, vertical {Vertical}, subVertical {SubVertical}",
+                //    responseDto.Count, userId, vertical, subVertical);
+
+                return responseDto;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to retrieve saved searches from database for user {UserId}, vertical {Vertical}, subVertical {SubVertical}",
+                    userId, vertical, subVertical);
+                throw new InvalidOperationException("Failed to retrieve saved searches from database.", ex);
+            }
+        }
+
         public async Task<bool> SaveSearchById(SaveSearchRequestByIdDto dto, CancellationToken cancellationToken = default)
         {
             if (dto == null)
@@ -118,31 +221,7 @@ namespace QLN.Classified.MS.Service
                 throw new InvalidOperationException("An unexpected error occurred while saving search.", ex);
             }
         }
-
-        public async Task<List<SavedSearchResponseDto>> GetSearches(string userId, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                if (string.IsNullOrWhiteSpace(userId))
-                    throw new ArgumentException("UserId is required.");
-
-                var key = $"search:{userId}";
-                var result = await _dapr.GetStateAsync<List<SavedSearchResponseDto>>(UnifiedStore, key);
-
-                return result ?? new List<SavedSearchResponseDto>();
-            }
-            catch (DaprException dex)
-            {
-                Console.WriteLine($"Dapr error: {dex.Message}");
-                throw new InvalidOperationException("Failed to retrieve saved searches due to Dapr error.", dex);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Unexpected error: {ex.Message}");
-                throw new InvalidOperationException("An unexpected error occurred while retrieving saved searches.", ex);
-            }
-        }
-
+     
         public Task<bool> SaveSearch(SaveSearchRequestDto dto, string userId, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();

@@ -23,7 +23,7 @@ namespace QLN.DataMigration.Models
         public string Name { get; set; }
     }
 
-    public class DrupalItemsCategories
+    public class DrupalItemsMobileDevices
     {
         [JsonPropertyName("makes")]
         public List<DrupalMake> Makes { get; set; }

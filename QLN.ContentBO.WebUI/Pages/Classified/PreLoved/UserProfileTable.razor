@@ -6,15 +6,7 @@
 @using QLN.ContentBO.WebUI.Models;
 
 <MudPaper Class="pa-4">
-    @if (IsLoading)
-    {
-        <MudSkeleton Height="40px" Width="100%" Count="10" />
-        <MudSkeleton Height="40px" Width="100%" Count="10" />
-        <MudSkeleton Height="40px" Width="100%" Count="10" />
-        <MudSkeleton Height="40px" Width="100%" Count="10" />
-
-    }
-    else if (IsEmpty)
+   @if (!Listings.Any())
     {
         <div class="empty-card-wrapper">
             <EmptyCard Title="No p2p listing found" Subtitle="Please check back later " />
@@ -22,7 +14,7 @@
     }
     else
     {
-        <MudDataGrid T="BusinessVerificationItem"
+        <MudDataGrid T="CompanyProfileItem"
                      Items="@Listings"
                      Hover="true"
                      Bordered="true"
@@ -32,9 +24,9 @@
 
             <Columns>
                 <!-- Business Name -->
-                <PropertyColumn Property="x => x.BusinessName" Title="Business Name">
+                <PropertyColumn Property="x => x.CompanyName" Title="Company Name">
                     <CellTemplate>
-                        @(string.IsNullOrWhiteSpace(context.Item.BusinessName) ? "-" : context.Item.BusinessName)
+                        @(string.IsNullOrWhiteSpace(context.Item.CompanyName) ? "-" : context.Item.CompanyName)
                     </CellTemplate>
                 </PropertyColumn>
 
@@ -46,23 +38,25 @@
                 </PropertyColumn>
 
                 <!-- CR File -->
-                <PropertyColumn Property="x => x.CRFile" Title="CR File">
+                <PropertyColumn Property="x => x.CrDocument" Title="CR File">
                     <CellTemplate>
-                        @(string.IsNullOrWhiteSpace(context.Item.CRFile) ? "-" : context.Item.CRFile)
+                        @(string.IsNullOrWhiteSpace(context.Item.CrDocument) ? "-" : context.Item.CrDocument)
                     </CellTemplate>
                 </PropertyColumn>
 
                 <!-- CR License -->
-                <PropertyColumn Property="x => x.CRLicense" Title="CR License">
+                <PropertyColumn Property="x => x.LicenseNumber" Title="CR License">
                     <CellTemplate>
-                        @(string.IsNullOrWhiteSpace(context.Item.CRLicense) ? "-" : context.Item.CRLicense)
+                        @(string.IsNullOrWhiteSpace(context.Item.LicenseNumber) ? "-" : context.Item.LicenseNumber)
                     </CellTemplate>
                 </PropertyColumn>
 
                 <!-- End Date -->
-                <PropertyColumn Property="x => x.EndDate" Title="End Date">
+                <PropertyColumn Property="x => x.CrExpiryDate" Title="End Date">
                     <CellTemplate>
-                        @context.Item.EndDate.ToString("dd-MM-yyyy")
+                         @(context.Item.CrExpiryDate.HasValue 
+                        ? context.Item.CrExpiryDate.Value.ToString("dd-MM-yyyy") 
+                        : "")
                     </CellTemplate>
                 </PropertyColumn>
 
@@ -74,7 +68,7 @@
                                  Dense="true"
                                  AnchorOrigin="Origin.BottomLeft"
                                  TransformOrigin="Origin.TopRight">
-                            <MudMenuItem OnClick="@(() => ShowPreview(context.Item))">
+                            <MudMenuItem OnClick="@(() => ShowPreview(context.Item.Id))">
                                 <img src="/qln-images/eye_icon.svg" class="menu-icon-style" alt="Ignore" />
                                 <span class="menu-text">View</span>
                             </MudMenuItem>

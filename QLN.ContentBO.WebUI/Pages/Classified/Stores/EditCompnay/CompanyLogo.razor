@@ -7,7 +7,7 @@
 
     <MudFileUpload T="IBrowserFile"
                    Accept="image/*"
-                   FilesChanged="HandleLogoFileSelected">
+                   OnFilesChanged="@(e => HandleLogoFileSelected(e))">
         <ActivatorContent>
             <div class="upload-wrapper">
                 <MudPaper Class="upload-box">

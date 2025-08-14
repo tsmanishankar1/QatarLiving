@@ -86,15 +86,15 @@ app.UseHttpsRedirection();
 
 // migrate categories
 
-app.MapGet("/migrate_categories", async (
+app.MapGet("/migrate_mobile_devices", async (
     [FromServices] IMigrationService migrationService,
     [FromQuery] string environment,
     CancellationToken cancellationToken = default
     ) =>
 {
-    return await migrationService.MigrateCategories(environment, cancellationToken);
+    return await migrationService.MigrateMobileDevices(environment, cancellationToken);
 })
-.WithSummary("Migrate Categories - Not to be used");
+.WithSummary("Migrate Mobile Devices - Not to be used");
 
 app.MapGet("/migrate_items", async (
     [FromServices] IMigrationService migrationService,

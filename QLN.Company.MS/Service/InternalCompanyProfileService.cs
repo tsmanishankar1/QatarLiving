@@ -1,10 +1,16 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Dapr.Client;
+using Dapr.Client.Autogen.Grpc.v1;
+using Microsoft.EntityFrameworkCore;
 using QLN.Common.DTO_s;
 using QLN.Common.DTO_s.Company;
+using QLN.Common.DTO_s.Index;
+using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.CustomException;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService.ICompanyService;
+using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.QLDbContext;
+using QLN.Common.Infrastructure.Utilities;
 using System.Text.RegularExpressions;
 
 namespace QLN.Company.MS.Service
@@ -14,27 +20,44 @@ namespace QLN.Company.MS.Service
         private readonly ILogger<InternalCompanyProfileService> _logger;
         private readonly QLCompanyContext _context;
         private readonly QLSubscriptionContext _dbContext;
-        public InternalCompanyProfileService(ILogger<InternalCompanyProfileService> logger, QLCompanyContext context, QLSubscriptionContext dbContext)
+        private readonly DaprClient _dapr;
+        public InternalCompanyProfileService(ILogger<InternalCompanyProfileService> logger, QLCompanyContext context, QLSubscriptionContext dbContext, DaprClient dapr)
         {
             _logger = logger;
             _context = context;
             _dbContext = dbContext;
+            _dapr = dapr;
         }
 
         public async Task<string> CreateCompany(string uid, string userName, CompanyProfile dto, CancellationToken cancellationToken = default)
         {
             try
             {
-                bool duplicateByUserAndVertical = await _context.Companies.AnyAsync(
-                    c => c.UserId == uid &&
-                         c.Vertical == dto.Vertical &&
-                         c.SubVertical == dto.SubVertical,
-                    cancellationToken);
+                bool duplicateByUserAndVertical;
+
+                if (dto.Vertical == VerticalType.Services)
+                {
+                    duplicateByUserAndVertical = await _context.Companies.AnyAsync(
+                        c => c.UserId == uid &&
+                             c.Vertical == VerticalType.Services,
+                        cancellationToken);
+                }
+                else
+                {
+                    duplicateByUserAndVertical = await _context.Companies.AnyAsync(
+                        c => c.UserId == uid &&
+                             c.Vertical == dto.Vertical &&
+                             c.SubVertical == dto.SubVertical,
+                        cancellationToken);
+                }
 
                 if (duplicateByUserAndVertical)
                 {
-                    throw new ConflictException("A company profile already exists for this user under the same subvertical.");
+                    throw new ConflictException(dto.Vertical == VerticalType.Services
+                        ? "You can only create one company profile under the Services vertical."
+                        : "A company profile already exists for this user under the same subvertical.");
                 }
+
                 bool duplicateContactInfo = await _context.Companies.AnyAsync(
                     c => c.UserId != uid &&
                          (c.PhoneNumber == dto.PhoneNumber || c.Email == dto.Email),
@@ -50,7 +73,6 @@ namespace QLN.Company.MS.Service
 
                 _context.Companies.Add(entity);
                 await _context.SaveChangesAsync(cancellationToken);
-
                 return "Company Created successfully";
             }
             catch (ArgumentException ex)
@@ -63,7 +85,6 @@ namespace QLN.Company.MS.Service
                 throw;
             }
         }
-
         public async Task<string> MigrateCompany(string guid, string uid, string userName, CompanyProfile dto, CancellationToken cancellationToken = default)
         {
             try
@@ -114,7 +135,7 @@ namespace QLN.Company.MS.Service
             return !string.IsNullOrWhiteSpace(email) &&
                    Regex.IsMatch(email, @"^[^@\s]+@[^@\s]+\.[^@\s]+$", RegexOptions.IgnoreCase);
         }
-        public static void Validate(QLN.Common.Infrastructure.Model.Company dto)
+        public static void Validate(Common.Infrastructure.Model.Company dto)
         {
             if (string.IsNullOrWhiteSpace(dto.CompanyName))
                 throw new ArgumentException("Company name is required.", nameof(dto.CompanyName));
@@ -199,6 +220,7 @@ namespace QLN.Company.MS.Service
                 Id = id,
                 Vertical = dto.Vertical,
                 SubVertical = dto.SubVertical,
+                Slug = SlugHelper.GenerateSlug(dto.CompanyName, dto.CompanyType.ToString(), dto.Vertical.ToString(), Guid.NewGuid()),
                 UserId = uid,
                 CompanyName = dto.CompanyName,
                 Country = dto.Country,
@@ -259,6 +281,26 @@ namespace QLN.Company.MS.Service
                 throw;
             }
         }
+        public async Task<Common.Infrastructure.Model.Company?> GetCompanyBySlug(string? slug, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var result = await _context.Companies
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(c => c.Slug == slug && c.IsActive, cancellationToken);
+
+                if (result == null)
+                    throw new KeyNotFoundException($"Company with slug '{slug}' was not found or is inactive.");
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while retrieving company profile", slug);
+                throw;
+            }
+        }
+
         public async Task<string> UpdateCompany(Common.Infrastructure.Model.Company dto, CancellationToken cancellationToken = default)
         {
             try
@@ -269,8 +311,8 @@ namespace QLN.Company.MS.Service
                 if (existing == null)
                     throw new KeyNotFoundException($"Company with ID {dto.Id} was not found.");
 
-                if (existing.Vertical == VerticalType.Classifieds && (int)(existing.SubVertical ?? 0) == (int)SubVertical.Stores)
-                    throw new ArgumentException("Editing companies in the 'Stores' category is not allowed.");
+                //if (existing.Vertical == VerticalType.Classifieds && (int)(existing.SubVertical ?? 0) == (int)SubVertical.Stores)
+                //    throw new ArgumentException("Editing companies in the 'Stores' category is not allowed.");
 
                 bool duplicateCompany = await _context.Companies
                     .AnyAsync(c => c.Id != dto.Id &&
@@ -305,6 +347,22 @@ namespace QLN.Company.MS.Service
                 _context.Entry(existing).CurrentValues.SetValues(updated);
 
                 await _context.SaveChangesAsync(cancellationToken);
+                await _dapr.PublishEventAsync("pubsub", "notifications-email", new NotificationEntity
+                {
+                    Destinations = new List<string> { "email" },
+                    Recipients = new List<RecipientDto>
+                    {
+                        new RecipientDto
+                        {
+                            Name = dto.UserName,
+                            Email = dto.Email
+                        }
+                    },
+                    Subject = $"Company '{dto.CompanyName}' was updated",
+                    Plaintext = $"Hello,\n\nYour company titled '{dto.CompanyName}' has been updated.\n\nStatus: {dto.Status}\n\nThanks,\nQL Team",
+                    Html = $"{dto.CompanyName} has been updated."
+                }, cancellationToken);
+
 
                 return "Company Profile Updated Successfully";
             }
@@ -318,12 +376,13 @@ namespace QLN.Company.MS.Service
                 throw;
             }
         }
-        private QLN.Common.Infrastructure.Model.Company EntityForUpdate(Common.Infrastructure.Model.Company dto, Common.Infrastructure.Model.Company existing)
+        private Common.Infrastructure.Model.Company EntityForUpdate(Common.Infrastructure.Model.Company dto, Common.Infrastructure.Model.Company existing)
         {
-            return new QLN.Common.Infrastructure.Model.Company
+            return new Common.Infrastructure.Model.Company
             {
                 Id = dto.Id,
                 Vertical = dto.Vertical,
+                Slug = SlugHelper.GenerateSlug(dto.CompanyName, dto.CompanyType.ToString(), dto.Vertical.ToString(), Guid.NewGuid()),
                 SubVertical = dto.SubVertical,
                 UserId = dto.UserId,
                 CompanyName = dto.CompanyName,
@@ -417,7 +476,7 @@ namespace QLN.Company.MS.Service
                 }
                 company.UpdatedUtc = DateTime.UtcNow;
                 company.UpdatedBy = userId;
-
+                dto.Reason = dto.Reason;
                 await _context.SaveChangesAsync(cancellationToken);
                 return "Company Status Changed Successfully";
             }
@@ -540,7 +599,8 @@ namespace QLN.Company.MS.Service
                                   Status = s.Status,
                                   StartDate = s.StartDate,
                                   EndDate = s.EndDate,
-                                  SubscriptionType = s.ProductName
+                                  SubscriptionType = s.ProductName,
+                                  Slug = c.Slug
                               }).AsQueryable();
 
                 if (!string.IsNullOrWhiteSpace(request.SubscriptionType))

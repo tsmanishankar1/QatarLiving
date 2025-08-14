@@ -1,17 +1,13 @@
 using Microsoft.AspNetCore.Components;
 using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Models;
-using System;
-using System.Collections.Generic;
-using System.Net.Http;
 using System.Text.Json;
-using System.Threading.Tasks;
 
 namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.ViewTransactions
 {
     public partial class ViewTransactionsBase : ComponentBase
     {
-        [Inject] public IClassifiedService ClassifiedService { get; set; }
+        [Inject] public ICollectiblesService CollectiblesService { get; set; }
 
         protected string SearchTerm { get; set; } = string.Empty;
         protected bool Ascending = true;
@@ -24,7 +20,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.ViewTransactions
         protected int PageSize { get; set; } = 12;
         protected string SelectedTab { get; set; } = "paytopublish";
 
-        protected List<ItemViewTransaction> Transactions { get; set; } = new();
+        protected List<ItemTransactionItem> Transactions { get; set; } = new();
         protected int TotalRecords { get; set; }
 
         protected override async Task OnInitializedAsync()
@@ -74,55 +70,48 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.ViewTransactions
             try
             {
                 IsLoading = true;
-                var payload = new Dictionary<string, object>
+                var request = new ItemTransactionRequest
                 {
-                    ["searchText"] = SearchTerm,
-                    ["sortOrder"] = Ascending ? "desc" : "asc",
-                    ["sortBy"] = "creationDate",
-                    ["pageNumber"] = CurrentPage,
-                    ["pageSize"] = PageSize,
-                    ["transactionType"] = SelectedTab switch
+                    SubVertical = (int)SubVerticalTypeEnum.Collectibles,
+                    Status = "Active",
+                    DateCreated = FilterCreated?.Date.ToString("yyyy-MM-dd") ?? string.Empty,
+                    DatePublished = FilterPublished?.Date.ToString("yyyy-MM-dd") ?? string.Empty,
+                    DateStart = FilterStart?.Date.ToString("yyyy-MM-dd") ?? string.Empty,
+                    DateEnd = FilterEnd?.Date.ToString("yyyy-MM-dd") ?? string.Empty,
+                    PageNumber = CurrentPage,
+                    PageSize = PageSize,
+                    SearchText = SearchTerm,
+                    ProductType = SelectedTab switch
                     {
                         "paytopublish" => "Pay To Publish",
                         "paytopromote" => "Pay To Promote",
                         "paytofeature" => "Pay To Feature",
                         "bulkrefresh" => "Bulk Refresh",
                         _ => ""
-                    }
+                    },
+                    PaymentMethod = "",
+                    SortBy = "creationDate",
+                    SortOrder = Ascending ? "desc" : "asc"
                 };
+                var response = await CollectiblesService.GetTransactionListing(request);
 
-                // Add filters if present
-                if (FilterCreated.HasValue)
-                    payload["dateCreated"] = FilterCreated.Value.ToString("yyyy-MM-dd");
-
-                if (FilterPublished.HasValue)
-                    payload["datePublished"] = FilterPublished.Value.ToString("yyyy-MM-dd");
-
-                if (FilterStart.HasValue)
-                    payload["dateStart"] = FilterStart.Value.ToString("yyyy-MM-dd");
-
-                if (FilterEnd.HasValue)
-                    payload["dateEnd"] = FilterEnd.Value.ToString("yyyy-MM-dd");
-
-                var responses = await ClassifiedService.SearchClassifiedsViewTransactionAsync(payload);
-
-                if (responses.Count > 0 && responses[0].IsSuccessStatusCode)
+                if (response.IsSuccessStatusCode)
                 {
-                    var json = await responses[0].Content.ReadAsStringAsync();
-                    var result = JsonSerializer.Deserialize<PagedTransactionResponse>(json, new JsonSerializerOptions
+                    var json = await response.Content.ReadAsStringAsync();
+                    var result = JsonSerializer.Deserialize<ItemTransactionResponse>(json, new JsonSerializerOptions
                     {
                         PropertyNameCaseInsensitive = true
                     });
 
                     if (result != null)
                     {
-                        Transactions = result.Records;
+                        Transactions = result.Items;
                         TotalRecords = result.TotalRecords;
                     }
                 }
                 else
                 {
-                    Console.WriteLine($"API call failed: {responses[0].StatusCode}");
+                    Console.WriteLine($"API call failed: {response.StatusCode}");
                 }
             }
             catch (Exception ex)

@@ -19,6 +19,7 @@ namespace QLN.Common.DTO_s.Company
         public SubscriptionStatus Status { get; set; }
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
+        public string? Slug { get; set; }
         [JsonIgnore]
         public string? SubscriptionType { get; set; }
     }

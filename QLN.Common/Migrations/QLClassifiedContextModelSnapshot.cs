@@ -1230,6 +1230,40 @@ namespace QLN.Common.Migrations
                     b.ToTable("Preloved");
                 });
 
+            modelBuilder.Entity("QLN.Common.Infrastructure.Model.SaveSearch", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<CommonSearchRequest>("SearchQuery")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("jsonb");
+
+                    b.Property<int?>("SubVertical")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("Vertical")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("saveSearches");
+                });
+
             modelBuilder.Entity("QLN.Common.Infrastructure.Model.SeasonalPicks", b =>
                 {
                     b.Property<Guid>("Id")

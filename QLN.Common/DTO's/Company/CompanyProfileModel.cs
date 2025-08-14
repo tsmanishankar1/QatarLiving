@@ -76,6 +76,7 @@ namespace QLN.Common.DTO_s.Company
         public Guid? CompanyId { get; set; }
         public VerifiedStatus? Status { get; set; }
         public VerifiedStatus? CompanyVerificationStatus { get; set; }
+        public string? Reason { get; set; }
     }
     public class DeleteCompanyRequest
     {

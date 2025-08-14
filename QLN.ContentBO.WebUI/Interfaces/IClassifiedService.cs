@@ -14,6 +14,10 @@ namespace QLN.ContentBO.WebUI.Interfaces
         Task<HttpResponseMessage?> GetAllCategoryTreesAsync(string vertical);
         Task<HttpResponseMessage> GetServicesCategories(Vertical vertical, SubVertical subVertical);
         Task<HttpResponseMessage?> GetFeaturedSeasonalPicks(Vertical vertical);
+        Task<HttpResponseMessage?> GetAllCollectibles(object payload);
+        Task<HttpResponseMessage> UpdateCompanyActions(CompanyUpdateActions requestModel);
+        Task<HttpResponseMessage?> UpdateCompanyProfile(CompanyProfileItem company);
+        Task<HttpResponseMessage?> GetCompanyProfileById(Guid companyId);
         Task<HttpResponseMessage?> GetFeaturedStores(Vertical vertical);
         Task<HttpResponseMessage?> GetAllSeasonalPicks(Vertical vertical);
         Task<HttpResponseMessage?> GetAllFeaturedStores(Vertical vertical);

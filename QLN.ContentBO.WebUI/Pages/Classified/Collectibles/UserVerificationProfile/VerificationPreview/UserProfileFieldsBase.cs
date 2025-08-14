@@ -1,34 +1,71 @@
 using Microsoft.AspNetCore.Components;
+using QLN.ContentBO.WebUI.Models;
 
 namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.UserVerificationProfile.VerificationPreview
 {
     public class UserProfileFieldsBase : ComponentBase
     {
+         [Parameter]
+        public CompanyProfileItem CompanyDetails { get; set; } = new();
         // Basic Info
-        protected string CompanyName => "Lulu Hypermarket";
-        protected string Country => "Qatar";
-        protected string City => "Doha";
-        protected string Location => "West Bay";
-        protected string PhoneNumber => "+974 2234 5675";
-        protected string WhatsAppNumber => "+974 2234 5675";
-        protected string WebsiteUrl => "www.website.com";
+        protected string CompanyName => CompanyDetails.CompanyName ?? "Default Company Name";
+        protected string Country => CompanyDetails.Country ?? "Default Country";
+        protected string City => CompanyDetails.City ?? "Default City";
+        protected string Location => CompanyDetails.BranchLocations.Any() 
+        ? string.Join(", ", CompanyDetails.BranchLocations) 
+        : "No Locations Available";
+        protected string PhoneNumber => CompanyDetails.PhoneNumber ?? "Default Phone Number";
+        protected string WhatsAppNumber => CompanyDetails.WhatsAppNumber ?? "Default WhatsApp Number";
+        protected string WebsiteUrl => CompanyDetails.WebsiteUrl ?? "https://defaultwebsite.com";
 
         // Operating Hours
-        protected string StartDay => "Sunday";
-        protected string EndDay => "Thursday";
-        protected string StartHour => "8:00 AM";
-        protected string EndHour => "5:00 PM";
+        protected string StartDay => CompanyDetails.StartDay ?? "Monday";
+        protected string EndDay => CompanyDetails.EndDay ?? "Friday";
+        protected string StartHour =>  CompanyDetails.StartHour ?? "9:00 AM";
+        protected string EndHour => CompanyDetails.EndHour ?? "5:00 PM";
 
         // Company Profile
-        protected string BusinessNature => "Hypermarket";
-        protected string CompanySize => "500+";
-        protected string CompanyType => "MNC";
-        protected string UserDesignation => "Social Media Manager";
-        protected string BusinessDescription => "For sale is a gently used White Google Pixel 6 Pro XL, a top-of-the-line smartphone...";
+        protected string BusinessNature => CompanyDetails.NatureOfBusiness.Any() 
+            ? string.Join(", ", CompanyDetails.NatureOfBusiness.Select(n => n.ToString())) 
+            : "Not Specified";
+        protected string CompanySize => CompanyDetails.CompanySize switch
+        {
+            1 => "0-1",
+            2 => "11–50",
+            3 => "51–200",
+            4 => "201–500",
+            5 => "500+",
+            _ => "Not Specified"
+        };
+        protected string CompanyType => CompanyDetails.CompanyType switch
+        {
+            1 => "SME",
+            2 => "Enterprise",
+            3 => "MNC",
+            4 => "Government",
+            _ => "Not Specified"
+        };
+        protected string UserDesignation => CompanyDetails.UserDesignation ?? "Not Specified";
+        protected string BusinessDescription => CompanyDetails.BusinessDescription ?? "No Description Available";
 
         // License & Visibility
-        protected string CRNumber => "202025";
-        protected string CompanyReferenceFileName => "company_cr_2025.pdf";
-        protected string CompanyReferenceUrl => $"/files/company_cr_2025.pdf";
+        protected string CRNumber => CompanyDetails.CrNumber.ToString() ?? "Not Specified";
+        protected string CompanyReferenceFileName
+        {
+            get
+            {
+                var crDoc = CompanyDetails?.CrDocument;
+
+                if (string.IsNullOrWhiteSpace(crDoc))
+                    return string.Empty;
+
+                if (Uri.TryCreate(crDoc, UriKind.Absolute, out var uri))
+                {
+                    return Path.GetFileName(uri.AbsolutePath);
+                }
+                return crDoc;
+            }
+        }
+
     }
 }

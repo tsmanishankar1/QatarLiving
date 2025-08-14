@@ -393,55 +393,258 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-            // get save search
-            group.MapGet("/search/getsavedSearches", async Task<Results<
-                Ok<List<SavedSearchResponseDto>>,
-                BadRequest<ProblemDetails>,
-                ProblemHttpResult>>
-            (
-                IClassifiedService service,
-                HttpContext context
-            ) =>
+            // sangeeth
+
+            group.MapPost("/savesearchvertical", async Task<Results<
+    Ok<string>,
+    BadRequest<ProblemDetails>,
+    ProblemHttpResult>> (
+    SaveSearchRequestDto dto,
+    IClassifiedService service,
+    HttpContext context
+) =>
             {
+                // Extract userId from the claims
                 var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                var userId = userData.GetProperty("uid").GetString();
-                if (userId == null)
+
+                if (string.IsNullOrEmpty(userClaim))
                 {
                     return TypedResults.BadRequest(new ProblemDetails
                     {
                         Title = "Validation Error",
-                        Detail = "Valid User ID must be provided in the query.",
+                        Detail = "Valid User ID must be provided in the token.",
                         Status = StatusCodes.Status400BadRequest,
                         Instance = context.Request.Path
                     });
                 }
-                else
+
+                var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                var userId = userData.GetProperty("uid").GetString();
+                var name = userData.GetProperty("name").GetString();
+
+                if (string.IsNullOrWhiteSpace(userId))
                 {
-                    try
+                    return TypedResults.BadRequest(new ProblemDetails
                     {
-                        var result = await service.GetSearches(userId.ToString());
-                        return TypedResults.Ok(result);
-                    }
-                    catch (Exception ex)
+                        Title = "Validation Error",
+                        Detail = "Valid User ID must be provided.",
+                        Status = StatusCodes.Status400BadRequest,
+                        Instance = context.Request.Path
+                    });
+                }
+
+                // Validate the request body (Search name and SearchQuery)
+                if (string.IsNullOrWhiteSpace(dto.Name))
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
                     {
-                        return TypedResults.Problem(
-                            title: "Internal Server Error",
-                            detail: ex.Message,
-                            statusCode: StatusCodes.Status500InternalServerError,
-                            instance: context.Request.Path
-                        );
+                        Title = "Validation Error",
+                        Detail = "Search name is required.",
+                        Status = StatusCodes.Status400BadRequest,
+                        Instance = context.Request.Path
+                    });
+                }
+
+                if (dto.SearchQuery == null || string.IsNullOrWhiteSpace(dto.SearchQuery.Text))
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = "Search query text is required.",
+                        Status = StatusCodes.Status400BadRequest,
+                        Instance = context.Request.Path
+                    });
+                }
+
+                try
+                {
+                    var success = await service.SaveSearchByVertical(dto, userId);
+                    if (success)
+                    {
+                        return TypedResults.Ok("Search saved successfully.");
                     }
+
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Save Failed",
+                        Detail = "Search save could not be confirmed.",
+                        Status = StatusCodes.Status400BadRequest,
+                        Instance = context.Request.Path
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        instance: context.Request.Path
+                    );
                 }
             })
-            .WithName("GetSavedSearch")
-            .WithTags("Search")
-            .WithSummary("Get saved searches")
-            .WithDescription("Get all saved searches for the current user.")
-            .RequireAuthorization()
-            .Produces<List<SavedSearchResponseDto>>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+.WithName("savesearchvertical")
+.WithTags("Search")
+.WithSummary("Save user search")
+.WithDescription("Save the search criteria using user ID from frontend.")
+.RequireAuthorization()
+.Produces<string>(StatusCodes.Status200OK)
+.Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+.Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapPost("/savesearchinternal", async Task<Results<
+     Ok<string>,
+     BadRequest<ProblemDetails>,
+     ProblemHttpResult>> (
+     SaveSearchRequestByIdDto dto, // Use the ByIdDto for internal calls
+     IClassifiedService service,
+     HttpContext context
+ ) =>
+            {
+                try
+                {
+                    // Convert SaveSearchRequestByIdDto to SaveSearchRequestDto for the service
+                    var serviceDto = new SaveSearchRequestDto
+                    {
+                        Name = dto.Name,
+                        UserId = dto.UserId,
+                        CreatedAt = dto.CreatedAt,
+                        SearchQuery = dto.SearchQuery,
+                        Vertical = dto.Vertical,
+                        SubVertical = dto.SubVertical
+                    };
+
+                    var success = await service.SaveSearchByVertical(serviceDto, dto.UserId);
+                    if (success)
+                    {
+                        return TypedResults.Ok("Search saved successfully.");
+                    }
+
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Save Failed",
+                        Detail = "Search save could not be confirmed.",
+                        Status = StatusCodes.Status400BadRequest,
+                        Instance = context.Request.Path
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        instance: context.Request.Path
+                    );
+                }
+            })
+ .WithName("savesearchinternal")
+ .WithTags("Search")
+ .WithSummary("Internal endpoint to save search to database")
+ .WithDescription("Internal endpoint called by external services to save search data.")
+ .ExcludeFromDescription()  // Hide from public API documentation
+ .Produces<string>(StatusCodes.Status200OK)
+ .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+ .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+
+
+            group.MapGet("/search/getsavedSearches", async Task<Results<
+    Ok<List<SavedSearchResponseDto>>,
+    BadRequest<ProblemDetails>,
+    ProblemHttpResult>>
+(
+    [Required][FromQuery] Vertical vertical,
+    [FromQuery] SubVertical? subVertical,
+    IClassifiedService service,
+    HttpContext context
+) =>
+            {
+                var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+
+                if (string.IsNullOrEmpty(userClaim))
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Authentication Error",
+                        Detail = "User claim not found in token.",
+                        Status = StatusCodes.Status400BadRequest,
+                        Instance = context.Request.Path
+                    });
+                }
+
+                try
+                {
+                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                    var userId = userData.GetProperty("uid").GetString();
+
+                    if (string.IsNullOrEmpty(userId))
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "Valid User ID must be provided in the token.",
+                            Status = StatusCodes.Status400BadRequest,
+                            Instance = context.Request.Path
+                        });
+                    }
+
+                    // Inline SubVertical validation
+                    if (subVertical.HasValue)
+                    {
+                        var isValid = vertical switch
+                        {
+                            Vertical.Vehicles => subVertical.Value is SubVertical.Items or SubVertical.Deals or SubVertical.Preloved,
+                            Vertical.Properties => subVertical.Value is SubVertical.Items or SubVertical.Deals,
+                            Vertical.Rewards => subVertical.Value is SubVertical.Deals or SubVertical.Stores,
+                            Vertical.Classifieds => subVertical.Value is SubVertical.Items or SubVertical.Preloved or SubVertical.Collectibles,
+                            Vertical.Services => subVertical.Value is SubVertical.Services,
+                            Vertical.Content => subVertical.Value is SubVertical.News or SubVertical.Daily or SubVertical.Events or SubVertical.Community,
+                            _ => false
+                        };
+
+                        if (!isValid)
+                        {
+                            return TypedResults.BadRequest(new ProblemDetails
+                            {
+                                Title = "Validation Error",
+                                Detail = $"SubVertical '{subVertical}' is not valid for Vertical '{vertical}'.",
+                                Status = StatusCodes.Status400BadRequest,
+                                Instance = context.Request.Path
+                            });
+                        }
+                    }
+
+                    var result = await service.GetSearches(userId, vertical, subVertical);
+                    return TypedResults.Ok(result);
+                }
+                catch (JsonException)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Token Error",
+                        Detail = "Invalid user data format in token.",
+                        Status = StatusCodes.Status400BadRequest,
+                        Instance = context.Request.Path
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        instance: context.Request.Path
+                    );
+                }
+            })
+.WithName("GetSavedSearches")
+.WithTags("Search")
+.WithSummary("Get saved searches")
+.WithDescription("Get all saved searches for the current user filtered by vertical (mandatory) and optional subVertical.")
+.RequireAuthorization()
+.Produces<List<SavedSearchResponseDto>>(StatusCodes.Status200OK)
+.Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+.Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             group.MapGet("/search/save-by-id", async Task<Results<
                 Ok<List<SavedSearchResponseDto>>,
@@ -449,11 +652,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 ProblemHttpResult>>
             (
                 [Required][FromQuery] string userId,
+                [Required][FromQuery] Vertical vertical,  
+                [FromQuery] SubVertical? subVertical,
                 IClassifiedService service,
                 HttpContext context
             ) =>
             {
-                if (userId == string.Empty)
+                if (string.IsNullOrWhiteSpace(userId))
                 {
                     return TypedResults.BadRequest(new ProblemDetails
                     {
@@ -463,32 +668,153 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         Instance = context.Request.Path
                     });
                 }
-                else
+                
+                if (subVertical.HasValue)
                 {
-                    try
+                    var isValid = vertical switch
                     {
-                        var result = await service.GetSearches(userId.ToString());
-                        return TypedResults.Ok(result);
-                    }
-                    catch (Exception ex)
+                        Vertical.Vehicles => subVertical.Value is SubVertical.Items or SubVertical.Deals or SubVertical.Preloved,
+                        Vertical.Properties => subVertical.Value is SubVertical.Items or SubVertical.Deals,
+                        Vertical.Rewards => subVertical.Value is SubVertical.Deals or SubVertical.Stores,
+                        Vertical.Classifieds => subVertical.Value is SubVertical.Items or SubVertical.Preloved or SubVertical.Collectibles,
+                        Vertical.Services => subVertical.Value is SubVertical.Services,
+                        Vertical.Content => subVertical.Value is SubVertical.News or SubVertical.Daily or SubVertical.Events or SubVertical.Community,
+                        _ => false
+                    };
+
+                    if (!isValid)
                     {
-                        return TypedResults.Problem(
-                            title: "Internal Server Error",
-                            detail: ex.Message,
-                            statusCode: StatusCodes.Status500InternalServerError,
-                            instance: context.Request.Path
-                        );
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = $"SubVertical '{subVertical}' is not valid for Vertical '{vertical}'.",
+                            Status = StatusCodes.Status400BadRequest,
+                            Instance = context.Request.Path
+                        });
                     }
                 }
+
+                try
+                {
+                    var result = await service.GetSearches(userId, vertical, subVertical);
+                    return TypedResults.Ok(result);
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        instance: context.Request.Path
+                    );
+                }
             })
-            .WithName("GetSavedSearcheById")
-            .WithTags("Searchs")
-            .WithSummary("Get saved searchess")
-            .WithDescription("Get all saved searches for the current users.")
+            .WithName("GetSavedSearchById")
+            .WithTags("Search")
+            .WithSummary("Get saved searches by user ID")
+            .WithDescription("Get all saved searches for a specific user filtered by vertical (mandatory) and optional subVertical.")
             .ExcludeFromDescription()
             .Produces<List<SavedSearchResponseDto>>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+
+            //// get save search
+            //group.MapGet("/search/getsavedSearches", async Task<Results<
+            //    Ok<List<SavedSearchResponseDto>>,
+            //    BadRequest<ProblemDetails>,
+            //    ProblemHttpResult>>
+            //(
+            //    IClassifiedService service,
+            //    HttpContext context
+            //) =>
+            //{
+            //    var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+            //    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+            //    var userId = userData.GetProperty("uid").GetString();
+            //    if (userId == null)
+            //    {
+            //        return TypedResults.BadRequest(new ProblemDetails
+            //        {
+            //            Title = "Validation Error",
+            //            Detail = "Valid User ID must be provided in the query.",
+            //            Status = StatusCodes.Status400BadRequest,
+            //            Instance = context.Request.Path
+            //        });
+            //    }
+            //    else
+            //    {
+            //        try
+            //        {
+            //            var result = await service.GetSearches(userId.ToString());
+            //            return TypedResults.Ok(result);
+            //        }
+            //        catch (Exception ex)
+            //        {
+            //            return TypedResults.Problem(
+            //                title: "Internal Server Error",
+            //                detail: ex.Message,
+            //                statusCode: StatusCodes.Status500InternalServerError,
+            //                instance: context.Request.Path
+            //            );
+            //        }
+            //    }
+            //})
+            //.WithName("GetSavedSearch")
+            //.WithTags("Search")
+            //.WithSummary("Get saved searches")
+            //.WithDescription("Get all saved searches for the current user.")
+            //.RequireAuthorization()
+            //.Produces<List<SavedSearchResponseDto>>(StatusCodes.Status200OK)
+            //.Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            //.Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            //group.MapGet("/search/save-by-id", async Task<Results<
+            //    Ok<List<SavedSearchResponseDto>>,
+            //    BadRequest<ProblemDetails>,
+            //    ProblemHttpResult>>
+            //(
+            //    [Required][FromQuery] string userId,
+            //    IClassifiedService service,
+            //    HttpContext context
+            //) =>
+            //{
+            //    if (userId == string.Empty)
+            //    {
+            //        return TypedResults.BadRequest(new ProblemDetails
+            //        {
+            //            Title = "Validation Error",
+            //            Detail = "Valid User ID must be provided in the query.",
+            //            Status = StatusCodes.Status400BadRequest,
+            //            Instance = context.Request.Path
+            //        });
+            //    }
+            //    else
+            //    {
+            //        try
+            //        {
+            //            var result = await service.GetSearches(userId.ToString());
+            //            return TypedResults.Ok(result);
+            //        }
+            //        catch (Exception ex)
+            //        {
+            //            return TypedResults.Problem(
+            //                title: "Internal Server Error",
+            //                detail: ex.Message,
+            //                statusCode: StatusCodes.Status500InternalServerError,
+            //                instance: context.Request.Path
+            //            );
+            //        }
+            //    }
+            //})
+            //.WithName("GetSavedSearcheById")
+            //.WithTags("Searchs")
+            //.WithSummary("Get saved searchess")
+            //.WithDescription("Get all saved searches for the current users.")
+            //.ExcludeFromDescription()
+            //.Produces<List<SavedSearchResponseDto>>(StatusCodes.Status200OK)
+            //.Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            //.Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             // itemsAd post
             group.MapPost("items", async Task<IResult> (
