@@ -1,10 +1,12 @@
 ﻿using Dapr.Client;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Hosting;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.IService.IFileStorage;
 using QLN.Common.Infrastructure.IService.V2IContent;
 using QLN.Common.Infrastructure.Utilities;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.Json;
 using System.Threading;
@@ -82,9 +84,22 @@ namespace QLN.DataMigration.Services
             throw new NotImplementedException();
         }
 
-        public Task AddCommentToCommunityPostAsync(CommunityCommentDto dto, CancellationToken ct = default)
+        public async Task AddCommentToCommunityPostAsync(CommunityCommentDto dto, CancellationToken ct = default)
         {
-            throw new NotImplementedException();
+            try
+            {
+                await _dapr.PublishEventAsync(
+                            pubsubName: ConstantValues.PubSubName,
+                            topicName: ConstantValues.PubSubTopics.CommentsMigration,
+                            data: dto,
+                            cancellationToken: ct
+                        );
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error publishing comment {dto.CommentId} to {ConstantValues.PubSubTopics.CommentsMigration} topic");
+                throw;
+            }
         }
 
         public Task<CommunityCommentListResponse> GetAllCommentsByPostIdAsync(Guid postId, int? page = null, int? perPage = null, CancellationToken ct = default)
@@ -162,7 +177,7 @@ namespace QLN.DataMigration.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error publishing article {post.Id} to {ConstantValues.PubSubTopics.ArticlesMigration} topic");
+                _logger.LogError(ex, $"Error publishing article {post.Id} to {ConstantValues.PubSubTopics.PostsMigration} topic");
                 throw;
             }
 

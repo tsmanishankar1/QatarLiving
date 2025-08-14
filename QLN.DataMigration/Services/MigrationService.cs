@@ -32,13 +32,13 @@ namespace QLN.DataMigration.Services
             _fileStorageBlobService = fileStorageBlobService;
         }
 
-        public async Task<IResult> MigrateCategories(string environment, CancellationToken cancellationToken)
+        public async Task<IResult> MigrateMobileDevices(string environment, CancellationToken cancellationToken)
         {
             _logger.LogInformation($"Starting Migrations @ {DateTime.UtcNow}");
 
             // first fetch all results from source
 
-            var categories = await _drupalSourceService.GetCategoriesAsync(environment, cancellationToken);
+            var categories = await _drupalSourceService.GetMobileDevicesAsync(environment, cancellationToken);
 
             if (categories == null || categories.Makes == null || !categories.Makes.Any())
             {
@@ -289,13 +289,33 @@ namespace QLN.DataMigration.Services
             }
 
             var migrationItems = new List<CommunityPost>();
+            var migrationComments = new Dictionary<string, List<ContentComment>>();
             int totalCount = 0;
+            int totalCommentCount = 0;
 
             // iterate over each drupal item and fetch its data from current storage
             // and upload it into Azure Blob
             foreach (var drupalItem in drupalItems.Items)
             {
                 await ProcessMigrationCommunity(drupalItem, importImages: importImages);
+
+                if (int.TryParse(drupalItem.CommentCount, out var commentCount) && commentCount > 0)
+                {
+                    int comment_page = 1;
+                    int comment_page_size = 30;
+
+                    // Fetch comments for this community post
+                    var comments = await _drupalSourceService.GetCommentsByIdAsync(drupalItem.Nid, cancellationToken, comment_page, comment_page_size);
+
+                    if (comments != null && comments.Comments != null && comments.Comments.Any())
+                    {
+                        migrationComments.Add(drupalItem.Nid, comments.Comments);
+
+                        totalCommentCount =+ comments.Comments.Count;
+
+                        _logger.LogInformation($"Found {comments.Comments.Count} comments for post {drupalItem.Nid}");
+                    }
+                }
 
                 migrationItems.Add(drupalItem);
                 totalCount += 1;
@@ -320,13 +340,32 @@ namespace QLN.DataMigration.Services
                     {
                         await ProcessMigrationCommunity(drupalItem, importImages: importImages);
 
+                        if (int.TryParse(drupalItem.CommentCount, out var commentCount) && commentCount > 0)
+                        {
+                            int comment_page = 1;
+                            int comment_page_size = 30;
+
+                            // Fetch comments for this community post
+                            var comments = await _drupalSourceService.GetCommentsByIdAsync(drupalItem.Nid, cancellationToken, comment_page, comment_page_size);
+
+                            if (comments != null && comments.Comments != null && comments.Comments.Any())
+                            {
+                                migrationComments.Add(drupalItem.Nid, comments.Comments);
+
+                                totalCommentCount = +comments.Comments.Count;
+
+                                _logger.LogInformation($"Found {comments.Comments.Count} comments for post {drupalItem.Nid}");
+                            }
+                        }
+
                         migrationItems.Add(drupalItem);
                         totalCount += 1;
                     }
 
                     await _dataOutputService.SaveContentCommunityPostsAsync(migrationItems, cancellationToken);
+                    await _dataOutputService.SaveContentCommentsAsync(migrationComments, cancellationToken);
 
-                    _logger.LogInformation($"Migrated {totalCount} out of {totalItemCount} Items");
+                    _logger.LogInformation($"Migrated {totalCount} out of {totalItemCount} Posts with {totalCommentCount} Comments");
                 }
             }
 
@@ -334,7 +373,7 @@ namespace QLN.DataMigration.Services
 
             return Results.Ok(new
             {
-                Message = $"Migrated {totalCount} out of {totalItemCount} Items - Started @ {startTime} - Completed @ {DateTime.UtcNow}.",
+                Message = $"Migrated {totalCount} out of {totalItemCount} Posts with {totalCommentCount} Comments - Started @ {startTime} - Completed @ {DateTime.UtcNow}.",
             });
         }
 
