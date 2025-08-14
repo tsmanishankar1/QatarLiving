@@ -115,7 +115,10 @@ try
         client.BaseAddress = new Uri(contentBOAPIURL);
     }).AddHttpMessageHandler<JwtTokenHeaderHandler>();
 
-
+    builder.Services.AddHttpClient<IItemService, ItemService>(client =>
+    {
+        client.BaseAddress = new Uri(contentBOAPIURL);
+    }).AddHttpMessageHandler<JwtTokenHeaderHandler>();
 
     var app = builder.Build();
 
