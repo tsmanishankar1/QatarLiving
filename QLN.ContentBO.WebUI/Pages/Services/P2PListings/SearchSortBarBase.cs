@@ -150,8 +150,10 @@ namespace QLN.ContentBO.WebUI.Pages.Services.P2PListings
                     ["Category"] = x.Category,
                     ["Sub Category"] = x.SubCategory,
                     ["Certification"] = x.Certificate,           
-                    ["Creation Date"] = x.CreationDate,
-                    ["Published Date"] = x.DatePublished,
+                    ["Creation Date"] = x.CreationDate.ToString("dd-MM-yyyy hh:mmtt"),
+                    ["Published Date"] = x.DatePublished.HasValue
+                    ? x.DatePublished.Value.ToString("dd-MM-yyyy hh:mmtt")
+                    : string.Empty,
                     ["Date Expriry"] = x.DateExpiry,
                 }).ToList();
 

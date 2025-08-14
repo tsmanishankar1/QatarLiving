@@ -19,10 +19,10 @@ namespace QLN.Common.DTO_s.Payments
         /// </summary>
         public string? SubscriptionId { get; set; }
 
-        /// <summary>
-        /// Subscription Type Id against which the payment has to be done
-        /// </summary>
-        public string? SubscriptionTypeId { get; set; }
+        ///// <summary>
+        ///// Subscription Type Id against which the payment has to be done
+        ///// </summary>
+        //public string? SubscriptionTypeId { get; set; } // rather use ProductType enum
 
         /// <summary>
         /// Number of features to purchase

@@ -24,6 +24,7 @@ using QLN.Common.Infrastructure.IService.ISearchService;
 using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.QLDbContext;
 using QLN.Common.Infrastructure.Service.FileStorage;
+using QLN.Common.Infrastructure.Subscriptions;
 using QLN.Common.Infrastructure.Utilities;
 using QLN.Common.Migrations.QLLog;
 using static Dapr.Client.Autogen.Grpc.v1.Dapr;
@@ -48,18 +49,20 @@ namespace QLN.Classified.MS.Service
         private const string DealsCategoryIndexKey = ConstantValues.StateStoreNames.DealsCategoryIndexKey;
         private readonly QLClassifiedContext _context;
         private readonly QLCompanyContext _companyContext;
+        private readonly QLSubscriptionContext _subscriptionContext;
 
         private readonly ILogger<ClassifiedService> _logger;
         private readonly string itemJsonPath = Path.Combine("ClassifiedMockData", "itemsAdsMock.json");
         private readonly string prelovedJsonPath = Path.Combine("ClassifiedMockData", "prelovedAdsMock.json");
         private readonly string CollectablesonPath = Path.Combine("ClassifiedMockData", "collectables.json");
-        public ClassifiedService(Dapr.Client.DaprClient dapr, ILogger<ClassifiedService> logger, IWebHostEnvironment env, QLClassifiedContext context, QLCompanyContext companyContext)
+        public ClassifiedService(Dapr.Client.DaprClient dapr, ILogger<ClassifiedService> logger, IWebHostEnvironment env, QLClassifiedContext context, QLCompanyContext companyContext, QLSubscriptionContext subscriptionContext)
         {
             _dapr = dapr ?? throw new ArgumentNullException(nameof(dapr));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _env = env;
             _context = context;
             _companyContext = companyContext;
+            _subscriptionContext = subscriptionContext;
         }
 
         public async Task<bool> SaveSearchById(SaveSearchRequestByIdDto dto, CancellationToken cancellationToken = default)
@@ -177,8 +180,9 @@ namespace QLN.Classified.MS.Service
             {
                 _logger.LogInformation("Starting CreateClassifiedItemsAd for UserId={UserId}, Title='{Title}'", dto.UserId, dto.Title);
 
-                dto.Status = AdStatus.PendingApproval;
-
+                dto.Status = AdStatus.Draft;
+                dto.CreatedAt = DateTime.UtcNow;
+                
                 _logger.LogDebug("Adding Items ad to EF context...");
                 _context.Item.Add(dto);
 
@@ -193,7 +197,7 @@ namespace QLN.Classified.MS.Service
                 return new AdCreatedResponseDto
                 {
                     AdId = dto.Id,
-                    Title = dto.Title,
+                    Title = dto.Title,                    
                     CreatedAt = DateTime.UtcNow,
                     Message = "Items Ad created successfully"
                 };
@@ -266,6 +270,8 @@ namespace QLN.Classified.MS.Service
 
             try
             {
+                subscriptionId = Guid.Parse("5a024f96-7414-4473-80b8-f5d70297e262");
+                //var subcription = await _subscriptionContext.Subscriptions.AsNoTracking().FirstOrDefaultAsync(s => s.SubscriptionId == subscriptionid,cancellationToken);
                 string? adTitle;
 
                 object? adItem = subVertical switch
@@ -689,6 +695,7 @@ namespace QLN.Classified.MS.Service
                 return null;
             }
         }
+
         public async Task<Items> GetItemAdById(long adId, CancellationToken cancellationToken = default)
         {
             if (adId <= 0)
@@ -711,6 +718,56 @@ namespace QLN.Classified.MS.Service
             {
                 _logger.LogError(ex, "Error while fetching classified item details by adId: {AdId}", adId);
                 throw new InvalidOperationException("Failed to fetch classified item ad by ID.", ex);
+            }
+        }
+
+        public async Task<Items> GetItemAdBySlug(string slug, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(slug))
+                throw new ArgumentException("Slug must not be null or empty.", nameof(slug));
+
+            try
+            {
+                var adItem = await _context.Item.AsNoTracking()
+                    .FirstOrDefaultAsync(i => i.Slug == slug && i.IsActive == true, cancellationToken);
+
+                if (adItem == null)
+                {
+                    _logger.LogWarning("Slug '{Slug}' not found in database or IsActive.", slug);
+                    throw new KeyNotFoundException($"Ad with Slug '{slug}' does not exist.");
+                }
+
+                return adItem;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while fetching classified item details by slug: {Slug}", slug);
+                throw new InvalidOperationException("Failed to fetch classified item ad by Slug.", ex);
+            }
+        }
+
+        public async Task<Preloveds> GetPrelovedAdBySlug(string slug, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(slug))
+                throw new ArgumentException("Slug must not be null or empty.", nameof(slug));
+
+            try
+            {
+                var adItem = await _context.Preloved.AsNoTracking()
+                    .FirstOrDefaultAsync(i => i.Slug == slug && i.IsActive == true, cancellationToken);
+
+                if (adItem == null)
+                {
+                    _logger.LogWarning("Slug '{Slug}' not found in database or IsActive.", slug);
+                    throw new KeyNotFoundException($"Ad with Slug '{slug}' does not exist.");
+                }
+
+                return adItem;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while fetching classified preloved details by slug: {Slug}", slug);
+                throw new InvalidOperationException("Failed to fetch classified preloved ad by Slug.", ex);
             }
         }
 
@@ -786,6 +843,56 @@ namespace QLN.Classified.MS.Service
             }
         }
 
+        public async Task<Collectibles> GetCollectiblesAdBySlug(string slug, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(slug))
+                throw new ArgumentException("Slug must not be null or empty.", nameof(slug));
+
+            try
+            {
+                var adItem = await _context.Collectible.AsNoTracking()
+                    .FirstOrDefaultAsync(i => i.Slug == slug && i.IsActive == true, cancellationToken);
+
+                if (adItem == null)
+                {
+                    _logger.LogWarning("Slug '{Slug}' not found in database or IsActive.", slug);
+                    throw new KeyNotFoundException($"Ad with Slug '{slug}' does not exist.");
+                }
+
+                return adItem;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while fetching classified collectibles details by slug: {Slug}", slug);
+                throw new InvalidOperationException("Failed to fetch classified preloved ad by Slug.", ex);
+            }
+        }
+
+        public async Task<Deals> GetDealsAdBySlug(string slug, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(slug))
+                throw new ArgumentException("Slug must not be null or empty.", nameof(slug));
+
+            try
+            {
+                var adItem = await _context.Deal.AsNoTracking()
+                    .FirstOrDefaultAsync(i => i.Slug == slug && i.IsActive == true, cancellationToken);
+
+                if (adItem == null)
+                {
+                    _logger.LogWarning("Slug '{Slug}' not found in database or IsActive.", slug);
+                    throw new KeyNotFoundException($"Ad with Slug '{slug}' does not exist.");
+                }
+
+                return adItem;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while fetching classified deals details by slug: {Slug}", slug);
+                throw new InvalidOperationException("Failed to fetch classified deals ad by Slug.", ex);
+            }
+        }
+
         public async Task<List<Deals>> GetAllDealsAdByUser(string userId, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(userId))
@@ -818,7 +925,7 @@ namespace QLN.Classified.MS.Service
             try
             {
                 var adPreloved = await _context.Preloved.AsNoTracking()
-                    .FirstOrDefaultAsync(p => p.Id == adId && p.IsActive == true, cancellationToken);
+                    .FirstOrDefaultAsync(p => p.Id == adId, cancellationToken);
 
                 if (adPreloved == null)
                 {
@@ -1759,6 +1866,7 @@ namespace QLN.Classified.MS.Service
                 SubVertical = SubVertical.Items.ToString(),
                 AdType = dto.AdType.ToString(),
                 Title = dto.Title,
+                Slug = dto.Slug,
                 Description = dto.Description,
                 CategoryId = dto.CategoryId.ToString(),
                 L1CategoryId = dto.L1CategoryId.ToString(),
@@ -1837,6 +1945,7 @@ namespace QLN.Classified.MS.Service
                 SubscriptionId = dto.SubscriptionId.ToString(),
                 SubVertical = SubVertical.Preloved.ToString(),
                 AdType = dto.AdType.ToString(),
+                Slug = dto.Slug,
                 Title = dto.Title,
                 Description = dto.Description,
                 Price = dto.Price,
@@ -2054,10 +2163,12 @@ namespace QLN.Classified.MS.Service
         }
         #endregion
                
-        public async Task<string> FeatureClassifiedAd(ClassifiedsPromoteDto dto, string userId, CancellationToken cancellationToken)
+        public async Task<string> FeatureClassifiedAd(ClassifiedsPromoteDto dto, string userId,Guid subscriptionId, CancellationToken cancellationToken)
         {
             try
             {
+                 var subscriptionid = Guid.Parse("5a024f96-7414-4473-80b8-f5d70297e262");
+               // var subcription = await _subscriptionContext.Subscriptions.AsNoTracking().FirstOrDefaultAsync(s => s.SubscriptionId == subscriptionId, cancellationToken);
                 if (dto is null) throw new ArgumentNullException(nameof(dto));
                 if (dto.AdId <= 0) throw new ArgumentException("AdId must be a positive number.", nameof(dto.AdId));
                 if (string.IsNullOrWhiteSpace(userId)) throw new ArgumentException("UserId must not be empty.", nameof(userId));
@@ -2191,12 +2302,15 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-        public async Task<string> PromoteClassifiedAd(ClassifiedsPromoteDto dto, string userId, CancellationToken cancellationToken)
+        public async Task<string> PromoteClassifiedAd(ClassifiedsPromoteDto dto, string userId, Guid subscriptionid, CancellationToken cancellationToken)
         {
             _logger.LogInformation("PromoteClassifiedAd called. SubVertical: {SubVertical}, AdId: {AdId}, UserId: {UserId}", dto.SubVertical, dto.AdId, userId);
 
             try
             {
+                subscriptionid = Guid.Parse("5a024f96-7414-4473-80b8-f5d70297e262");
+                //var subcription = await _subscriptionContext.Subscriptions.AsNoTracking().FirstOrDefaultAsync(s => s.SubscriptionId == subscriptionid,cancellationToken);
+                
                 object? adItem = null;
 
                 _logger.LogDebug("Fetching ad from database for SubVertical: {SubVertical}", dto.SubVertical);
@@ -2318,6 +2432,92 @@ namespace QLN.Classified.MS.Service
                 throw new InvalidOperationException("Failed to promote the ad due to an unexpected error.", ex);
             }
         }
+
+        #region WishList
+
+        public async Task<string> Favourite(WishlistCreateDto dto, string userId, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var exists = await _context.Wishlists
+                    .AnyAsync(w => w.UserId == userId && w.Vertical == dto.Vertical && w.AdId == dto.AdId);
+
+                if (!exists)
+                {
+                    var wishlist = new Wishlist
+                    {
+                        UserId = userId,
+                        Vertical = dto.Vertical,
+                        Subvertical = dto.SubVertical,
+                        AdId = dto.AdId
+                    };
+                    _context.Wishlists.Add(wishlist);
+                    await _context.SaveChangesAsync();
+
+                    return "Added to favourites successfully.";
+                }
+                else
+                {
+                    return "Already exists in favourites.";
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("An error occurred while Favourite.", ex);
+            }
+        }
+
+        public async Task<List<Wishlist>> GetAllByUserFavouriteList(string userId, Vertical vertical, SubVertical subVertical, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var list = await _context.Wishlists
+                            .Where(w => w.UserId == userId && w.Vertical == vertical)
+                            .Select(w => new Wishlist
+                            {
+                                Id = w.Id,
+                                UserId = w.UserId,
+                                Vertical = w.Vertical,
+                                Subvertical = w.Subvertical,
+                                AdId = w.AdId,
+                                CreatedAt = w.CreatedAt,
+                                UpdatedAt = w.UpdatedAt
+                            }).ToListAsync();
+
+                return list;
+            }
+            catch(Exception ex)
+            {
+                throw new InvalidOperationException("An error occurred while retrieving the user's wishlist.", ex);
+                throw;
+            }
+        }
+
+        public async Task<string> UnFavourite(string userId, Vertical vertical, SubVertical subVertical, long adId, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var wishList = await _context.Wishlists
+                    .FirstOrDefaultAsync(w => w.UserId == userId && w.Vertical == vertical && w.AdId == adId);
+
+                if (wishList == null)
+                    return "Wishlist item not found.";
+
+                _context.Wishlists.Remove(wishList);
+                await _context.SaveChangesAsync();
+
+                return "Wishlist item removed successfully.";
+
+            }            
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Bulk publish/unpublish failed.");
+                throw new InvalidOperationException("An error occurred while removing the wishlist item", ex);
+            }
+        }
+
+        #endregion
+
 
     }
 }

@@ -5,9 +5,12 @@ using QLN.Backend.API.Service.V2ClassifiedBoService;
 using QLN.Common.DTO_s.ClassifiedsBo;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.CustomException;
+using QLN.Common.Infrastructure.IService;
 using QLN.Common.Infrastructure.IService.IClassifiedBoService;
 using QLN.Common.Infrastructure.IService.IFileStorage;
+using QLN.Common.Infrastructure.IService.IProductService;
 using QLN.Common.Infrastructure.IService.ISearchService;
+using QLN.Common.Infrastructure.QLDbContext;
 using System.Net;
 using System.Text;
 using System.Text.Json;
@@ -21,19 +24,22 @@ namespace QLN.Backend.API.Service.ClassifiedBoService
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IFileStorageBlobService _fileStorageBlob;
         private readonly ISearchService _searchService;
-
+        private readonly IClassifiedService _classifiedService;
+        private readonly IV2SubscriptionService _subscriptionContext;
         public ExternalClassifiedPreLovedBOService(
             DaprClient dapr,
             ILogger<ExternalClassifiedPreLovedBOService> logger,
             IHttpContextAccessor httpContextAccessor,
             IFileStorageBlobService fileStorageBlob,
-            ISearchService searchService)
+            ISearchService searchService,IClassifiedService classifiedService, IV2SubscriptionService subscriptionContext)
         {
             _dapr = dapr ?? throw new ArgumentNullException(nameof(dapr));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _httpContextAccessor = httpContextAccessor;
             _fileStorageBlob = fileStorageBlob;
             _searchService = searchService;
+            _classifiedService = classifiedService;
+            _subscriptionContext = subscriptionContext;
         }
 
 
@@ -60,12 +66,12 @@ namespace QLN.Backend.API.Service.ClassifiedBoService
             }
         }
 
-        public async Task<ClassifiedBOPageResponse<PreLovedViewP2PDto>> ViewPreLovedP2PSubscriptions(string? createdDate, string? publishedDate, int? Page, int? PageSize, string? Search, string? SortBy, string? SortOrder, CancellationToken cancellationToken = default)
+        public async Task<ClassifiedBOPageResponse<PreLovedViewP2PDto>> ViewPreLovedP2PSubscriptions(string? Status, string? createdDate, string? publishedDate, int? Page, int? PageSize, string? Search, string? SortBy, string? SortOrder, CancellationToken cancellationToken = default)
         {
             try
             {
                 _logger.LogInformation("Preloved p2p external services initiated.");
-                var queryParams = $"?createdDate={createdDate}&publishedDate={publishedDate}&Page={Page}&PageSize={PageSize}&Search={Search}&SortBy={SortBy}&SortOrder={SortOrder}";
+                var queryParams = $"?Status={Status}&createdDate={createdDate}&publishedDate={publishedDate}&Page={Page}&PageSize={PageSize}&Search={Search}&SortBy={SortBy}&SortOrder={SortOrder}";
                 var response = await _dapr.InvokeMethodAsync<ClassifiedBOPageResponse<PreLovedViewP2PDto>>(
                     HttpMethod.Get,
                     SERVICE_APP_ID,
@@ -106,12 +112,68 @@ namespace QLN.Backend.API.Service.ClassifiedBoService
             }
         }
 
-        public async Task<string> BulkEditP2PSubscriptions(BulkEditPreLovedP2PDto dto, CancellationToken cancellationToken = default)
+        public async Task<string> BulkEditP2PSubscriptions(BulkEditPreLovedP2PDto dto, string userId, CancellationToken cancellationToken = default)
         {
             try
             {
+                int TotalCount = 0;
+                int failedCount= 0;
+               
+                if (dto.AdIds == null || !dto.AdIds.Any())
+                    throw new ArgumentException("AdIds cannot be null or empty.");
 
-                var url = "/api/v2/classifiedbo/preloved-bulk-edits-subscriptions";
+                if (dto.AdStatus == null)
+                    throw new ArgumentException("AdStatus is required.");
+
+                if (string.IsNullOrWhiteSpace(userId))
+                    throw new ArgumentException("UserId cannot be null or empty.");
+
+                var ads = await Task.WhenAll(
+                   dto.AdIds.Select(id => _classifiedService.GetPrelovedAdById(id, cancellationToken))
+               );
+
+
+                var groupedActions = ads
+                    .Where(a => a != null && a.SubscriptionId.HasValue && a.SubscriptionId.Value != Guid.Empty)
+                    .GroupBy(a => new
+                    {
+                        a.SubscriptionId,
+                        ActionType = dto.AdStatus
+                    })
+                    .ToList();
+
+                if (groupedActions.Any())
+                    TotalCount = groupedActions.Count();
+
+                foreach (var group in groupedActions)
+                {
+                    var subscriptionId = group.Key.SubscriptionId!.Value;
+                    var actionName = group.Key.ActionType switch
+                    {
+                        BulkActionEnum.Promote => "promote", // match single method case
+                        BulkActionEnum.Feature => "feature",
+                        BulkActionEnum.Publish=>"publish",
+                        BulkActionEnum.Unpublish=>"unpublish",
+                        _ => throw new InvalidOperationException("Invalid bulk action.")
+                    };
+
+                    var usageCount = group.Count();
+
+                    var canUse = await _subscriptionContext.ValidateSubscriptionUsageAsync(
+                        subscriptionId,
+                        actionName,
+                        usageCount,
+                        cancellationToken
+                    );
+
+                    if (!canUse)
+                    {
+                        failedCount++;
+                    }
+                }
+
+
+                var url = $"/api/v2/classifiedbo/preloved-bulk-edits-subscriptions/{userId}";
                 var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Put, SERVICE_APP_ID, url);
                 request.Content = new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
                 var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
@@ -134,7 +196,35 @@ namespace QLN.Backend.API.Service.ClassifiedBoService
                     }
                     throw new InvalidDataException(errorMessage);
                 }
-                return "Preloved status updated successfully.";
+
+                foreach (var group in groupedActions)
+                {
+                    var subscriptionId = group.Key.SubscriptionId!.Value;
+                    var actionName = group.Key.ActionType switch
+                    {
+                        BulkActionEnum.Promote => "Promote",
+                        BulkActionEnum.Feature => "Feature",
+                        BulkActionEnum.Publish => "Publish",
+                        BulkActionEnum.Unpublish => "Unpublish",
+                        _ => throw new InvalidOperationException("Invalid bulk action.")
+                    };
+
+                    var usageCount = group.Count();
+
+                    var success = await _subscriptionContext.RecordSubscriptionUsageAsync(
+                        subscriptionId,
+                        actionName,
+                        usageCount,
+                        cancellationToken
+                    );
+
+                    if (!success)
+                    {
+                        failedCount++;
+                    }
+                }
+                int Success = TotalCount - failedCount;
+                return "Preloved status updated "+Success.ToString()+" out of "+ TotalCount.ToString()+" successfully.";
             }
             catch (Exception ex)
             {
@@ -143,6 +233,10 @@ namespace QLN.Backend.API.Service.ClassifiedBoService
                 throw;
             }
         }
-
+        private static long GuidToLong(Guid guid)
+        {
+            var bytes = guid.ToByteArray();
+            return BitConverter.ToInt64(bytes, 0); // uses first 8 bytes
+        }
     }
 }

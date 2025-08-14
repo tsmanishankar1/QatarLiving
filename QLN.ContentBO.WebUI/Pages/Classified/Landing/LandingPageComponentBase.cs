@@ -4,6 +4,7 @@ using Microsoft.JSInterop;
 using MudBlazor;
 using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Components;
+using QLN.ContentBO.WebUI.Pages.Classified.Modal;
 using static QLN.ContentBO.WebUI.Models.ClassifiedLanding;
 
 namespace QLN.ContentBO.WebUI.Pages.Classified.Landing
@@ -23,8 +24,12 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Landing
         public EventCallback<LandingPageItem> ReplaceItem { get; set; }
         [Inject]
         public IDialogService DialogService { get; set; } = default!;
+        [Parameter]
+        public EventCallback<string> OnDelete { get; set; }
         [Inject]
         public IClassifiedService ClassifiedService { get; set; }
+         [Parameter]
+        public EventCallback ReloadData { get; set; }
 
         // Services and injections
         [Inject] public ISnackbar Snackbar { get; set; }
@@ -51,7 +56,6 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Landing
                     Event = item
                 }).ToList();
             }
-            Console.WriteLine("Items", Items);
         }
 
         protected override async Task OnParametersSetAsync()
@@ -76,37 +80,23 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Landing
         [JSInvokable]
         public async Task OnTableReordered(List<string> newOrder)
         {
-
             try
             {
                 var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
                 var dialog = await DialogService.ShowAsync<ReOrderConfirmDialog>("", options);
                 var result = await dialog.Result;
-
                 if (result is not null)
                 {
                     if (result.Canceled)
                     {
-                        await ResetOrder(); 
+                        await ResetOrder();
                         return;
                     }
-
                     var newSlotOrder = newOrder.Select(int.Parse).ToList();
-                    Console.WriteLine("newSlotOrder", newSlotOrder);
-
                     var pickMap = Items
                         .Where(item => item != null)
                         .ToDictionary(item => item.SlotOrder, item => item.Id);
-                    Console.WriteLine("pickMap", pickMap);
-
-                    //var slotAssignments = newSlotOrder.Select((originalSlotNumber, newIndex) => new
-                    //{
-                    //    slotOrder = newIndex + 1,
-                    //    pickId = pickMap.TryGetValue(originalSlotNumber, out var id) && id != Guid.Empty ? (Guid?)id : null
-                    //}).ToList();
-                    Console.WriteLine("pickMap", pickMap);
                     List<object> slotAssignments;
-
                     switch (ItemType)
                     {
                         case LandingPageItemType.FeaturedCategory:
@@ -118,11 +108,17 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Landing
                             break;
 
                         case LandingPageItemType.SeasonalPick:
-                        case LandingPageItemType.FeaturedStore:
                             slotAssignments = newSlotOrder.Select((originalSlotNumber, newIndex) => new
                             {
                                 slotOrder = newIndex + 1,
                                 pickId = pickMap.TryGetValue(originalSlotNumber, out var id) && id != Guid.Empty ? (Guid?)id : null
+                            }).Cast<object>().ToList();
+                            break;
+                        case LandingPageItemType.FeaturedStore:
+                            slotAssignments = newSlotOrder.Select((originalSlotNumber, newIndex) => new
+                            {
+                                slotOrder = newIndex + 1,
+                                storeId = pickMap.TryGetValue(originalSlotNumber, out var id) && id != Guid.Empty ? (Guid?)id : null
                             }).Cast<object>().ToList();
                             break;
 
@@ -131,10 +127,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Landing
                             Logger.LogWarning("Unhandled ItemType in reorder: {ItemType}", ItemType);
                             return;
                     }
-
-
                     HttpResponseMessage? response = null;
-                    Console.WriteLine("ItemType", ItemType);
                     switch (ItemType)
                     {
                         case LandingPageItemType.FeaturedCategory:
@@ -146,9 +139,8 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Landing
                             break;
 
                         case LandingPageItemType.FeaturedStore:
-                            response = await ClassifiedService.ReorderSeasonalPicksAsync(slotAssignments, Models.Vertical.Classifieds);
+                            response = await ClassifiedService.ReorderFeaturedStoresAsync(slotAssignments, Models.Vertical.Classifieds);
                             break;
-
                         default:
                             Snackbar.Add("Unknown item type for reordering.", Severity.Warning);
                             Logger.LogWarning("Unhandled ItemType in reorder: {ItemType}", ItemType);
@@ -156,7 +148,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Landing
                     }
                     if (response?.IsSuccessStatusCode == true)
                     {
-                        Snackbar.Add("Items reordered successfully.", Severity.Success);
+                        Snackbar.Add("Items reordered successfully here.", Severity.Success);
                     }
                     else
                     {
@@ -172,6 +164,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Landing
                 Snackbar.Add("Failed to reorder items", Severity.Error);
             }
         }
+
 
         // UI Helper methods
         protected string GetTableTitle()
@@ -196,64 +189,6 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Landing
             };
         }
         protected string EmptyCardTitle => $"No {GetItemTypeName()} found";
-        protected async Task DeleteItem(string id)
-        {
-            var title = $"{GetItemTypeName()}";
-
-            var parameters = new DialogParameters
-        {
-            { "Title", "Delete Confirmation" },
-            { "Description", $"Do you want to delete this {title}?" },
-            { "ButtonTitle", "Delete" },
-            { "OnConfirmed", EventCallback.Factory.Create(this, async () => await DeleteItemAsync(id)) }
-        };
-
-        }
-        protected async Task DeleteItemAsync(string id)
-        {
-            try
-            {
-                HttpResponseMessage? response = null;
-                switch (ItemType)
-                {
-                    case LandingPageItemType.SeasonalPick:
-                        response = await ClassifiedService.DeleteSeasonalPicks(id, Models.Vertical.Classifieds);
-                        break;
-
-                    case LandingPageItemType.FeaturedCategory:
-                        response = await ClassifiedService.DeleteFeaturedCategory(id, Models.Vertical.Classifieds);
-                        break;
-
-                    case LandingPageItemType.FeaturedStore:
-                        response = await ClassifiedService.DeleteSeasonalPicks(id, Models.Vertical.Classifieds);
-                        break;
-
-                    default:
-                        Snackbar.Add("Unknown item type for deletion", Severity.Warning);
-                        Logger.LogWarning("Unhandled ItemType in delete: {ItemType}", ItemType);
-                        return;
-                }
-
-                if (response?.IsSuccessStatusCode == true)
-                {
-                    Snackbar.Add($"{GetItemTypeName()} deleted successfully", Severity.Success);
-
-                    var deletedItem = Items.FirstOrDefault(i => i.Id.ToString() == id);
-                    if (deletedItem != null)
-                        Items.Remove(deletedItem);
-                }
-                else
-                {
-                    Snackbar.Add($"Failed to delete {GetItemTypeName()}", Severity.Error);
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, $"Error deleting {GetItemTypeName()}");
-                Snackbar.Add($"Error occurred while deleting {GetItemTypeName()}", Severity.Error);
-            }
-        }
-
         protected async Task ResetOrder()
         {
             try
@@ -264,6 +199,70 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Landing
             {
                 Logger.LogError(ex, "ResetOrder");
             }
+        }
+        protected string GetCurrentTabAddButtonText()
+    {
+        return ItemType switch
+        {
+            LandingPageItemType.FeaturedCategory => "Featured Category",
+            LandingPageItemType.SeasonalPick => "Seasonal Pick",
+            LandingPageItemType.FeaturedStore => "Featured Store",
+            _ => "Item"
+        };
+    }
+
+
+         protected async Task NavigateToAddItem(string Id)
+        {
+            var title = $"Edit {GetCurrentTabAddButtonText()}";
+            var options = new DialogOptions
+            {
+                CloseOnEscapeKey = true
+            };
+            IDialogReference dialog;
+            if (ItemType == LandingPageItemType.FeaturedCategory)
+            {
+                var parameters = new DialogParameters
+                {
+                    { nameof(EditFeaturedCategoryModalBase.Title), title },
+                    { nameof(EditFeaturedCategoryModalBase.CategoryId), Id },
+                    { nameof(EditFeaturedCategoryModalBase.ReloadData), ReloadData },
+
+                };
+                dialog = await DialogService.ShowAsync<EditFeaturedCategoryModel>("", parameters, options);
+            }
+            else if (ItemType == LandingPageItemType.SeasonalPick)
+            {
+                var parameters = new DialogParameters
+                {
+                    { nameof(EditSeasonPickModalBase.Title), title },
+                    { nameof(EditSeasonPickModalBase.CategoryId), Id },
+                    { nameof(EditFeaturedCategoryModalBase.ReloadData), ReloadData },
+                };
+                dialog = await DialogService.ShowAsync<EditSeasonalPickModel>("", parameters, options);
+            }
+            else if (ItemType == LandingPageItemType.FeaturedStore)
+            {
+                var parameters = new DialogParameters
+                {
+                    { nameof(EditStoreModalBase.Title), title },
+                    { nameof(EditStoreModalBase.CategoryId), Id },
+                    { nameof(EditStoreModalBase.ReloadData), ReloadData },
+                };
+                dialog = await DialogService.ShowAsync<EditStoreModal>("", parameters, options);
+            }
+            else
+            {
+                return;
+            }
+            var result = await dialog.Result;
+            // if (!result.Canceled)
+            // {
+            //     await LoadDataForCurrentTab();
+            //     await LoadAllFeaturedCategory();
+            //     await LoadAllSeasonalPicks();
+            //     StateHasChanged();
+            // }
         }
     }
 }

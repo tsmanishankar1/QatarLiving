@@ -11,7 +11,7 @@ namespace QLN.Common.DTO_s
 
     {
         [StringLength(50)]
-        public string Text { get; set; } = "*";
+        public string? Text { get; set; } = "*";
         public Dictionary<string, object> Filters { get; set; } = new();
         public string? OrderBy { get; set; }
         public int PageNumber { get; set; } = 1;

@@ -1494,7 +1494,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
 
 
             group.MapGet("/featured-stores/slotted", async Task<Results<
-                 Ok<List<FeaturedStore>>,
+                 Ok<List<FeaturedStoreItem>>,
                  ProblemHttpResult>>
                  (
                  IClassifiedBoLandingService service,
@@ -1517,7 +1517,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                  .WithTags("ClassifiedBo")
                  .WithSummary("Get all slotted featured stores")
                  .WithDescription("Returns only featured stores that are assigned to slot positions (1–6).")
-                 .Produces<List<FeaturedStore>>(StatusCodes.Status200OK)
+                 .Produces<List<FeaturedStoreItem>>(StatusCodes.Status200OK)
                  .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
 
@@ -2105,7 +2105,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
 
-            group.MapPost("/bulk-items-action-userid", async Task<Results<
+            group.MapPost("/bulk-items-action-userid/{userId}", async Task<Results<
                Ok<string>,
                BadRequest<ProblemDetails>,
                Conflict<ProblemDetails>,

@@ -6,6 +6,7 @@ using QLN.Common.DTO_s;
 using QLN.Common.DTO_s.ClassifiedsBo;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.IService.IClassifiedBoService;
+using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.QLDbContext;
 using QLN.Common.Infrastructure.Subscriptions;
 using System.ComponentModel.DataAnnotations;
@@ -165,7 +166,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
             }
         }
 
-        public async Task<ClassifiedBOPageResponse<PreLovedViewP2PDto>> ViewPreLovedP2PSubscriptions(string? createdDate, string? publishedDate, int? Page, int? PageSize, string? Search, string? SortBy, string? SortOrder, CancellationToken cancellationToken = default)
+        public async Task<ClassifiedBOPageResponse<PreLovedViewP2PDto>> ViewPreLovedP2PSubscriptions(string? Status, string? createdDate, string? publishedDate, int? Page, int? PageSize, string? Search, string? SortBy, string? SortOrder, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -248,6 +249,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                                 })
                 .Where(x =>
                     (
+                    (string.IsNullOrEmpty(Status) || x.Status == Status) &&
                    (!createdDateParsed.HasValue || x.CreatedDate >= createdDateParsed.Value) &&
                     (!publishedDateParsed.HasValue || x.PublishedDate >= publishedDateParsed.Value) &&
                     (
@@ -415,23 +417,181 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
             }
         }
 
-        public async Task<string> BulkEditP2PSubscriptions(BulkEditPreLovedP2PDto dto, CancellationToken cancellationToken = default)
+        public async Task<string> BulkEditP2PSubscriptions(BulkEditPreLovedP2PDto dto, string userId, CancellationToken cancellationToken = default)
         {
             try
             {
                 _logger.LogInformation("P2P edit functionality initiated.");
-                foreach (var id in dto.AdIds)
+
+                var ads = await _context.Preloved
+                .Where(ad => dto.AdIds.Contains(ad.Id) && ad.IsActive == true)
+                .ToListAsync(cancellationToken);
+                var updatedAds = new List<Preloveds>();
+                foreach (var ad in ads)
                 {
-                    var preLove = await _context.Preloved.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
-                    if (preLove == null)
+                    bool shouldUpdate = false;
+                    switch (dto.AdStatus)
                     {
-                        continue;
+                        case BulkActionEnum.Approve:
+                            if (ad.Status == AdStatus.PendingApproval)
+                            {
+                                ad.Status = AdStatus.Published;
+                                shouldUpdate = true;
+                                ad.UpdatedAt = DateTime.UtcNow;
+                            }
+                            else
+                            {
+                                throw new InvalidOperationException($"Cannot approve preloved ad with status '{ad.Status}'. Only 'PendingApproval' is allowed.");
+                            }
+                            break;
+
+                        //case BulkActionEnum.NeedChanges:
+                        //    if (ad.Status == AdStatus.PendingApproval)
+                        //    {
+                        //        ad.Status = AdStatus.NeedsModification;
+                        //        shouldUpdate = true;
+                        //        ad.UpdatedAt = DateTime.UtcNow;
+                        //    }
+                        //    else
+                        //    {
+                        //        throw new InvalidOperationException($"Cannot need changes ad with status '{ad.Status}'. Only 'PendingApproval' is allowed.");
+                        //    }
+                        //    break;
+
+                        case BulkActionEnum.Publish:
+                            if (ad.Status == AdStatus.Unpublished)
+                            {
+                                ad.Status = AdStatus.Published;
+                                shouldUpdate = true;
+                                ad.UpdatedAt = DateTime.UtcNow;
+                            }
+                            else
+                            {
+                                throw new InvalidOperationException($"Cannot publish preloved ad with status '{ad.Status}'. Only 'Unpublished' is allowed.");
+                            }
+                            break;
+
+                        case BulkActionEnum.Unpublish:
+                            if (ad.Status == AdStatus.Published)
+                            {
+                                ad.Status = AdStatus.Unpublished;
+                                shouldUpdate = true;
+                                ad.UpdatedAt = DateTime.UtcNow;
+                            }
+                            else
+                            {
+                                throw new InvalidOperationException($"Cannot unpublish preloved ad with status '{ad.Status}'. Only 'Published' is allowed.");
+                            }
+                            break;
+
+                        case BulkActionEnum.UnPromote:
+                            if (ad.IsPromoted)
+                            {
+                                ad.IsPromoted = false;
+                                shouldUpdate = true;
+                                ad.UpdatedAt = DateTime.UtcNow;
+
+                            }
+                            else
+                            {
+                                throw new InvalidOperationException("Cannot unpromote an preloved ad that is not promoted.");
+                            }
+                            break;
+
+                        case BulkActionEnum.UnFeature:
+                            if (ad.IsFeatured)
+                            {
+                                ad.IsFeatured = false;
+                                shouldUpdate = true;
+                                ad.UpdatedAt = DateTime.UtcNow;
+                            }
+                            else
+                            {
+                                throw new InvalidOperationException("Cannot unfeature an preloved ad that is not featured.");
+                            }
+                            break;
+
+                        case BulkActionEnum.Promote:
+                            if (!ad.IsPromoted)
+                            {
+                                ad.IsPromoted = true;
+                                shouldUpdate = true;
+                                ad.UpdatedAt = DateTime.UtcNow;
+                                ad.PromotedExpiryDate = DateTime.UtcNow;
+                            }
+                            else
+                            {
+                                throw new InvalidOperationException("Cannot promote an preloved ad that is already promoted.");
+                            }
+                            break;
+
+                        case BulkActionEnum.Feature:
+                            if (!ad.IsFeatured)
+                            {
+                                ad.IsFeatured = true;
+                                shouldUpdate = true;
+                                ad.UpdatedAt = DateTime.UtcNow;
+                                ad.FeaturedExpiryDate = DateTime.UtcNow;
+                            }
+                            else
+                            {
+                                throw new InvalidOperationException("Cannot feature an preloved ad that is already featured.");
+                            }
+                            break;
+
+                        case BulkActionEnum.Remove:
+                            ad.Status = AdStatus.Rejected;
+                            shouldUpdate = true;
+                            break;
+
+                        case BulkActionEnum.Hold:
+                            if (ad.Status == AdStatus.Draft)
+                            {
+                                throw new InvalidOperationException("Cannot hold an preloved ad that is in draft status.");
+                            }
+                            else if (ad.Status != AdStatus.Hold)
+                            {
+                                ad.Status = AdStatus.Hold;
+                                shouldUpdate = true;
+                            }
+                            else
+                            {
+                                throw new InvalidOperationException("preloved Ad is already on hold.");
+                            }
+                            break;
+
+                        case BulkActionEnum.Onhold:
+                            if (ad.Status != AdStatus.Onhold)
+                            {
+                                ad.Status = AdStatus.Unpublished;
+                                shouldUpdate = true;
+                            }
+                            else
+                            {
+                                throw new InvalidOperationException("Ad is not on hold.");
+                            }
+                            break;
+
+                        default:
+                            throw new InvalidOperationException("Invalid action");
                     }
-                    preLove.Status = (AdStatus)dto.AdStatus;
-                    _context.Preloved.Update(preLove);
-                    await _context.SaveChangesAsync(cancellationToken);
+
+                    if (shouldUpdate)
+                    {
+                        ad.UpdatedAt = DateTime.UtcNow;
+                        ad.UpdatedBy = userId;
+                        updatedAds.Add(ad);
+                    }
                 }
                 
+
+                if (updatedAds.Any())
+                {
+                    await _context.SaveChangesAsync(cancellationToken);
+
+                   
+                }
+
                 _logger.LogInformation("Preloved P2P edit functionality completed.");
                 return "Preloved P2P status updated successfully.";
             }

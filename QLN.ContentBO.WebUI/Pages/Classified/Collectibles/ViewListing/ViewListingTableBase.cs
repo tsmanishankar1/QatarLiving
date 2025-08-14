@@ -33,9 +33,9 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.ViewListing
         protected int currentPage = 1;
         protected int pageSize = 12;
         protected bool isBulkActionLoading = false;
-        protected string singleItemLoadingId = null;
-        protected string rejectionTargetItemId = null;
-        protected string removeTargetItemId = null;
+        protected long? singleItemLoadingId = null;
+        protected long? rejectionTargetItemId = null;
+        protected long? removeTargetItemId = null;
         protected bool isBulkRemove = false;
 
         protected async void HandlePageChange(int newPage)
@@ -107,7 +107,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.ViewListing
             var result = await dialog.Result;
 
         }
-        private void OpenRejectDialog(string itemId)
+        private void OpenRejectDialog(long? itemId)
         {
             rejectionTargetItemId = itemId;
             var parameters = new DialogParameters
@@ -185,22 +185,22 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.ViewListing
             OpenRemoveReasonDialog();
             return Task.CompletedTask;
         }
-        private async Task RunSingleAction(string itemId, AdBulkActionType action)
+        private async Task RunSingleAction(long? itemId, AdBulkActionType action)
         {
             singleItemLoadingId = itemId;
-            await PerformBulkAction(action, "", new List<string> { itemId });
+            await PerformBulkAction(action, "", new List<long?> { itemId });
         }
 
         private async Task HandleRejection(string reason)
         {
             Console.WriteLine($"Rejection Reason: {reason}");
 
-            if (string.IsNullOrWhiteSpace(rejectionTargetItemId))
+            if (rejectionTargetItemId == null)
                 return;
 
             singleItemLoadingId = rejectionTargetItemId;
 
-            await PerformBulkAction(AdBulkActionType.NeedChanges, reason, new List<string> { rejectionTargetItemId });
+            await PerformBulkAction(AdBulkActionType.NeedChanges, reason, new List<long?> { rejectionTargetItemId });
 
             rejectionTargetItemId = null;
         }
@@ -213,10 +213,10 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.ViewListing
             {
                 await PerformBulkAction(AdBulkActionType.Remove, reason);
             }
-            else if (!string.IsNullOrWhiteSpace(removeTargetItemId))
+            else if (removeTargetItemId != null)
             {
                 singleItemLoadingId = removeTargetItemId;
-                await PerformBulkAction(AdBulkActionType.Remove, reason, new List<string> { removeTargetItemId });
+                await PerformBulkAction(AdBulkActionType.Remove, reason, new List<long?> { removeTargetItemId });
                 removeTargetItemId = null;
             }
 
@@ -242,7 +242,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.ViewListing
                 _ => "Action performed successfully."
             };
         }     
-        private async Task PerformBulkAction(AdBulkActionType action, string reason = "", List<string> adIds = null)
+        private async Task PerformBulkAction(AdBulkActionType action, string reason = "", List<long?> adIds = null)
         {
             isBulkActionLoading = adIds == null; // only bulk shows spinner
 

@@ -17,27 +17,41 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Modal
         public IClassifiedService ClassifiedService { get; set; }
         [Inject]
         public ISnackbar Snackbar { get; set; }
+        protected string? featuredCategoryTitle;
+        [Inject] IServiceBOService serviceBOService { get; set; }
+        public List<VerificationProfileStatus> Listings { get; set; } = new();
 
         [Parameter]
         public string Title { get; set; } = "Add Seasonal Pick";
-        protected List<CategoryTreeNode> _categoryTree = new();
-        protected List<CategoryTreeNode> _subcategories = new();
-        protected List<CategoryTreeNode> _sections = new();
+        [Parameter] public List<ServiceCategory> CategoryTrees { get; set; } = new();
+        protected List<L1Category> _selectedL1Categories = new();
+        protected List<L2Category> _selectedL2Categories = new();
         protected bool IsLoadingCategories { get; set; } = true;
+        protected DateRange? dateRange
+        {
+            get => StartDate.HasValue && EndDate.HasValue ? new DateRange(StartDate.Value, EndDate.Value) : null;
+            set
+            {
+                if (value != null)
+                {
+                    var start = value.Start ?? DateTime.Today;
+                    var end = value.End ?? start;
+                    StartDate = start;
+                    EndDate = end;
+                }
+                StateHasChanged();
+            }
+        }
 
-        protected string? SelectedCategoryId;
-        protected string? SelectedSubcategoryId;
-        protected string? SelectedSectionId;
+        protected Guid? SelectedCategoryId;
         protected string SelectedCategory { get; set; } = string.Empty;
-        protected string SelectedSubcategory { get; set; } = string.Empty;
-        protected string SelectedSection { get; set; } = string.Empty;
         protected string ImagePreviewUrl { get; set; }
         protected string ImagePreviewWithoutBase64 { get; set; }
 
         protected ElementReference fileInput;
 
-        protected DateTime? StartDate { get; set; } = DateTime.Today;
-        protected DateTime? EndDate { get; set; } = DateTime.Today;
+        protected DateTime? StartDate { get; set; } 
+        protected DateTime? EndDate { get; set; } 
 
         protected bool IsSubmitting { get; set; } = false;
 
@@ -45,15 +59,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Modal
         {
             try
             {
-                var response = await ClassifiedService.GetAllCategoryTreesAsync("items");
-                if (response?.IsSuccessStatusCode == true)
-                {
-                    var json = await response.Content.ReadAsStringAsync();
-                    _categoryTree = JsonSerializer.Deserialize<List<CategoryTreeNode>>(json, new JsonSerializerOptions
-                    {
-                        PropertyNameCaseInsensitive = true
-                    }) ?? new();
-                }
+                  Listings =  await LoadCategoryTreesAsync();
             }
             catch (Exception ex)
             {
@@ -65,63 +71,31 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Modal
             }
         }
 
-        protected void OnCategoryChanged(string? categoryId)
+        protected void OnCategoryChanged(Guid? categoryId)
         {
             SelectedCategoryId = categoryId;
-            SelectedSubcategoryId = null;
-            SelectedSectionId = null;
-            var category = _categoryTree.FirstOrDefault(c => c.Id == categoryId);
-            SelectedCategory = category?.Name ?? string.Empty;
-            _subcategories = category?.Children ?? new();
-            _sections = new();
+            var selected = Listings.FirstOrDefault(c => c.Id == categoryId);
+            SelectedCategory = selected?.CompanyName ?? string.Empty;
         }
-
-
-        protected void OnSubcategoryChanged(string? subcategoryId)
+        private bool IsBase64String(string? base64)
         {
-            SelectedSubcategoryId = subcategoryId;
-            SelectedSectionId = null;
+            if (string.IsNullOrWhiteSpace(base64))
+                return false;
 
-            var sub = _subcategories.FirstOrDefault(c => c.Id == subcategoryId);
-            SelectedSubcategory = sub?.Name ?? string.Empty;
-
-            _sections = sub?.Children ?? new();
-
+            Span<byte> buffer = new Span<byte>(new byte[base64.Length]);
+            return Convert.TryFromBase64String(base64, buffer, out _);
         }
-        protected void OnSectionChanged(string? sectionId)
-        {
-            SelectedSectionId = sectionId;
-            var section = _sections.FirstOrDefault(c => c.Id == sectionId);
-            SelectedSection = section?.Name ?? string.Empty;
-        }
-
-
 
         protected bool IsFormValid()
         {
-            return !string.IsNullOrEmpty(SelectedCategoryId) &&
-                   !string.IsNullOrEmpty(SelectedSubcategoryId) &&
-                   !string.IsNullOrEmpty(SelectedSectionId);
+            return SelectedCategoryId.HasValue
+                && !string.IsNullOrWhiteSpace(featuredCategoryTitle)
+                && StartDate.HasValue
+                && EndDate.HasValue
+                && !string.IsNullOrEmpty(ImagePreviewUrl);
         }
-
 
         protected void Close() => MudDialog.Cancel();
-
-        protected void Save()
-        {
-            var newItem = new LandingPageItem
-            {
-                Category = SelectedCategory,
-                Subcategory = SelectedSubcategory,
-                Section = SelectedSection,
-                ImageUrl = ImagePreviewUrl,
-                Title = $"{SelectedCategory} - {SelectedSubcategory}",
-                EndDate = DateTime.Now.AddMonths(3)
-            };
-
-            MudDialog.Close(DialogResult.Ok(newItem));
-        }
-
         protected async Task SaveAsync()
         {
             if (!IsFormValid())
@@ -131,33 +105,29 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Modal
             }
 
             IsSubmitting = true;
-
+            var imageUrl = await UploadImageAsync(ImagePreviewWithoutBase64);
             var payload = new
             {
-                vertical = "classifieds",
-                categoryId = SelectedCategoryId,
-                categoryName = SelectedCategory,
-                l1CategoryId = SelectedSubcategoryId,
-                l1categoryName = SelectedSubcategory,
-                l2categoryId = SelectedSectionId,
-                l2categoryName = SelectedSection,
-                startDate = StartDate?.ToUniversalTime().ToString("o"),
-                endDate = EndDate?.ToUniversalTime().ToString("o"),
-                slotOrder = 0,
-                imageUrl = ImagePreviewWithoutBase64
+                title = featuredCategoryTitle,
+                vertical = Vertical.Classifieds,
+                storeId = SelectedCategoryId,
+                storeName = SelectedCategory,
+                startDate = StartDate?.ToString("yyyy-MM-dd"),
+                endDate = EndDate?.ToString("yyyy-MM-dd"),
+                imageUrl = imageUrl
             };
 
             try
             {
-                var response = await ClassifiedService.CreateSeasonalPicksAsync(payload);
+                var response = await ClassifiedService.CreateFeaturedStoresAsync(payload);
                 if (response?.IsSuccessStatusCode == true)
                 {
-                    Snackbar.Add("Seasonal pick added successfully!", Severity.Success);
+                    Snackbar.Add("Featured Store added successfully!", Severity.Success);
                     MudDialog.Close(DialogResult.Ok(true));
                 }
                 else
                 {
-                    Snackbar.Add("Failed to add seasonal pick.", Severity.Error);
+                    Snackbar.Add("Failed to add Featured Store.", Severity.Error);
                 }
             }
             catch (Exception ex)
@@ -193,6 +163,62 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Modal
             ImagePreviewUrl = $"data:{file.ContentType};base64,{base64}";
             ImagePreviewWithoutBase64 = base64;
         }
+        private async Task<string?> UploadImageAsync(string base64Image)
+        {
+            if (string.IsNullOrWhiteSpace(base64Image))
+                return null;
+
+            var uploadPayload = new FileUploadModel
+            {
+                Container = "services-images",
+                File = base64Image
+            };
+            var uploadResponse = await FileUploadService.UploadFileAsync(uploadPayload);
+            if (uploadResponse.IsSuccessStatusCode)
+            {
+                var result = await uploadResponse.Content.ReadFromJsonAsync<FileUploadResponseDto>();
+                if (result?.IsSuccess == true)
+                {
+                    return result.FileUrl;
+                }
+                else
+                {
+                    Logger.LogWarning("Image upload failed: {Message}", result?.Message);
+                }
+            }
+            else
+            {
+                Logger.LogWarning("Image upload HTTP error");
+            }
+            return null;
+        }
+
+        private async Task<List<VerificationProfileStatus>> LoadCategoryTreesAsync()
+        {
+            try
+            {
+                var payload = new
+                {
+                    vertical = 3,
+                    subVertical = 5,
+                    pageNumber = 1,
+                    pageSize = 12
+                };
+                var response = await serviceBOService.GetAllCompaniesAsync(payload);
+                if (response.IsSuccessStatusCode)
+                {
+                    var result = await response.Content.ReadFromJsonAsync<PaginatedCompanyResponse>();
+                    return result.items ?? new List<VerificationProfileStatus>();
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "LoadCategoryTreesAsync");
+            }
+
+            return new List<VerificationProfileStatus>();
+        }
+    
 
     }
 }

@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using QLN.ContentBO.WebUI.Models;
+using Microsoft.JSInterop;
 using QLN.ContentBO.WebUI.Components.AutoSelectDialog;
+using QLN.ContentBO.WebUI.Components.ConfirmationDialog;
 
 namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.ViewSubscriptionListing
 {
@@ -10,9 +12,11 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.ViewSubscriptionListing
     {
         [Inject] protected IDialogService DialogService { get; set; } = default!;
         [Inject] protected NavigationManager NavManager { get; set; } = default!;
-
+         [Inject] protected IJSRuntime JS { get; set; } = default!;
         [Parameter] public EventCallback<string> OnSearch { get; set; }
         [Parameter] public EventCallback<bool> OnSort { get; set; }
+        [Inject] ISnackbar Snackbar { get; set; }
+        [Parameter] public List<StoreSubscriptionItem> Items { get; set; } = new();
 
         protected bool ascending = true;
         protected string SortIcon => ascending ? Icons.Material.Filled.FilterList : Icons.Material.Filled.FilterListOff;
@@ -28,7 +32,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.ViewSubscriptionListing
             await OnSort.InvokeAsync(ascending);
         }
 
-  
+
 
 
         // Date range logic
@@ -106,9 +110,64 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.ViewSubscriptionListing
         protected Task OnSubscriptionChanged(string selected)
         {
             SelectedSubscriptionType = selected;
-            // Handle logic like filtering, etc.
             return Task.CompletedTask;
         }
+        protected async Task ShowConfirmationExport()
+        {
+            var parameters = new DialogParameters
+            {
+                { "Title", "Export Classified Subscriptions" },
+                { "Descrption", "Do you want to export the current Subscription data to Excel?" },
+                { "ButtonTitle", "Export" },
+                { "OnConfirmed", EventCallback.Factory.Create(this, ExportToExcel) }
+            };
 
+            var options = new DialogOptions
+            {
+                CloseButton = false,
+                MaxWidth = MaxWidth.Small,
+                FullWidth = true
+            };
+
+            var dialog = DialogService.Show<ConfirmationDialog>("", parameters, options);
+            var result = await dialog.Result;
+        }
+        private async Task ExportToExcel()
+        {
+            try
+            {
+                if (Items == null || !Items.Any())
+                {
+                    Snackbar.Add("No data available to export.", Severity.Warning);
+                    return;
+                }
+                var exportData = Items.Select(x => new Dictionary<string, object?>
+                {
+                    ["Order Id"] = x.OrderId,
+                    ["Subscripton Type"] = x.SubscriptionType,
+                    ["User Name"] = x.UserName,
+                    ["Email"] = x.Email,
+                    ["Mobile"] = x.Mobile,
+                    ["Whatsapp"] = x.Whatsapp,
+                    ["Web Url"] = x.WebUrl,
+                    ["Amount"] = x.Amount,
+                    ["Status"] = x.Status,
+                    ["Start Date"] = x.StartDate.ToString("dd-MM-yyyy hh:mmtt"),
+                    ["End Date"] = x.EndDate.ToString("dd-MM-yyyy hh:mmtt"),
+                    ["Web Leads"] = x.WebLeads,
+                    ["Email Leads"] = x.EmailLeads,
+                    ["WhatsApp Leads"] = x.WhatsappLeads,
+                    ["Phone Leads"] = x.PhoneLeads,
+                }).ToList();
+
+                await JS.InvokeVoidAsync("exportToExcel", exportData, "Classifieds_Subscriptions.xlsx", "Subscriptions");
+
+                Snackbar.Add("Export successful!", Severity.Success);
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Export failed: {ex.Message}", Severity.Error);
+            }
+        }
     }
 }

@@ -16,17 +16,21 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.ViewStores
         protected int currentPage = 1;
         protected int pageSize = 12;
         protected int TotalCount { get; set; }
-        protected string SearchTerm { get; set; } = string.Empty;
+        protected string? SearchTerm { get; set; } = null;
+        protected string? SubscriptionType { get; set; } = null;
+        public DateTime? StartDate { get; set; }
+        public DateTime? EndDate { get; set; }
         protected bool Ascending = true;
-        protected List<CompanyProfileItem> StoreItems { get; set; } = [];
+        public DateTime? FromDate { get; set; }
+        public DateTime? ToDate { get; set; }
+        protected List<CompanySubscriptionDto> StoreItems { get; set; } = [];
 
         protected override async Task OnInitializedAsync()
         {
             try
             {
-                var companyProfileResponse = await LoadStores();
-                StoreItems = companyProfileResponse?.Items ?? new List<CompanyProfileItem>();
-                TotalCount = companyProfileResponse?.TotalCount ?? 0;
+                 await LoadStores();
+                StateHasChanged();
             }
             catch (Exception ex)
             {
@@ -39,49 +43,96 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.ViewStores
         {
             SearchTerm = searchTerm;
 
-            var payload = new CompanyRequestPayload
+            var payload = new CompanySubscriptionFilter
             {
-                IsBasicProfile = true,
-                Status = 1,
-                Vertical = 3,
-                SubVertical = 3,
-                Search = SearchTerm,
-                SortBy = "",
+                SubscriptionType = SubscriptionType,
+                StartDate = StartDate,
+                EndDate = EndDate,
+                SearchTerm = searchTerm,
+                SortBy = Ascending ? "asc" : "desc",
                 PageNumber = currentPage,
                 PageSize = pageSize
             };
 
             var companyProfileResponse = await GetAllStoresListingAsync(payload);
-            StoreItems = companyProfileResponse?.Items ?? [];
-            TotalCount = companyProfileResponse?.TotalCount ?? 0;
+            StoreItems = companyProfileResponse?.Records ?? [];
+            TotalCount = companyProfileResponse?.TotalRecords ?? 0;
+        }
+        protected async Task HandleTypeChange(string type)
+        {
+            SubscriptionType = type;
+            var payload = new CompanySubscriptionFilter
+            {
+                SubscriptionType = type,
+                StartDate = StartDate,
+                EndDate = EndDate,
+                SearchTerm = SearchTerm,
+                SortBy = Ascending ? "asc" : "desc",
+                PageNumber = currentPage,
+                PageSize = pageSize
+            };
+
+            var companyProfileResponse = await GetAllStoresListingAsync(payload);
+            StoreItems = companyProfileResponse?.Records ?? [];
+            TotalCount = companyProfileResponse?.TotalRecords ?? 0;
         }
 
         protected async Task HandleSort(bool sortOption)
         {
             Ascending = sortOption;
-            Console.WriteLine($"Sort triggered: {sortOption}");
-            // Add logic to sort your listing data based on SortOption
-        }
-
-        protected async Task HandlePageChange(int newPage)
-        {
-            currentPage = newPage;
-            
-            var payload = new CompanyRequestPayload
+            var payload = new CompanySubscriptionFilter
             {
-                IsBasicProfile = true,
-                Status = 1,
-                Vertical = 3,
-                SubVertical = 3,
-                Search = "",
-                SortBy = "",
+                SubscriptionType = SubscriptionType,
+                StartDate = StartDate,
+                EndDate = EndDate,
+                SearchTerm = SearchTerm,
+                SortBy = sortOption ? "asc" : "desc",
                 PageNumber = currentPage,
                 PageSize = pageSize
             };
 
             var companyProfileResponse = await GetAllStoresListingAsync(payload);
-            StoreItems = companyProfileResponse?.Items ?? [];
-            TotalCount = companyProfileResponse?.TotalCount ?? 0;
+            StoreItems = companyProfileResponse?.Records ?? [];
+            TotalCount = companyProfileResponse?.TotalRecords ?? 0;
+        }
+        protected async Task HandleDateFiltersChanged((DateTime? createdFrom, DateTime? createdTo) filters)
+        {
+            StartDate = filters.createdFrom;
+            EndDate = filters.createdTo;
+             var payload = new CompanySubscriptionFilter
+            {
+                SubscriptionType = SubscriptionType,
+                StartDate = filters.createdFrom,
+                EndDate = filters.createdTo,
+                SearchTerm = SearchTerm,
+                SortBy = Ascending ? "asc" : "desc",
+                PageNumber = currentPage,
+                PageSize = pageSize
+            };
+            var companyProfileResponse = await GetAllStoresListingAsync(payload);
+            StoreItems = companyProfileResponse?.Records ?? [];
+            TotalCount = companyProfileResponse?.TotalRecords ?? 0;
+        }
+
+
+
+        protected async Task HandlePageChange(int newPage)
+        {
+            currentPage = newPage;
+           var payload = new CompanySubscriptionFilter
+            {
+                SubscriptionType = SubscriptionType,
+                StartDate = StartDate,
+                EndDate = EndDate,
+                SearchTerm = SearchTerm,
+                SortBy = Ascending ? "asc" : "desc",
+                PageNumber = newPage,
+                PageSize = pageSize
+            };
+
+            var companyProfileResponse = await GetAllStoresListingAsync(payload);
+            StoreItems = companyProfileResponse?.Records ?? [];
+            TotalCount = companyProfileResponse?.TotalRecords ?? 0;
         }
 
         protected async Task HandlePageSizeChange(int newPageSize)
@@ -89,63 +140,70 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.ViewStores
             pageSize = newPageSize;
             currentPage = 1; // reset to first page
             
-            var payload = new CompanyRequestPayload
+             var payload = new CompanySubscriptionFilter
             {
-                IsBasicProfile = true,
-                Status = 1,
-                Vertical = 3,
-                SubVertical = 3,
-                Search = "",
-                SortBy = "",
-                PageNumber = currentPage,
+                 SubscriptionType = SubscriptionType,
+                StartDate = StartDate,
+                EndDate = EndDate,
+                SearchTerm = SearchTerm,
+                SortBy = Ascending ? "asc" : "desc",
+                // PageNumber = newPage,
                 PageSize = pageSize
             };
-
             var companyProfileResponse = await GetAllStoresListingAsync(payload);
-            StoreItems = companyProfileResponse?.Items ?? [];
-            TotalCount = companyProfileResponse?.TotalCount ?? 0;
+            StoreItems = companyProfileResponse?.Records ?? [];
+            TotalCount = companyProfileResponse?.TotalRecords ?? 0;
         }
 
-        protected void OnViewClicked(CompanyProfileItem store)
+        protected void OnViewClicked(CompanySubscriptionDto store)
         {
             var name = "Rashid";
             // NavigationManager.NavigateTo($"/manage/classified/stores/createform/{name}");
 
         }
 
-        private async Task<CompanyProfileResponse> LoadStores()
+        private async Task LoadStores()
         {
             try
             {
-                var payload = new CompanyRequestPayload
+                var payload = new CompanySubscriptionFilter
                 {
-                    IsBasicProfile = true,
-                    Status = 1,
-                    Vertical = 3,
-                    SubVertical = 3,
-                    Search = "",
-                    SortBy = "",
+                    SubscriptionType = SubscriptionType,
+                    StartDate = StartDate,
+                    EndDate = EndDate,
+                    SearchTerm = SearchTerm,
+                    // SortBy = ,
                     PageNumber = currentPage,
                     PageSize = pageSize
                 };
-
-                return await GetAllStoresListingAsync(payload);
+                var companyProfileResponse = await GetAllStoresListingAsync(payload);
+                StoreItems = companyProfileResponse?.Records ?? new List<CompanySubscriptionDto>();
+                TotalCount = companyProfileResponse?.TotalRecords ?? 0;
             }
             catch (Exception ex)
             {
                 Logger.LogError(ex, "LoadStores");
-                return new();
             }
         }
 
-        private async Task<CompanyProfileResponse> GetAllStoresListingAsync(CompanyRequestPayload companyRequestPayload)
+        private async Task<CompanyStoresResponse> GetAllStoresListingAsync(CompanySubscriptionFilter companyRequestPayload)
         {
             try
             {
                 var apiResponse = await StoresService.GetAllStoresListing(companyRequestPayload);
+
                 if (apiResponse.IsSuccessStatusCode)
                 {
-                    var companyProfileResponse = await apiResponse.Content.ReadFromJsonAsync<CompanyProfileResponse>();
+                    var companyProfileResponse = await apiResponse.Content.ReadFromJsonAsync<CompanyStoresResponse>();
+
+                    if (companyProfileResponse != null)
+                    {
+                        Logger.LogInformation("Parsing completed successfully.");
+                    }
+                    else
+                    {
+                        Logger.LogWarning("Parsing returned null.");
+                    }
 
                     return companyProfileResponse ?? new();
                 }
@@ -158,5 +216,6 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.ViewStores
                 return new();
             }
         }
+
     }
 }

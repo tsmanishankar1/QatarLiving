@@ -139,6 +139,9 @@ namespace QLN.Common.DTO_s
 
         [SearchableField(IsFilterable = true)]
         public string? Reservation { get; set; }
+
+        [SearchableField(IsFilterable = true)]
+        public string? Slug { get; set; }
     }
 
     public class ServiceImageInfo

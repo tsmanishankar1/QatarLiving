@@ -13,6 +13,7 @@
         SUBSCRIPTION = 107,
         ADDON_COMBO = 108,
         ADDON_FEATURE = 109,
-        ADDON_REFRESH = 110
+        ADDON_REFRESH = 110,
+        FREE = 999,
     }
 }

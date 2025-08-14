@@ -192,9 +192,9 @@ namespace QLN.Company.MS.Service
             if (dto.CRNumber < 100000 || dto.CRNumber > 99999999)
                 throw new ArgumentException("CR Number must be between 6 to 8 digits.", nameof(dto.CRNumber));
         }
-        private QLN.Common.Infrastructure.Model.Company EntityForCreate(CompanyProfile dto, Guid id, string uid, string userName)
+        private Common.Infrastructure.Model.Company EntityForCreate(CompanyProfile dto, Guid id, string uid, string userName)
         {
-            return new QLN.Common.Infrastructure.Model.Company
+            return new Common.Infrastructure.Model.Company
             {
                 Id = id,
                 Vertical = dto.Vertical,
@@ -230,8 +230,9 @@ namespace QLN.Company.MS.Service
                 CRNumber = dto.CRNumber,
                 CompanyLogo = dto.CompanyLogo,
                 CRDocument = dto.CRDocument,
-                UploadFeed=dto.UploadFeed,
-                XMLFeed=dto.XMLFeed,
+                UploadFeed = dto.UploadFeed,
+                XMLFeed = dto.XMLFeed,
+                CompanyVerificationStatus = dto.CompanyVerificationStatus,
                 Status = dto.Status,
                 CreatedBy = uid,
                 CreatedUtc = DateTime.UtcNow,
@@ -239,7 +240,7 @@ namespace QLN.Company.MS.Service
                 IsActive = true
             };
         }
-        public async Task<QLN.Common.Infrastructure.Model.Company?> GetCompanyById(Guid id, CancellationToken cancellationToken = default)
+        public async Task<Common.Infrastructure.Model.Company?> GetCompanyById(Guid id, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -258,7 +259,7 @@ namespace QLN.Company.MS.Service
                 throw;
             }
         }
-        public async Task<string> UpdateCompany(QLN.Common.Infrastructure.Model.Company dto, CancellationToken cancellationToken = default)
+        public async Task<string> UpdateCompany(Common.Infrastructure.Model.Company dto, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -268,7 +269,7 @@ namespace QLN.Company.MS.Service
                 if (existing == null)
                     throw new KeyNotFoundException($"Company with ID {dto.Id} was not found.");
 
-                if ((int)(existing.SubVertical ?? 0) == (int)SubVertical.Stores)
+                if (existing.Vertical == VerticalType.Classifieds && (int)(existing.SubVertical ?? 0) == (int)SubVertical.Stores)
                     throw new ArgumentException("Editing companies in the 'Stores' category is not allowed.");
 
                 bool duplicateCompany = await _context.Companies
@@ -317,7 +318,7 @@ namespace QLN.Company.MS.Service
                 throw;
             }
         }
-        private QLN.Common.Infrastructure.Model.Company EntityForUpdate(QLN.Common.Infrastructure.Model.Company dto, QLN.Common.Infrastructure.Model.Company existing)
+        private QLN.Common.Infrastructure.Model.Company EntityForUpdate(Common.Infrastructure.Model.Company dto, Common.Infrastructure.Model.Company existing)
         {
             return new QLN.Common.Infrastructure.Model.Company
             {
@@ -345,6 +346,7 @@ namespace QLN.Company.MS.Service
                 CompanySize = dto.CompanySize,
                 CompanyType = dto.CompanyType,
                 UserDesignation = dto.UserDesignation,
+                CompanyVerificationStatus = dto.CompanyVerificationStatus,
                 AuthorisedContactPersonName = dto.AuthorisedContactPersonName,
                 UserName = dto.UserName,
                 CRExpiryDate = dto.CRExpiryDate,
@@ -408,12 +410,11 @@ namespace QLN.Company.MS.Service
                     throw new InvalidOperationException("Cannot approve an inactive company profile.");
 
                 company.Status = dto.Status;
-
+                company.CompanyVerificationStatus = dto.CompanyVerificationStatus;
                 if (dto.Status == VerifiedStatus.Removed)
                 {
                     company.IsActive = false;
                 }
-
                 company.UpdatedUtc = DateTime.UtcNow;
                 company.UpdatedBy = userId;
 
@@ -447,7 +448,7 @@ namespace QLN.Company.MS.Service
                 throw;
             }
         }
-        public async Task<CompanyPaginatedResponse<QLN.Common.Infrastructure.Model.Company>> GetAllVerifiedCompanies(CompanyProfileFilterRequest filter, CancellationToken cancellationToken = default)
+        public async Task<CompanyPaginatedResponse<Common.Infrastructure.Model.Company>> GetAllVerifiedCompanies(CompanyProfileFilterRequest filter, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -472,6 +473,9 @@ namespace QLN.Company.MS.Service
 
                 if (!string.IsNullOrWhiteSpace(filter.Search))
                     query = query.Where(c => c.CompanyName.Contains(filter.Search));
+
+                if (filter.CompanyVerificationStatus != null)
+                    query = query.Where(c => c.CompanyVerificationStatus == filter.CompanyVerificationStatus);
 
                 query = (filter.SortBy?.ToLower()) switch
                 {
@@ -527,6 +531,7 @@ namespace QLN.Company.MS.Service
                               join s in subscriptions on c.Id equals s.CompanyId
                               select new CompanySubscriptionDto
                               {
+                                  CompanyId = c.Id,
                                   CompanyName = c.CompanyName,
                                   Email = c.Email,
                                   Mobile = c.PhoneNumber,

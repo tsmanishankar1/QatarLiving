@@ -34,78 +34,96 @@ namespace QLN.Content.MS.Service.BannerInternalService
 
             return string.Empty;
         }
-        public async Task<string> ReorderAsync(Vertical verticalId, SubVertical? subVerticalId,Guid pageId, List<Guid> banners,CancellationToken cancellationToken = default)
+        public async Task<string> ReorderAsync(
+      Vertical verticalId,
+      SubVertical? subVerticalId,
+      BannerPageId pageId,
+      List<Guid> banners,
+      CancellationToken cancellationToken = default)
         {
             try
             {
-               
-
                 var allBannerTypes = await _dapr.GetStateAsync<List<V2BannerTypeDto>>(
-                   V2Content.ContentStoreName,
-                   V2Content.BannerTypeIndexKey,
-                   cancellationToken: cancellationToken);
+                    V2Content.ContentStoreName,
+                    V2Content.BannerTypeIndexKey,
+                    cancellationToken: cancellationToken);
 
-                    if (allBannerTypes == null)
-                    {
-                        
-                        return null;
-                    }
-
-                    var bannerType = allBannerTypes
-                        .FirstOrDefault(x => x.VerticalId == verticalId && x.SubVerticalId == subVerticalId);
-
-                    if (bannerType == null)
-                    {
-                      
-                        return null;
-                    }
-                    var matchingPage = bannerType.Pages?.FirstOrDefault(p => p.Id == pageId);
-                    if (matchingPage == null)
-                    {
-                        
-                        return null;
-                    }
-                var banner = await _dapr.GetStateAsync<V2BannerDto>(
-                 V2Content.ContentStoreName,
-                 banners[0].ToString(),
-               cancellationToken: cancellationToken);
-
-                if (banner == null) {
-                   
+                if (allBannerTypes == null)
+                {
                     return null;
                 }
+
+                // Find matching bannerType based on whether subVerticalId is given
+                V2BannerTypeDto bannerType;
+                if (subVerticalId.HasValue)
+                {
+                    bannerType = allBannerTypes.FirstOrDefault(x =>
+                        x.VerticalId == verticalId &&
+                        x.SubVerticalId == subVerticalId &&
+                        x.Pages?.Any(p => p.PageId == pageId) == true);
+                }
+                else
+                {
+                    bannerType = allBannerTypes.FirstOrDefault(x =>
+                        x.VerticalId == verticalId &&
+                        x.Pages?.Any(p => p.PageId == pageId) == true);
+                }
+
+                if (bannerType == null)
+                {
+                    return null;
+                }
+
+                var matchingPage = bannerType.Pages?.FirstOrDefault(p => p.PageId == pageId);
+                if (matchingPage == null)
+                {
+                    return null;
+                }
+
+                // Get first banner (just to check BannerTypeId)
+                var banner = await _dapr.GetStateAsync<V2BannerDto>(
+                    V2Content.ContentStoreName,
+                    banners[0].ToString(),
+                    cancellationToken: cancellationToken);
+
+                if (banner == null)
+                {
+                    return null;
+                }
+
                 if (matchingPage.bannertypes != null)
-                    {
-                   
+                {
                     foreach (var location in matchingPage.bannertypes)
+                    {
+                        if (location.Id == banner.BannerTypeId)
                         {
-                            if (location.Id == banner.BannerTypeId)
-                            {
                             if (string.IsNullOrEmpty(ValidateReorderProcess(location?.BannerIds ?? [], banners)))
                             {
-                                location?.BannerIds?.Clear();
-                                location?.BannerIds?.AddRange(banners);
+                                location.BannerIds?.Clear();
+                                location.BannerIds?.AddRange(banners);
                             }
-                           
-                                break;
+                            break;
                         }
-                        }
-                    };
-                    await _dapr.SaveStateAsync(
-                            V2Content.ContentStoreName,
-                            V2Content.BannerTypeIndexKey,
-                            allBannerTypes,
-                            metadata: null,
-                            cancellationToken: cancellationToken
-                        );
+                    }
+                }
+
+                await _dapr.SaveStateAsync(
+                    V2Content.ContentStoreName,
+                    V2Content.BannerTypeIndexKey,
+                    allBannerTypes,
+                    metadata: null,
+                    cancellationToken: cancellationToken);
+
                 return "Banner slot reordered successfully.";
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error creating banner.");
-                throw new Exception("Internal error occurred while creating banner.", ex);
+                _logger.LogError(ex, "Error reordering banners.");
+                throw new Exception("Internal error occurred while reordering banners.", ex);
             }
         }
+
+
         public async Task<string> CreateBannerAsync(string uid, V2CreateBannerDto dto, CancellationToken cancellationToken = default)
         {
             try
@@ -168,8 +186,8 @@ namespace QLN.Content.MS.Service.BannerInternalService
                         continue;
                     }
 
-                  
-                    var matchingPage = bannerType.Pages?.FirstOrDefault(p => p.Id == bannerTypeRequest.PageId);
+
+                    var matchingPage = bannerType.Pages?.FirstOrDefault(p => p.PageId == bannerTypeRequest.PageId);
                     if (matchingPage == null)
                     {
                         _logger.LogWarning("No matching page found for PageId: {PageId}", bannerTypeRequest.PageId);
@@ -395,7 +413,11 @@ namespace QLN.Content.MS.Service.BannerInternalService
                 throw;
             }
         }
-        public async Task<List<V2BannerTypeDto>?> GetBannerTypesByFilterAsync( Vertical verticalId, SubVertical? subVerticalId, Guid pageId,CancellationToken cancellationToken)
+        public async Task<List<V2BannerTypeDto>?> GetBannerTypesByFilterAsync(
+            Vertical verticalId,
+            SubVertical? subVerticalId,
+            BannerPageId pageId,
+            CancellationToken cancellationToken)
         {
             try
             {
@@ -403,11 +425,13 @@ namespace QLN.Content.MS.Service.BannerInternalService
                     V2Content.ContentStoreName,
                     V2Content.BannerTypeIndexKey,
                     cancellationToken: cancellationToken);
+
                 if (allBannerTypes == null)
                 {
                     Console.WriteLine("⚠️ No banner types found in storage.");
                     return null;
                 }
+
                 var bannerType = allBannerTypes
                     .FirstOrDefault(x => x.VerticalId == verticalId && x.SubVerticalId == subVerticalId);
 
@@ -418,14 +442,16 @@ namespace QLN.Content.MS.Service.BannerInternalService
                 }
 
                 var bannerKeys = await _dapr.GetStateAsync<List<string>>(
-                 V2Content.ContentStoreName,
-                 V2Content.BannerIndexKey,
-                 cancellationToken: cancellationToken) ?? new List<string>();
-                var matchingPage = bannerType.Pages?.FirstOrDefault(p => p.Id == pageId);
+                    V2Content.ContentStoreName,
+                    V2Content.BannerIndexKey,
+                    cancellationToken: cancellationToken) ?? new List<string>();
+
+                var matchingPage = bannerType.Pages?.FirstOrDefault(p => p.PageId == pageId);
                 if (matchingPage == null)
                 {
                     return null;
                 }
+
                 if (matchingPage.bannertypes != null)
                 {
                     foreach (var location in matchingPage.bannertypes)
@@ -433,14 +459,23 @@ namespace QLN.Content.MS.Service.BannerInternalService
                         foreach (var item in location.BannerIds ?? [])
                         {
                             var banner = await _dapr.GetStateAsync<V2BannerDto>(
-                        V2Content.ContentStoreName,
-                        item.ToString(),
-                        cancellationToken: cancellationToken);
-                            location?.BannerDetails?.Add(banner);
-                        }
+                                V2Content.ContentStoreName,
+                                item.ToString(),
+                                cancellationToken: cancellationToken);
 
+                            if (banner != null)
+                            {
+                                
+                                bool dateValid = banner.EndDate >= DateOnly.FromDateTime(DateTime.Now);
+                                if (dateValid)
+                                {
+                                    location?.BannerDetails?.Add(banner);
+                                }
+                            }
+                        }
                     }
                 }
+
                 var result = new V2BannerTypeDto
                 {
                     Id = bannerType.Id,
@@ -459,6 +494,7 @@ namespace QLN.Content.MS.Service.BannerInternalService
                 throw new Exception("Error occurred while retrieving banner types by filter.", ex);
             }
         }
+
         public async Task<List<V2BannerTypeDto>> GetBannerTypesWithBannersByStatusAsync( Vertical? verticalId, bool? status, CancellationToken cancellationToken)
         {
             try

@@ -40,10 +40,56 @@ namespace QLN.Common.DTO_s.ClassifiedsBo
 
     }
 
+    public class ViewStoresSubscription
+    {
+        public Guid CompanyId { get; set; }
+        public Guid SubscriptionId { get; set; }
+        public string? SubscriptionType { get; set; } = null;
+        public string? UserId { get; set; } = null;
+        public string? UserName { get; set; } = null;
+        public string? CompanyName { get; set; } = null;
+        public string? Mobile { get; set; } = null;
+        public string? Whatsapp { get; set; } = null;
+        public string? WebUrl { get; set; } = null;
+        public string? Email { get; set; } = null;
+        public int Status { get; set; }
+        public DateTime StartDate { get; set; }
+        public DateTime EndDate { get; set; }
+        public int OrderId { get; set; }
+        public decimal Amount { get; set; } = 0;
+        
 
+    }
+    public class ViewStoresSubscriptionDto
+    {
+        public string? CompanyId { get; set; }
+        public string? SubscriptionId { get; set; }
+        public string? SubscriptionType { get; set; } = null;
+        public string? UserId { get; set; } = null;
+        public string? UserName { get; set; } = null;
+        public string? CompanyName { get; set; } = null;
+        public string? Mobile { get; set; } = null;
+        public string? Whatsapp { get; set; } = null;
+        public string? WebUrl { get; set; } = null;
+        public string? Email { get; set; } = null;
+        public string? Status { get; set; } = null;
+        public DateTime StartDate { get; set; }
+        public DateTime EndDate { get; set; }
+        public int OrderId { get; set; }
+        public decimal Amount { get; set; } = 0;
+        public int WebLeads { get; set; } = 0;
+        public int EmailLeads { get; set; } = 0;
+        public int WhatsappLeads { get; set; } = 0;
+        public int PhoneLeads { get; set; } = 0;
+
+    }
     public class ClassifiedStoreResponse
     {
         public List<StoresGroup> Stores { get; set; } = new();
+    }
+    public class ClassifiedStoresProducts
+    {
+        public List<ClassifiedStoresIndex> Products { get; set; } = new();
     }
 
     public class StoresGroup

@@ -10,8 +10,8 @@ namespace QLN.ContentBO.WebUI.Models
         public string L1categoryName { get; set; } = null!;
         public long L1CategoryId { get; set; }
         public int? SlotOrder { get; set; }
-        public DateOnly StartDate { get; set; }
-        public DateOnly EndDate { get; set; }
+        public DateOnly? StartDate { get; set; }
+        public DateOnly? EndDate { get; set; }
         public string ImageUrl { get; set; } = null!;
     }
 }

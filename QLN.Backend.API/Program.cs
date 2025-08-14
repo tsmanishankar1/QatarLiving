@@ -19,8 +19,6 @@ using QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.D365Endpoints;
-using QLN.Common.Infrastructure.CustomEndpoints.D365Endpoints;
-using QLN.Common.Infrastructure.CustomEndpoints.FatoraEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.FatoraEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.FileUploadService;
 using QLN.Common.Infrastructure.CustomEndpoints.PayToPublishEndpoint;
@@ -38,9 +36,6 @@ using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.QLDbContext;
 using QLN.Common.Infrastructure.ServiceConfiguration;
 using QLN.Common.Infrastructure.TokenProvider;
-using QLN.Common.Migrations.QLLog;
-using System;
-using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
@@ -337,6 +332,9 @@ builder.Services.ProductsConfiguration(builder.Configuration);
 builder.Services.ClassifiedBoStoresConfiguration(builder.Configuration);
 builder.Services.ServicesBo(builder.Configuration);
 
+// Putting this here as it could be used from the Backend API - but also in Classifieds Service
+builder.Services.ImplioConfiguration(builder.Configuration);
+
 var app = builder.Build();
 #region DAPR Subscriptions
 
@@ -372,7 +370,7 @@ authGroup.MapAuthEndpoints();
 var filesGroup = app.MapGroup("/files");
 filesGroup.MapFileUploadEndpoint();
 var paymentGroup = app.MapGroup("/api/pay");
-paymentGroup.MapFaturaEndpoints().MapD365Endpoints();
+paymentGroup.MapD365Endpoints();
 var wishlistgroup = app.MapGroup("/api/wishlist");
 wishlistgroup.MapWishlist();
 var companyProfileGroup = app.MapGroup("/api/companyprofile");
@@ -399,6 +397,9 @@ app.MapGroup("/api/subscriptions")
 app.MapGroup("/api/v2/subscriptions")
     .MapV2SubscriptionEndpoints()
     .RequireAuthorization();
+
+var fatoraGroup = app.MapGroup("/api/fatora");
+fatoraGroup.MapFaturaEndpoints();
 
 app.MapGroup("/api/payments")
  .MapPaymentEndpoints();

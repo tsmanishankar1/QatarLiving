@@ -1,9 +1,12 @@
 ﻿using QLN.Backend.API.Service.AnalyticsService;
 using QLN.Backend.API.Service.BannerService;
+using QLN.Backend.API.Service.ClassifiedBoService;
 using QLN.Backend.API.Service.ClassifiedService;
+using QLN.Backend.API.Service.ClassifiedsService;
 using QLN.Backend.API.Service.CompanyService;
 using QLN.Backend.API.Service.ContentService;
 using QLN.Backend.API.Service.DrupalAuthService;
+using QLN.Backend.API.Service.ProductService;
 using QLN.Backend.API.Service.SearchService;
 using QLN.Backend.API.Service.ServiceBoService;
 using QLN.Backend.API.Service.Services;
@@ -12,19 +15,17 @@ using QLN.Backend.API.Service.V2ContentService;
 using QLN.Common.Infrastructure.IService;
 using QLN.Common.Infrastructure.IService.IAuth;
 using QLN.Common.Infrastructure.IService.IBannerService;
+using QLN.Common.Infrastructure.IService.IClassifiedBoService;
 using QLN.Common.Infrastructure.IService.ICompanyService;
 using QLN.Common.Infrastructure.IService.IContentService;
 using QLN.Common.Infrastructure.IService.IFileStorage;
+using QLN.Common.Infrastructure.IService.IProductService;
 using QLN.Common.Infrastructure.IService.ISearchService;
-using QLN.Common.Infrastructure.IService.V2IClassifiedBoService;
 using QLN.Common.Infrastructure.IService.IService;
+using QLN.Common.Infrastructure.IService.IServiceBoService;
+using QLN.Common.Infrastructure.IService.V2IClassifiedBoService;
 using QLN.Common.Infrastructure.IService.V2IContent;
 using QLN.Common.Infrastructure.Service.FileStorage;
-using QLN.Common.Infrastructure.IService.IServiceBoService;
-using QLN.Common.Infrastructure.IService.IProductService;
-using QLN.Backend.API.Service.ProductService;
-using QLN.Common.Infrastructure.IService.IClassifiedBoService;
-using QLN.Backend.API.Service.ClassifiedBoService;
 
 namespace QLN.Backend.API.ServiceConfiguration
 {
@@ -40,6 +41,7 @@ namespace QLN.Backend.API.ServiceConfiguration
         public static IServiceCollection ClassifiedServicesConfiguration(this IServiceCollection services, IConfiguration configuration)
         {
             services.AddTransient<IClassifiedService, ExternalClassifiedService>();
+            services.AddTransient<IClassifiedsFoService, ExternalClassifiedFoService>();
             services.AddScoped<IFileStorageBlobService, FileStorageBlobService>();
 
             return services;
@@ -172,6 +174,7 @@ namespace QLN.Backend.API.ServiceConfiguration
         {
             services.AddTransient<IClassifiedStoresBOService, ExternalClassifiedStoresBOService>();
             services.AddTransient<IClassifiedPreLovedBOService, ExternalClassifiedPreLovedBOService>();
+            services.AddTransient<IV2SubscriptionService, V2SubscriptionService>();
             return services;
         }
 

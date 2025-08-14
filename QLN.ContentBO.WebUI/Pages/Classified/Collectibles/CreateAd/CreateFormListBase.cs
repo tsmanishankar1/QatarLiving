@@ -15,16 +15,16 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.CreateAd
         [Parameter]
         public string? UserEmail { get; set; }
         [Parameter] public List<LocationZoneDto> Zones { get; set; }
-        [Parameter] public List<CategoryTreeDto> CategoryTrees { get; set; } = new();
-        protected CategoryTreeDto SelectedCategory => CategoryTrees.FirstOrDefault(x => x.Id.ToString() == Ad.SelectedCategoryId);
-        protected CategoryTreeDto SelectedSubcategory => SelectedCategory?.Children?.FirstOrDefault(x => x.Id.ToString() == Ad.SelectedSubcategoryId);
-        protected CategoryTreeDto SelectedSubSubcategory => SelectedSubcategory?.Children?.FirstOrDefault(x => x.Id.ToString() == Ad.SelectedSubSubcategoryId);
+        [Parameter] public List<ClassifiedsCategory> CategoryTrees { get; set; } = new();
+        protected ClassifiedsCategory SelectedCategory => CategoryTrees.FirstOrDefault(x => x.Id.ToString() == Ad.SelectedCategoryId);
+        protected ClassifiedsCategoryField SelectedSubcategory => SelectedCategory?.Fields?.FirstOrDefault(x => x.Id.ToString() == Ad.SelectedSubcategoryId);
+        protected ClassifiedsCategoryField SelectedSubSubcategory => SelectedSubcategory?.Fields?.FirstOrDefault(x => x.Id.ToString() == Ad.SelectedSubSubcategoryId);
 
-        protected List<CategoryField> AvailableFields =>
+        protected List<ClassifiedsCategoryField> AvailableFields =>
                                         SelectedSubSubcategory?.Fields ??
                                         SelectedSubcategory?.Fields ??
                                         SelectedCategory?.Fields ??
-                                        new List<CategoryField>();
+                                        new List<ClassifiedsCategoryField>();
         [Parameter] public string[] ExcludedFields { get; set; } = Array.Empty<string>();
 
         [Parameter] public CollectiblesAdPost Ad { get; set; } = new();

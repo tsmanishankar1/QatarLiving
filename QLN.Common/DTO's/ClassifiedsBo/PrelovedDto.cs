@@ -132,7 +132,7 @@ namespace QLN.Common.DTO_s.ClassifiedsBo
     public class BulkEditPreLovedP2PDto
     {
         public List<long> AdIds { get; set; }
-        public int AdStatus { get; set; }
+        public BulkActionEnum AdStatus { get; set; }
     }
 
 }
