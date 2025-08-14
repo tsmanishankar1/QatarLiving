@@ -24,7 +24,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.ViewTransactions
         protected int PageSize { get; set; } = 12;
         protected string SelectedTab { get; set; } = "paytopublish";
 
-        protected List<ItemViewTransaction> Transactions { get; set; } = new();
+        protected List<ItemTransactionItem> Transactions { get; set; } = new();
         protected int TotalRecords { get; set; }
 
         protected override async Task OnInitializedAsync()
@@ -109,14 +109,14 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.ViewTransactions
                 if (responses.Count > 0 && responses[0].IsSuccessStatusCode)
                 {
                     var json = await responses[0].Content.ReadAsStringAsync();
-                    var result = JsonSerializer.Deserialize<PagedTransactionResponse>(json, new JsonSerializerOptions
+                    var result = JsonSerializer.Deserialize<ItemTransactionResponse>(json, new JsonSerializerOptions
                     {
                         PropertyNameCaseInsensitive = true
                     });
 
                     if (result != null)
                     {
-                        Transactions = result.Records;
+                        Transactions = result.Items;
                         TotalRecords = result.TotalRecords;
                     }
                 }

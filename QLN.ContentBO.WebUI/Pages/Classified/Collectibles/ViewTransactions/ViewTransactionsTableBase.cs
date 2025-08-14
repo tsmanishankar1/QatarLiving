@@ -11,7 +11,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.ViewTransactions
     public partial class ViewTransactionsTableBase : ComponentBase
     {
         [Parameter] public bool IsLoading { get; set; }
-        [Parameter] public List<ItemViewTransaction> Transactions { get; set; } = new();
+        [Parameter] public List<ItemTransactionItem> Transactions { get; set; } = new();
         [Parameter] public int TotalRecords { get; set; }
         [Inject] public IDialogService DialogService { get; set; }
         public string SelectedTab { get; set; } = "paytopublish";
@@ -32,7 +32,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.ViewTransactions
             currentPage = 1;
             await OnPageSizeChanged.InvokeAsync(pageSize);
         }
-         private void OpenAdDialog(ItemViewTransaction item)
+         private async void OpenAdDialog(ItemTransactionItem item)
         {
             int adId = int.TryParse(item.AdId, out var parsedId) ? parsedId : 0;
 
@@ -58,7 +58,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.ViewTransactions
                 FullWidth = true
             };
 
-            DialogService.Show<AdHistoryDialog>("", parameters, options);
+            await DialogService.ShowAsync<AdHistoryDialog>("", parameters, options);
         }
 
        protected List<ToggleTabs.TabOption> tabOptions = new()
@@ -87,7 +87,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.ViewTransactions
         }
 
      
-        protected void OnPreview(ItemViewTransaction item)
+        protected void OnPreview(ItemTransactionItem item)
         {
             OpenAdDialog(item);
             Console.WriteLine($"Preview clicked: {item.AdId}");
