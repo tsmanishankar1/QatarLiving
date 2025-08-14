@@ -10,16 +10,17 @@ namespace QLN.Common.DTO_s
 
     public class ClassifiedStoresIndex
     {
-        
 
         [SimpleField(IsFilterable = true)]
         public string? CompanyId { get; set; }
-       
         [SimpleField(IsFilterable = true)]
         public string? SubscriptionId { get; set; }
 
         [SearchableField(IsFilterable = true)]
         public string? CompanyName { get; set; }
+
+        [SearchableField(IsFilterable = true, IsFacetable = true)]
+        public string? StoreSlug { get; set; }
 
         [SimpleField]
         public string? ContactNumber { get; set; }
@@ -43,6 +44,10 @@ namespace QLN.Common.DTO_s
         [SearchableField(IsFilterable = true, IsFacetable = true)]
         public string? ProductName { get; set; }
 
+        [SearchableField(IsFilterable = true, IsFacetable = true)]
+        public string? ProductSlug { get; set; }
+
+
         [SimpleField]
         public string? ProductLogo { get; set; }
 
@@ -52,15 +57,14 @@ namespace QLN.Common.DTO_s
         [SimpleField]
         public string? Currency { get; set; }
 
-        [SearchableField(IsFacetable =true)]
+        [SearchableField(IsFacetable = true)]
         public string? ProductSummary { get; set; }
 
         [SearchableField]
         public string? ProductDescription { get; set; }
-      
-        public List<string>? Features { get; set; }=new List<string>();
+        public List<string>? Features { get; set; } = new List<string>();
 
-        public List<string>? Images { get; set; }=new List<string>();
+        public List<string>? Images { get; set; } = new List<string>();
 
         [SimpleField(IsFilterable = true, IsSortable = true)]
         public DateTime CreatedAt { get; set; }

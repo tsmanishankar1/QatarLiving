@@ -75,7 +75,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints
                     // Alternatively you could implement a new method for just subscription payments and use
                     // it here as a _paymentService.PayForSubscription(request, uid, cancellationToken)
                    
-                    var subscriptionId = await service.PurchaseSubscriptionAsync(request, uid, cancellationToken); // if this is creating a PendingPayment subscription then
+                    var subscriptionId = await service.PurchaseSubscriptionAsync(request, cancellationToken); // if this is creating a PendingPayment subscription then
                                                                                                                    // you would create an order next, however I notice this expects a
                                                                                                                    // paymentId so the ordering may need to be swopped.
                                                                                                                    // it is faster (from here) to create an order, then a subscription
@@ -565,7 +565,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints
                          var UserId = uidFromToken;
                     
 
-                    var addonId = await service.PurchaseAddonAsync(request, uidFromToken, cancellationToken);
+                    var addonId = await service.PurchaseAddonAsync(request, cancellationToken);
 
                     return TypedResults.Ok(new V2PurchaseResponseDto
                     {

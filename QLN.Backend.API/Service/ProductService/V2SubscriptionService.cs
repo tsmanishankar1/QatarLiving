@@ -106,7 +106,7 @@ namespace QLN.Backend.API.Service.ProductService
             };
         }
 
-        public async Task<Guid> PurchaseSubscriptionAsync(V2SubscriptionPurchaseRequestDto request, string userID, CancellationToken cancellationToken = default)
+        public async Task<Guid> PurchaseSubscriptionAsync(V2SubscriptionPurchaseRequestDto request, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(request);
 
@@ -119,8 +119,8 @@ namespace QLN.Backend.API.Service.ProductService
                 if (product == null)
                     throw new InvalidOperationException($"Product with code {request.ProductCode} not found or inactive");
 
-                if (product.ProductType != ProductType.SUBSCRIPTION)
-                    throw new InvalidOperationException($"Product {request.ProductCode} is not a subscription product");
+                if (product.ProductType != ProductType.SUBSCRIPTION || product.ProductType != ProductType.PUBLISH)
+                    throw new InvalidOperationException($"Product {request.ProductCode} is not a subscription or P2P product");
 
                 var subscriptionId = Guid.NewGuid();
 
@@ -129,7 +129,8 @@ namespace QLN.Backend.API.Service.ProductService
                     SubscriptionId = subscriptionId,
                     ProductCode = product.ProductCode,
                     ProductName = product.ProductName,
-                    UserId = userID,
+                    UserId = request.UserId,
+                    AdId = request.AdId ?? null,
                     CompanyId = request.CompanyId,
                     PaymentId = request.PaymentId,
                     Vertical = product.Vertical,
@@ -137,7 +138,7 @@ namespace QLN.Backend.API.Service.ProductService
                     Quota = BuildSubscriptionQuotaFromProduct(product),
                     StartDate = DateTime.UtcNow,
                     EndDate = DateTime.UtcNow.Add(GetDurationFromProduct(product)),
-                    Status = SubscriptionStatus.Active, // this should likely be created in an PendingPayment status ?
+                    Status = SubscriptionStatus.PaymentPending,
                     CreatedAt = DateTime.UtcNow
                 };
 
@@ -149,7 +150,7 @@ namespace QLN.Backend.API.Service.ProductService
                     Id = subscriptionId,
                     ProductCode = product.ProductCode,
                     ProductName = product.ProductName,
-                    //UserId = request.UserId,
+                    UserId = request.UserId,
                     CompanyId = request.CompanyId,
                     PaymentId = request.PaymentId,
                     Vertical = product.Vertical,                    
@@ -373,7 +374,7 @@ namespace QLN.Backend.API.Service.ProductService
 
         #region Addon Operations
 
-        public async Task<Guid> PurchaseAddonAsync(V2UserAddonPurchaseRequestDto request,string userid, CancellationToken cancellationToken = default)
+        public async Task<Guid> PurchaseAddonAsync(V2UserAddonPurchaseRequestDto request, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(request);
 
@@ -397,7 +398,7 @@ namespace QLN.Backend.API.Service.ProductService
                     UserAddOnId = addonId,
                     ProductCode = product.ProductCode,
                     ProductName = product.ProductName,
-                    UserId = userid,
+                    UserId = request.UserId,
                     CompanyId = request.CompanyId,
                     SubscriptionId = request.SubscriptionId,
                     PaymentId = request.PaymentId,
@@ -418,7 +419,7 @@ namespace QLN.Backend.API.Service.ProductService
                     Id = addonId,
                     ProductCode = product.ProductCode,
                     ProductName = product.ProductName,
-                    UserId = userid,
+                    UserId = request.UserId,
                     CompanyId = request.CompanyId,
                     SubscriptionId = request.SubscriptionId,
                     PaymentId = request.PaymentId,
@@ -439,7 +440,7 @@ namespace QLN.Backend.API.Service.ProductService
                 if (!actorResult) throw new Exception("Failed to save addon to actor");
 
                 await transaction.CommitAsync(cancellationToken);
-                _logger.LogInformation("V2 Addon purchased successfully: {Id} for user: {UserId}", addonId, userid);
+                _logger.LogInformation("V2 Addon purchased successfully: {Id} for user: {UserId}", addonId, request.UserId);
                 return addonId;
             }
             catch (Exception ex)
@@ -951,8 +952,8 @@ namespace QLN.Backend.API.Service.ProductService
                 CanRefreshAds = (c.RefreshBudgetPerDay ?? 0) > 0,
                 CanPostSocialMedia = false,
 
-                RefreshInterval = "Every 72 Hours",
-                RefreshIntervalHours = 72
+                RefreshInterval = product.ProductType== ProductType.FREE ?"Every 72 Hours": "Every Hour",
+                RefreshIntervalHours = product.ProductType == ProductType.FREE ? 72: 1
             };
 
             return q;
