@@ -16,7 +16,7 @@ namespace QLN.Common.Infrastructure.Model
         public long Id { get; set; }
 
         [MaxLength(50)]
-        public string? SubscriptionId { get; set; }
+        public Guid? SubscriptionId { get; set; }
 
         [Required]
         [MaxLength(100)]
@@ -30,6 +30,10 @@ namespace QLN.Common.Infrastructure.Model
         [MaxLength(100)]
         public string? BusinessType { get; set; }
 
+        [MaxLength(100)]
+        public string? CompanyLogo { get; set; }
+        [MaxLength(200)]
+        public string? Slug { get; set; }
         [MaxLength(300)]
         public string? Description { get; set; }
         public DateTime? StartDate { get; set; }
@@ -53,10 +57,7 @@ namespace QLN.Common.Infrastructure.Model
         [MaxLength(100)]
         public string? SocialMediaLinks { get; set; }
 
-        public bool IsActive { get; set; }
-
-        [Column(TypeName = "jsonb")]
-        public LocationsDtos Locations { get; set; }
+        public bool IsActive { get; set; }       
 
         [Required]
         [MaxLength(100)]
@@ -76,8 +77,8 @@ namespace QLN.Common.Infrastructure.Model
         [MaxLength(100)]
         public string? Offertitle { get; set; }
 
-        [Column(TypeName = "jsonb")]
-        public List<ImageInfo> Images { get; set; } = new List<ImageInfo>();
+        [MaxLength(250)]
+        public string CoverImage { get; set; }
         public DateTime ExpiryDate { get; set; }
         public DateTime? FeaturedExpiryDate { get; set; }
         public DateTime? PromotedExpiryDate { get; set; }
