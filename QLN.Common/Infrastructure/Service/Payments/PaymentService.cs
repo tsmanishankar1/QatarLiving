@@ -10,6 +10,7 @@ using QLN.Common.DTOs;
 using QLN.Common.Infrastructure.IService.IAuth;
 using QLN.Common.Infrastructure.IService.IPayments;
 using QLN.Common.Infrastructure.IService.IProductService;
+using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.QLDbContext;
 using QLN.Common.Infrastructure.Subscriptions;
 using System;
@@ -27,6 +28,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
         private readonly IFatoraService _fatoraService;
         private readonly ID365Service _d365Service;
         private readonly QLPaymentsContext _dbContext;
+        private readonly QLSubscriptionContext _subscriptionContext;
         private readonly IV2SubscriptionService _subscriptionService;
 
         public PaymentService(
@@ -35,7 +37,8 @@ namespace QLN.Common.Infrastructure.Service.Payments
             ID365Service d365Service,
             QLPaymentsContext dbContext,
             IConfiguration configuration,
-            IV2SubscriptionService subscriptionService
+            IV2SubscriptionService subscriptionService,
+            QLSubscriptionContext subscriptionContext
             )
         {
             _logger = logger;
@@ -44,16 +47,12 @@ namespace QLN.Common.Infrastructure.Service.Payments
             _dbContext = dbContext;
             _configuration = configuration;
             _subscriptionService = subscriptionService;
+            _subscriptionContext = subscriptionContext;
 
         }
 
         public async Task<PaymentResponse> PayAsync(ExternalPaymentRequest request, CancellationToken cancellationToken = default)
         {
-            // Steps followed in this method:
-            // 1. Validate the request parameters.
-            // 2. Check if the product type is supported.
-            // 3. If the product type is supported, create a payment request using the Fatora service.
-            // 4. If the product type is not supported, log an error and return a failure response.
 
             var platform = "web";
 
@@ -90,7 +89,6 @@ namespace QLN.Common.Infrastructure.Service.Payments
             if (request.ProductType == null)
             {
                 _logger.LogError("ProductType is null");
-                // Return a failure response
                 return new PaymentResponse
                 {
                     Status = "failure",
@@ -132,15 +130,13 @@ namespace QLN.Common.Infrastructure.Service.Payments
                         UserId = request.User.UserId,
                     };
 
-                    // Create the subscription
                     var subscriptionId = await _subscriptionService.PurchaseSubscriptionAsync(subscriptionRequest, cancellationToken);
 
-                    // After subscription is created, update PaymentEntity with subscription info
                     dbResult.Entity.UserSubscriptionId = subscriptionId;
 
-                    _dbContext.SaveChanges(); // Update the payment entity in the database with subscription info
+                    _dbContext.SaveChanges(); 
 
-                    return await _fatoraService.CreatePaymentAsync(request, request.User.UserName, request.Vertical, request.SubVertical, request.User.Email, request.User.Mobile, platform, cancellationToken);
+                    return await _fatoraService.CreatePaymentAsync(request, request.User.UserName,request.ProductCode, request.Vertical, request.SubVertical, request.User.Email, request.User.Mobile, platform, cancellationToken);
 
                 case ProductType.PUBLISH:
                     _logger.LogInformation("Processing Pay to Publish payment for Order ID: {OrderId}", request.OrderId);
@@ -171,17 +167,16 @@ namespace QLN.Common.Infrastructure.Service.Payments
                         PaymentId = publishDbResult.Entity.PaymentId,
                         ProductCode = request.ProductCode,
                         UserId = request.User.UserId,
+                        AdId = request.AdId,
                     };
 
-                    // Create the subscription
                     var pubsubscriptionId = await _subscriptionService.PurchaseSubscriptionAsync(publishRequest, cancellationToken);
 
-                    // After subscription is created, update PaymentEntity with subscription info
                     publishDbResult.Entity.UserSubscriptionId = pubsubscriptionId;
 
-                    _dbContext.SaveChanges(); // Update the payment entity in the database with subscription info
+                    _dbContext.SaveChanges(); 
 
-                    return await _fatoraService.CreatePaymentAsync(request, request.User.UserName, request.Vertical, request.SubVertical, request.User.Email, request.User.Mobile, platform, cancellationToken);
+                    return await _fatoraService.CreatePaymentAsync(request, request.User.UserName,request.ProductCode, request.Vertical, request.SubVertical, request.User.Email, request.User.Mobile, platform, cancellationToken);
 
                 case ProductType.ADDON_COMBO:
                 case ProductType.ADDON_FEATURE:
@@ -189,6 +184,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
                     _logger.LogInformation("Processing Addon payment for Order ID: {OrderId}", request.OrderId);
                     var addonDbResult = _dbContext.Payments.Add(new PaymentEntity
                     {
+                        AdId = request.AdId,
                         ProductType = request.ProductType ?? ProductType.FREE,
                         Status = PaymentStatus.Pending,
                         UserSubscriptionId = request.SubscriptionId,
@@ -216,15 +212,13 @@ namespace QLN.Common.Infrastructure.Service.Payments
                         SubscriptionId = request.SubscriptionId ?? Guid.Empty,
                     };
 
-                    // Create the addon
                     var addonId = await _subscriptionService.PurchaseAddonAsync(addonRequest, cancellationToken);
 
-                    // After addon is created, update PaymentEntity with addon info
                     addonDbResult.Entity.UserAddonId = addonId;
 
-                    _dbContext.SaveChanges(); // Update the payment entity in the database with addon info
+                    _dbContext.SaveChanges(); 
 
-                    return await _fatoraService.CreatePaymentAsync(request, request.User.UserName, request.Vertical, request.SubVertical, request.User.Email, request.User.Mobile, platform, cancellationToken);
+                    return await _fatoraService.CreatePaymentAsync(request, request.User.UserName,request.ProductCode, request.Vertical, request.SubVertical, request.User.Email, request.User.Mobile, platform, cancellationToken);
 
                 default:
                     _logger.LogError("Unsupported ProductType: {ProductType}", request.ProductType);
@@ -244,56 +238,84 @@ namespace QLN.Common.Infrastructure.Service.Payments
 
         public async Task<string> PaymentFailureAsync(PaymentTransactionRequest request, CancellationToken cancellationToken = default)
         {
-            // Steps followed in this method:
-            // 1. Check if the order ID is valid and parse it.
-            // 2. Retrieve the payment from the database using the order ID.
-            // 3. If the payment is not found, return a failure URL.
-            // 4. Update the payment status to Failure and set the transaction ID.
-            // 5. Save the changes to the database.
-            // 6. Send the payment information to D365 with the operation set to Failure.
 
             string baseRedirectUrl = GenerateRedirectURLBase(request.Vertical, request.SubVertical);
 
-            if (!int.TryParse(request.OrderId, out var orderId)) return $"{baseRedirectUrl}?paymentSuccess=false";
+            if (!int.TryParse(request.OrderId, out var orderId))
+                return $"{baseRedirectUrl}?paymentSuccess=false&error=invalid_order_id";
 
             _logger.LogDebug("Processing payment failure for Order ID: {OrderId}", orderId);
 
-            var payment = await _dbContext.Payments
-                .FirstOrDefaultAsync(p => p.PaymentId == orderId, cancellationToken);
-
-            _logger.LogDebug("Retrieved payment: {Payment}", payment?.PaymentId);
-
-            if (payment == null)
+            try
             {
-                _logger.LogError("Payment not found for Order ID: {OrderId}", orderId);
-                return $"{baseRedirectUrl}?paymentSuccess=false"; // this is just an example, you might want to return a more meaningful URL 
+                var payment = await _dbContext.Payments
+                    .FirstOrDefaultAsync(p => p.PaymentId == orderId || p.AttachedPaymentId == orderId, cancellationToken);
+
+                var subscription = await _subscriptionContext.Subscriptions
+                    .FirstOrDefaultAsync(s => s.PaymentId == orderId, cancellationToken);
+
+                _logger.LogDebug("Retrieved payment: {PaymentId}, subscription: {SubscriptionId}",
+                    payment?.PaymentId, subscription?.SubscriptionId);
+
+                if (payment == null)
+                {
+                    _logger.LogError("Payment not found for Order ID: {OrderId}", orderId);
+                    return $"{baseRedirectUrl}?paymentSuccess=false&error=payment_not_found";
+                }
+
+                payment.Status = PaymentStatus.Failure;
+                payment.TransactionId = request.TransactionId;
+                payment.TriggeredSource = TriggeredSource.Web;
+
+                if (subscription != null)
+                {
+                    subscription.Status = SubscriptionStatus.Failed; 
+                    subscription.StartDate = DateTime.MinValue; 
+                    subscription.EndDate = DateTime.MinValue;  
+
+                    _logger.LogDebug("Subscription status updated to Failed for Order ID: {OrderId}", orderId);
+
+                    _subscriptionContext.Update(subscription);
+                    await _subscriptionContext.SaveChangesAsync(cancellationToken);
+                }
+                else
+                {
+                    _logger.LogWarning("No subscription found for failed payment Order ID: {OrderId}", orderId);
+                }
+
+                _dbContext.Update(payment);
+                await _dbContext.SaveChangesAsync(cancellationToken);
+
+                _logger.LogDebug("Payment status updated to Failure for Order ID: {OrderId}", orderId);
+
+                var d365Data = new D365Data
+                {
+                    PaymentInfo = payment,
+                    Operation = D365PaymentOperations.FAILURE,
+                    User = new()
+                    {
+                        Id = payment.PaidByUid,
+                        Email = string.Empty,
+                        Mobile = string.Empty,
+                        Name = string.Empty
+                    }
+                };
+
+                // Send the payment information to D365
+                await _d365Service.SendPaymentInfoD365Async(d365Data, cancellationToken);
+
+                _logger.LogDebug("Payment failure information sent to D365 for Order ID: {OrderId}", orderId);
+
+                // Return failure URL with additional context
+                return $"{baseRedirectUrl}?paymentSuccess=false&productType={payment.ProductType}&orderId={orderId}&error=payment_failed";
             }
-
-            payment.Status = PaymentStatus.Failure;
-            payment.TransactionId = request.TransactionId;
-
-            _dbContext.Update(payment);
-
-            await _dbContext.SaveChangesAsync(cancellationToken);
-
-            _logger.LogDebug("Payment status updated to Failure for Order ID: {OrderId}", orderId);
-
-            var d365Data = new D365Data
+            catch (Exception ex)
             {
-                PaymentInfo = payment,
-                Operation = D365PaymentOperations.FAILURE
-            };
-
-            // Send the payment information to D365
-            await _d365Service.SendPaymentInfoD365Async(d365Data, cancellationToken);
-
-            _logger.LogDebug("Payment information sent to D365 for Order ID: {OrderId}", orderId);
-
-            // Return the redirect URL as a string
-            return $"{baseRedirectUrl}?paymentSuccess=false"; // this is just an example, you might want to return a more meaningful URL 
+                _logger.LogError(ex, "Error processing payment failure for Order ID: {OrderId}", orderId);
+                return $"{baseRedirectUrl}?paymentSuccess=false&error=processing_error";
+            }
         }
 
-        
 
         public async Task<string> PaymentSuccessAsync(PaymentTransactionRequest request, CancellationToken cancellationToken = default)
         {
@@ -301,72 +323,130 @@ namespace QLN.Common.Infrastructure.Service.Payments
             // 1. Verify the payment using the Fatora service.
             // 2. If the payment verification fails, return a failure URL.
             // 3. If the payment verification is successful, update the payment status in the database.
-            // 4. Send the payment information to D365.
-            // 5. Return a success URL with the payment status and product type.
+            // 4. Update subscription status to Active and set expiry date based on product duration.
+            // 5. Send the payment information to D365.
+            // 6. Return a success URL with the payment status and product type.
 
             string baseRedirectUrl = GenerateRedirectURLBase(request.Vertical, request.SubVertical);
 
-            if (!int.TryParse(request.OrderId, out var orderId)) return $"{baseRedirectUrl}?paymentSuccess=false";
+            if (!int.TryParse(request.OrderId, out var orderId))
+                return $"{baseRedirectUrl}?paymentSuccess=false";
 
             _logger.LogDebug("Processing payment success for Order ID: {OrderId}", orderId);
-            
+
             var paymentConfirmation = await _fatoraService.VerifyPayment(request.OrderId, cancellationToken);
 
-            if(paymentConfirmation == null)
+            if (paymentConfirmation == null)
             {
                 _logger.LogError("Payment confirmation is null for Order ID: {OrderId}", request.OrderId);
-                return $"{baseRedirectUrl}?paymentSuccess=false"; // this is just an example, you might want to return a more meaningful URL 
+                return $"{baseRedirectUrl}?paymentSuccess=false";
             }
 
-            if (paymentConfirmation == null || paymentConfirmation.Status != "SUCCESS")
+            if (paymentConfirmation.Status != "SUCCESS")
             {
-                _logger.LogError("Payment verification failed for Order ID: {OrderId}", request.OrderId);
-                return $"{baseRedirectUrl}?paymentSuccess=false"; // this is just an example, you might want to return a more meaningful URL 
+                _logger.LogError("Payment verification failed for Order ID: {OrderId}. Status: {Status}",
+                    request.OrderId, paymentConfirmation.Status);
+                return $"{baseRedirectUrl}?paymentSuccess=false";
             }
 
+            // Retrieve payment, subscription, and product information
             var payment = await _dbContext.Payments
                 .FirstOrDefaultAsync(p => p.PaymentId == orderId || p.AttachedPaymentId == orderId, cancellationToken);
 
-            _logger.LogDebug("Retrieved payment: {Payment}", payment?.PaymentId);
+            var subscription = await _subscriptionContext.Subscriptions
+                .FirstOrDefaultAsync(s => s.PaymentId == orderId, cancellationToken);
+
+            var product = await _subscriptionContext.Products
+                .FirstOrDefaultAsync(p => p.ProductCode == request.ProductCode, cancellationToken);
+
+            _logger.LogDebug("Retrieved payment: {PaymentId}, subscription: {SubscriptionId}, product: {ProductCode}",
+                payment?.PaymentId, subscription?.SubscriptionId, product?.ProductCode);
 
             if (payment == null)
             {
                 _logger.LogError("Payment not found for Order ID: {OrderId}", orderId);
-                return $"{baseRedirectUrl}?paymentSuccess=false"; // this is just an example, you might want to return a more meaningful URL 
+                return $"{baseRedirectUrl}?paymentSuccess=false";
             }
 
-            payment.Status = PaymentStatus.Success;
-            payment.TransactionId = paymentConfirmation.Result.TransactionId;
-            payment.TriggeredSource = TriggeredSource.Web; // defaulting to Web
-
-            _dbContext.Update(payment);
-
-            await _dbContext.SaveChangesAsync(cancellationToken);
-
-            _logger.LogDebug("Payment status updated to Success for Order ID: {OrderId}", orderId);
-
-            var d365Data = new D365Data
+            if (subscription == null)
             {
-                PaymentInfo = payment,
-                Operation = D365PaymentOperations.SUCCESS,
-                User = new()
+                _logger.LogError("Subscription not found for Order ID: {OrderId}", orderId);
+                return $"{baseRedirectUrl}?paymentSuccess=false";
+            }
+
+            if (product == null)
+            {
+                _logger.LogError("Product not found for ProductCode: {ProductCode}", request.ProductCode);
+                return $"{baseRedirectUrl}?paymentSuccess=false";
+            }
+
+            try
+            {
+                // Update payment status
+                payment.Status = PaymentStatus.Success;
+                payment.TransactionId = paymentConfirmation.Result.TransactionId;
+                payment.TriggeredSource = TriggeredSource.Web;
+
+                // Update subscription status and dates
+                var currentTime = DateTime.UtcNow;
+                subscription.Status = SubscriptionStatus.Active; // Set status to Active
+                subscription.StartDate = currentTime;
+
+                // Calculate expiry date based on product duration
+                subscription.EndDate = CalculateExpiryDate(currentTime, product);
+
+                _logger.LogDebug("Subscription activated: StartDate: {StartDate}, EndDate: {EndDate}",
+                    subscription.StartDate, subscription.EndDate);
+
+                // Save payment changes
+                _dbContext.Update(payment);
+                await _dbContext.SaveChangesAsync(cancellationToken);
+
+                // Save subscription changes
+                _subscriptionContext.Update(subscription);
+                await _subscriptionContext.SaveChangesAsync(cancellationToken);
+
+                _logger.LogDebug("Payment and subscription updated successfully for Order ID: {OrderId}", orderId);
+
+                // Prepare D365 data
+                var d365Data = new D365Data
                 {
-                    Id = payment.PaidByUid,
-                    Email = string.Empty,
-                    Mobile = string.Empty,
-                    Name = string.Empty
-                }
-            };
+                    PaymentInfo = payment,
+                    Operation = D365PaymentOperations.SUCCESS,
+                    User = new()
+                    {
+                        Id = payment.PaidByUid,
+                        Email = string.Empty,
+                        Mobile = string.Empty,
+                        Name = string.Empty
+                    }
+                };
 
-            // Send payment information to D365
-            await _d365Service.SendPaymentInfoD365Async(d365Data, cancellationToken);
+                // Send payment information to D365
+                await _d365Service.SendPaymentInfoD365Async(d365Data, cancellationToken);
 
-            _logger.LogDebug("Payment information sent to D365 for Order ID: {OrderId}", orderId);
+                _logger.LogDebug("Payment information sent to D365 for Order ID: {OrderId}", orderId);
 
-            // Return the redirect URL as a string
-            return $"{baseRedirectUrl}?paymentSuccess=${paymentConfirmation.Status}&productType=${payment.ProductType}"; // this is just an example, you might want to return a more meaningful URL 
+                // Return success URL
+                return $"{baseRedirectUrl}?paymentSuccess=true&productType={payment.ProductType}&subscriptionId={subscription.SubscriptionId}";
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating payment and subscription for Order ID: {OrderId}", orderId);
+                return $"{baseRedirectUrl}?paymentSuccess=false&error=update_failed";
+            }
         }
+        private DateTime CalculateExpiryDate(DateTime startDate, Product product)
+        {
+            if (product?.Constraints?.Duration == null)
+            {
+                _logger.LogWarning("Product duration is null, defaulting to 1 month");
+                return startDate.AddMonths(1);
+            }
 
+            // Simply add the TimeSpan to the start date
+            return startDate.Add(product.Constraints.Duration.Value);
+        }
         private string GenerateRedirectURLBase(Vertical vertical, SubVertical? subVertical)
         {
             var baseUrls = _configuration.GetSection("BaseUrl").GetChildren()

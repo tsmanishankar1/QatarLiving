@@ -108,6 +108,7 @@ public static class FatoraEndpoints
                 var responseCode = queryParams.TryGetValue("response_code", out var respCode) ? respCode.ToString() : null;
                 var description = queryParams.TryGetValue("description", out var desc) ? desc.ToString() : null;
                 var platform = queryParams.TryGetValue("platform", out var plat) ? plat.ToString() : null;
+                var productCode = queryParams.TryGetValue("product_code", out var prodCode) ? prodCode.ToString() : null;
 
                 Vertical? vertical = null;
                 if (queryParams.TryGetValue("vertical", out var verticalValue) &&
@@ -134,6 +135,7 @@ public static class FatoraEndpoints
                     Platform = platform,
                     Vertical = vertical ?? Vertical.Classifieds,
                     SubVertical = subVertical,
+                    ProductCode = productCode
                 };
 
                 var redirectUrl = await service.PaymentSuccessAsync(request, cancellationToken);
@@ -174,6 +176,7 @@ public static class FatoraEndpoints
                 var responseCode = queryParams.TryGetValue("response_code", out var respCode) ? respCode.ToString() : null;
                 var description = queryParams.TryGetValue("description", out var desc) ? desc.ToString() : null;
                 var platform = queryParams.TryGetValue("platform", out var plat) ? plat.ToString() : null;
+                var productCode = queryParams.TryGetValue("product_code", out var prodCode) ? prodCode.ToString() : null;
 
                 Vertical? vertical = null;
                 if (queryParams.TryGetValue("vertical", out var verticalValue) &&
@@ -206,7 +209,8 @@ public static class FatoraEndpoints
                     Description = description,
                     Platform = platform,
                     Vertical = vertical ?? Vertical.Classifieds, 
-                    SubVertical = subVertical
+                    SubVertical = subVertical,
+                    ProductCode = productCode
                 };
 
                 var redirectUrl = await service.PaymentFailureAsync(request, cancellationToken);

@@ -12,7 +12,7 @@ namespace QLN.Common.DTO_s.Payments
         /// <summary>
         /// Ad Id against which the payment has to be done
         /// </summary>
-        public string? AdId { get; set; }
+        public long? AdId { get; set; }
 
         /// <summary>
         /// Subscription Id against which the payment has to be done
