@@ -360,7 +360,7 @@
 
         }
 
-        public async Task SaveContentCommentsAsync(Dictionary<string, List<ContentComment>> items, CancellationToken cancellationToken)
+        public async Task SaveContentCommunityCommentsAsync(Dictionary<string, List<ContentComment>> items, CancellationToken cancellationToken)
         {
             foreach (var dto in items)
             {
@@ -385,6 +385,42 @@
                     {
 
                         await _communityPostService.AddCommentToCommunityPostAsync(entity, cancellationToken);
+
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError($"Failed to create community comment - {ex.Message}");
+                        throw new Exception("Unexpected error during article creation", ex);
+                    }
+                }
+            }
+        }
+
+        public async Task SaveContentNewsCommentsAsync(Dictionary<string, List<ContentComment>> items, CancellationToken cancellationToken)
+        {
+            foreach (var dto in items)
+            {
+                //var postGuid = ProcessingHelpers.StringToGuid(dto.Key);
+
+                foreach (var comment in dto.Value)
+                {
+                    var id = ProcessingHelpers.StringToGuid(comment.CommentId);
+
+                    var entity = new V2NewsCommentDto
+                    {
+                        CommentId = id,
+                        Nid = dto.Key,
+                        CommentedAt = DateTime.TryParse(comment.CreatedDate, out var commentDate) ? commentDate : DateTime.Now,
+                        UserName = comment.Username,
+                        Uid = comment.UserId,
+                        Comment = comment.Subject,
+                        UpdatedAt = DateTime.Now,
+                        IsActive = true,
+                    };
+                    try
+                    {
+
+                        await _newsService.SaveNewsCommentAsync(entity, cancellationToken);
 
                     }
                     catch (Exception ex)

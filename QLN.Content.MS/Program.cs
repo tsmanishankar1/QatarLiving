@@ -127,6 +127,47 @@ app.MapPost("/api/v2/news/bulkMigrate",
 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
+app.MapPost("/api/v2/news/comment/bulkMigrate",
+    [Topic(PubSubName, PubSubTopics.NewsCommentsMigration)]
+async Task<Results<
+             Ok<NewsCommentApiResponse>,
+             BadRequest<ProblemDetails>,
+             ProblemHttpResult>>
+         (
+             V2NewsCommentDto comment,
+             IV2NewsService service,
+             CancellationToken cancellationToken
+         ) =>
+    {
+        try
+        {
+
+            var result = await service.SaveNewsCommentAsync(comment, cancellationToken);
+
+            return TypedResults.Ok(result);
+        }
+        catch (InvalidDataException ex)
+        {
+            return TypedResults.BadRequest(new ProblemDetails
+            {
+                Title = "Invalid Data",
+                Detail = ex.Message,
+                Status = StatusCodes.Status400BadRequest
+            });
+        }
+        catch (Exception ex)
+        {
+            return TypedResults.Problem("Internal Server Error", ex.Message);
+        }
+    }).ExcludeFromDescription()
+.WithName("BulkMigrateNewsComments")
+.WithTags("News")
+.WithSummary("Bulk Migrate News Comment")
+.WithDescription("Bulk Migrate News Comment")
+.Produces<string>(StatusCodes.Status200OK)
+.Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+.Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
 app.MapPost("/api/v2/events/bulkMigrate",
     [Topic(PubSubName, PubSubTopics.EventsMigration)] 
             async Task<Results<
@@ -191,7 +232,7 @@ app.MapPost("/api/v2/community/bulkMigrate",
 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
 app.MapPost("/api/v2/community/comments/bulkMigrate",
-    [Topic(PubSubName, PubSubTopics.CommentsMigration)]
+    [Topic(PubSubName, PubSubTopics.CommunityCommentsMigration)]
 async Task<Results<
                 Ok<string>,
                 BadRequest<ProblemDetails>,

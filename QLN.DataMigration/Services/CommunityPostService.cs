@@ -90,14 +90,14 @@ namespace QLN.DataMigration.Services
             {
                 await _dapr.PublishEventAsync(
                             pubsubName: ConstantValues.PubSubName,
-                            topicName: ConstantValues.PubSubTopics.CommentsMigration,
+                            topicName: ConstantValues.PubSubTopics.CommunityCommentsMigration,
                             data: dto,
                             cancellationToken: ct
                         );
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error publishing comment {dto.CommentId} to {ConstantValues.PubSubTopics.CommentsMigration} topic");
+                _logger.LogError(ex, $"Error publishing comment {dto.CommentId} to {ConstantValues.PubSubTopics.CommunityCommentsMigration} topic");
                 throw;
             }
         }

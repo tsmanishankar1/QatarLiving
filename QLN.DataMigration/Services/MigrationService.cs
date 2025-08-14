@@ -151,14 +151,34 @@ namespace QLN.DataMigration.Services
                 return Results.Problem("No items found or deserialized data is invalid.");
             }
 
-            var migrationItems = new List<ArticleItem>();
+            var migrationItems = new List<ArticleItem>(); 
+            var migrationComments = new Dictionary<string, List<ContentComment>>();
             int totalCount = 0;
+            int totalCommentCount = 0;
 
             // iterate over each drupal item and fetch its data from current storage
             // and upload it into Azure Blob
             foreach (var drupalItem in drupalItems.Items)
             {
                 await ProcessMigrationArticle(drupalItem, importImages: importImages);
+
+                if (int.TryParse(drupalItem.CommentCount, out var commentCount) && commentCount > 0)
+                {
+                    int comment_page = 1;
+                    int comment_page_size = 30;
+
+                    // Fetch comments for this community post
+                    var comments = await _drupalSourceService.GetCommentsByIdAsync(drupalItem.Nid, cancellationToken, comment_page, comment_page_size);
+
+                    if (comments != null && comments.Comments != null && comments.Comments.Any())
+                    {
+                        migrationComments.Add(drupalItem.Nid, comments.Comments);
+
+                        totalCommentCount = +comments.Comments.Count;
+
+                        _logger.LogInformation($"Found {comments.Comments.Count} comments for post {drupalItem.Nid}");
+                    }
+                }
 
                 migrationItems.Add(drupalItem);
                 totalCount += 1;
@@ -182,13 +202,32 @@ namespace QLN.DataMigration.Services
                     {
                         await ProcessMigrationArticle(drupalItem, importImages: importImages);
 
+                        if (int.TryParse(drupalItem.CommentCount, out var commentCount) && commentCount > 0)
+                        {
+                            int comment_page = 1;
+                            int comment_page_size = 30;
+
+                            // Fetch comments for this community post
+                            var comments = await _drupalSourceService.GetCommentsByIdAsync(drupalItem.Nid, cancellationToken, comment_page, comment_page_size);
+
+                            if (comments != null && comments.Comments != null && comments.Comments.Any())
+                            {
+                                migrationComments.Add(drupalItem.Nid, comments.Comments);
+
+                                totalCommentCount = +comments.Comments.Count;
+
+                                _logger.LogInformation($"Found {comments.Comments.Count} comments for post {drupalItem.Nid}");
+                            }
+                        }
+
                         migrationItems.Add(drupalItem);
                         totalCount += 1;
                     }
 
                     await _dataOutputService.SaveContentNewsAsync(migrationItems, destinationCategory, destinationSubCategory, cancellationToken);
+                    await _dataOutputService.SaveContentCommunityCommentsAsync(migrationComments, cancellationToken);
 
-                    _logger.LogInformation($"Migrated {totalCount} out of {totalItemCount} Items"); 
+                    _logger.LogInformation($"Migrated {totalCount} out of {totalItemCount} Posts with {totalCommentCount} Comments");
                 }
             }
 
@@ -196,7 +235,7 @@ namespace QLN.DataMigration.Services
 
             return Results.Ok(new
             {
-                Message = $"Migrated {totalCount} out of {totalItemCount} Items - Started @ {startTime} - Completed @ {DateTime.UtcNow}.",
+                Message = $"Migrated {totalCount} out of {totalItemCount} Posts with {totalCommentCount} Comments - Started @ {startTime} - Completed @ {DateTime.UtcNow}.",
             });
         }
 
@@ -363,7 +402,7 @@ namespace QLN.DataMigration.Services
                     }
 
                     await _dataOutputService.SaveContentCommunityPostsAsync(migrationItems, cancellationToken);
-                    await _dataOutputService.SaveContentCommentsAsync(migrationComments, cancellationToken);
+                    await _dataOutputService.SaveContentCommunityCommentsAsync(migrationComments, cancellationToken);
 
                     _logger.LogInformation($"Migrated {totalCount} out of {totalItemCount} Posts with {totalCommentCount} Comments");
                 }
