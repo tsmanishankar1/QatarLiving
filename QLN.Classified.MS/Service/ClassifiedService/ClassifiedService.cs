@@ -516,13 +516,13 @@ namespace QLN.Classified.MS.Service
             if (string.IsNullOrWhiteSpace(dto.UserId)) throw new ArgumentException("UserId is required.");
             if (string.IsNullOrWhiteSpace(dto.Offertitle)) throw new ArgumentException("Title is required.");
             if (string.IsNullOrWhiteSpace(dto.FlyerFileUrl)) throw new ArgumentException("Flyer URL must be provided.");
-            if (dto.Images == null || !dto.Images.Any()) throw new ArgumentException("At least one image is required.");
+            if (dto.CoverImage == null || !dto.CoverImage.Any()) throw new ArgumentException("At least one image is required.");
 
           
             try
             {
                 var company = await _companyContext.Companies
-                    .FirstOrDefaultAsync(c => c.UserId == dto.UserId && c.IsActive, cancellationToken);
+                    .FirstOrDefaultAsync(c => c.UserId == dto.UserId && c.SubVertical == SubVertical.Deals && c.IsActive, cancellationToken);
 
                 if (company == null)
                     throw new InvalidOperationException($"No company found for user ID: {dto.UserId}");
@@ -545,6 +545,8 @@ namespace QLN.Classified.MS.Service
                 dto.SocialMediaLinks = socialLinks.Any() ? string.Join(", ", socialLinks) : null;
                 dto.Status = AdStatus.Draft; 
                 dto.CreatedAt = dto.CreatedAt == default ? DateTime.UtcNow : dto.CreatedAt;
+                dto.CompanyLogo = company.CompanyLogo;
+
 
                 _context.Deal.Add(dto);
                 await _context.SaveChangesAsync(cancellationToken);
@@ -1560,7 +1562,10 @@ namespace QLN.Classified.MS.Service
                     if (string.IsNullOrWhiteSpace(existingAd.WhatsappNumber))
                         existingAd.WhatsappNumber = company.WhatsAppNumber;
 
-                    if (string.IsNullOrWhiteSpace(existingAd.SocialMediaLinks))
+                    if (string.IsNullOrWhiteSpace(existingAd.CompanyLogo))
+                        existingAd.CompanyLogo = company.CompanyLogo;
+
+                        if (string.IsNullOrWhiteSpace(existingAd.SocialMediaLinks))
                     {
                         var socialLinks = new List<string>();
                         if (!string.IsNullOrWhiteSpace(company.FacebookUrl))
@@ -1589,9 +1594,8 @@ namespace QLN.Classified.MS.Service
                 existingAd.ContactNumber = dto.ContactNumber;
                 existingAd.WhatsappNumber = dto.WhatsappNumber;
                 existingAd.WebsiteUrl = dto.WebsiteUrl;
-                existingAd.Locations = dto.Locations;
                 existingAd.XMLlink = dto.XMLlink;
-                existingAd.Images = dto.Images;
+                existingAd.CoverImage = dto.CoverImage;
                 existingAd.CreatedAt = existingAd.CreatedAt;
                 existingAd.CreatedBy = existingAd.CreatedBy;
                 existingAd.UpdatedBy = dto.UpdatedBy;
@@ -2031,6 +2035,7 @@ namespace QLN.Classified.MS.Service
                 AdType = dto.AdType.ToString(),
                 Title = dto.Title,
                 Description = dto.Description,
+                Slug = dto.Slug,
                 Price = dto.Price,
                 PriceType = dto.PriceType,
                 CategoryId = dto.CategoryId.ToString(),
@@ -2114,6 +2119,7 @@ namespace QLN.Classified.MS.Service
                 BusinessName = dto.BusinessName,
                 BranchNames = dto.BranchNames,
                 BusinessType = dto.BusinessType,
+                Slug = dto.Slug,
                 offertitle = dto.Offertitle,
                 Description = dto.Description,
                 StartDate = dto.StartDate,
@@ -2132,7 +2138,7 @@ namespace QLN.Classified.MS.Service
                 UpdatedAt = dto.UpdatedAt,
                 UpdatedBy = dto.UpdatedBy,
                 ExpiryDate = dto.ExpiryDate,
-                Images = dto.Images,
+                CoverImage = dto.CoverImage,
                 PromotedExpiryDate = dto.PromotedExpiryDate,
                 IsPromoted = dto.IsPromoted,
                 FeaturedExpiryDate = dto.FeaturedExpiryDate,
