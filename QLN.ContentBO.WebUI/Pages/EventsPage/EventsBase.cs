@@ -93,9 +93,9 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
         protected override async Task OnInitializedAsync()
         {
             await AuthorizedPage();
+            Categories = await GetEventsCategories();
             await HandleStatusChange(1);
             featuredEventSlots = await GetFeaturedSlotsAsync();
-            Categories = await GetEventsCategories();
             var featuredEventIds = featuredEventSlots
                 .Where(slot => slot.Event != null)
                 .Select(slot => slot.Event.Id)
@@ -331,48 +331,6 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
                 IsLoadingEvent = false;
             }
             return slots;
-        }
-        private async Task<List<EventDTO>> GetFeaturedvents()
-        {
-            try
-            {
-                var apiResponse = await eventsService.GetFeaturedEvents();
-                if (apiResponse.IsSuccessStatusCode)
-                {
-                    var response = await apiResponse.Content.ReadFromJsonAsync<List<EventDTO>>();
-                    var json = JsonSerializer.Serialize(response, new JsonSerializerOptions
-                    {
-                        WriteIndented = true
-                    });
-                    return response ?? new List<EventDTO>();
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, "GetEventsLocations");
-            }
-            return new List<EventDTO>();
-        }
-        private async Task<List<EventDTO>> GetAllEvents()
-        {
-            try
-            {
-                var apiResponse = await eventsService.GetAllEvents();
-                if (apiResponse.IsSuccessStatusCode)
-                {
-                    var response = await apiResponse.Content.ReadFromJsonAsync<List<EventDTO>>();
-                    var json = JsonSerializer.Serialize(response, new JsonSerializerOptions
-                    {
-                        WriteIndented = true
-                    });
-                    return response ?? new List<EventDTO>();
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, "GetEvents");
-            }
-            return new List<EventDTO>();
         }
 
         private async Task<List<EventCategoryModel>> GetEventsCategories()

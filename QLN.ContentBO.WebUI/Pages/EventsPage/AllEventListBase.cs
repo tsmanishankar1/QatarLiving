@@ -1,18 +1,11 @@
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Routing;
-using Microsoft.AspNetCore.WebUtilities;
-using Microsoft.JSInterop;
-using MudBlazor;
 using MudBlazor;
 using QLN.ContentBO.WebUI.Components;
 using QLN.ContentBO.WebUI.Components.ConfirmationDialog;
-using QLN.ContentBO.WebUI.Components.PaginationFooter;
 using QLN.ContentBO.WebUI.Components.ToggleTabs;
 using QLN.ContentBO.WebUI.Extensions;
-using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Models;
-using QLN.ContentBO.WebUI.Pages.EventCreateForm.MessageBox;
-using System.Text.Json;
+
 
 namespace QLN.ContentBO.WebUI.Pages.EventsPage
 {
@@ -143,6 +136,10 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
         {
             try
             {
+                // Skip execution for default or min DateTime
+                if (givenUtcTime == DateTime.MinValue)
+                    return "-";
+
                 var now = DateTime.UtcNow.ToQatarTime();
                 var diff = now - givenUtcTime.ToQatarTime();
                 var isFuture = diff.TotalSeconds < 0;

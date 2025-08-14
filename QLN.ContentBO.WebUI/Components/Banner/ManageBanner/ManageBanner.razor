@@ -46,6 +46,7 @@
     <MudExpansionPanels Elevation="0" Class="mt-2">
         @foreach (var location in bannerPageTypes)
         {
+            
             @foreach (var Page in location.bannertypes)
         {
             <MudExpansionPanel Class="custom-expansion-panel" Style="border: 1px solid #e0e0e0;">
@@ -54,6 +55,11 @@
                         <MudItem xs="12">
                             <div class="d-flex align-center flex-wrap">
                                 <MudText Typo="Typo.subtitle1" Style="font-weight:600;">@Page.BannerTypeName</MudText>
+                                <MudChip T="string" Color="Color.Primary" Variant="Variant.Text">
+                                @(location.SubVerticalId.HasValue
+                                ? ((SubVertical)location.SubVerticalId.Value).ToString() 
+                                : string.Empty)
+                                </MudChip>
                                 <MudChip T="string" Color="Color.Primary" Variant="Variant.Filled" Class="ml-2 px-3"
                                 Size="Size.Medium">
                                 @{
