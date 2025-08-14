@@ -56,11 +56,11 @@ namespace QLN.Common.DTO_s
             [SearchableField]
             public string? EndDay { get; set; }
 
-            [SearchableField]
-            public TimeSpan? StartHour { get; set; }
+            [SimpleField(IsFilterable = true)]
+            public string? StartHour { get; set; }
 
-            [SearchableField]
-            public TimeSpan? EndHour { get; set; }
+            [SimpleField(IsFilterable = true)]
+            public string? EndHour { get; set; }
 
             [SearchableField(IsFilterable = true)]
             public string? UserDesignation { get; set; }

@@ -1,9 +1,7 @@
 ﻿using Dapr.Client;
-using Dapr.Client.Autogen.Grpc.v1;
 using Microsoft.EntityFrameworkCore;
 using QLN.Common.DTO_s;
 using QLN.Common.DTO_s.Company;
-using QLN.Common.DTO_s.Index;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.CustomException;
 using QLN.Common.Infrastructure.DTO_s;
@@ -73,6 +71,23 @@ namespace QLN.Company.MS.Service
 
                 _context.Companies.Add(entity);
                 await _context.SaveChangesAsync(cancellationToken);
+                var upsertRequest = await IndexServiceToAzureSearch(entity, cancellationToken);
+                if (upsertRequest != null)
+                {
+                    var message = new IndexMessage
+                    {
+                        Action = "Upsert",
+                        Vertical = ConstantValues.IndexNames.CompanyProfileIndex,
+                        UpsertRequest = upsertRequest
+                    };
+
+                    await _dapr.PublishEventAsync(
+                        pubsubName: ConstantValues.PubSubName,
+                        topicName: ConstantValues.PubSubTopics.IndexUpdates,
+                        data: message,
+                        cancellationToken: cancellationToken
+                    );
+                }
                 return "Company Created successfully";
             }
             catch (ArgumentException ex)
@@ -85,6 +100,64 @@ namespace QLN.Company.MS.Service
                 throw;
             }
         }
+        private async Task<CommonIndexRequest> IndexServiceToAzureSearch(Common.Infrastructure.Model.Company entity, CancellationToken cancellationToken)
+        {
+            var indexDoc = new CompanyProfileIndex
+            {
+                CompanyId = entity.Id.ToString(),
+                CompanyName = entity.CompanyName,
+                Country = entity.Country,
+                City = entity.City,
+                PhoneNumber = entity.PhoneNumber,
+                PhoneNumberCountryCode = entity.PhoneNumberCountryCode,
+                BranchLocations = entity.BranchLocations,
+                WhatsAppNumber = entity.WhatsAppNumber,
+                WhatsAppCountryCode = entity.WhatsAppCountryCode,
+                Email = entity.Email,
+                UserName = entity.UserName,
+                IsBasicProfile = entity.IsBasicProfile,
+                WebsiteUrl = entity.WebsiteUrl,
+                FacebookUrl = entity.FacebookUrl,
+                InstagramUrl = entity.InstagramUrl,
+                CompanyLogo = entity.CompanyLogo,
+                StartDay = entity.StartDay,
+                EndDay = entity.EndDay,
+                StartHour = entity.StartHour.ToString(),
+                EndHour = entity.EndHour.ToString(),
+                UserDesignation = entity.UserDesignation,
+                CoverImage1 = entity.CoverImage1,
+                CoverImage2 = entity.CoverImage2,
+                IsTherapeuticService = entity.IsTherapeuticService,
+                TherapeuticCertificate = entity.TherapeuticCertificate,
+                LicenseNumber = entity.LicenseNumber,
+                CompanyType = entity.CompanyType.ToString(),
+                CompanySize = entity.CompanySize.ToString(),
+                NatureOfBusiness = entity.NatureOfBusiness.Select(n => n.ToString()).ToList(),
+                BusinessDescription = entity.BusinessDescription,
+                CRNumber = entity.CRNumber,
+                CRDocument = entity.CRDocument,
+                UploadFeed = entity.UploadFeed,
+                XMLFeed = entity.XMLFeed,
+                CompanyVerificationStatus = entity.CompanyVerificationStatus?.ToString(),
+                Status = entity.Status?.ToString(),
+                Vertical = entity.Vertical.ToString(),
+                SubVertical = entity.SubVertical?.ToString(),
+                UserId = entity.UserId,
+                Slug = entity.Slug,
+                IsActive = entity.IsActive,
+                CreatedBy = entity.CreatedBy,
+                CreatedUtc = entity.CreatedUtc,
+                UpdatedBy = entity.UpdatedBy,
+                UpdatedUtc = entity.UpdatedUtc
+            };
+            var indexRequest = new CommonIndexRequest
+            {
+                IndexName = ConstantValues.IndexNames.CompanyProfileIndex,
+                CompanyProfile = indexDoc
+            };
+            return indexRequest;
+        }
+
         public async Task<string> MigrateCompany(string guid, string uid, string userName, CompanyProfile dto, CancellationToken cancellationToken = default)
         {
             try
@@ -347,6 +420,23 @@ namespace QLN.Company.MS.Service
                 _context.Entry(existing).CurrentValues.SetValues(updated);
 
                 await _context.SaveChangesAsync(cancellationToken);
+                var upsertRequest = await IndexServiceToAzureSearch(dto, cancellationToken);
+                if (upsertRequest != null)
+                {
+                    var message = new IndexMessage
+                    {
+                        Action = "Upsert",
+                        Vertical = ConstantValues.IndexNames.CompanyProfileIndex,
+                        UpsertRequest = upsertRequest
+                    };
+
+                    await _dapr.PublishEventAsync(
+                        pubsubName: ConstantValues.PubSubName,
+                        topicName: ConstantValues.PubSubTopics.IndexUpdates,
+                        data: message,
+                        cancellationToken: cancellationToken
+                    );
+                }
                 await _dapr.PublishEventAsync("pubsub", "notifications-email", new NotificationEntity
                 {
                     Destinations = new List<string> { "email" },
@@ -448,6 +538,23 @@ namespace QLN.Company.MS.Service
                 entity.UpdatedBy = request.UpdatedBy;
 
                 await _context.SaveChangesAsync(cancellationToken);
+                var upsertRequest = await IndexServiceToAzureSearch(entity, cancellationToken);
+                if (upsertRequest != null)
+                {
+                    var message = new IndexMessage
+                    {
+                        Action = "Upsert",
+                        Vertical = ConstantValues.IndexNames.CompanyProfileIndex,
+                        UpsertRequest = upsertRequest
+                    };
+
+                    await _dapr.PublishEventAsync(
+                        pubsubName: ConstantValues.PubSubName,
+                        topicName: ConstantValues.PubSubTopics.IndexUpdates,
+                        data: message,
+                        cancellationToken: cancellationToken
+                    );
+                }
             }
             catch (Exception ex)
             {
@@ -478,6 +585,38 @@ namespace QLN.Company.MS.Service
                 company.UpdatedBy = userId;
                 dto.Reason = dto.Reason;
                 await _context.SaveChangesAsync(cancellationToken);
+                var upsertRequest = await IndexServiceToAzureSearch(company, cancellationToken);
+                if (upsertRequest != null)
+                {
+                    var message = new IndexMessage
+                    {
+                        Action = "Upsert",
+                        Vertical = ConstantValues.IndexNames.CompanyProfileIndex,
+                        UpsertRequest = upsertRequest
+                    };
+
+                    await _dapr.PublishEventAsync(
+                        pubsubName: ConstantValues.PubSubName,
+                        topicName: ConstantValues.PubSubTopics.IndexUpdates,
+                        data: message,
+                        cancellationToken: cancellationToken
+                    );
+                }
+                await _dapr.PublishEventAsync("pubsub", "notifications-email", new NotificationEntity
+                {
+                    Destinations = new List<string> { "email" },
+                    Recipients = new List<RecipientDto>
+                    {
+                        new RecipientDto
+                        {
+                            Name = company.UserName,
+                            Email = company.Email
+                        }
+                    },
+                    Subject = $"Company '{company.CompanyName}' was updated",
+                    Plaintext = $"Hello,\n\nYour company titled '{company.CompanyName}' has been updated.\n\nStatus: {dto.Status}\n\nThanks,\nQL Team",
+                    Html = $"{company.CompanyName} has been updated."
+                }, cancellationToken);
                 return "Company Status Changed Successfully";
             }
             catch (KeyNotFoundException)
@@ -494,7 +633,7 @@ namespace QLN.Company.MS.Service
                 throw;
             }
         }
-        public async Task<List<QLN.Common.Infrastructure.Model.Company>> GetCompaniesByTokenUser(string userId, CancellationToken cancellationToken = default)
+        public async Task<List<Common.Infrastructure.Model.Company>> GetCompaniesByTokenUser(string userId, CancellationToken cancellationToken = default)
         {
             try
             {
