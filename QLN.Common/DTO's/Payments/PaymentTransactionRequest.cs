@@ -37,5 +37,9 @@ namespace QLN.Common.DTO_s.Payments
 
         [JsonPropertyName("subvertical")]
         public SubVertical? SubVertical { get; set; }
+
+        [JsonPropertyName("product_code")]
+        public string ProductCode { get; set; }
+
     }
 }

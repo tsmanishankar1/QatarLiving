@@ -21,7 +21,7 @@ namespace QLN.Common.DTO_s.Payments
         public Vertical Vertical { get; set; }
         public SubVertical? SubVertical { get; set; }
 
-        public string? AdId { get; set; }
+        public long? AdId { get; set; }
 
         public PaymentStatus Status { get; set; }
 
