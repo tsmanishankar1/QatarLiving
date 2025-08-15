@@ -30,7 +30,6 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.Subscription
         public string? _timeTypeError;
         public string? _eventTypeError;
         protected List<LocationEventDto> Locations = [];
-        public EventDTO CurrentEvent { get; set; } = new EventDTO();
         public string selectedLocation { get; set; } = string.Empty;
         public bool _isTimeDialogOpen = true;
         protected string? _DateError;
@@ -101,11 +100,15 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.Subscription
             {
                 IsLoading = true;
 
-                var request = new FilterRequest
+                var request = new DealsSubscriptionQuery
                 {
-
+                    Search = SearchText,
+                    StartDate = _dateRange.Start.ToString() ?? "",
+                    EndDate = _dateRange.End.ToString() ?? "",
                     PageNumber = currentPage,
-                    PageSize = pageSize
+                    PageSize = pageSize,
+                    SortBy = "CreatedDate",
+                    SubscriptionType = SelectedSubscriptionType
                 };
 
                 var response = await DealsService.GetAllDealsSubscription(request);
@@ -118,7 +121,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.Subscription
                         PropertyNameCaseInsensitive = true
                     });
 
-                    Listings = data.Items ?? [];
+                    Listings = data?.Items ?? [];
 
                     TotalCount = data?.TotalCount ?? 0;
                 }
@@ -215,33 +218,6 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.Subscription
                 await OnDateChanged.InvokeAsync((null, null));
             }
             StateHasChanged();
-        }
-
-        protected async Task ApplyDatePicker()
-        {
-            if (_dateRange?.Start != null)
-            {
-                var startDate = _dateRange.Start.Value;
-                var endDate = _dateRange.End ?? _dateRange.Start.Value;
-                _confirmedDateRange = new DateRange(startDate, endDate);
-                CurrentEvent.EventSchedule.StartDate = DateOnly.FromDateTime(startDate);
-                CurrentEvent.EventSchedule.EndDate = DateOnly.FromDateTime(endDate);
-                if (startDate.Date == endDate.Date)
-                {
-                    SelectedDateLabel = $"{startDate:dd-MM-yyyy}";
-                    await OnDateChanged.InvokeAsync((startDate.ToString("yyyy-MM-dd"), null));
-                }
-                else
-                {
-                    SelectedDateLabel = $"{startDate:dd-MM-yyyy} to {endDate:dd-MM-yyyy}";
-                    await OnDateChanged.InvokeAsync((startDate.ToString("yyyy-MM-dd"), endDate.ToString("yyyy-MM-dd")));
-                }
-                _editContext.NotifyFieldChanged(FieldIdentifier.Create(() => CurrentEvent.EventSchedule.StartDate));
-                _editContext.NotifyFieldChanged(FieldIdentifier.Create(() => CurrentEvent.EventSchedule.EndDate));
-                _showDatePicker = false;
-                GenerateDayTimeList();
-                StateHasChanged();
-            }
         }
 
         protected void ToggleDatePicker()
