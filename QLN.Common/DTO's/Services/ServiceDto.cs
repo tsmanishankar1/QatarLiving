@@ -96,7 +96,6 @@ namespace QLN.Common.DTO_s
     public class PromoteServiceRequest
     {
         public long ServiceId { get; set; }
-        [JsonIgnore]
         public Guid? SubscriptionId { get; set; }
         public bool IsPromoted { get; set; }
         [JsonIgnore]

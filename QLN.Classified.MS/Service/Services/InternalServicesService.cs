@@ -842,7 +842,8 @@ namespace QLN.Classified.MS.Service.Services
             {
                 serviceAd.PromotedExpiryDate = null;
             }
-            request.SubscriptionId = Guid.Parse("8459a8a0-93b0-4a31-84a9-88eb846274f3");
+            //request.SubscriptionId = Guid.Parse("752ea67e-5fc3-4dae-ab96-4aa3822afc38");
+            request.SubscriptionId = serviceAd.SubscriptionId;
             serviceAd.UpdatedBy = uid;
             serviceAd.UpdatedAt = DateTime.UtcNow;
 
@@ -879,20 +880,7 @@ namespace QLN.Classified.MS.Service.Services
                 throw new KeyNotFoundException("Service Ad not found.");
 
             serviceAd.IsFeatured = request.IsFeature;
-            if (request.IsFeature)
-            {
-                var subscription = await _qLSubscriptionContext.Subscriptions
-                    .FirstOrDefaultAsync(sub => sub.SubscriptionId == serviceAd.SubscriptionId && (int)sub.Status == (int)V2Status.Active, ct);
-
-                if (subscription == null)
-                    throw new InvalidOperationException("Active subscription not found for this service.");
-
-                serviceAd.FeaturedExpiryDate = subscription.EndDate;
-            }
-            else
-            {
-                serviceAd.FeaturedExpiryDate = null;
-            }
+            serviceAd.FeaturedExpiryDate = request.IsFeature ? DateTime.UtcNow.AddDays(7) : null;
             serviceAd.UpdatedBy = uid;
             serviceAd.UpdatedAt = DateTime.UtcNow;
 
@@ -919,7 +907,7 @@ namespace QLN.Classified.MS.Service.Services
             }
 
             return serviceAd;
-        }
+        }        
         public async Task<Common.Infrastructure.Model.Services> RefreshService(RefreshServiceRequest request, string? uid, CancellationToken ct)
         {
             var serviceAd = await _dbContext.Services

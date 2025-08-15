@@ -926,7 +926,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                     //        Status = StatusCodes.Status400BadRequest
                     //    });
                     //}
-                    request.SubscriptionId = Guid.Parse("8459a8a0-93b0-4a31-84a9-88eb846274f3");
+                    //request.SubscriptionId = Guid.Parse("752ea67e-5fc3-4dae-ab96-4aa3822afc38");
                     var resultMessage = await service.PromoteService(request, uid, cancellationToken);
 
                     if (resultMessage == null)
@@ -1065,8 +1065,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                             Status = StatusCodes.Status400BadRequest
                         });
                     }
-
-                    // --- Extract user info from token ---
                     var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
                     if (string.IsNullOrEmpty(userClaim))
                     {
@@ -1081,7 +1079,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                     var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
                     uid = userData.GetProperty("uid").GetString();
                     //var subscriptionId = new Guid("752ea67e-5fc3-4dae-ab96-4aa3822afc38");
-                    // --- Extract subscriptionId from token ---
                     if (!userData.TryGetProperty("subscription", out var subscriptionElement) ||
                         !subscriptionElement.TryGetProperty("subscription_id", out var subscriptionIdElement) ||
                         !Guid.TryParse(subscriptionIdElement.GetString(), out var subscriptionId))
@@ -1094,10 +1091,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                         });
                     }
 
-                    // --- Call external method ---
                     var result = await service.FeatureService(request, uid, subscriptionId, cancellationToken);
 
-                    // --- Audit Log ---
                     await auditLogger.LogAuditAsync(
                         module: "Service",
                         httpMethod: "POST",
@@ -1131,12 +1126,10 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
             .WithTags("Service")
             .WithSummary("Feature a service ad")
             .WithDescription("Marks a service as featured and records subscription usage.")
-            .Produces<QLN.Common.Infrastructure.Model.Services>(StatusCodes.Status200OK)
+            .Produces<Services>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-
-
 
             group.MapPost("/featurebyuserid", async Task<IResult> (
                 FeatureServiceRequest request,

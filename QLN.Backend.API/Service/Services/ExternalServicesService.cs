@@ -382,7 +382,7 @@ namespace QLN.Backend.API.Service.Services
         {
             try
             {
-                request.SubscriptionId = Guid.Parse("8459a8a0-93b0-4a31-84a9-88eb846274f3");
+                //request.SubscriptionId = Guid.Parse("752ea67e-5fc3-4dae-ab96-4aa3822afc38");
                 var quotaAction = request.IsPromoted ? ActionTypes.Promote : ActionTypes.UnPromote;
 
                 if (quotaAction == ActionTypes.Promote && request.SubscriptionId != Guid.Empty)
@@ -467,7 +467,7 @@ namespace QLN.Backend.API.Service.Services
 
             try
             {
-                
+
                 if (subscriptionId != Guid.Empty)
                 {
                     var canUse = await _v2SubscriptionService.ValidateSubscriptionUsageAsync(
@@ -498,7 +498,7 @@ namespace QLN.Backend.API.Service.Services
                 if (response.IsSuccessStatusCode)
                 {
                     var json = await response.Content.ReadAsStringAsync(ct);
-                    var serviceDto = JsonSerializer.Deserialize<Common.Infrastructure.Model.Services>(json, new JsonSerializerOptions
+                    var serviceDto = JsonSerializer.Deserialize<QLN.Common.Infrastructure.Model.Services>(json, new JsonSerializerOptions
                     {
                         PropertyNameCaseInsensitive = true
                     });
@@ -524,23 +524,6 @@ namespace QLN.Backend.API.Service.Services
 
                     }
 
-                    if (serviceDto.SubscriptionId != Guid.Empty)
-                    {
-                        var success = await _v2SubscriptionService.RecordSubscriptionUsageAsync(
-                            serviceDto.SubscriptionId.Value,
-                            quotaAction,
-                            1,
-                            ct
-                        );
-
-                        if (!success)
-                        {
-                            _logger.LogWarning(
-                                "Failed to record subscription usage for SubscriptionId {SubscriptionId}",
-                                serviceDto.SubscriptionId
-                            );
-                        }
-                    }
                     return serviceDto;
                 }
                 else
@@ -571,11 +554,11 @@ namespace QLN.Backend.API.Service.Services
             }
             catch (InvalidOperationException)
             {
-                throw; // Re-throw subscription quota exceptions as-is
+                throw; 
             }
             catch (KeyNotFoundException)
             {
-                throw; // Re-throw key not found exceptions as-is
+                throw;
             }
             catch (DaprException daprEx)
             {
