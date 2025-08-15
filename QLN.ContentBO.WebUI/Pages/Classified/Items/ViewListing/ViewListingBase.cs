@@ -1,28 +1,21 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Http;
-using System.Net.Http.Json;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Components;
 using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Models;
-using System.Text.Json;
 using QLN.ContentBO.WebUI.Components.AutoSelectDialog;
 using MudBlazor;
 using QLN.ContentBO.WebUI.Enums;
+using QLN.ContentBO.WebUI.Components;
 
 namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewListing
 {
-    public partial class ViewListingBase : ComponentBase
+    public partial class ViewListingBase : QLComponentBase
     {
         [Inject] protected IDialogService DialogService { get; set; } = default!;
-        [Inject] protected NavigationManager NavManager { get; set; } = default!;
-        [Inject] public IClassifiedService ClassifiedService { get; set; }
+        [Inject] public IItemService ItemService { get; set; }
         [Inject] private ILogger<ViewListingBase> Logger { get; set; } = default!;
         protected string SearchTerm { get; set; } = string.Empty;
         protected bool Ascending { get; set; } = true;
-        protected List<ClassifiedItemViewListing> ClassifiedItems { get; set; } = new();
+        protected List<ClassifiedItemViewListing> ClassifiedItems { get; set; } = [];
         protected int TotalCount { get; set; }
         private DateTime? DateCreatedFilter { get; set; }
         private DateTime? DatePublishedFilter { get; set; }
@@ -40,10 +33,10 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewListing
                 "pendingApproval" => new() { { "status", (int)AdStatus.PendingApproval } },
                 "published" => new() { { "status", (int)AdStatus.Published } },
                 "unpublished" => new() { { "status", (int)AdStatus.Unpublished } },
-                "p2p" => new() { { "adType", (int)AdType.P2P  } },
+                "p2p" => new() { { "adType", (int)AdType.P2P } },
                 "needChanges" => new() { { "status", (int)AdStatus.NeedsModification } },
-                "removed" => new() { { "status", (int)AdStatus.Rejected  } },
-                _ => new()
+                "removed" => new() { { "status", (int)AdStatus.Rejected } },
+                _ => []
             };
         }
 
@@ -104,47 +97,51 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewListing
             try
             {
                 IsLoading = true;
-                var payload = new Dictionary<string, object>
+                var request = new ItemsRequest
                 {
-                    ["text"] = SearchTerm,
-                    ["orderBy"] = Ascending ? "createdAt desc" : "createdAt asc",
-                    ["pageNumber"] = CurrentPage,
-                    ["pageSize"] = PageSize
+                    Text = SearchTerm,
+                    OrderBy = Ascending ? "createdAt desc" : "createdAt asc",
+                    PageNumber = CurrentPage,
+                    PageSize = PageSize
                 };
 
-                // Declare filters regardless of selectedTab
-                 var filters = GetFiltersForTab();
-               if (DateCreatedFilter.HasValue)
+                var filters = GetFiltersForTab();
+
+                if (DateCreatedFilter.HasValue)
                 {
-                    var createdUtc = DateTime.SpecifyKind(DateCreatedFilter.Value, DateTimeKind.Utc);
-                    filters["createdAt"] = createdUtc.ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
+                    request.CreatedAt = DateTime.SpecifyKind(DateCreatedFilter.Value, DateTimeKind.Utc);
                 }
 
                 if (DatePublishedFilter.HasValue)
                 {
-                    var publishedUtc = DateTime.SpecifyKind(DatePublishedFilter.Value, DateTimeKind.Utc);
-                    filters["publishedDate"] = publishedUtc.ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
+                    request.PublishedDate = DateTime.SpecifyKind(DatePublishedFilter.Value, DateTimeKind.Utc);
                 }
 
-                // Only include filters if any were added
-                if (filters.Any())
+                if (filters.TryGetValue("status", out var statusValue) && int.TryParse(statusValue.ToString(), out var status))
                 {
-                    foreach (var kvp in filters)
-                    {
-                        payload[kvp.Key] = kvp.Value;
-                    }
+                    request.Status = status;
                 }
 
-
-                // ✅ Log the actual payload
-                // var payloadJson = JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true });
-                // Logger.LogInformation("Classified Payload:\n{Payload}", payloadJson);
-
-                var responses = await ClassifiedService.SearchClassifiedsViewListingAsync("getall-items", payload);
-
-                if (responses.Any() && responses[0].IsSuccessStatusCode)
+                if (filters.TryGetValue("adType", out var adTypeValue) && int.TryParse(adTypeValue.ToString(), out var adType))
                 {
-                    var result = await responses[0].Content.ReadFromJsonAsync<ClassifiedsApiResponse>();
+                    request.AdType = adType;
+                }
+
+                if (filters.TryGetValue("isFeatured", out var isFeaturedValue) && bool.TryParse(isFeaturedValue.ToString(), out var isFeatured))
+                {
+                    request.IsFeatured = isFeatured;
+                }
+
+                if (filters.TryGetValue("isPromoted", out var isPromotedValue) && bool.TryParse(isPromotedValue.ToString(), out var isPromoted))
+                {
+                    request.IsPromoted = isPromoted;
+                }
+
+                var response = await ItemService.GetAllItemsListing(request);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var result = await response.Content.ReadFromJsonAsync<ClassifiedsApiResponse>();
                     if (result != null)
                     {
                         ClassifiedItems = result.ClassifiedsItems;
@@ -154,13 +151,13 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewListing
                 }
 
                 // Fallback if no results or error
-                ClassifiedItems = new List<ClassifiedItemViewListing>();
+                ClassifiedItems = [];
                 TotalCount = 0;
             }
             catch (Exception ex)
             {
                 Logger.LogError(ex, "Error loading classifieds.");
-                ClassifiedItems = new List<ClassifiedItemViewListing>();
+                ClassifiedItems = [];
                 TotalCount = 0;
             }
             finally
@@ -168,31 +165,29 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewListing
                 IsLoading = false;
             }
         }
-          protected async Task HandleAddClicked()
+
+        protected async Task HandleAddClicked()
         {
             var parameters = new DialogParameters
-        {
-            { "Title", "Create Ad" },
-            { "Label", "User Email*" },
-            { "ButtonText", "Continue" },
-            { "OnSelect", EventCallback.Factory.Create<DropdownItem>(this, HandleSelect) }
-        };
+            {
+                { "Title", "Create Ad" },
+                { "Label", "User Email*" },
+                { "ButtonText", "Continue" },
+                { "OnSelect", EventCallback.Factory.Create<DropdownItem>(this, HandleSelect) }
+            };
 
-            DialogService.Show<AutoSelectDialog>("", parameters);
+            await DialogService.ShowAsync<AutoSelectDialog>("", parameters);
         }
 
-
-         private Task HandleSelect(DropdownItem selected)
+        private Task HandleSelect(DropdownItem selected)
         {
             if (selected == null || string.IsNullOrWhiteSpace(selected.Label))
             {
                 return Task.CompletedTask;
             }
             var targetUrl = $"/manage/classified/items/createform?email={selected.Label}&uid={selected.Id}";
-            NavManager.NavigateTo(targetUrl);
+            NavManager.NavigateTo(targetUrl, true);
             return Task.CompletedTask;
         }
-
-        
     }
 }

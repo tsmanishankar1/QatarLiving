@@ -1793,6 +1793,14 @@ a, .btn-link {
         display: inline-block;
         margin-right: 6px;
     }
+    .inactive-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 6px;
+    background-color: #E53935; /* red */
+}
 
     .button-row {
         display: flex;

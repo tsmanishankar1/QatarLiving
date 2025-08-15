@@ -10,7 +10,7 @@ namespace QLN.Backend.API.ServiceConfiguration
         public static IServiceCollection SubscriptionConfiguration(this IServiceCollection services, IConfiguration config)
         {
             services.AddTransient<IExternalSubscriptionService, ExternalSubscriptionService>();
-            services.AddScoped<IUserQuotaService, UserQuotaService>();
+            services.AddTransient<IUserQuotaService, UserQuotaService>();
             services.AddTransient<IV2SubscriptionService, V2SubscriptionService>();
             return services;
         }

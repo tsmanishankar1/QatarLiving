@@ -122,6 +122,9 @@ namespace QLN.Common.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("Slug")
+                        .HasColumnType("text");
+
                     b.HasKey("StoreProductId");
 
                     b.HasIndex("FlyerId");

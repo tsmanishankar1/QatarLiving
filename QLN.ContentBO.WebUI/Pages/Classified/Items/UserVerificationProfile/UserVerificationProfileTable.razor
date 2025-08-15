@@ -22,18 +22,22 @@
         </HeaderContent>
 
         <RowTemplate>
-            <MudTd>@context.BusinessName</MudTd>
+            <MudTd>@context.CompanyName</MudTd>
             <MudTd>@context.UserName</MudTd>
-            <MudTd>@context.CRFile</MudTd>
-            <MudTd>@context.CRLicense</MudTd>
-            <MudTd>@context.EndDate.ToString("dd-MM-yyyy")</MudTd>
+            <MudTd>@context.CrDocument</MudTd>
+            <MudTd>@context.LicenseNumber</MudTd>
+            <MudTd>
+            @(context.CrExpiryDate.HasValue 
+            ? context.CrExpiryDate.Value.ToString("dd-MM-yyyy") 
+            : string.Empty)
+            </MudTd>
             <MudTd>
                 <MudMenu Class="mud-table-menu"
                     Icon="@Icons.Material.Filled.MoreVert"
                     Dense="true"
                     AnchorOrigin="Origin.BottomLeft"
                     TransformOrigin="Origin.TopRight">
-                    <MudMenuItem OnClick="@(() => ShowPreview(context))">
+                    <MudMenuItem OnClick="@(() => ShowPreview(context.Id))">
                        <img src="/qln-images/eye_icon.svg" class="menu-icon-style" alt="Ignore" />
                         <span class="menu-text">View</span>
                     </MudMenuItem>

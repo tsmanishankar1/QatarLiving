@@ -1,5 +1,8 @@
 using Microsoft.AspNetCore.Components;
 using QLN.ContentBO.WebUI.Models;
+using PSC.Blazor.Components.MarkdownEditor;
+using PSC.Blazor.Components.MarkdownEditor.EventsArgs;
+using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.WebUtilities;
 using QLN.ContentBO.WebUI.Components.ConfirmationDialog;
 using MudBlazor;
@@ -14,6 +17,10 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
         [Inject] public IDialogService DialogService { get; set; }
         [Inject] IServiceBOService serviceBOService { get; set; }
         [Inject] ISnackbar Snackbar { get; set; }
+        protected string UploadImageButtonName { get; set; } = "uploadImage";
+        protected MudFileUpload<IBrowserFile> _markdownfileUploadRef;
+        protected string[] HiddenIcons = ["fullscreen"];
+        protected MarkdownEditor MarkdownEditorRef;
         [Inject] ILogger<EditServiceBase> Logger { get; set; }
         private BulkModerationAction _selectedAction;
         protected AdPost adPostModel { get; set; } = new();
@@ -36,7 +43,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
                 Logger.LogError(ex, "OnParametersSetAsync");
             }
         }
-         protected void GoBack()
+        protected void GoBack()
         {
             switch (Source?.ToLower())
             {
@@ -155,5 +162,33 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
                 selectedService.Comments = result.Data?.ToString() ?? "";
             }
         }
+        protected Task OnCustomButtonClicked(MarkdownButtonEventArgs eventArgs)
+        {
+            if (eventArgs.Name is not null)
+            {
+                if (eventArgs.Name == UploadImageButtonName)
+                {
+                    TriggerCustomImageUpload();
+                }
+
+                if (eventArgs.Name == "CustomPreview")
+                {
+                    ToggleMarkdownPreview();
+                }
+            }
+            return Task.CompletedTask;
+        }
+        protected async void ToggleMarkdownPreview()
+        {
+            if (MarkdownEditorRef != null)
+            {
+                await MarkdownEditorRef.TogglePreviewAsync();
+            }
+        }
+        protected void TriggerCustomImageUpload()
+        {
+            _markdownfileUploadRef.OpenFilePickerAsync();
+        }
+
     }
 }

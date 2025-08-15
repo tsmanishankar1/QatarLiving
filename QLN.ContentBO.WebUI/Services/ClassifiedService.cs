@@ -3,6 +3,8 @@ using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Models;
 using QLN.ContentBO.WebUI.Services.Base;
 using System.Net;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
@@ -44,6 +46,23 @@ namespace QLN.ContentBO.WebUI.Services
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
+        public async Task<HttpResponseMessage?> GetCompanyProfileById(Guid companyId)
+        {
+            try
+            {
+                var requestUrl = $"/api/companyprofile/getcompanybyid?id={companyId}";
+                var request = new HttpRequestMessage(HttpMethod.Get, requestUrl);
+                return await _httpClient.SendAsync(request);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "GetCompanyProfileById");
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+
+
+
 
         public async Task<HttpResponseMessage?> GetFeaturedSeasonalPicks(Vertical vertical)
         {
@@ -305,6 +324,25 @@ namespace QLN.ContentBO.WebUI.Services
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
+        public async Task<HttpResponseMessage> UpdateCompanyActions(CompanyUpdateActions requestModel)
+        {
+            try
+            {
+                    var json = JsonSerializer.Serialize(requestModel, new JsonSerializerOptions { WriteIndented = true });
+                    var request = new HttpRequestMessage(HttpMethod.Put, "api/companyprofile/action")
+                    {
+                        Content = new StringContent(json, Encoding.UTF8, "application/json")
+                    };
+                    var response = await _httpClient.SendAsync(request);
+                    return response;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "UpdateCompanyActions");
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+
         public async Task<HttpResponseMessage?> UpdateFeaturedCategoryAsync(object payload)
         {
             try
@@ -329,8 +367,31 @@ namespace QLN.ContentBO.WebUI.Services
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
+        public async Task<HttpResponseMessage?> UpdateCompanyProfile(CompanyProfileItem company)
+        {
+            try
+            {
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                    WriteIndented = true
+                };
+                var json = JsonSerializer.Serialize(company, options);
+                Console.WriteLine("Serialized Company Profile: " + json);
+                var request = new HttpRequestMessage(HttpMethod.Put, "/api/companyprofile/updatecompanyprofile")
+                {
+                    Content = new StringContent(json, Encoding.UTF8, "application/json")
+                };
+                return await _httpClient.SendAsync(request);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("UpdateCompanyProfile" + ex.Message);
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
         public async Task<HttpResponseMessage?> UpdateSeasonalPicksAsync(object payload)
-        { 
+        {
             try
             {
                 var options = new JsonSerializerOptions
@@ -351,7 +412,7 @@ namespace QLN.ContentBO.WebUI.Services
                 _logger.LogError("UpdateSeasonalPicksAsync" + ex.Message);
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
-            
+
         }
         public async Task<HttpResponseMessage?> UpdateFeaturedStoreAsync(object payload)
         { 
@@ -472,6 +533,31 @@ namespace QLN.ContentBO.WebUI.Services
                 return responses;
             }
         }
+        public async Task<HttpResponseMessage?> GetAllCollectibles(object payload)
+        {
+            try
+            {
+                var options = new JsonSerializerOptions
+                {
+                    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+                };
+
+                var json = JsonSerializer.Serialize(payload, options);
+                Console.WriteLine("Serialized Payload: " + json);
+                var request = new HttpRequestMessage(HttpMethod.Post, "/api/v2/classifiedbo/getall-collectibles")
+                {
+                    Content = new StringContent(json, Encoding.UTF8, "application/json")
+                };
+
+                return await _httpClient.SendAsync(request);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "GetAllFeatureCategory");
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+
         public async Task<List<HttpResponseMessage>> SearchClassifiedsViewTransactionAsync(object searchPayload)
         {
             var responses = new List<HttpResponseMessage>();
@@ -656,15 +742,27 @@ namespace QLN.ContentBO.WebUI.Services
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
-        public async Task<HttpResponseMessage?> GetAdByIdAsync(string vertical, string adId)
+        public async Task<HttpResponseMessage?> GetAdByIdAsync(long adId)
         {
             try
             {
-                return await _httpClient.GetAsync($"/api/classified/{vertical}/{adId}");
+                return await _httpClient.GetAsync($"/api/classified/items/{adId}");
             }
             catch (Exception ex)
             {
                 _logger.LogError("GetAdByIdAsync Error: " + ex.Message);
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+        public async Task<HttpResponseMessage?> GetCollectibleIdAsync(long adId)
+        {
+            try
+            {
+                return await _httpClient.GetAsync($"/api/classified/collectibles/{adId}");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("GetCollectibleIdAsync: " + ex.Message);
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
@@ -817,7 +915,7 @@ namespace QLN.ContentBO.WebUI.Services
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
-        public async Task<HttpResponseMessage?> RefreshAdAsync(string adId, int subVertical)
+        public async Task<HttpResponseMessage?> RefreshAdAsync(long adId, int subVertical)
         {
             try
             {

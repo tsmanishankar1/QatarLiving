@@ -35,9 +35,9 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.ViewStores
         
         protected void EditStore(CompanySubscriptionDto order)
         {
-            if (!string.IsNullOrEmpty(order?.CompanyName))
+            if (order?.companyId != null)
             {
-                NavigationManager.NavigateTo($"/manage/classified/stores/edit/company/{order.CompanyName}");
+                NavigationManager.NavigateTo($"/manage/classified/stores/edit/company/{order.companyId}");
             }
         }
     }

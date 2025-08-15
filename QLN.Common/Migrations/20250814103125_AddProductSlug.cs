@@ -2,18 +2,18 @@
 
 #nullable disable
 
-namespace QLN.Common.Migrations.QLCompany
+namespace QLN.Common.Migrations.ClassifiedDev
 {
     /// <inheritdoc />
-    public partial class companyverificationfield : Migration
+    public partial class AddProductSlug : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddColumn<int>(
-                name: "CompanyVerificationStatus",
-                table: "Companies",
-                type: "integer",
+            migrationBuilder.AddColumn<string>(
+                name: "Slug",
+                table: "StoreProduct",
+                type: "text",
                 nullable: true);
         }
 
@@ -21,8 +21,8 @@ namespace QLN.Common.Migrations.QLCompany
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropColumn(
-                name: "CompanyVerificationStatus",
-                table: "Companies");
+                name: "Slug",
+                table: "StoreProduct");
         }
     }
 }

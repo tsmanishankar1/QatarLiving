@@ -1,9 +1,7 @@
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using QLN.ContentBO.WebUI.Models;
-using System;
 using Microsoft.JSInterop;
-using System.Threading.Tasks;
 using QLN.ContentBO.WebUI.Components.ConfirmationDialog;
 
 namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.ViewTransactions
@@ -12,7 +10,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.ViewTransactions
     {
         [Inject] protected IDialogService DialogService { get; set; } = default!;
         [Inject] protected NavigationManager NavManager { get; set; } = default!;
-        [Parameter] public List<ItemViewTransaction> Items { get; set; } = new();
+        [Parameter] public List<ItemTransactionItem> Items { get; set; } = new();
         [Parameter] public EventCallback<string> OnSearch { get; set; }
         [Parameter] public EventCallback<bool> OnSort { get; set; }
         [Parameter] public EventCallback<(DateTime? created, DateTime? published, DateTime? start, DateTime? end)> OnDateFilterChanged { get; set; }
@@ -155,58 +153,51 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.ViewTransactions
                 FullWidth = true
             };
 
-            var dialog = DialogService.Show<ConfirmationDialog>("", parameters, options);
+            var dialog = await DialogService.ShowAsync<ConfirmationDialog>("", parameters, options);
             var result = await dialog.Result;
         }
 
-      private async Task ExportToExcel()
-    {
-        try
+        private async Task ExportToExcel()
         {
-            if (Items == null || !Items.Any())
+            try
             {
-                Snackbar.Add("No data available to export.", Severity.Warning);
-                return;
+                if (Items == null || !Items.Any())
+                {
+                    Snackbar.Add("No data available to export.", Severity.Warning);
+                    return;
+                }
+
+                var exportData = Items.Select(x => new Dictionary<string, object?>
+                {
+                    ["Ad ID"] = x.AdId,
+                    ["Order ID"] = x.OrderId,
+                    ["Username"] = x.Username,
+                    ["User Email"] = x.UserEmail,
+                    ["Transaction Type"] = x.TransactionType,
+                    ["Product Type"] = x.ProductType,
+                    ["Category"] = x.Category,
+                    ["Status"] = x.Status,
+                    ["Email"] = x.Email,
+                    ["Mobile"] = x.Mobile,
+                    ["WhatsApp"] = x.Whatsapp,
+                    ["Account"] = x.Account,
+                    ["Amount"] = x.Amount,
+                    ["Creation Date"] = x.CreationDate,
+                    ["Published Date"] = x.PublishedDate,
+                    ["Start Date"] = x.StartDate,
+                    ["End Date"] = x.EndDate,
+                    ["Payment Method"] = x.PaymentMethod,
+                    ["Description"] = x.Description
+                }).ToList();
+
+                await JS.InvokeVoidAsync("exportToExcel", exportData, "Classified_Collectibles_ViewTransactions.xlsx", "Transactions");
+
+                Snackbar.Add("Export successful!", Severity.Success);
             }
-
-            var exportData = Items.Select(x => new Dictionary<string, object?>
+            catch (Exception ex)
             {
-                ["Ad ID"] = x.AdId,
-                ["Order ID"] = x.OrderId,
-                ["Username"] = x.Username,
-                ["User Email"] = x.UserEmail,
-                ["Transaction Type"] = x.TransactionType,
-                ["Product Type"] = x.ProductType,
-                ["Category"] = x.Category,
-                ["Status"] = x.Status,
-                ["Email"] = x.Email,
-                ["Mobile"] = x.Mobile,
-                ["WhatsApp"] = x.Whatsapp,
-                ["Account"] = x.Account,
-                ["Amount"] = x.Amount,
-                ["Creation Date"] = FormatDate(x.CreationDate),
-                ["Published Date"] = FormatDate(x.PublishedDate),
-                ["Start Date"] = FormatDate(x.StartDate),
-                ["End Date"] = FormatDate(x.EndDate),
-                ["Payment Method"] = x.PaymentMethod,
-                ["Description"] = x.Description
-            }).ToList();
-
-            await JS.InvokeVoidAsync("exportToExcel", exportData, "Classified_Collectibles_ViewTransactions.xlsx", "Transactions");
-
-            Snackbar.Add("Export successful!", Severity.Success);
+                Snackbar.Add($"Export failed: {ex.Message}", Severity.Error);
+            }
         }
-        catch (Exception ex)
-        {
-            Snackbar.Add($"Export failed: {ex.Message}", Severity.Error);
-        }
-    }
-
-    private string FormatDate(string? raw)
-    {
-        return DateTime.TryParse(raw, out var date) ? date.ToString("yyyy/MM/dd") : "-";
-    }
-
-
     }
 }

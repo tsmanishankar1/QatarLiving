@@ -39,7 +39,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
         protected EditContext editContext;
         private ValidationMessageStore messageStore;
 
-        [Parameter] public string Id { get; set; }
+        [Parameter] public long Id { get; set; }
         protected string? DefaultSelectedPhoneCountry { get; set; }
         protected string? DefaultSelectedWhatsappCountry { get; set; }
         public void SetDefaultDynamicFieldsFromApi()
@@ -80,7 +80,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
             try
             {
                 IsLoadingId = true;
-                var response = await ClassifiedService.GetAdByIdAsync("items", Id);
+                var response = await ClassifiedService.GetAdByIdAsync(Id);
                 if (response is { IsSuccessStatusCode: true })
                 {
                     var json = await response.Content.ReadAsStringAsync();
@@ -155,10 +155,14 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
 
 
         protected List<ClassifiedsCategory> CategoryTrees { get; set; } = new();
-        protected ClassifiedsCategory SelectedCategory => CategoryTrees.FirstOrDefault(x => x.Id.ToString() == adPostModel.CategoryId);
-        protected ClassifiedsCategoryField SelectedSubcategory => SelectedCategory?.Fields?.FirstOrDefault(x => x.Id.ToString() == adPostModel.L1CategoryId);
-        protected ClassifiedsCategoryField SelectedSubSubcategory => SelectedSubcategory?.Fields?.FirstOrDefault(x => x.Id.ToString() == adPostModel.L2CategoryId);
+        protected ClassifiedsCategory SelectedCategory =>
+                CategoryTrees.FirstOrDefault(x => x.Id == adPostModel.CategoryId)
+                ?? new ClassifiedsCategory();
+        protected ClassifiedsCategoryField? SelectedSubcategory =>
+    SelectedCategory?.Fields?.FirstOrDefault(x => x.Id == adPostModel.L1CategoryId);
 
+protected ClassifiedsCategoryField? SelectedSubSubcategory =>
+    SelectedSubcategory?.Fields?.FirstOrDefault(x => x.Id == adPostModel.L2CategoryId);
         protected List<ClassifiedsCategoryField> AvailableFields =>
                                         SelectedSubSubcategory?.Fields ??
                                         SelectedSubcategory?.Fields ??
@@ -180,19 +184,43 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
             return new List<string>();
         }
 
+        // private void ValidateDynamicFields()
+        // {
+        //     if (AvailableFields == null)
+        //         return; 
+
+        //     foreach (var field in AvailableFields
+        //         .Where(f => !ExcludedFields.Contains(f.CategoryName) &&
+        //                     (string.Equals(f.Type, "dropdown", StringComparison.OrdinalIgnoreCase) ||
+        //                      string.Equals(f.Type, "string", StringComparison.OrdinalIgnoreCase))))
+        //     {
+        //         Console.WriteLine($"Validating Field: {field.CategoryName}, Type: {field.Type}");
+        //         if (string.IsNullOrWhiteSpace(adPostModel.DynamicFields.GetValueOrDefault(field.CategoryName)))
+        //         {
+        //             messageStore.Add(
+        //                 new FieldIdentifier(adPostModel.DynamicFields, field.CategoryName),
+        //                 $"{field.CategoryName} is required."
+        //             );
+        //         }
+        //     }
+        // }
         private void ValidateDynamicFields()
         {
             if (AvailableFields == null)
-                return; // Nothing to validate yet
+                return; 
 
-            foreach (var field in AvailableFields.Where(f => !ExcludedFields.Contains(f.CategoryName)))
+            foreach (var field in AvailableFields.Where(f => ExcludedFields.Contains(f.Type)))
             {
-                if (string.IsNullOrWhiteSpace(adPostModel.DynamicFields.GetValueOrDefault(field.CategoryName)))
+                if (field.Type == "dropdown" || field.Type == "Dropdown" || field.Type == "string")
                 {
-                    messageStore.Add(new FieldIdentifier(adPostModel.DynamicFields, field.CategoryName), $"{field.CategoryName} is required.");
+                    if (string.IsNullOrWhiteSpace(adPostModel.DynamicFields.GetValueOrDefault(field.CategoryName)))
+                    {
+                        messageStore.Add(new FieldIdentifier(adPostModel.DynamicFields, field.CategoryName), $"{field.CategoryName} is required.");
+                    }
                 }
             }
         }
+
         protected async Task SubmitForm()
         {
             messageStore.Clear();
@@ -200,13 +228,13 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
             // Run automatic validation
             var isValid = editContext.Validate();
 
-            if (SelectedCategory?.Fields?.Any() == true && string.IsNullOrEmpty(adPostModel.L1CategoryId))
+            if (SelectedCategory?.Fields?.Any() == true && adPostModel.L1CategoryId == null)
             {
                 messageStore.Add(() => adPostModel.L1CategoryId, "Subcategory is required.");
                 isValid = false;
             }
 
-            if (SelectedSubcategory?.Fields?.Any() == true && string.IsNullOrEmpty(adPostModel.L2CategoryId))
+            if (SelectedSubcategory?.Fields?.Any() == true && adPostModel.L2CategoryId == null)
             {
                 messageStore.Add(() => adPostModel.L2CategoryId, "Section is required.");
                 isValid = false;
@@ -227,15 +255,18 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
             // Manual validation: Dynamic fields
             foreach (var field in AvailableFields.Where(f => !ExcludedFields.Contains(f.CategoryName)))
             {
-                var value = adPostModel.DynamicFields.ContainsKey(field.CategoryName) ? adPostModel.DynamicFields[field.CategoryName] : null;
-
-                if (string.IsNullOrWhiteSpace(value))
+                if (field.Type == "dropdown" || field.Type == "Dropdown" || field.Type == "string")
                 {
-                    messageStore.Add(new FieldIdentifier(adPostModel.DynamicFields, field.CategoryName), $"{field.CategoryName} is required.");
-                    if (!DynamicFieldErrors.ContainsKey(field.CategoryName))
-                        DynamicFieldErrors[field.CategoryName] = new List<string>();
-                    DynamicFieldErrors[field.CategoryName].Add($"{field.CategoryName} is required.");
-                    isValid = false;
+                    var value = adPostModel.DynamicFields.ContainsKey(field.CategoryName) ? adPostModel.DynamicFields[field.CategoryName] : null;
+
+                    if (string.IsNullOrWhiteSpace(value))
+                    {
+                        messageStore.Add(new FieldIdentifier(adPostModel.DynamicFields, field.CategoryName), $"{field.CategoryName} is required.");
+                        if (!DynamicFieldErrors.ContainsKey(field.CategoryName))
+                            DynamicFieldErrors[field.CategoryName] = new List<string>();
+                        DynamicFieldErrors[field.CategoryName].Add($"{field.CategoryName} is required.");
+                        isValid = false;
+                    }
                 }
             }
 
@@ -279,13 +310,13 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
         }
        
 
-         private string GetCategoryNameById(string? id)
+         private string GetCategoryNameById(long? id)
         {
-            if (string.IsNullOrEmpty(id)) return string.Empty;
+            if (id == null) return string.Empty;
 
-            if (SelectedCategory?.Id.ToString() == id) return SelectedCategory?.CategoryName ?? string.Empty;
-            if (SelectedSubcategory?.Id.ToString() == id) return SelectedSubcategory?.CategoryName ?? string.Empty;
-            if (SelectedSubSubcategory?.Id.ToString() == id) return SelectedSubSubcategory?.CategoryName ?? string.Empty;
+            if (SelectedCategory?.Id == id) return SelectedCategory?.CategoryName ?? string.Empty;
+            if (SelectedSubcategory?.Id == id) return SelectedSubcategory?.CategoryName ?? string.Empty;
+            if (SelectedSubSubcategory?.Id == id) return SelectedSubSubcategory?.CategoryName ?? string.Empty;
 
             return string.Empty;
         }

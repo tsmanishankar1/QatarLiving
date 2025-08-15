@@ -75,6 +75,9 @@ namespace QLN.Common.Migrations.QLSubscription
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<long?>("AdId")
+                        .HasColumnType("bigint");
+
                     b.Property<Guid?>("CompanyId")
                         .HasColumnType("uuid");
 

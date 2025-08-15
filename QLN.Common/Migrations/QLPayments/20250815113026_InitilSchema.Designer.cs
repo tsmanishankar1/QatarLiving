@@ -12,8 +12,8 @@ using QLN.Common.Infrastructure.QLDbContext;
 namespace QLN.Common.Migrations.QLPayments
 {
     [DbContext(typeof(QLPaymentsContext))]
-    [Migration("20250804120934_InitialSchema")]
-    partial class InitialSchema
+    [Migration("20250815113026_InitilSchema")]
+    partial class InitilSchema
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -119,17 +119,16 @@ namespace QLN.Common.Migrations.QLPayments
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("PaymentId"));
 
-                    b.Property<string>("AdId")
-                        .HasColumnType("text");
+                    b.Property<long?>("AdId")
+                        .HasColumnType("bigint");
 
-                    b.Property<int>("AttachedPaymentId")
+                    b.Property<int?>("AttachedPaymentId")
                         .HasColumnType("integer");
 
                     b.Property<int?>("CardType")
                         .HasColumnType("integer");
 
                     b.Property<string>("Comments")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<DateTime>("Date")
@@ -151,7 +150,8 @@ namespace QLN.Common.Migrations.QLPayments
                     b.Property<int?>("PaymentMethod")
                         .HasColumnType("integer");
 
-                    b.Property<decimal>("Points")
+                    b.Property<decimal?>("Points")
+                        .IsRequired()
                         .HasColumnType("decimal(10,1)");
 
                     b.Property<int>("ProductType")
@@ -163,21 +163,20 @@ namespace QLN.Common.Migrations.QLPayments
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 
-                    b.Property<string>("SubscriptionFeaturedAddonsId")
-                        .HasColumnType("text");
-
-                    b.Property<string>("SubscriptionRefreshedAddonsId")
-                        .HasColumnType("text");
+                    b.Property<int?>("SubVertical")
+                        .HasColumnType("integer");
 
                     b.Property<string>("TransactionId")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<int>("TriggeredSource")
                         .HasColumnType("integer");
 
-                    b.Property<string>("UserSubscriptionId")
-                        .HasColumnType("text");
+                    b.Property<Guid?>("UserAddonId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("UserSubscriptionId")
+                        .HasColumnType("uuid");
 
                     b.Property<int>("Vertical")
                         .HasColumnType("integer");

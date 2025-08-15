@@ -655,23 +655,22 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
 
             return group;
         }
-
         public static RouteGroupBuilder MapDetailedGetByIdEndpoint(this RouteGroupBuilder group)
         {
-            group.MapGet("/getbyserviceid/{id:long}", async Task<Results<
+            group.MapGet("/getbyserviceid/{slug}", async Task<Results<
                 Ok<GetWithSimilarResponse<ServicesIndex>>,
                 NotFound<ProblemDetails>,
                 ProblemHttpResult>> (
 
-                long id,
+                string slug,
                 [FromServices] ISearchService service,
                 CancellationToken cancellationToken) =>
             {
                 try
                 {
-                    var result = await service.GetByIdWithSimilarAsync<ServicesIndex>(
+                    var result = await service.GetBySlugWithSimilarAsync<ServicesIndex>(
                         ConstantValues.IndexNames.ServicesIndex,
-                        id.ToString(),
+                        slug,
                         10
                     );
 
@@ -680,7 +679,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                         return TypedResults.NotFound(new ProblemDetails
                         {
                             Title = "Service Ad Not Found",
-                            Detail = $"No service ad found with ID: {id}",
+                            Detail = $"No service ad found with ID: {slug}",
                             Status = 404
                         });
                     }
@@ -1033,30 +1032,9 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                 IServices service,
                 CancellationToken cancellationToken) =>
             {
+                string uid = "unknown";
                 try
                 {
-                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                    if (string.IsNullOrEmpty(userClaim))
-                    {
-                        return TypedResults.Problem(new ProblemDetails
-                        {
-                            Title = "Unauthorized Access",
-                            Detail = "User information is missing or invalid in the token.",
-                            Status = StatusCodes.Status403Forbidden
-                        });
-                    }
-                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                    var uid = userData.GetProperty("uid").GetString();
-                    request.UpdatedBy = uid;
-                    if (uid == null)
-                    {
-                        return TypedResults.Problem(new ProblemDetails
-                        {
-                            Title = "Unauthorized Access",
-                            Detail = "User ID could not be extracted from token.",
-                            Status = StatusCodes.Status403Forbidden
-                        });
-                    }
                     if (request == null || request.ServiceId <= 0)
                     {
                         return Results.BadRequest(new ProblemDetails
@@ -1067,63 +1045,82 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                         });
                     }
 
-                    var resultMessage = await service.FeatureService(request, uid, cancellationToken);
-
-                    if (resultMessage == null)
+                    // --- Extract user info from token ---
+                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                    if (string.IsNullOrEmpty(userClaim))
                     {
-                        return Results.Problem(
-                            detail: "Service not found",
-                            statusCode: StatusCodes.Status404NotFound,
-                            title: "Service Not Found");
+                        return Results.Problem(new ProblemDetails
+                        {
+                            Title = "Unauthorized Access",
+                            Detail = "User information is missing or invalid in the token.",
+                            Status = StatusCodes.Status403Forbidden
+                        });
                     }
+
+                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                    uid = userData.GetProperty("uid").GetString();
+                    //var subscriptionId = new Guid("752ea67e-5fc3-4dae-ab96-4aa3822afc38");
+                    // --- Extract subscriptionId from token ---
+                    if (!userData.TryGetProperty("subscription", out var subscriptionElement) ||
+                        !subscriptionElement.TryGetProperty("subscription_id", out var subscriptionIdElement) ||
+                        !Guid.TryParse(subscriptionIdElement.GetString(), out var subscriptionId))
+                    {
+                        return Results.Problem(new ProblemDetails
+                        {
+                            Title = "Invalid Subscription",
+                            Detail = "Subscription ID is missing or invalid in the token.",
+                            Status = StatusCodes.Status403Forbidden
+                        });
+                    }
+
+                    // --- Call external method ---
+                    var result = await service.FeatureService(request, uid, subscriptionId, cancellationToken);
+
+                    // --- Audit Log ---
                     await auditLogger.LogAuditAsync(
-                        module: ModuleName,
+                        module: "Service",
                         httpMethod: "POST",
                         apiEndpoint: "/api/service/feature",
-                        message: "Service ad featured successfully",
+                        message: $"Featured service with ID {request.ServiceId}",
                         createdBy: uid,
                         payload: request,
                         cancellationToken: cancellationToken
                     );
-                    return Results.Ok(resultMessage);
+
+                    return Results.Ok(result);
                 }
                 catch (KeyNotFoundException ex)
                 {
-                    await auditLogger.LogExceptionAsync(ModuleName, "/api/service/feature", ex, request.UpdatedBy, cancellationToken);
-                    return Results.Problem(
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status404NotFound,
-                        title: "Invalid Request");
+                    await auditLogger.LogExceptionAsync("Service", "/api/service/feature", ex, uid, cancellationToken);
+                    return Results.Problem(ex.Message, statusCode: StatusCodes.Status404NotFound, title: "Not Found");
                 }
-                catch (InvalidDataException ex)
+                catch (InvalidOperationException ex)
                 {
-                    await auditLogger.LogExceptionAsync(ModuleName, "/api/service/feature", ex, request.UpdatedBy, cancellationToken);
-                    return Results.Problem(
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status400BadRequest,
-                        title: "Invalid Request");
+                    await auditLogger.LogExceptionAsync("Service", "/api/service/feature", ex, uid, cancellationToken);
+                    return Results.Problem(ex.Message, statusCode: StatusCodes.Status400BadRequest, title: "Invalid Operation");
                 }
                 catch (Exception ex)
                 {
-                    await auditLogger.LogExceptionAsync(ModuleName, "/api/service/feature", ex, request.UpdatedBy, cancellationToken);
-                    return Results.Problem(
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError,
-                        title: "Internal Server Error");
+                    await auditLogger.LogExceptionAsync("Service", "/api/service/feature", ex, uid, cancellationToken);
+                    return Results.Problem(ex.Message, statusCode: StatusCodes.Status500InternalServerError, title: "Internal Server Error");
                 }
             })
+            .RequireAuthorization()
             .WithName("FeatureService")
             .WithTags("Service")
             .WithSummary("Feature a service ad")
-            .WithDescription("Features a service ad by paying a fee. Requires valid service ID.")
-            .Produces<Services>(StatusCodes.Status200OK)
+            .WithDescription("Marks a service as featured and records subscription usage.")
+            .Produces<QLN.Common.Infrastructure.Model.Services>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
+
+
             group.MapPost("/featurebyuserid", async Task<IResult> (
                 FeatureServiceRequest request,
                 [FromQuery] string? uid,
+                Guid subscriptionId,
                 IServices service,
                 CancellationToken cancellationToken) =>
             {
@@ -1139,9 +1136,9 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                         });
                     }
 
-                    var resultMessage = await service.FeatureService(request, uid, cancellationToken);
+                    var result = await service.FeatureService(request, uid, subscriptionId, cancellationToken);
 
-                    if (resultMessage == null)
+                    if (result == null)
                     {
                         return Results.Problem(
                             detail: "Service not found",
@@ -1149,39 +1146,31 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                             title: "Service Not Found");
                     }
 
-                    return Results.Ok(resultMessage);
+                    return Results.Ok(result);
                 }
                 catch (KeyNotFoundException ex)
                 {
-                    return Results.Problem(
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status404NotFound,
-                        title: "Invalid Request");
+                    return Results.Problem(ex.Message, statusCode: StatusCodes.Status404NotFound, title: "Not Found");
                 }
-                catch (InvalidDataException ex)
+                catch (InvalidOperationException ex)
                 {
-                    return Results.Problem(
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status400BadRequest,
-                        title: "Invalid Request");
+                    return Results.Problem(ex.Message, statusCode: StatusCodes.Status400BadRequest, title: "Invalid Operation");
                 }
                 catch (Exception ex)
                 {
-                    return Results.Problem(
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError,
-                        title: "Internal Server Error");
+                    return Results.Problem(ex.Message, statusCode: StatusCodes.Status500InternalServerError, title: "Internal Server Error");
                 }
             })
             .ExcludeFromDescription()
             .WithName("FeatureServiceByUserId")
             .WithTags("Service")
-            .WithSummary("Feature a service ad")
-            .WithDescription("Features a service ad by paying a fee. Requires valid service ID.")
-            .Produces<Services>(StatusCodes.Status200OK)
+            .WithSummary("Feature a service ad (explicit user + subscription)")
+            .WithDescription("Marks a service as featured when both user and subscription are explicitly provided.")
+            .Produces<QLN.Common.Infrastructure.Model.Services>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
             return group;
         }
         public static RouteGroupBuilder MapRefreshEndpoint(this RouteGroupBuilder group)

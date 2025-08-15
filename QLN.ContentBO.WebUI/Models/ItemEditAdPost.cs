@@ -9,9 +9,9 @@ namespace QLN.ContentBO.WebUI.Models
         // Category Selection
         // ----------------------------
         [Required(ErrorMessage = "Category is required.")]
-        public string? CategoryId { get; set; }
-        public string? L1CategoryId { get; set; }
-        public string? L2CategoryId { get; set; }
+        public long? CategoryId { get; set; }
+        public long? L1CategoryId { get; set; }
+        public long? L2CategoryId { get; set; }
 
         // ----------------------------
         // Dynamic Fields
@@ -98,7 +98,7 @@ namespace QLN.ContentBO.WebUI.Models
 
         // Dynamic API attributes
         public Dictionary<string, string>? Attributes { get; set; }
-        public string? Id { get; set; }
+        public long? Id { get; set; }
         public string? UserId { get; set; }
         public string? UserName { get; set; }
         public string? ContactEmail { get; set; }
@@ -113,7 +113,7 @@ namespace QLN.ContentBO.WebUI.Models
         public string? CreatedBy { get; set; }
         public DateTime? CreatedAt { get; set; }
         public int? AdType { get; set; } 
-        public string? SubVertical { get; set; }
+        public int? SubVertical { get; set; }
 
     }
 }

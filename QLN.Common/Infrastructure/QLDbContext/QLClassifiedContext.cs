@@ -3,6 +3,7 @@ using Microsoft.Identity.Client;
 using QLN.Common.DTO_s.ClassifiedsBo;
 using QLN.Common.DTO_s.ClassifiedsFo;
 using QLN.Common.Infrastructure.Model;
+using System.Text.Json;
 
 
 
@@ -34,8 +35,8 @@ namespace QLN.Common.Infrastructure.QLDbContext
         public DbSet<FeaturedCategory> FeaturedCategories { get; set; }
         public DbSet<StoresDashboardHeader> StoresDashboardHeaderItems { get; set; }
         public DbSet<StoresDashboardSummary> StoresDashboardSummaryItems { get; set; }
-
         public DbSet<Wishlist> Wishlists { get; set; }
+        public DbSet<StoreCompanyDto> StoreCompanyDto { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
 
@@ -179,6 +180,41 @@ namespace QLN.Common.Infrastructure.QLDbContext
                 entity.Property(e => e.OrderId).HasColumnName("OrderId");
                 entity.Property(e => e.Amount).HasColumnName("Amount");
             });
+            modelBuilder.Entity<StoreCompanyDto>(entity =>
+            {
+                entity.HasNoKey();
+                entity.ToSqlQuery(@"
+        SELECT 
+            ""Id"",
+            ""CompanyName"",
+            ""CompanyLogo"",
+            ""CoverImage1"",
+            ""PhoneNumber"",
+            ""Email"",
+            ""WebsiteUrl"",
+            ""BranchLocations"",
+            ""Slug""
+        FROM public.""Companies""
+    ");
+
+                entity.Property(e => e.Id).HasColumnName("Id");
+                entity.Property(e => e.CompanyName).HasColumnName("CompanyName");
+                entity.Property(e => e.CompanyLogo).HasColumnName("CompanyLogo");
+                entity.Property(e => e.CoverImage1).HasColumnName("CoverImage1");
+                entity.Property(e => e.PhoneNumber).HasColumnName("PhoneNumber");
+                entity.Property(e => e.Email).HasColumnName("Email");
+                entity.Property(e => e.WebsiteUrl).HasColumnName("WebsiteUrl");
+               // entity.Property(e => e.BranchLocations).HasColumnName("BranchLocations");
+                entity.Property(e => e.Slug).HasColumnName("Slug");
+                entity.Property(e => e.BranchLocations)
+  .HasColumnName("BranchLocations")
+  .HasConversion(
+      v => JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
+      v => JsonSerializer.Deserialize<List<string>>(v, (JsonSerializerOptions?)null)
+  );
+            });
+
+          
 
             base.OnModelCreating(modelBuilder);
         }

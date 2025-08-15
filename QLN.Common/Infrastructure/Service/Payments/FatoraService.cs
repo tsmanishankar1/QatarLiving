@@ -1,7 +1,9 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using QLN.Common.DTO_s;
 using QLN.Common.DTO_s.Payments;
 using QLN.Common.Infrastructure.IService.IPayments;
+using QLN.Common.Infrastructure.Subscriptions;
 using System.Text.Json;
 
 namespace QLN.Common.Infrastructure.Service.Payments
@@ -22,22 +24,18 @@ namespace QLN.Common.Infrastructure.Service.Payments
             _httpClient = httpClient;
             _logger = logger;
         }
-
-        // First you create a payment and build a payment checkout payload, this is provided back to the user as a redirect URL
-        // to the payment gateway payment processing page.
-        // After the user completes the payment, they are redirected back to your application with a success or failure
-        public async Task<PaymentResponse> CreatePaymentAsync(ExternalPaymentRequest request, string username, string? email, string? mobile, string? platform, CancellationToken cancellationToken = default)
+        public async Task<PaymentResponse> CreatePaymentAsync(ExternalPaymentRequest request, string username,string productCode, Vertical vertical, SubVertical? subVertical, string? email, string? mobile, string? platform, CancellationToken cancellationToken = default)
         {
             try
             {
-                var paymentDetails = BuildPaymentCheckoutPayload(request, username, email, mobile, platform);
+                var paymentDetails = BuildPaymentCheckoutPayload(request, username,productCode, vertical, subVertical, email, mobile, platform);
 
                 using var httpRequest = new HttpRequestMessage(HttpMethod.Post, $"{_fatoraConfig.ApiUrl}/checkout")
                 {
                     Content = new StringContent(JsonSerializer.Serialize(paymentDetails), System.Text.Encoding.UTF8, "application/json")
                 };
 
-                httpRequest.Headers.Add("x-api-key", _fatoraConfig.ApiKey);
+                httpRequest.Headers.Add("api_key", _fatoraConfig.ApiKey);
 
                 using var response = await _httpClient.SendAsync(httpRequest, cancellationToken);
                 response.EnsureSuccessStatusCode();
@@ -61,9 +59,6 @@ namespace QLN.Common.Infrastructure.Service.Payments
                 Error = new FaturaPaymentError { Message = "An error occurred while processing the payment." }
             };
         }
-
-        // After the user completes the payment, they are redirected back to your application with a success or failure
-        // You then verify the payment by calling the Fatora API with the order ID to check if the payment was successful.
         public async Task<FatoraVerificationResponse> VerifyPayment(string orderId, CancellationToken cancellationToken = default)
         {
             try
@@ -73,7 +68,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
                     Content = new StringContent(JsonSerializer.Serialize(new { order_id = orderId }), System.Text.Encoding.UTF8, "application/json")
                 };
 
-                httpRequest.Headers.Add("x-api-key", _fatoraConfig.ApiKey);
+                httpRequest.Headers.Add("api_key", _fatoraConfig.ApiKey);
 
                 using var response = await _httpClient.SendAsync(httpRequest, cancellationToken);
                 response.EnsureSuccessStatusCode();
@@ -110,29 +105,13 @@ namespace QLN.Common.Infrastructure.Service.Payments
             };
         }
 
-        // This method builds the payload for the payment checkout request to Fatora.
-        // It includes the amount, currency, order ID, client information, language, and success/failure URLs.
-        private FatoraPaymentRequest BuildPaymentCheckoutPayload(ExternalPaymentRequest request, string username, string? email, string? mobile, string? platform = "web")
+        private FatoraPaymentRequest BuildPaymentCheckoutPayload(ExternalPaymentRequest request, string username, string productCode, Vertical vertical, SubVertical? subVertical, string? email, string? mobile, string? platform = "web")
         {
-            // Success documentation https://fatora.io/api/standardCheckout.php#tab-complete-success
-            // https://domain.com/payments/success?transaction_id=XXX&order_id=XXX&mode=XXX&response_code=XXX&description=XXX
-            //
-            // Failure documentation https://fatora.io/api/standardCheckout.php#tab-complete-failure
-            // https://domain.com/payments/failure?transaction_id=XXX&order_id=XXX&mode=XXX&response_code=XXX&description=XXX
-            // therefore we already have an order_id in the success or failure response, so can rely on this when providing a user with a redirect URL
 
-            var vertical = request.Vertical.ToString();
+            var query = $"?platform={Uri.EscapeDataString(platform ?? "web")}&vertical={Uri.EscapeDataString(vertical.ToString())}&subvertical={Uri.EscapeDataString(subVertical?.ToString() ?? string.Empty)}&product_code={Uri.EscapeDataString(productCode)}";
 
-            var query = $"?platform={platform}";
-
-            // add the vertical to the redirect URL if it is not null or empty
-            if (!string.IsNullOrWhiteSpace(vertical))
-            {
-                query += $"&vertical={vertical}";
-            }
-
-            var successUrl = $"{_fatoraConfig.BaseUrl}/{_fatoraConfig.SuccessPath}{query}";
-            var failureUrl = $"{_fatoraConfig.BaseUrl}/{_fatoraConfig.FailurePath}{query}";
+            var successUrl = $"{_fatoraConfig.BaseUrl}/{_fatoraConfig.SuccessUrl}{query}";
+            var failureUrl = $"{_fatoraConfig.BaseUrl}/{_fatoraConfig.FailureUrl}{query}";
 
             return new FatoraPaymentRequest
             {
