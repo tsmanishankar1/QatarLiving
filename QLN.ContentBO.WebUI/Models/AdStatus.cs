@@ -10,7 +10,7 @@
         Rejected = 5,
         Expired = 6,
         NeedsModification = 7,
-        P2p=8
+        P2p = 8
     }
 
     public enum BulkActionEnum
@@ -24,13 +24,18 @@
         NeedChanges = 7,
         Promote = 8,
         Feature = 9,
-        Hold=10
+        Hold = 10
     }
+
     public enum VerifiedStatus
     {
         Pending = 1,
         Approved = 2,
         NeedChanges = 3,
-        Rejected = 4
+        Rejected = 4,
+        Removed = 5,
+        OnHold = 6,
+        NotVerified = 7,
+        Verified = 8
     }
 }

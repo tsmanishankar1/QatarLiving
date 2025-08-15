@@ -22,10 +22,11 @@ namespace QLN.Classifieds.MS.ServiceConfiguration
             services.AddTransient<IClassifiedStoresBOService, InternalClassifiedStoresBOService>();
             services.AddScoped<IClassifiedPreLovedBOService, InternalClassifiedPreLovedBOService>();
             services.AddTransient<IClassifiedService, ClassifiedService>();
+            services.AddTransient<IClassifiedsFoService, ClassifiedFoService>();
             services.AddTransient<IServices, InternalServicesService>();
             services.AddTransient<IServicesBoService, InternalServicesBo>();
-            
-;            return services;
+           
+            return services;
         }
     }
 }

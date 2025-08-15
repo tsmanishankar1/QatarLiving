@@ -110,7 +110,7 @@ namespace QLN.Common.Infrastructure.Model
         public string UploadFeed { get; set; } = string.Empty;
         [MaxLength(150)]
         public string XMLFeed { get; set; } = string.Empty;
-
+        public VerifiedStatus? CompanyVerificationStatus { get; set; }
         public VerifiedStatus? Status { get; set; }
 
         [Required]
@@ -122,6 +122,9 @@ namespace QLN.Common.Infrastructure.Model
         public string? UserId { get; set; }
 
         public bool? IsBasicProfile { get; set; }
+
+        [MaxLength(200)]
+        public string? Slug { get; set; }
 
         public bool IsActive { get; set; } = true;
 

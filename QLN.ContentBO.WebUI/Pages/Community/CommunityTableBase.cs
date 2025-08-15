@@ -44,6 +44,10 @@ namespace QLN.ContentBO.WebUI.Pages.Community
         {
             try
             {
+                // Skip execution for default or min DateTime
+                if (givenUtcTime == DateTime.MinValue)
+                    return "-";
+
                 var now = DateTime.UtcNow.ToQatarTime();
                 var diff = now - givenUtcTime.ToQatarTime();
                 var isFuture = diff.TotalSeconds < 0;

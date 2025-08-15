@@ -1,6 +1,6 @@
 ﻿using QLN.Notification.MS.IService.INotificationService;
 using Dapr;
-using static QLN.Common.DTO_s.NotificationDto;
+using QLN.Common.DTO_s;
 
 namespace QLN.Notification.MS.CustomEndpoints.NotificationEndpoints
 {
@@ -11,7 +11,7 @@ namespace QLN.Notification.MS.CustomEndpoints.NotificationEndpoints
         public static RouteGroupBuilder MapNotificationSubscriber(this RouteGroupBuilder app)
         {
             app.MapPost("/notifications/email", [Topic("pubsub", "notifications-email")]
-            async (NotificationRequest request,
+            async (NotificationDto request,
                        INotificationService service,
                        ILogger<NotificationSubscriber> logger) =>
                 {
@@ -33,7 +33,7 @@ namespace QLN.Notification.MS.CustomEndpoints.NotificationEndpoints
             .WithName("NotificationEmailSubscriber")
             .WithTags("NotificationSubscriber")
             .WithSummary("Handles email notifications via Dapr pubsub")
-            .Accepts<NotificationRequest>("application/json")
+            .Accepts<NotificationDto>("application/json")
             .Produces(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status500InternalServerError);
             return app;

@@ -15,6 +15,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.DealsSection
 
         protected List<DealsListingModal> Listings { get; set; } = new();
         protected string SearchText { get; set; } = string.Empty;
+         protected string SubscriptionType { get; set; } = string.Empty;
         protected string SortIcon { get; set; } = Icons.Material.Filled.Sort;
         protected string SortDirection { get; set; } = "asc";
         protected string SortField { get; set; } = "creationDate";
@@ -65,14 +66,11 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.DealsSection
                 {
                     PageNumber = currentPage,
                     PageSize = pageSize,
-                    Status = status,
+                    SubscriptionType = SubscriptionType,
                     SearchText = SearchText,
-                    CreationDate = dateCreated,
+                    StartDate = dateCreated,
                     PublishedDate = datePublished,
-                    SortField = SortField,
-                    SortDirection = SortDirection,
-                    IsPromoted = isPromoted,
-                    IsFeatured = isFeatured
+                    SortBy = SortDirection,
                 };
 
 
@@ -81,27 +79,13 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.DealsSection
                 if (response?.IsSuccessStatusCode ?? false)
                 {
                     var content = await response.Content.ReadAsStringAsync();
-                    Console.WriteLine($"API Raw Content: {content}");
-
                     var result = JsonSerializer.Deserialize<PagedResult<DealsListingModal>>(content, new JsonSerializerOptions
                     {
                         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
                         PropertyNameCaseInsensitive = true
                     });
-                    if (result == null)
-                    {
-                        Console.WriteLine("Deserialized result is null");
-                    }
-                    else
-                    {
-                        Console.WriteLine($"Items Count: {result.Items?.Count ?? 0}, TotalCount: {result.TotalCount}");
-                    }
                     Listings = result?.Items ?? new List<DealsListingModal>();
                     TotalCount = result?.TotalCount ?? 0;
-                }
-                else
-                {
-                    Console.WriteLine($"API call failed. StatusCode: {response?.StatusCode}");
                 }
             }
             catch (Exception ex)
@@ -145,6 +129,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.DealsSection
 
         protected async Task HandlePageChanged(int newPage)
         {
+            currentPage = newPage;
             await LoadData();
         }
 

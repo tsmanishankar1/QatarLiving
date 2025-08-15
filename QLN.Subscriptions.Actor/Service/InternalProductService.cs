@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using QLN.Common.DTO_s;
 using QLN.Common.DTO_s.Payments;
 using QLN.Common.DTO_s.Subscription;
 using QLN.Common.DTOs;
@@ -41,15 +42,18 @@ namespace QLN.Subscriptions.Actor.Service
             }
         }
 
-        public async Task<List<ProductResponseDto>> GetProductsByVerticalAsync(Vertical vertical, CancellationToken cancellationToken = default)
+        public async Task<List<ProductResponseDto>> GetProductsByVerticalAsync(Vertical? vertical, SubVertical? subvertical, ProductType? productType, CancellationToken cancellationToken = default)
         {
             try
             {
                 var products = await _context.Products
-                    .Where(p => p.IsActive && p.Vertical == vertical)
-                    .OrderBy(p => p.ProductType)
-                    .ThenBy(p => p.Price)
-                    .ToListAsync(cancellationToken);
+                .Where(p => p.IsActive)
+                .Where(p => vertical == null || p.Vertical == vertical)
+                .Where(p => subvertical == null || p.SubVertical == subvertical)
+                .Where(p => productType == null || p.ProductType == productType)
+                .OrderBy(p => p.ProductType)
+                .ThenBy(p => p.Price)
+                .ToListAsync(cancellationToken);
 
                 return products.Select(MapToResponseDto).ToList();
             }

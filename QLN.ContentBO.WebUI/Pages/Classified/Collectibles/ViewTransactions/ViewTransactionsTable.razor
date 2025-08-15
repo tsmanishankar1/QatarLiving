@@ -59,7 +59,7 @@ else
                     <span>@context.AdId</span>
                 </div>
             </MudTd>
-            <MudTd Class="truncate-text" title="@(string.IsNullOrWhiteSpace(context.OrderId) ? "-" : context.OrderId)">@context.OrderId</MudTd>
+            <MudTd Class="truncate-text" title="@(context.OrderId == 0 ? "-" : context.OrderId)">@context.OrderId</MudTd>
             <MudTd Class="truncate-text" title="@(string.IsNullOrWhiteSpace(context.UserId) ? "-" : context.UserId)">@context.UserId</MudTd>
             <MudTd Class="truncate-text" title="@(string.IsNullOrWhiteSpace(context.Username) ? "-" : context.Username)">@context.Username</MudTd>
             <MudTd Class="truncate-text" title="@(string.IsNullOrWhiteSpace(context.UserEmail) ? "-" : context.UserEmail)">@context.UserEmail</MudTd>
@@ -73,10 +73,10 @@ else
             <MudTd Class="truncate-text" title="@(string.IsNullOrWhiteSpace(context.Account) ? "-" : context.Account)">@context.Account</MudTd>
             <MudTd Class="truncate-text">@context.Amount</MudTd>
             <MudTd Class="truncate-text">@context.PaymentMethod</MudTd>
-            <MudTd Class="truncate-text">@(!string.IsNullOrEmpty(context.CreationDate) ? context.CreationDate : "--")</MudTd>
-            <MudTd Class="truncate-text">@(!string.IsNullOrEmpty(context.PublishedDate) ? context.PublishedDate : "--")</MudTd>
-            <MudTd Class="truncate-text">@(!string.IsNullOrEmpty(context.StartDate) ? context.StartDate : "--")</MudTd>
-            <MudTd Class="truncate-text">@(!string.IsNullOrEmpty(context.EndDate) ? context.EndDate : "--")</MudTd>
+            <MudTd Class="truncate-text">@(context.CreationDate)</MudTd>
+            <MudTd Class="truncate-text">@(context.PublishedDate)</MudTd>
+            <MudTd Class="truncate-text">@(context.StartDate)</MudTd>
+            <MudTd Class="truncate-text">@(context.EndDate)</MudTd>
             <MudTd Class="truncate-text"title="@(string.IsNullOrWhiteSpace(context.Description) ? "-" : context.Description)">@context.Description</MudTd>
             <MudTd>
                 <div @onclick="@(() => OnPreview(context))">

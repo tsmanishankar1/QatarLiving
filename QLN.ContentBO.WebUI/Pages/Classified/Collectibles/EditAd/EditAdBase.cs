@@ -58,7 +58,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.EditAd
             foreach (var field in mainFields)
             {
                 if (!string.IsNullOrWhiteSpace(field.Value) &&
-                    AvailableFields.Any(f => string.Equals(f.Name, field.Key, StringComparison.OrdinalIgnoreCase)))
+                    AvailableFields.Any(f => string.Equals(f.CategoryName, field.Key, StringComparison.OrdinalIgnoreCase)))
                 {
                     adPostModel.DynamicFields[field.Key] = field.Value!;
                 }
@@ -70,7 +70,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.EditAd
                 foreach (var attribute in adPostModel.Attributes)
                 {
                     if (!string.IsNullOrWhiteSpace(attribute.Value) &&
-                        AvailableFields.Any(f => string.Equals(f.Name, attribute.Key, StringComparison.OrdinalIgnoreCase)))
+                        AvailableFields.Any(f => string.Equals(f.CategoryName, attribute.Key, StringComparison.OrdinalIgnoreCase)))
                     {
                         adPostModel.DynamicFields[attribute.Key] = attribute.Value;
                     }
@@ -157,16 +157,17 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.EditAd
         }
 
 
-        protected List<CategoryTreeDto> CategoryTrees { get; set; } = new();
-        protected CategoryTreeDto SelectedCategory => CategoryTrees.FirstOrDefault(x => x.Id.ToString() == adPostModel.CategoryId);
-        protected CategoryTreeDto SelectedSubcategory => SelectedCategory?.Children?.FirstOrDefault(x => x.Id.ToString() == adPostModel.L1CategoryId);
-        protected CategoryTreeDto SelectedSubSubcategory => SelectedSubcategory?.Children?.FirstOrDefault(x => x.Id.ToString() == adPostModel.L2CategoryId);
+        [Parameter] public List<ClassifiedsCategory> CategoryTrees { get; set; } = new();
+        protected ClassifiedsCategory SelectedCategory => CategoryTrees.FirstOrDefault(x => x.Id.ToString() == adPostModel.CategoryId);
+        protected ClassifiedsCategoryField SelectedSubcategory => SelectedCategory?.Fields?.FirstOrDefault(x => x.Id.ToString() == adPostModel.L1CategoryId);
+        protected ClassifiedsCategoryField SelectedSubSubcategory => SelectedSubcategory?.Fields?.FirstOrDefault(x => x.Id.ToString() == adPostModel.L2CategoryId);
 
-        protected List<CategoryField> AvailableFields =>
+
+        protected List<ClassifiedsCategoryField> AvailableFields =>
                                         SelectedSubSubcategory?.Fields ??
                                         SelectedSubcategory?.Fields ??
                                         SelectedCategory?.Fields ??
-                                        new List<CategoryField>();
+                                        new List<ClassifiedsCategoryField>();
         protected string[] ExcludedFields => new[]
         {
                "L2 Category" // Add any other fields you want to hide here
@@ -188,11 +189,11 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.EditAd
             if (AvailableFields == null)
                 return; // Nothing to validate yet
 
-            foreach (var field in AvailableFields.Where(f => !ExcludedFields.Contains(f.Name)))
+            foreach (var field in AvailableFields.Where(f => !ExcludedFields.Contains(f.CategoryName)))
             {
-                if (string.IsNullOrWhiteSpace(adPostModel.DynamicFields.GetValueOrDefault(field.Name)))
+                if (string.IsNullOrWhiteSpace(adPostModel.DynamicFields.GetValueOrDefault(field.CategoryName)))
                 {
-                    messageStore.Add(new FieldIdentifier(adPostModel.DynamicFields, field.Name), $"{field.Name} is required.");
+                    messageStore.Add(new FieldIdentifier(adPostModel.DynamicFields, field.CategoryName), $"{field.CategoryName} is required.");
                 }
             }
         }
@@ -211,13 +212,13 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.EditAd
                 }
             }
 
-            if (SelectedCategory?.Children?.Any() == true && string.IsNullOrEmpty(adPostModel.L1CategoryId))
+            if (SelectedCategory?.Fields?.Any() == true && string.IsNullOrEmpty(adPostModel.L1CategoryId))
             {
                 messageStore.Add(() => adPostModel.L1CategoryId, "Subcategory is required.");
                 isValid = false;
             }
 
-            if (SelectedSubcategory?.Children?.Any() == true && string.IsNullOrEmpty(adPostModel.L2CategoryId))
+            if (SelectedSubcategory?.Fields?.Any() == true && string.IsNullOrEmpty(adPostModel.L2CategoryId))
             {
                 messageStore.Add(() => adPostModel.L2CategoryId, "Section is required.");
                 isValid = false;
@@ -236,16 +237,16 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.EditAd
             }
 
             // Manual validation: Dynamic fields
-            foreach (var field in AvailableFields.Where(f => !ExcludedFields.Contains(f.Name)))
+            foreach (var field in AvailableFields.Where(f => !ExcludedFields.Contains(f.CategoryName)))
             {
-                var value = adPostModel.DynamicFields.ContainsKey(field.Name) ? adPostModel.DynamicFields[field.Name] : null;
+                var value = adPostModel.DynamicFields.ContainsKey(field.CategoryName) ? adPostModel.DynamicFields[field.CategoryName] : null;
 
                 if (string.IsNullOrWhiteSpace(value))
                 {
-                    messageStore.Add(new FieldIdentifier(adPostModel.DynamicFields, field.Name), $"{field.Name} is required.");
-                    if (!DynamicFieldErrors.ContainsKey(field.Name))
-                        DynamicFieldErrors[field.Name] = new List<string>();
-                    DynamicFieldErrors[field.Name].Add($"{field.Name} is required.");
+                    messageStore.Add(new FieldIdentifier(adPostModel.DynamicFields, field.CategoryName), $"{field.CategoryName} is required.");
+                    if (!DynamicFieldErrors.ContainsKey(field.CategoryName))
+                        DynamicFieldErrors[field.CategoryName] = new List<string>();
+                    DynamicFieldErrors[field.CategoryName].Add($"{field.CategoryName} is required.");
                     isValid = false;
                 }
             }
@@ -294,9 +295,9 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.EditAd
         {
             if (string.IsNullOrEmpty(id)) return string.Empty;
 
-            if (SelectedCategory?.Id.ToString() == id) return SelectedCategory?.Name ?? string.Empty;
-            if (SelectedSubcategory?.Id.ToString() == id) return SelectedSubcategory?.Name ?? string.Empty;
-            if (SelectedSubSubcategory?.Id.ToString() == id) return SelectedSubSubcategory?.Name ?? string.Empty;
+            if (SelectedCategory?.Id.ToString() == id) return SelectedCategory?.CategoryName ?? string.Empty;
+            if (SelectedSubcategory?.Id.ToString() == id) return SelectedSubcategory?.CategoryName ?? string.Empty;
+            if (SelectedSubSubcategory?.Id.ToString() == id) return SelectedSubSubcategory?.CategoryName ?? string.Empty;
 
             return string.Empty;
         }
@@ -488,11 +489,11 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.EditAd
         {
             try
             {
-                var response = await ClassifiedService.GetAllCategoryTreesAsync("collectibles");
+                var response = await ClassifiedService.GetServicesCategories(Vertical.Classifieds, SubVertical.Collectibles);
 
                 if (response is { IsSuccessStatusCode: true })
                 {
-                    var result = await response.Content.ReadFromJsonAsync<List<CategoryTreeDto>>();
+                    var result = await response.Content.ReadFromJsonAsync<List<ClassifiedsCategory>>();
                     CategoryTrees = result ?? new();
                     StateHasChanged();
                 }

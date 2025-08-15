@@ -69,6 +69,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedBOEndPoints
           (
           [FromServices] IClassifiedPreLovedBOService service,
           HttpContext context,
+          string? Status,
           string? createdDate,
           string? publishedDate,
           int? Page, int? PageSize, string? Search, string? SortBy, string? SortOrder,
@@ -79,7 +80,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedBOEndPoints
                 {
                     int page = Page ?? 1;
                     int pageSize = PageSize ?? 12;
-                    var result = await service.ViewPreLovedP2PSubscriptions(createdDate, publishedDate, page, pageSize, Search, SortBy, SortOrder, cancellationToken);
+                    var result = await service.ViewPreLovedP2PSubscriptions(Status,createdDate, publishedDate, page, pageSize, Search, SortBy, SortOrder, cancellationToken);
 
                     return TypedResults.Ok(result);
                 }
@@ -178,7 +179,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedBOEndPoints
                     else if(dto.AdIds == null || dto.AdStatus==0)
                         return TypedResults.BadRequest(new ProblemDetails() { Detail = "AdIs cannot be null or Status not be '0'." });
 
-                    var result = await service.BulkEditP2PSubscriptions(dto, cancellationToken);
+                    var result = await service.BulkEditP2PSubscriptions(dto, userId, cancellationToken);
                     await auditLogger.LogAuditAsync(
                         module: ModuleName,
                         httpMethod: "POST",
@@ -210,7 +211,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedBOEndPoints
                  .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
             
-            group.MapPut("/preloved-bulk-edits-subscriptions", async Task<Results<
+            group.MapPut("/preloved-bulk-edits-subscriptions/{userId}", async Task<Results<
           Ok<string>,
           ForbidHttpResult,
           BadRequest<ProblemDetails>,
@@ -218,6 +219,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedBOEndPoints
           (
           [FromServices] IClassifiedPreLovedBOService service,
           HttpContext httpContext,
+          string? userId,
           BulkEditPreLovedP2PDto dto,
           AuditLogger auditLogger,
           CancellationToken cancellationToken
@@ -227,7 +229,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedBOEndPoints
                 {
                     
 
-                    var result = await service.BulkEditP2PSubscriptions(dto, cancellationToken);
+                    var result = await service.BulkEditP2PSubscriptions(dto,userId, cancellationToken);
                     
                     return TypedResults.Ok(result);
                 }

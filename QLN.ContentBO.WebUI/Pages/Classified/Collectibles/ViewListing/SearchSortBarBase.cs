@@ -1,10 +1,9 @@
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using QLN.ContentBO.WebUI.Models;
-using QLN.ContentBO.WebUI.Components.AutoSelectDialog;
 using QLN.ContentBO.WebUI.Components.ConfirmationDialog;
 using Microsoft.JSInterop;
-using QLN.ContentBO.WebUI.Interfaces;
+
 
 namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.ViewListing
 {
@@ -12,7 +11,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.ViewListing
     {
         [Inject] protected IDialogService DialogService { get; set; } = default!;
         [Inject] protected NavigationManager NavManager { get; set; } = default!;
-        [Parameter] public List<ClassifiedItemViewListing> Items { get; set; } = new();
+        [Parameter] public List<CollectibleItem> Items { get; set; } = new();
         [Parameter] public EventCallback<string> OnSearch { get; set; }
         [Parameter] public EventCallback<bool> OnSort { get; set; }
         [Parameter] public EventCallback<(DateTime? created, DateTime? published)> OnDateFilterChanged { get; set; }

@@ -524,7 +524,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
             }
         }
 
-        public async Task<List<FeaturedStore>> GetSlottedFeaturedStores(Vertical vertical, CancellationToken cancellationToken = default)
+        public async Task<List<FeaturedStoreItem>> GetSlottedFeaturedStores(Vertical vertical, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -541,9 +541,34 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                     .OrderBy(p => p.SlotOrder)
                     .ToListAsync(cancellationToken);
 
-                _logger.LogInformation("Fetched {Count} slotted featured stores.", slottedStores.Count);
+                var productSummary = _context.StoresDashboardSummaryItems.ToList();
 
-                return slottedStores;
+                var featuredStoreDtos = (from store in slottedStores
+                                         join summary in productSummary
+                                             on store.StoreId.ToLower() equals summary.CompanyId.ToString().ToLower() into summaryGroup
+                                         from summary in summaryGroup.DefaultIfEmpty()
+                                         select new FeaturedStoreItem
+                                         {
+                                             Id = store.Id,
+                                             Title = store.Title,
+                                             Vertical = store.Vertical,
+                                             StoreId = store.StoreId,
+                                             StoreName = store.StoreName,
+                                             ImageUrl = store.ImageUrl,
+                                             StartDate = store.StartDate,
+                                             EndDate = store.EndDate,
+                                             SlotOrder = store.SlotOrder,
+                                             IsActive = store.IsActive,
+                                             CreatedBy = store.CreatedBy,
+                                             CreatedAt = store.CreatedAt,
+                                             UpdatedBy = store.UpdatedBy,
+                                             UpdatedAt = store.UpdatedAt,
+                                             ProductCount = summary?.ProductCount ?? 0
+                                         }).ToList();
+
+                _logger.LogInformation("Fetched {Count} slotted featured stores.", featuredStoreDtos.Count);
+
+                return featuredStoreDtos;
             }
             catch (Exception ex)
             {
@@ -1142,12 +1167,14 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
             }
         }
 
-        public async Task<string> BulkItemsAction(BulkActionRequest request, string userId, CancellationToken ct)
+        public async Task<string> BulkItemsAction(BulkActionRequest request, string userId,  CancellationToken ct)
         {
-            // Fetch all ads in one query instead of looping and hitting DB individually
+            
             var ads = await _context.Item
                 .Where(ad => request.AdIds.Contains(ad.Id) && ad.IsActive == true)
                 .ToListAsync(ct);
+
+           
 
             if (!ads.Any())
             {
@@ -1167,6 +1194,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                         {
                             ad.Status = AdStatus.Published;
                             shouldUpdate = true;
+                            ad.UpdatedAt = DateTime.UtcNow;
                         }
                         else
                         {
@@ -1179,6 +1207,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                         {
                             ad.Status = AdStatus.NeedsModification;
                             shouldUpdate = true;
+                            ad.UpdatedAt = DateTime.UtcNow;
                         }
                         else
                         {
@@ -1191,6 +1220,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                         {
                             ad.Status = AdStatus.Published;
                             shouldUpdate = true;
+                            ad.UpdatedAt = DateTime.UtcNow;
                         }
                         else
                         {
@@ -1203,6 +1233,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                         {
                             ad.Status = AdStatus.Unpublished;
                             shouldUpdate = true;
+                            ad.UpdatedAt = DateTime.UtcNow;
                         }
                         else
                         {
@@ -1215,6 +1246,8 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                         {
                             ad.IsPromoted = false;
                             shouldUpdate = true;
+                            ad.UpdatedAt = DateTime.UtcNow;
+                            
                         }
                         else
                         {
@@ -1227,6 +1260,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                         {
                             ad.IsFeatured = false;
                             shouldUpdate = true;
+                            ad.UpdatedAt = DateTime.UtcNow;
                         }
                         else
                         {
@@ -1239,6 +1273,8 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                         {
                             ad.IsPromoted = true;
                             shouldUpdate = true;
+                            ad.UpdatedAt = DateTime.UtcNow;
+                            ad.PromotedExpiryDate = DateTime.UtcNow;
                         }
                         else
                         {
@@ -1251,6 +1287,8 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                         {
                             ad.IsFeatured = true;
                             shouldUpdate = true;
+                            ad.UpdatedAt = DateTime.UtcNow;
+                            ad.FeaturedExpiryDate = DateTime.UtcNow;
                         }
                         else
                         {
@@ -1522,11 +1560,11 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                               join s in subscriptions on p.PaymentId equals s.PaymentId
                               join u in users on s.UserId equals u.Id.ToString() into userJoin
                               from u in userJoin.DefaultIfEmpty()
-                              join i in publisheddate on p.AdId equals i.Id.ToString() into itemJoin
+                              join i in publisheddate on p.AdId equals i.Id into itemJoin
                               from i in itemJoin.DefaultIfEmpty()
                               select new TransactionDto
                               {
-                                  AdId = p.AdId,
+                                  AdId = (long)p.AdId,
                                   OrderId = p.PaymentId,
                                   Username = u?.UserName,
                                   UserId = s.UserId,
@@ -1553,11 +1591,11 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                               join s in subscriptions on p.PaymentId equals s.PaymentId
                               join u in users on s.UserId equals u.Id.ToString() into userJoin
                               from u in userJoin.DefaultIfEmpty()
-                              join i in publisheddate on p.AdId equals i.Id.ToString() into itemJoin
+                              join i in publisheddate on p.AdId equals i.Id into itemJoin
                               from i in itemJoin.DefaultIfEmpty()
                               select new TransactionDto
                               {
-                                  AdId = p.AdId,
+                                  AdId = (long)p.AdId,
                                   OrderId = p.PaymentId,
                                   Username = u?.UserName,
                                  // ProductType = p.ProductType,
@@ -1603,7 +1641,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                         t.Mobile.ToLower().Contains(search) ||
                         t.Whatsapp.ToLower().Contains(search) ||
                         t.Status.ToLower().Contains(search) ||
-                        t.AdId.ToLower().Contains(search) ||
+                        t.AdId.ToString().Contains(search) ||
                         t.OrderId.ToString().Contains(search)
                     );
                     _logger.LogInformation("Filtered by search text: {SearchText}", request.SearchText);
@@ -1922,7 +1960,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                               join s in subscriptions on p.PaymentId equals s.PaymentId
                               join u in users on s.UserId equals u.Id.ToString() into userJoin
                               from u in userJoin.DefaultIfEmpty()
-                              join d in deals on p.AdId equals d.Id.ToString() into dealJoin
+                              join d in deals on p.AdId equals d.Id into dealJoin
                               from d in dealJoin.DefaultIfEmpty()
                               select new DealsAdSummaryDto
                               {
@@ -2046,7 +2084,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                               join s in subscriptions on p.PaymentId equals s.PaymentId
                               join u in users on s.UserId equals u.Id.ToString() into userJoin
                               from u in userJoin.DefaultIfEmpty()
-                              join d in deals on p.AdId equals d.Id.ToString() into dealJoin
+                              join d in deals on p.AdId equals d.Id into dealJoin
                               from d in dealJoin.DefaultIfEmpty()
                               where d != null && d.IsActive
                               select new DealsViewSummaryDto
@@ -2069,7 +2107,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                                   EndDate = d.EndDate ?? DateTime.UtcNow,
                                   WebClick = 0,
                                   Weburl = d.WebsiteUrl,
-                                  Locations = d.Locations,
+                                  CoverImage = d.CoverImage,
                                   Views = 0,
                                   Impression = 0,
                                   Phonelead = 0,
@@ -3155,7 +3193,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                 UpdatedAt = dto.UpdatedAt,
                 UpdatedBy = dto.UpdatedBy,
                 ExpiryDate = dto.ExpiryDate,
-                Images = dto.Images,
+                CoverImage = dto.CoverImage,
                 PromotedExpiryDate = dto.PromotedExpiryDate,
                 IsPromoted = dto.IsPromoted,
                 FeaturedExpiryDate = dto.FeaturedExpiryDate,

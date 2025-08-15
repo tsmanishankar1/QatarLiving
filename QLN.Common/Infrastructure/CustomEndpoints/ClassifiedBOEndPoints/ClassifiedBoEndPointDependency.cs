@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Routing;
 using QLN.Common.Infrastructure.CustomEndpoints.ClassifiedBOEndPoints;
-using QLN.Common.Infrastructure.CustomEndpoints.ClassifiedFOEndpoints;
+
 using QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints;
 using System;
 using System.Collections.Generic;
@@ -16,6 +16,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
             group.MapClassifiedBoEndpoints();
             group.MapClassifiedBOStoresEndpoints();
             group.MapClassifiedBOPreLovedEndpoints();
+           
             return group;        
         }
     }

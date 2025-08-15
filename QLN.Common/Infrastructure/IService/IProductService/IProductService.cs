@@ -1,4 +1,5 @@
-﻿using QLN.Common.DTO_s.Payments;
+﻿using QLN.Common.DTO_s;
+using QLN.Common.DTO_s.Payments;
 using QLN.Common.DTO_s.Subscription;
 using QLN.Common.DTOs;
 using QLN.Common.Infrastructure.Model;
@@ -14,7 +15,7 @@ namespace QLN.Common.Infrastructure.IService.IProductService
     public interface IProductService
     {
         Task<List<ProductResponseDto>> GetAllProductsAsync(CancellationToken cancellationToken = default);
-        Task<List<ProductResponseDto>> GetProductsByVerticalAsync(Vertical vertical, CancellationToken cancellationToken = default);
+        Task<List<ProductResponseDto>> GetProductsByVerticalAsync(Vertical? vertical, SubVertical? subvertical, ProductType? productType, CancellationToken cancellationToken = default);
         Task<List<ProductResponseDto>> GetProductsByTypeAsync(ProductType productType, CancellationToken cancellationToken = default);
         Task<ProductResponseDto?> GetProductByCodeAsync(string productCode, CancellationToken cancellationToken = default);
 

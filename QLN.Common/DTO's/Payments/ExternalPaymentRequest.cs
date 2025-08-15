@@ -12,32 +12,23 @@ namespace QLN.Common.DTO_s.Payments
         /// <summary>
         /// Ad Id against which the payment has to be done
         /// </summary>
-        public string? AdId { get; set; }
+        public long? AdId { get; set; }
 
         /// <summary>
         /// Subscription Id against which the payment has to be done
         /// </summary>
-        public string? SubscriptionId { get; set; }
+        public Guid? SubscriptionId { get; set; }
 
-        /// <summary>
-        /// Subscription Type Id against which the payment has to be done
-        /// </summary>
-        public string? SubscriptionTypeId { get; set; }
+        ///// <summary>
+        ///// Product code against which the payment has to be done
+        ///// </summary>
+        public string ProductCode { get; set; } 
 
-        /// <summary>
-        /// Number of features to purchase
-        /// </summary>
-        public int? NoOfFeatures { get; set; }
 
         /// <summary>
         /// Type of the product to purchase
         /// </summary>
         public ProductType? ProductType { get; set; }
-
-        /// <summary>
-        /// User Subscription Id for the associated payment
-        /// </summary>
-        public string? UserSubscriptionId { get; set; }
 
         /// <summary>
         /// Addon details with respective d365Id, featureBudget or refreshBudget
@@ -48,11 +39,8 @@ namespace QLN.Common.DTO_s.Payments
         /// Vertical
         /// </summary>
         public Vertical Vertical { get; set; }
-
-        /// <summary>
-        /// Use reward points
-        /// </summary>
-        public bool? UsePoints { get; set; }
+        public SubVertical? SubVertical { get; set; }
+        public UserReqDto? User { get; set; }
 
         /// <summary>
         /// Payment amount

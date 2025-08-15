@@ -1,6 +1,7 @@
 @inherits EditServiceFormBase
 @using QLN.ContentBO.WebUI.Components.PhoneNumberInput;
 @using QLN.ContentBO.WebUI.Components.FilePreviewDialog;
+@using PSC.Blazor.Components.MarkdownEditor.Enums
 @using QLN.ContentBO.WebUI.Models
 
 <EditForm EditContext="@editContext" OnSubmit="@SubmitForm">
@@ -55,10 +56,32 @@
         <MudTextField Class="white-bg" Variant="Variant.Outlined" T="string" Label="Title"
                       @bind-Value="selectedService.Title" For="@(() => selectedService.Title)" FullWidth="true" />
 
-        <MudExRichTextEdit @bind-Value="selectedService.Description" @ref="Editor"
-                           Height="350" Placeholder="Start Typing"
-                           For="@(() => selectedService.Description)">
-        </MudExRichTextEdit>
+        <MarkdownEditor @bind-Value="@selectedService.Description" Placeholder="Start Typing" HideIcons="@HiddenIcons" CustomButtonClicked="@OnCustomButtonClicked" @ref="MarkdownEditorRef">
+                <Toolbar>
+                    <MarkdownToolbarButton Action="MarkdownAction.Bold" Icon="fa fa-bold" Title="Bold" />
+                    <MarkdownToolbarButton Action="MarkdownAction.Italic" Icon="fa fa-italic" Title="Italic" />
+                    <MarkdownToolbarButton Action="MarkdownAction.Heading" Icon="fa fa-header" Title="Heading" />
+                    <MarkdownToolbarButton Action="MarkdownAction.Strikethrough" Icon="fa fa-strikethrough" Title="Strikethrough" />
+
+                    <MarkdownToolbarButton Separator Action="MarkdownAction.Code" Icon="fa fa-code" Title="Code Block" />
+                    <MarkdownToolbarButton Action="MarkdownAction.Quote" Icon="fa fa-quote-right" Title="Quote" />
+                    <MarkdownToolbarButton Action="MarkdownAction.HorizontalRule" Icon="fa fa-minus" Title="Horizontal Rule" />
+                    <MarkdownToolbarButton Action="MarkdownAction.UnorderedList" Icon="fa fa-list-ul" Title="Unordered List" />
+                    <MarkdownToolbarButton Action="MarkdownAction.OrderedList" Icon="fa fa-list-ol" Title="Ordered List" />
+
+                    <MarkdownToolbarButton Separator Action="MarkdownAction.Link" Icon="fa fa-link" Title="Link" />
+                    <MarkdownToolbarButton Action="MarkdownAction.Custom" Name="@UploadImageButtonName" Icon="fa fa-upload" Title="Upload Image" />
+                    <MarkdownToolbarButton Action="MarkdownAction.Image" Icon="fa fa-image" Title="Image" />
+
+                    <MarkdownToolbarButton Separator Action="MarkdownAction.Custom" Name="CustomPreview" Icon="fa fa-eye no-disable" Title="Toggle Preview (Ctrl-P)" />
+                    <MarkdownToolbarButton Action="MarkdownAction.SideBySide" Icon="fa fa-columns no-disable no-mobile" Title="Side by Side" />
+                    <MarkdownToolbarButton Action="MarkdownAction.Guide" Icon="fa fa-question-circle" Title="Markdown Guide" />
+                </Toolbar>
+            </MarkdownEditor>
+            <MudText Typo="Typo.caption" Color="Color.Error">
+                <ValidationMessage For="@(() => selectedService.Description)" />
+            </MudText>
+
         <MudPaper Class="catification-upload-section" Style="margin-top: 20px;">
             <div class="catification-upload-info">
                 <h3 class="catification-upload-label">Certificate / Warranty*</h3>

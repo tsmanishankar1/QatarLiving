@@ -14,171 +14,36 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.UserProfile
     {
         [Inject]
         protected IClassifiedService ClassifiedService { get; set; } = default!;
-
-        protected List<BusinessVerificationItem> Listings { get; set; } = new();
+         [Inject] IServiceBOService serviceBOService { get; set; }
+        protected List<CompanyProfileItem> Listings { get; set; } = new();
         protected bool IsLoading { get; set; } = true;
         protected bool IsEmpty => !IsLoading && Listings.Count == 0;
         protected int TotalCount { get; set; }
         protected int currentPage { get; set; } = 1;
         protected int pageSize { get; set; } = 12;
-        protected string SearchText { get; set; } = string.Empty;
-
+        public string? SortBy { get; set; }
+        protected string? SearchText { get; set; } = string.Empty;
+        public int? Status { get; set; }
         protected string SortIcon { get; set; } = Icons.Material.Filled.Sort;
-
-        protected DateTime? dateCreated { get; set; }
-        protected DateTime? datePublished { get; set; }
-
-        protected DateTime? tempCreatedDate { get; set; }
-        protected DateTime? tempPublishedDate { get; set; }
-
-        protected bool showCreatedPopover { get; set; } = false;
-        protected bool showPublishedPopover { get; set; } = false;
-
         protected string SelectedTab { get; set; } = ((int)CompanyStatus.Rejected).ToString();
         protected override async Task OnInitializedAsync()
         {
-            await LoadData();
+            currentPage = 1;
+            pageSize = 12;
+            Status = 1;
+            Listings = await GetCompanyProfiles();
         }
-
-        //protected async Task LoadData()
-        //{
-        //    IsLoading = true;
-        //    StateHasChanged();
-
-        //    try
-        //    {
-        //        int? status = null;
-
-        //        if (int.TryParse(SelectedTab, out var tabValue))
-        //        {
-        //            status = tabValue;
-        //        }
-
-        //        var request = new FilterRequest
-        //        {
-        //            PageNumber = currentPage,
-        //            PageSize = pageSize,
-        //            Status = status,
-        //            SearchText = SearchText,
-        //            CreationDate = dateCreated,
-        //            PublishedDate = datePublished,
-        //            Vertical = (int)VerticalType.Classifieds, 
-        //            SubVertical = (int)SubVerticalType.Preloved
-        //        };
-
-
-        //        var response = await ClassifiedService.GetPrelovedUserListing(request);
-
-        //        if (response?.IsSuccessStatusCode ?? false)
-        //        {
-        //            var content = await response.Content.ReadAsStringAsync();
-        //            Console.WriteLine($"API Raw Content: {content}");
-
-        //            var result = JsonSerializer.Deserialize<PagedResult<BusinessVerificationItem>>(content, new JsonSerializerOptions
-        //            {
-        //                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-        //            });
-        //            if (result == null)
-        //            {
-        //                Console.WriteLine("Deserialized result is null");
-        //            }
-        //            else
-        //            {
-        //                Console.WriteLine($"Items Count: {result.Items?.Count ?? 0}, TotalCount: {result.TotalCount}");
-        //            }
-        //            Listings = result?.Items ?? new List<BusinessVerificationItem>();
-        //            TotalCount = result?.TotalCount ?? 0;
-        //        }
-        //        else
-        //        {
-        //            Console.WriteLine($"API call failed. StatusCode: {response?.StatusCode}");
-        //        }
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        Console.WriteLine($"Error loading data: {ex.Message}");
-        //    }
-        //    finally
-        //    {
-        //        IsLoading = false;
-        //        StateHasChanged();
-        //    }
-        //}
-        protected async Task LoadData()
-        {
-            IsLoading = true;
-            StateHasChanged();
-
-            try
-            {
-                int? status = null;
-
-                if (int.TryParse(SelectedTab, out var tabValue))
-                {
-                    status = tabValue;
-                }
-
-                var request = new FilterRequest
-                {
-                    PageNumber = currentPage,
-                    PageSize = pageSize,
-                    Status = status,
-                    SearchText = SearchText,
-                    CreationDate = dateCreated,
-                    PublishedDate = datePublished,
-                    Vertical = (int)VerticalTypeEnum.Classifieds,
-                    SubVertical = (int)SubVerticalTypeEnum.Preloved
-                };
-
-
-                var response = await ClassifiedService.GetPrelovedUserListing(request);
-
-                if (response?.IsSuccessStatusCode ?? false)
-                {
-                    var content = await response.Content.ReadAsStringAsync();
-                    Console.WriteLine($"API Raw Content: {content}");
-
-                    try
-                    {
-                        // Deserialize as List since your JSON shows an array
-                        var result = JsonSerializer.Deserialize<List<BusinessVerificationItem>>(
-                            content,
-                            new JsonSerializerOptions
-                            {
-                                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                                PropertyNameCaseInsensitive = true
-                            });
-
-                        Listings = result ?? new List<BusinessVerificationItem>();
-                        TotalCount = Listings.Count;
-                    }
-                    catch (JsonException ex)
-                    {
-                        Console.WriteLine($"JSON Deserialization Error: {ex.Message}");
-                        Listings = new List<BusinessVerificationItem>();
-                        TotalCount = 0;
-                    }
-                }
-                else
-                {
-                    Console.WriteLine($"API call failed. StatusCode: {response?.StatusCode}");
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error loading data: {ex.Message}");
-            }
-            finally
-            {
-                IsLoading = false;
-                StateHasChanged();
-            }
-        }
-        protected void OnSearchChanged(ChangeEventArgs e)
+        protected async Task OnSearchChanged(ChangeEventArgs e)
         {
             SearchText = e.Value?.ToString();
+            Listings = await GetCompanyProfiles();
         }
-
+        protected async Task HandleSort(bool sortOption)
+        {
+            SortBy = sortOption ? "asc" : "desc";
+            Listings = await GetCompanyProfiles();
+            StateHasChanged();
+        }
         protected void ToggleSort()
         {
             SortIcon = SortIcon == Icons.Material.Filled.ArrowDownward
@@ -194,79 +59,77 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.UserProfile
             new() { Label = "Approved", Value = "approved" },
         };
 
-        protected async Task HandlePageChanged(int newPage)
+        protected async Task HandlePageSizeChange(int newPageSize)
         {
-            await LoadData();
+            pageSize = newPageSize;
+            Listings = await GetCompanyProfiles();
+            StateHasChanged();
         }
-
-        protected async Task HandlePageSizeChanged(int newSize)
+        protected async Task HandlePageChange(int newPage)
         {
-            pageSize = newSize;
-            currentPage = 1;
-            await LoadData();
+            currentPage = newPage;
+            Listings = await GetCompanyProfiles();
+            StateHasChanged();
+        }
+        protected async Task HandleStatusChange(int? status)
+        {
+            Status = status;
+            Listings = await GetCompanyProfiles();
+            StateHasChanged();
         }
         protected async Task OnTabChanged(string newTab)
         {
             selectedTab = newTab;
 
-            int? status = newTab switch
+            Status = newTab switch
             {
                 "verificationrequests" => 1,
                 "rejected" => 2,
                 "approved" => 3,
                 _ => null
             };
-
+            HandleStatusChange(Status);
+            StateHasChanged();
         }
-        protected async Task HandleTabChange(string newTab)
-        {
-            if (SelectedTab != newTab)
-            {
-                SelectedTab = newTab;
-                currentPage = 1;
-                await LoadData();
-                StateHasChanged();
-            }
-        }
-        protected void ToggleCreatedPopover()
-        {
-            showCreatedPopover = !showCreatedPopover;
-        }
-
-        protected void CancelCreatedPopover()
-        {
-            tempCreatedDate = dateCreated;
-            showCreatedPopover = false;
-        }
-
-        protected void ConfirmCreatedPopover()
-        {
-            dateCreated = tempCreatedDate;
-            showCreatedPopover = false;
-        }
-
-        protected void TogglePublishedPopover()
-        {
-            showPublishedPopover = !showPublishedPopover;
-        }
-
-        protected void CancelPublishedPopover()
-        {
-            tempPublishedDate = datePublished;
-            showPublishedPopover = false;
-        }
-
-        protected void ConfirmPublishedPopover()
-        {
-            datePublished = tempPublishedDate;
-            showPublishedPopover = false;
-        }
-
         protected void ClearFilters()
         {
-            dateCreated = null;
-            datePublished = null;
-            SearchText = string.Empty;
+            SearchText = null;
+            Status = null;
+            SortBy = null;
+        }
+        private async Task<List<CompanyProfileItem>> GetCompanyProfiles()
+        {
+            try
+            {
+                IsLoading = true;
+                var payload = new
+                {
+                    vertical = Vertical.Classifieds,
+                    subVertical = SubVertical.Preloved,
+                    companyVerificationStatus = Status,
+                    search = SearchText,
+                    sortBy = SortBy,
+                    pageNumber = currentPage,
+                    pageSize = pageSize
+                };
+
+                var response = await serviceBOService.GetAllCompaniesAsync(payload);
+                if (response.IsSuccessStatusCode)
+                {
+                   var result = await response.Content.ReadFromJsonAsync<CompanyProfileResponse>();
+                    return result.Items ?? new List<CompanyProfileItem>();
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "GetCompanyProfiles");
+            }
+            finally
+            {
+                IsLoading = false;
+            }
+
+            return new List<CompanyProfileItem>();
         }
 
     }

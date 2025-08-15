@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
+using System.Net;
 using static QLN.ContentBO.WebUI.Models.ClassifiedLanding;
 using QLN.ContentBO.WebUI.Components;
 using QLN.ContentBO.WebUI.Models;
@@ -130,12 +131,16 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Modal
                 var response = await ClassifiedService.CreateFeaturedCategoryAsync(payload);
                 if (response?.IsSuccessStatusCode == true)
                 {
-                    Snackbar.Add("Seasonal pick added successfully!", Severity.Success);
+                    Snackbar.Add("Featured Category added successfully!", Severity.Success);
                     MudDialog.Close(DialogResult.Ok(true));
+                }
+                else if (response.StatusCode == HttpStatusCode.Conflict)
+                {
+                    Snackbar.Add("A featured category Title 'Qatar living Featured Category' already exists for vertical 'Classifieds'.", Severity.Warning);
                 }
                 else
                 {
-                    Snackbar.Add("Failed to add seasonal pick.", Severity.Error);
+                    Snackbar.Add("Failed to add Featured Category", Severity.Error);
                 }
             }
             catch (Exception ex)

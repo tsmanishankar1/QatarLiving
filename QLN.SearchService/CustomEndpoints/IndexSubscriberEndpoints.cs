@@ -74,7 +74,9 @@ namespace QLN.SearchService.CustomEndpoints
                                     msg.UpsertRequest.ClassifiedsCollectiblesItem?.Id ??
                                     msg.UpsertRequest.ContentNewsItem?.Id ??
                                     msg.UpsertRequest.ContentEventsItem?.Id ??
-                                    msg.UpsertRequest.ContentCommunityItem?.Id;
+                                    msg.UpsertRequest.ContentCommunityItem?.Id ??
+                                    msg.UpsertRequest.CompanyProfile?.CompanyId ??
+                                    msg.UpsertRequest.ClassifiedStores?.ProductId;
 
 
                             await svc.UploadAsync(msg.UpsertRequest);

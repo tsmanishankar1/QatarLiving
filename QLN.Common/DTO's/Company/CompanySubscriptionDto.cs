@@ -10,6 +10,7 @@ namespace QLN.Common.DTO_s.Company
 {
     public class CompanySubscriptionDto
     {
+        public Guid? CompanyId { get; set; }
         public string CompanyName { get; set; }
         public string Email { get; set; }
         public string Mobile { get; set; }
@@ -18,6 +19,7 @@ namespace QLN.Common.DTO_s.Company
         public SubscriptionStatus Status { get; set; }
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
+        public string? Slug { get; set; }
         [JsonIgnore]
         public string? SubscriptionType { get; set; }
     }

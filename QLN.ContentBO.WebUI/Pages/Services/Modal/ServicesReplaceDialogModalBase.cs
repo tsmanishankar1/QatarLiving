@@ -52,7 +52,12 @@ public class ServicesReplaceDialogModalBase : ComponentBase
         var slot = SlotNumber;
         if (selected == null || string.IsNullOrWhiteSpace(selected.CategoryName))
         {
-            _autocompleteError = "No matching seasonal pick found.";
+            _autocompleteError = ActiveIndex switch
+            {
+                0 => "No matching Category found.",
+                1 => "No matching seasonal pick found.",
+                _ => "No match found"
+            };
             StateHasChanged();
             return;
         }

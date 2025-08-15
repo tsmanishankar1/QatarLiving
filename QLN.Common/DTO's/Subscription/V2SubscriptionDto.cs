@@ -92,6 +92,8 @@ namespace QLN.Common.DTO_s.Subscription
         public Guid? CompanyId { get; set; }
 
         public int? PaymentId { get; set; }
+        public string? UserId { get; set; } = string.Empty;
+        public long? AdId { get; set; }
 
     }
 
@@ -114,6 +116,7 @@ namespace QLN.Common.DTO_s.Subscription
         public Guid SubscriptionId { get; set; }
 
         public int? PaymentId { get; set; }
+        public string? UserId { get; set; } = string.Empty;
     }
 
     /// <summary>

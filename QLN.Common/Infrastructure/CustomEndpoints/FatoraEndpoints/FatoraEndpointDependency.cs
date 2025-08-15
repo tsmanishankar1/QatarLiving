@@ -8,7 +8,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.FatoraEndpoints
         {
             // PayTh endpoints
             group.MapFatoraSuccessEndpoint()
-                .MapFatoraFailureEndpoint();
+                .MapFatoraFailureEndpoint()
+                .MapPaymentCheckout();
 
             return group;
         }

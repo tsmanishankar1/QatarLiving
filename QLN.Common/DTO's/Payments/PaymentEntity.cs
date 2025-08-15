@@ -16,12 +16,12 @@ namespace QLN.Common.DTO_s.Payments
         public int PaymentId { get; set; }
 
         public ProductType ProductType { get; set; }
-        public string? UserSubscriptionId { get; set; } // optional for buying a subscription
-        public string? SubscriptionFeaturedAddonsId { get; set; } // optional for buying featured addon
-        public string? SubscriptionRefreshedAddonsId { get; set; } // optional for buying refresh addon
+        public Guid? UserSubscriptionId { get; set; }
+        public Guid? UserAddonId { get; set; }
         public Vertical Vertical { get; set; }
+        public SubVertical? SubVertical { get; set; }
 
-        public string? AdId { get; set; } // optional for pay to purchase
+        public long? AdId { get; set; }
 
         public PaymentStatus Status { get; set; }
 
@@ -39,18 +39,18 @@ namespace QLN.Common.DTO_s.Payments
 
         public Gateway Gateway { get; set; }
 
-        public string TransactionId { get; set; }
+        public string? TransactionId { get; set; }
 
-        public int AttachedPaymentId { get; set; } // not sure what this is for
+        public int? AttachedPaymentId { get; set; } // not sure what this is for
 
         public GatewayResponse? GatewayResponse { get; set; } // not sure of the purpose of this one
 
-        public string Comments { get; set; }
+        public string? Comments { get; set; }
 
         public TriggeredSource TriggeredSource { get; set; }
 
         [Column(TypeName = "decimal(10,1)")]
         [Required]
-        public decimal Points { get; set; } = 0.0m;
+        public decimal? Points { get; set; } = 0.0m;
     }
 }

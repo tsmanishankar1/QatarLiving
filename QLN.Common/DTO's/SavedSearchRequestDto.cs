@@ -1,4 +1,5 @@
 ﻿using QLN.Common.DTO_s;
+using QLN.Common.Infrastructure.Subscriptions;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -16,7 +17,9 @@ namespace QLN.Common.Infrastructure.DTO_s
         public string Name { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public CommonSearchRequest SearchQuery { get; set; } = new();
-        public string subVertical { get; set; }
+        public SubVertical? SubVertical { get; set; }
+        public Vertical Vertical { get; set; }
+        public string UserId { get; set; }
     }
     public class SaveSearchRequestByIdDto
     {
@@ -26,10 +29,12 @@ namespace QLN.Common.Infrastructure.DTO_s
         public string Name { get; set; } = string.Empty;
         public string UserId { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-        public CommonSearchRequest SearchQuery { get; set; } = new();
-        public string subVertical { get; set; }
+        public CommonSearchRequest? SearchQuery { get; set; } = new();
+        public Vertical Vertical { get; set; }
 
+        public SubVertical? SubVertical { get; set; }
     }
+
 
 
 }

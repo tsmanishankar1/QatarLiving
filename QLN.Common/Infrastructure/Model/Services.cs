@@ -63,7 +63,7 @@ namespace QLN.Common.Infrastructure.Model
         public string Location { get; set; } = string.Empty;
 
         public int? LocationId { get; set; }
-        [MaxLength(100)]
+        [MaxLength(50)]
         public Guid? SubscriptionId { get; set; }
         [Required]
         [MaxLength(50)]
@@ -101,6 +101,8 @@ namespace QLN.Common.Infrastructure.Model
         public string? Duration { get; set; }
         [MaxLength(100)]
         public string? Reservation { get; set; }
+        [MaxLength(200)]
+        public string? Slug { get; set; }
         public DateTime? PublishedDate { get; set; }
         public DateTime? ExpiryDate { get; set; }
         public bool IsActive { get; set; }

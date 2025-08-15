@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
+using QLN.Common.DTO_s;
 using QLN.Common.DTO_s.Payments;
 using QLN.Common.DTO_s.Subscription;
 using QLN.Common.Infrastructure.CustomException;
@@ -46,22 +47,16 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ProductEndpoints
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             // Get products by vertical
-            group.MapGet("/vertical/{vertical:int}", async (
-                Vertical vertical,
+            group.MapGet("/getallproducts", async (
+                [FromQuery]Vertical? vertical,
+                [FromQuery]SubVertical? subvertical,
+                [FromQuery] ProductType? productType,
                 [FromServices] IProductService productService,
                 CancellationToken cancellationToken) =>
             {
                 try
                 {
-                    if (!Enum.IsDefined(typeof(Vertical), vertical))
-                        return Results.BadRequest(new ProblemDetails
-                        {
-                            Title = "Invalid Data",
-                            Detail = "Invalid vertical type",
-                            Status = StatusCodes.Status400BadRequest
-                        });
-
-                    var products = await productService.GetProductsByVerticalAsync((Vertical)vertical, cancellationToken);
+                    var products = await productService.GetProductsByVerticalAsync(vertical, subvertical, productType, cancellationToken);
                     return Results.Ok(products);
                 }
                 catch (Exception ex)
@@ -75,7 +70,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ProductEndpoints
             .AllowAnonymous()
             .WithName("GetProductsByVertical")
             .WithTags("Products")
-            .WithSummary("Get products by vertical")
+            .WithSummary("Get all products")
             .WithDescription("Retrieves all active products for a specific vertical")
             .Produces<List<ProductResponseDto>>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)

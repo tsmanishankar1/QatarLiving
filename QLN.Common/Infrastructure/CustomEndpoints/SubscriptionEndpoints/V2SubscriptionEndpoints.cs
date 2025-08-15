@@ -72,10 +72,20 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints
                         );
                     }
 
+                    // Alternatively you could implement a new method for just subscription payments and use
+                    // it here as a _paymentService.PayForSubscription(request, uid, cancellationToken)
                    
-                   
+                    var subscriptionId = await service.PurchaseSubscriptionAsync(request, cancellationToken); // if this is creating a PendingPayment subscription then
+                                                                                                                   // you would create an order next, however I notice this expects a
+                                                                                                                   // paymentId so the ordering may need to be swopped.
+                                                                                                                   // it is faster (from here) to create an order, then a subscription
+                                                                                                                   // and then update the order after with the subscription ID
+                                                                                                                   // this may be preferred as an order is to pay for something (anything)
+                                                                                                                   // while it may not necessarily be a subscription - the order would be
+                                                                                                                   // updated with referential data after "whatever" is bought and then
+                                                                                                                   // associated with the order
 
-                    var subscriptionId = await service.PurchaseSubscriptionAsync(request, uid, cancellationToken);
+                    // what should be returned to the frontend is the redirection URL so they know how to get to the payment gateway
 
                     return TypedResults.Ok(new V2PurchaseResponseDto
                     {
@@ -554,7 +564,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints
                          var UserId = uidFromToken;
                     
 
-                    var addonId = await service.PurchaseAddonAsync(request, uidFromToken, cancellationToken);
+                    var addonId = await service.PurchaseAddonAsync(request, cancellationToken);
 
                     return TypedResults.Ok(new V2PurchaseResponseDto
                     {

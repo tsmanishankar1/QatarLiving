@@ -188,9 +188,28 @@ namespace QLN.DataMigration.Services
             throw new NotImplementedException();
         }
 
-        public Task<NewsCommentApiResponse> SaveNewsCommentAsync(V2NewsCommentDto dto, CancellationToken ct = default)
+        public async Task<NewsCommentApiResponse> SaveNewsCommentAsync(V2NewsCommentDto dto, CancellationToken ct = default)
         {
-            throw new NotImplementedException();
+            try
+            {
+                await _dapr.PublishEventAsync(
+                            pubsubName: ConstantValues.PubSubName,
+                            topicName: ConstantValues.PubSubTopics.NewsCommentsMigration,
+                            data: dto,
+                            cancellationToken: ct
+                        );
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error publishing comment {dto.CommentId} to {ConstantValues.PubSubTopics.NewsCommentsMigration} topic");
+                throw;
+            }
+
+            return new NewsCommentApiResponse
+            {
+                Status = "Success",
+                Message = $"Published comment {dto.CommentId} to {ConstantValues.PubSubTopics.NewsCommentsMigration} topic"
+            };
         }
 
         public Task<NewsCommentApiResponse> SoftDeleteNewsCommentAsync(string articleId, Guid commentId, string userId, CancellationToken ct = default)

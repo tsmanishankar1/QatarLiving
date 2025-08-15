@@ -288,6 +288,32 @@ namespace QLN.Backend.API.Service.Services
                 throw;
             }
         }
+        public async Task<Common.Infrastructure.Model.Services?> GetServiceAdBySlug(string? slug, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var url = $"/api/service/getbyslug/{Uri.EscapeDataString(slug)}";
+                return await _dapr.InvokeMethodAsync<object?, QLN.Common.Infrastructure.Model.Services>(
+                    HttpMethod.Get,
+                    ConstantValues.Services.ServiceAppId,
+                    url,
+                    null,
+                    cancellationToken
+                );
+            }
+            catch (InvocationException ex) when (ex.InnerException is HttpRequestException httpEx &&
+                                          httpEx.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                _logger.LogWarning("Service ad not found for slug}");
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error retrieving service ad by slug");
+                throw;
+            }
+        }
+
         public async Task<string> DeleteServiceAdById(string userId, long id, CancellationToken cancellationToken = default)
         {
             try

@@ -22,6 +22,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                  .MapServiceAdUpdateEndpoints()
                  .MapServiceGetAllEndpoints()
                  .MapServiceGetByIdEndpoint()
+                 .MapServiceGetBySlugEndpoint()
                  .MapServiceAdDeleteEndpoint()
                  .MapGetAllWithPagination()
                  .MapPromoteEndpoint()

@@ -20,7 +20,7 @@ namespace QLN.Common.DTO_s
         public string? WhatsAppNumber { get; set; }
         public string? Offertitle { get; set; }
         public string? Description { get; set; }
-        public List<ImageInfo> ImageUrl { get; set; } = new List<ImageInfo>();
+        public string CoverImage { get; set; }
         public LocationsDtos Locations { get; set; }
     }
 
