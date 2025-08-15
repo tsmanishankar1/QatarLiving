@@ -387,7 +387,7 @@ namespace QLN.Backend.API.Service.V2ContentService
             // S1 → Top Story
             var s1 = slots.FirstOrDefault(s => s.SlotNumber == 1 && s.ContentType == DailyContentType.Article);
             if (s1?.RelatedContentId != Guid.Empty && await LoadNewsAsync(s1.RelatedContentId, ct) is { } n1)
-                topStory.Add(MapNewsToPost(n1, "Top Story"));
+                topStory.Add(MapNewsToPost(n1, "Top Story", s1.Id));
 
             // S2 → Highlighted Event
             var s2 = slots.FirstOrDefault(s => s.SlotNumber == 2 && s.ContentType == DailyContentType.Event);
@@ -397,12 +397,12 @@ namespace QLN.Backend.API.Service.V2ContentService
             // S3..5 → Top Stories
             foreach (var s in slots.Where(x => x.SlotNumber is >= 3 and <= 5 && x.ContentType == DailyContentType.Article).OrderBy(x => x.SlotNumber))
                 if (await LoadNewsAsync(s.RelatedContentId, ct) is { } n)
-                    topStories.Add(MapNewsToPost(n, "Top Stories"));
+                    topStories.Add(MapNewsToPost(n, "Top Stories", s.Id));
 
             // S6..9 → More Articles
             foreach (var s in slots.Where(x => x.SlotNumber is >= 6 and <= 9 && x.ContentType == DailyContentType.Article).OrderBy(x => x.SlotNumber))
                 if (await LoadNewsAsync(s.RelatedContentId, ct) is { } n)
-                    moreArticles.Add(MapNewsToEvent(n, "More Articles"));
+                    moreArticles.Add(MapNewsToEvent(n, "More Articles", s.Id));
             var featuredEvents = await LoadFeaturedEventsAsync(ct);
 
             // Dynamic topics
@@ -417,7 +417,7 @@ namespace QLN.Backend.API.Service.V2ContentService
                     if (s.ContentType == DailyContentType.Article && s.RelatedContentId != Guid.Empty)
                     {
                         if (await LoadNewsAsync(s.RelatedContentId, ct) is { } n)
-                            items.Add(MapNewsToEvent(n, t.TopicName));
+                            items.Add(MapNewsToEvent(n, t.TopicName, t.Id));
                     }
                     else if (s.ContentType == DailyContentType.Event && s.RelatedContentId != Guid.Empty)
                     {
@@ -434,6 +434,7 @@ namespace QLN.Backend.API.Service.V2ContentService
                             UpdatedAt = s.UpdatedAt,
                             PageName = DrupalContentConstants.QlnContentsDaily,
                             QueueLabel = t.TopicName,
+                            QueueLabelId = t.Id,
                             NodeType = "video",
                             Nid = s.RelatedContentId.ToString(),
                             Title = s.Title,
@@ -445,7 +446,7 @@ namespace QLN.Backend.API.Service.V2ContentService
                     }
                 }
 
-                topicQueues.Add(new BaseQueueResponse<ContentEvent> { QueueLabel = t.TopicName, Items = items });
+                topicQueues.Add(new BaseQueueResponse<ContentEvent> { QueueLabel = t.TopicName, TopicId = t.Id, Items = items });
             }
 
             return new ContentsDailyPageResponse
@@ -465,7 +466,6 @@ namespace QLN.Backend.API.Service.V2ContentService
                 }
             };
         }
-
         private async Task<ContentNewsIndex?> LoadNewsAsync(Guid id, CancellationToken ct)
         {
             if (id == Guid.Empty) return null;
@@ -508,12 +508,13 @@ namespace QLN.Backend.API.Service.V2ContentService
             };
         }
 
-        private static ContentPost MapNewsToPost(ContentNewsIndex i, string label) => new()
+        private static ContentPost MapNewsToPost(ContentNewsIndex i, string label, Guid labelId) => new()
         {
             Id = Guid.TryParse(i.Id, out var gid) ? gid : Guid.Empty,
             Nid = i.Id,
             PageName = DrupalContentConstants.QlnContentsDaily,
             QueueLabel = label,
+            QueueLabelId = labelId,
             NodeType = "post",
             Title = i.Title,
             Description = i.Content,
@@ -527,12 +528,13 @@ namespace QLN.Backend.API.Service.V2ContentService
             DateCreated = (i.CreatedAt == default ? DateTime.UtcNow : i.CreatedAt).ToString("o")
         };
 
-        private static ContentEvent MapNewsToEvent(ContentNewsIndex i, string label) => new()
+        private static ContentEvent MapNewsToEvent(ContentNewsIndex i, string label, Guid labelId) => new()
         {
             Id = Guid.TryParse(i.Id, out var gid) ? gid : Guid.Empty,
             Nid = i.Id,
             PageName = DrupalContentConstants.QlnContentsDaily,
             QueueLabel = label,
+            QueueLabelId = labelId,
             NodeType = "post",
             Title = i.Title,
             Description = i.Content,
