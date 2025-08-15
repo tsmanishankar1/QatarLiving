@@ -164,10 +164,11 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu
             OpenRemoveReasonDialog();
             return Task.CompletedTask;
         }
+
         private async Task RunSingleAction(string itemId, BulkActionEnum action)
         {
             singleItemLoadingId = itemId;
-            await PerformBulkAction(action, "", new List<string> { itemId });
+            await PerformBulkAction(action, "", new List<long> { itemId });
         }
         private async void OpenRemoveReasonDialog()
         {
@@ -197,7 +198,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu
 
             singleItemLoadingId = rejectionTargetItemId;
 
-            await PerformBulkAction(BulkActionEnum.NeedChanges, reason, new List<string> { rejectionTargetItemId });
+            await PerformBulkAction(BulkActionEnum.NeedChanges, reason, new List<long> { rejectionTargetItemId });
 
             rejectionTargetItemId = null;
         }
@@ -213,7 +214,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu
             else if (!string.IsNullOrWhiteSpace(removeTargetItemId))
             {
                 singleItemLoadingId = removeTargetItemId;
-                await PerformBulkAction(BulkActionEnum.Remove, reason, new List<string> { removeTargetItemId });
+                await PerformBulkAction(BulkActionEnum.Remove, reason, new List<long> { removeTargetItemId });
                 removeTargetItemId = null;
             }
 
@@ -262,7 +263,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu
         {
             isBulkActionLoading = adIds == null;
 
-            adIds ??= [.. SelectedListings.Select(x => x.Id)];
+            adIds ??= [.. SelectedListings.Select(x => x.AdId)];
 
             if (adIds.Count == 0)
                 return;
@@ -283,9 +284,8 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu
                 if (response?.IsSuccessStatusCode == true)
                 {
                     SelectedListings.Clear();
-                    Listings = Listings.Where(i => !adIds.Contains(i.Id)).ToList();
+                    Listings = Listings.Where(i => !adIds.Contains(i.AdId)).ToList();
                     Snackbar.Add(GetSuccessMessage(action), Severity.Success);
-
                 }
                 else
                 {
