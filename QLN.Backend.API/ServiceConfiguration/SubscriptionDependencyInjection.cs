@@ -11,7 +11,7 @@ namespace QLN.Backend.API.ServiceConfiguration
         {
             services.AddTransient<IExternalSubscriptionService, ExternalSubscriptionService>();
             services.AddScoped<IUserQuotaService, UserQuotaService>();
-            services.AddScoped<IV2SubscriptionService, V2SubscriptionService>();
+            services.AddTransient<IV2SubscriptionService, V2SubscriptionService>();
             return services;
         }
     }

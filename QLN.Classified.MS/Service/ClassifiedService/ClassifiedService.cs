@@ -468,12 +468,22 @@ namespace QLN.Classified.MS.Service
             if (string.IsNullOrWhiteSpace(dto.UserId)) throw new ArgumentException("UserId is required.");
             if (string.IsNullOrWhiteSpace(dto.Title)) throw new ArgumentException("Title is required.");
             if (dto.Images == null || dto.Images.Count == 0)
-                throw new ArgumentException("Image URLs must be provided.");
-            if (string.IsNullOrWhiteSpace(dto.AuthenticityCertificateUrl))
-                throw new ArgumentException("Certificate URL must be provided.");            
+                throw new ArgumentException("Image URLs must be provided.");                
 
             try
-            {                
+            {
+                if (dto.HasAuthenticityCertificate == true)
+                {
+                    if (string.IsNullOrWhiteSpace(dto.AuthenticityCertificateUrl))
+                        throw new ArgumentException("AuthenticityCertificateUrl is required when HasAuthenticityCertificate is true.");                    
+                }
+                else
+                {
+                    dto.HasAuthenticityCertificate = false;
+                    dto.AuthenticityCertificateUrl = null;
+                    dto.AuthenticityCertificateName = null;
+                }
+
                 dto.Status = AdStatus.Draft;
                 dto.CreatedAt = DateTime.UtcNow;
 
@@ -517,9 +527,7 @@ namespace QLN.Classified.MS.Service
             if (dto == null) throw new ArgumentNullException(nameof(dto));
             if (dto.UserId == null) throw new ArgumentException("UserId is required.");
             if (string.IsNullOrWhiteSpace(dto.Title)) throw new ArgumentException("Title is required.");
-            if (dto.Images == null || dto.Images.Count == 0) throw new ArgumentException("Image URLs must be provided.");
-            if (string.IsNullOrWhiteSpace(dto.AuthenticityCertificateUrl) && dto.HasAuthenticityCertificate)
-                throw new ArgumentException("Certificate URL must be provided.");         
+            if (dto.Images == null || dto.Images.Count == 0) throw new ArgumentException("Image URLs must be provided.");                  
 
             try
             {
@@ -1482,6 +1490,18 @@ namespace QLN.Classified.MS.Service
                 if (dto.SubVertical != SubVertical.Preloved)
                     throw new InvalidOperationException("This service only supports updating ads under the 'Preloved' vertical.");
 
+                if (dto.HasAuthenticityCertificate == true)
+                {
+                    if (string.IsNullOrWhiteSpace(dto.AuthenticityCertificateUrl))
+                        throw new ArgumentException("AuthenticityCertificateUrl is required when HasAuthenticityCertificate is true.");
+                }
+                else
+                {
+                    dto.HasAuthenticityCertificate = false;
+                    dto.AuthenticityCertificateUrl = null;
+                    dto.AuthenticityCertificateName = null;
+                }
+
                 AdUpdateHelper.ApplySelectiveUpdates(existingAd, dto);
 
                 existingAd.HasAuthenticityCertificate = dto.HasAuthenticityCertificate;
@@ -2062,6 +2082,7 @@ namespace QLN.Classified.MS.Service
                 Condition = dto.Condition,
                 CreatedBy = dto.CreatedBy,
                 HasAuthenticityCertificate = dto.HasAuthenticityCertificate,
+                AuthenticityCertificateName = dto.AuthenticityCertificateName,
                 Inclusion = dto.Inclusion,
                 Model = dto.Model,
                 UserName = dto.UserName,

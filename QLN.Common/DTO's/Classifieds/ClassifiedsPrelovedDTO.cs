@@ -13,6 +13,7 @@ namespace QLN.Common.DTO_s.Classifieds
         public string? Inclusion { get; set; }
         public bool? HasAuthenticityCertificate { get; set; }
         public string? AuthenticityCertificateUrl { get; set; }
+        public string? AuthenticityCertificateName { get; set; }
 
     }
 

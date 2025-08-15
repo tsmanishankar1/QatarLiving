@@ -38,6 +38,7 @@ namespace QLN.Common.Infrastructure.QLDbContext
         public DbSet<Wishlist> Wishlists { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+
             modelBuilder.Entity<StoreFlyers>()
                 .HasMany(s => s.Products)
                 .WithOne(s => s.StoreFlyer)
