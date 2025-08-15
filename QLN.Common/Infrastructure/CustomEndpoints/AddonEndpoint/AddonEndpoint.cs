@@ -165,7 +165,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.AddonEndpoint
 
             
             group.MapGet("/quantites-currencies/by-quantites/{quantityId:Guid}", async Task<IResult> (
-     Guid quantityId, // ✅ Fixed
+     Guid quantityId, 
      [FromServices] IAddonService service,
      [FromServices] ILogger<IAddonService> logger,
      CancellationToken cancellationToken = default) =>

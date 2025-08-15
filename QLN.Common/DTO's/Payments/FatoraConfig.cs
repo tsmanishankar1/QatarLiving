@@ -12,7 +12,7 @@ namespace QLN.Common.DTO_s.Payments
         public string ApiKey { get; set; } = string.Empty;
 
         public string BaseUrl { get; set; } = string.Empty;
-        public string SuccessPath { get; set; } = string.Empty;
-        public string FailurePath { get; set; } = string.Empty;
+        public string SuccessUrl { get; set; } = string.Empty;
+        public string FailureUrl { get; set; } = string.Empty;
     }
 }

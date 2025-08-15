@@ -11,19 +11,20 @@ namespace QLN.Common.DTO_s
         [SearchableField(IsFilterable = true)]
         public string Subvertical { get; set; }
 
-        [SimpleField(IsFilterable = true)]
+        [SearchableField(IsFilterable = true)]
         public string UserId { get; set; }
 
-        [SearchableField(IsFilterable = true)]
+        [SearchableField(IsFilterable = true,IsFacetable = true)]
         public string? BusinessName { get; set; }
 
-        [SearchableField]
+        [SearchableField(IsFacetable = true, IsFilterable = true)]
         public string? BranchNames { get; set; }
-        [SearchableField]
+
+        [SearchableField(IsFilterable = true,IsFacetable = true)]
         public string? Slug { get; set; }
 
-        [SearchableField(IsFilterable = true)]
-        public string? BusinessType { get; set; }        
+        [SearchableField(IsFilterable = true, IsFacetable = true)]
+        public string? BusinessType { get; set; }
 
         [SearchableField]
         public string? Description { get; set; }
@@ -38,18 +39,18 @@ namespace QLN.Common.DTO_s
         public string? FlyerFileUrl { get; set; }
 
         [SearchableField(IsFilterable = false)]
-        public string? DataFeedUrl { get; set; }      
+        public string? DataFeedUrl { get; set; }
 
-        [SearchableField]
-        public string? ContactNumber { get; set; }       
+        [SearchableField(IsFilterable = true)]
+        public string? ContactNumber { get; set; }
 
-        [SearchableField]
+        [SearchableField(IsFilterable = true)]
         public string? WhatsappNumber { get; set; }
 
-        [SearchableField]
+        [SimpleField]
         public string? WebsiteUrl { get; set; }
 
-        [SearchableField]
+        [SimpleField]
         public string? SocialMediaLinks { get; set; }
 
         [SimpleField(IsFilterable = true)]
@@ -58,22 +59,22 @@ namespace QLN.Common.DTO_s
         [SimpleField(IsFilterable = true)]
         public string CreatedBy { get; set; }
 
-        [SimpleField(IsSortable = true)]
+        [SimpleField(IsSortable = true, IsFilterable = true)]
         public DateTime CreatedAt { get; set; }
 
         [SimpleField(IsFilterable = true)]
         public string? UpdatedBy { get; set; }
 
-        [SimpleField(IsSortable = true)]
+        [SimpleField(IsSortable = true, IsFilterable = true)]
         public DateTime? UpdatedAt { get; set; }
 
         [SearchableField(IsFilterable = false)]
         public string XMLlink { get; set; }
 
-        [SearchableField]
+        [SearchableField(IsFilterable = true)]
         public string? offertitle { get; set; }
 
-        [SearchableField]
+        [SimpleField(IsFilterable = true)]
         public string CoverImage { get; set; }
 
         [SimpleField(IsFilterable = true, IsSortable = true)]

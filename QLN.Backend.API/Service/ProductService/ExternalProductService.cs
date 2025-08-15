@@ -1,4 +1,5 @@
 ﻿using Dapr.Client;
+using QLN.Common.DTO_s;
 using QLN.Common.DTO_s.Payments;
 using QLN.Common.DTO_s.Subscription;
 using QLN.Common.Infrastructure.Constants;
@@ -39,14 +40,21 @@ namespace QLN.Backend.API.Service.ProductService
             }
         }
 
-        public async Task<List<ProductResponseDto>> GetProductsByVerticalAsync(Vertical vertical, CancellationToken cancellationToken = default)
+        public async Task<List<ProductResponseDto>> GetProductsByVerticalAsync(Vertical? vertical, SubVertical? subvertical, ProductType? productType, CancellationToken cancellationToken = default)
         {
             try
             {
+                var queryParams = new List<string>();
+                if (vertical.HasValue) queryParams.Add($"vertical={(int)vertical.Value}");
+                if (subvertical.HasValue) queryParams.Add($"subvertical={(int)subvertical.Value}");
+                if (productType.HasValue) queryParams.Add($"productType={(int)productType.Value}");
+
+                var queryString = queryParams.Count > 0 ? "?" + string.Join("&", queryParams) : "";
+
                 return await _dapr.InvokeMethodAsync<List<ProductResponseDto>>(
                     HttpMethod.Get,
                     ServiceAppId,
-                    $"api/products/vertical/{(int)vertical}",
+                    $"api/products/getallproducts{queryString}",
                     cancellationToken) ?? new();
             }
             catch (Exception ex)
