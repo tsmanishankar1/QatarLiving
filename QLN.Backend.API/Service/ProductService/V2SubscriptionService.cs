@@ -626,7 +626,7 @@ namespace QLN.Backend.API.Service.ProductService
             if (filter.CompanyId.HasValue)
                 query = query.Where(s => s.CompanyId == filter.CompanyId);
 
-            // ✅ new filter fields
+            
             query = query.Where(s => s.Vertical == filter.Vertical);
 
             if (filter.SubVertical.HasValue)
@@ -860,8 +860,8 @@ namespace QLN.Backend.API.Service.ProductService
                 CompanyId = dbAddon.CompanyId,
                 SubscriptionId = dbAddon.SubscriptionId,
                 PaymentId = dbAddon.PaymentId,
-                Vertical = dbAddon.Vertical,            // 
-                SubVertical = dbAddon.SubVertical,      // 
+                Vertical = dbAddon.Vertical,            
+                SubVertical = dbAddon.SubVertical,       
                 Price = 0,
                 Currency = "QAR",
                 Quota = dbAddon.Quota,
@@ -885,8 +885,8 @@ namespace QLN.Backend.API.Service.ProductService
                 ProductName = v2Data.ProductName,
                 UserId = v2Data.UserId,
                 VerticalName = v2Data.Vertical.ToString(),
-                Vertical = v2Data.Vertical,                 // 
-                SubVertical = v2Data.SubVertical,           // 
+                Vertical = v2Data.Vertical,                 
+                SubVertical = v2Data.SubVertical,           
                 Price = v2Data.Price,
                 Currency = v2Data.Currency,
                 Quota = v2Data.Quota,
@@ -913,8 +913,8 @@ namespace QLN.Backend.API.Service.ProductService
                 UserId = v2Data.UserId,
                 SubscriptionId = v2Data.SubscriptionId,
                 VerticalName = v2Data.Vertical.ToString(),
-                Vertical = v2Data.Vertical,                 // ✅
-                SubVertical = v2Data.SubVertical,           // ✅
+                Vertical = v2Data.Vertical,                 
+                SubVertical = v2Data.SubVertical,           
                 Price = v2Data.Price,
                 Currency = v2Data.Currency,
                 Quota = v2Data.Quota,
@@ -1020,7 +1020,7 @@ namespace QLN.Backend.API.Service.ProductService
 
         private TimeSpan GetDurationFromProduct(Product product)
         {
-            // ✅ Duration is TimeSpan? now
+            
             if (product.Constraints?.Duration.HasValue == true)
             {
                 return product.Constraints.Duration.Value;
