@@ -6,14 +6,14 @@
         <h3 class="form-heading-f1">Ad Information</h3>
  
         @* <h3 class="form-heading">Ad Information</h3> *@
-            <MudSelect T="string" Class="white-bg" Label="Category" Variant="Variant.Outlined"
+            <MudSelect T="long?" Class="white-bg" Label="Category" Variant="Variant.Outlined"
                 Value="@Ad.CategoryId"
                 ValueChanged="@OnCategoryChanged"
                 For="@(() => Ad.CategoryId)"
                 FullWidth="true">
              @if (IsLoadingCategories)
             {
-                  <MudSelectItem T="string" Value="@("__loading__")" Disabled="true">Loading...</MudSelectItem>
+                  <MudSelectItem T="long?" Value="@(0)" Disabled="true">Loading...</MudSelectItem>
             }
             else
             {
@@ -21,16 +21,16 @@
                 {
                     if (cat != null && cat.Id != null && cat.CategoryName != null)
                     {
-                        <MudSelectItem T="string" Value="@cat.Id.ToString()">@cat.CategoryName</MudSelectItem>
+                        <MudSelectItem T="long?" Value="@cat.Id">@cat.CategoryName</MudSelectItem>
                     }
                 }
             }
         </MudSelect>
 
 
-        @if (!string.IsNullOrEmpty(Ad.CategoryId) && SelectedCategory?.Fields?.Any() == true)
+        @if (Ad.CategoryId != null && SelectedCategory?.Fields?.Any() == true)
         {
-          <MudSelect T="string" Class="white-bg" Label="Subcategory" Variant="Variant.Outlined"
+          <MudSelect T="long?" Class="white-bg" Label="Subcategory" Variant="Variant.Outlined"
                     Value="@Ad.L1CategoryId"
                     ValueChanged="@OnSubCategoryChanged"
                     For="@(() => Ad.L1CategoryId)"
@@ -39,16 +39,16 @@
                 {
                     if (sub?.Id != null && sub.CategoryName != null)
                     {
-                        <MudSelectItem T="string" Value="@sub.Id.ToString()">@sub.CategoryName</MudSelectItem>
+                        <MudSelectItem T="long?" Value="@sub.Id">@sub.CategoryName</MudSelectItem>
                     }
                 }
             </MudSelect>
 
         }
 
-        @if (!string.IsNullOrEmpty(Ad.L1CategoryId) && SelectedSubcategory?.Fields?.Any() == true)
+        @if (Ad.L1CategoryId != null && SelectedSubcategory?.Fields?.Any() == true)
         {
-            <MudSelect T="string"Class="white-bg" Label="Section" Variant="Variant.Outlined"
+            <MudSelect T="long?"Class="white-bg" Label="Section" Variant="Variant.Outlined"
                 Value="@Ad.L2CategoryId"
                 ValueChanged="@OnSubSubCategoryChanged"
                 For="@(() => Ad.L2CategoryId)"
@@ -57,7 +57,7 @@
                 {
                     if (subsub?.Id != null && subsub.CategoryName != null)
                     {
-                        <MudSelectItem T="string" Value="@subsub.Id.ToString()">@subsub.CategoryName</MudSelectItem>
+                        <MudSelectItem T="long?" Value="@subsub.Id">@subsub.CategoryName</MudSelectItem>
                     }
                 }
         </MudSelect>

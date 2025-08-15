@@ -742,15 +742,27 @@ namespace QLN.ContentBO.WebUI.Services
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
-        public async Task<HttpResponseMessage?> GetAdByIdAsync(string vertical, string adId)
+        public async Task<HttpResponseMessage?> GetAdByIdAsync(long adId)
         {
             try
             {
-                return await _httpClient.GetAsync($"/api/classified/{vertical}/{adId}");
+                return await _httpClient.GetAsync($"/api/classified/items/{adId}");
             }
             catch (Exception ex)
             {
                 _logger.LogError("GetAdByIdAsync Error: " + ex.Message);
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+        public async Task<HttpResponseMessage?> GetCollectibleIdAsync(long adId)
+        {
+            try
+            {
+                return await _httpClient.GetAsync($"/api/classified/collectibles/{adId}");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("GetCollectibleIdAsync: " + ex.Message);
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
@@ -903,7 +915,7 @@ namespace QLN.ContentBO.WebUI.Services
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
-        public async Task<HttpResponseMessage?> RefreshAdAsync(string adId, int subVertical)
+        public async Task<HttpResponseMessage?> RefreshAdAsync(long adId, int subVertical)
         {
             try
             {

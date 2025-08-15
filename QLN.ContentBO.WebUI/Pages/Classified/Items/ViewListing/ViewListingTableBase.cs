@@ -144,9 +144,14 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewListing
 
         protected void OnEdit(ClassifiedItemViewListing item)
         {
-            var targetUrl = $"/manage/classified/items/edit/ad/{item.Id}";
-            NavManager.NavigateTo(targetUrl, true);
-
+            if (item?.Id is long id) 
+            {
+                NavManager.NavigateTo($"/manage/classified/items/edit/ad/{id}");
+            }
+            else
+            {
+                Console.WriteLine("Item ID is null — cannot navigate to edit page.");
+            }
         }
 
         protected void OnPreview(ClassifiedItemViewListing item)
