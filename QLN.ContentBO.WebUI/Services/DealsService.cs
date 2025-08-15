@@ -1,4 +1,5 @@
 ﻿using QLN.ContentBO.WebUI.Interfaces;
+using QLN.ContentBO.WebUI.Models;
 using QLN.ContentBO.WebUI.Services.Base;
 using System.Net;
 using System.Text;
@@ -36,6 +37,43 @@ namespace QLN.ContentBO.WebUI.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "BulkActionAsync");
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+
+        public Task<HttpResponseMessage> GetAllDealsListing(CompanySubscriptionFilter companyRequestPayload)
+        {
+            throw new NotImplementedException();
+        }
+
+        public async Task<HttpResponseMessage> GetAllDealsSubscription(DealsSubscriptionQuery query)
+        {
+            try
+            {
+                var queryParams = new Dictionary<string, string>
+                {
+                    { "pageNumber", query.PageNumber.ToString() },
+                    { "pageSize", query.PageSize.ToString() },
+                    { "subscriptionType", query.SubscriptionType },
+                    { "startDate", query.StartDate },
+                    { "endDate", query.EndDate },
+                    { "search", query.Search },
+                    { "sortBy", query.SortBy }
+                };
+
+                var queryString = string.Join("&", queryParams
+                    .Where(kv => !string.IsNullOrEmpty(kv.Value))
+                    .Select(kv => $"{kv.Key}={Uri.EscapeDataString(kv.Value)}"));
+
+                var requestUrl = $"/api/v2/classifiedbo/getdealsSummary?{queryString}";
+
+                var request = new HttpRequestMessage(HttpMethod.Get, requestUrl);
+
+                return await _httpClient.SendAsync(request);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "GetAllDealsSubscription");
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
