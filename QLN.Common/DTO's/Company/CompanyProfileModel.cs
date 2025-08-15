@@ -46,6 +46,7 @@ namespace QLN.Common.DTO_s.Company
         public bool? IsTherapeuticService { get; set; }
         public string? TherapeuticCertificate { get; set; }
         public string? LicenseNumber { get; set; }
+        public VerifiedStatus? CompanyVerificationStatus { get; set; }
         [Required]
         public CompanyType CompanyType { get; set; }
         [Required]
@@ -74,6 +75,8 @@ namespace QLN.Common.DTO_s.Company
     {
         public Guid? CompanyId { get; set; }
         public VerifiedStatus? Status { get; set; }
+        public VerifiedStatus? CompanyVerificationStatus { get; set; }
+        public string? Reason { get; set; }
     }
     public class DeleteCompanyRequest
     {
@@ -99,6 +102,7 @@ namespace QLN.Common.DTO_s.Company
         public VerifiedStatus? Status { get; set; }
         public VerticalType? Vertical { get; set; }
         public SubVertical? SubVertical { get; set; }
+        public VerifiedStatus? CompanyVerificationStatus { get; set; }
         public string? Search { get; set; }
         public string? SortBy { get; set; }
         public int PageNumber { get; set; } = 1;

@@ -10,6 +10,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using QLN.Backend.API.ServiceConfiguration;
 using QLN.Common.DTO_s;
+using QLN.Common.DTO_s.Payments;
 using QLN.Common.Infrastructure.Auditlog;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.CustomEndpoints;
@@ -36,6 +37,7 @@ using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.QLDbContext;
 using QLN.Common.Infrastructure.ServiceConfiguration;
 using QLN.Common.Infrastructure.TokenProvider;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
@@ -150,6 +152,8 @@ builder.Services.AddDbContext<QLSubscriptionContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddDbContext<QLLogContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddDbContext<QLNotificationContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 #endregion
 
 #region Identity configuration
@@ -192,7 +196,56 @@ builder.Services.AddAuthentication(options =>
         NameClaimType = ClaimTypes.Name
     };
 
-    options.MapInboundClaims = false;
+    options.MapInboundClaims = false; options.Events = new JwtBearerEvents
+    {
+        OnTokenValidated = ctx =>
+        {
+            if (ctx.SecurityToken is JwtSecurityToken jwt &&
+                jwt.Payload.TryGetValue("user", out var userObj) && userObj is not null)
+            {
+                try
+                {
+                    var el = userObj is JsonElement je ? je : JsonDocument.Parse(userObj.ToString()!).RootElement;
+                    var id = new ClaimsIdentity("QLClaims");
+
+                    string? GetString(string name)
+                        => el.TryGetProperty(name, out var p) && p.ValueKind is JsonValueKind.String
+                           ? p.GetString() : null;
+
+                    void AddIf(string type, string? val)
+                    {
+                        if (!string.IsNullOrWhiteSpace(val)) id.AddClaim(new Claim(type, val));
+                    }
+
+                    var uid = GetString("uid");
+                    AddIf("ql:uid", uid);
+                    if (!string.IsNullOrWhiteSpace(uid))
+                        id.AddClaim(new Claim(ClaimTypes.NameIdentifier, uid));
+
+                    AddIf(ClaimTypes.Name, GetString("name") ?? GetString("alias"));
+                    AddIf(ClaimTypes.Email, GetString("email"));
+                    AddIf("ql:phone", GetString("phone"));
+                    AddIf("ql:alias", GetString("alias"));
+                    AddIf("ql:qlnext_user_id", GetString("qlnext_user_id"));
+
+                    if (el.TryGetProperty("roles", out var roles) && roles.ValueKind == JsonValueKind.Array)
+                    {
+                        foreach (var r in roles.EnumerateArray())
+                        {
+                            var rv = r.GetString();
+                            if (!string.IsNullOrWhiteSpace(rv))
+                                id.AddClaim(new Claim(ClaimTypes.Role, rv));
+                        }
+                    }
+
+                    ctx.Principal!.AddIdentity(id);
+                }
+                catch {  }
+            }
+            return Task.CompletedTask;
+        }
+    };
+
 });
 
 #endregion
@@ -332,6 +385,16 @@ builder.Services.ProductsConfiguration(builder.Configuration);
 builder.Services.ClassifiedBoStoresConfiguration(builder.Configuration);
 builder.Services.ServicesBo(builder.Configuration);
 
+// Putting this here as it could be used from the Backend API - but also in Classifieds Service
+builder.Services.ImplioConfiguration(builder.Configuration);
+
+builder.Services.AddSingleton<D365Config>(provider =>
+{
+    var config = new D365Config();
+    builder.Configuration.GetSection("D365").Bind(config);
+    return config;
+});
+
 var app = builder.Build();
 #region DAPR Subscriptions
 
@@ -358,6 +421,7 @@ if (builder.Configuration.GetValue<bool>("EnableSwagger"))
         options.DocumentTitle = "Qatar Management API";
     });
 }
+app.UseAuthentication();
 app.UseHttpsRedirection();
 app.UseAuthorization();
 
@@ -389,26 +453,26 @@ var contentGroup = app.MapGroup("/api/content");
 contentGroup.MapContentLandingEndpoints();
 var analyticGroup = app.MapGroup("/api/analytics");
 analyticGroup.MapAnalyticsEndpoints();
-app.MapGroup("/api/subscriptions")
-   .MapSubscriptionEndpoints();
+/*app.MapGroup("/api/subscriptions")
+   .MapSubscriptionEndpoints();*/
 app.MapGroup("/api/v2/subscriptions")
     .MapV2SubscriptionEndpoints()
     .RequireAuthorization();
 
-var fatoraGroup = app.MapGroup("/api/fatora");
+var fatoraGroup = app.MapGroup("/api/pay");
 fatoraGroup.MapFaturaEndpoints();
 
-app.MapGroup("/api/payments")
+/*app.MapGroup("/api/payments")
  .MapPaymentEndpoints();
 app.MapGroup("/api/paytofeature")
  .MapPayToFeatureEndpoints();
 app.MapGroup("/api/paytopublish")
-    .MapPayToPublishEndpoints();
+    .MapPayToPublishEndpoints();*/
 
-app.MapGroup("/api/addon")
+/*app.MapGroup("/api/addon")
  .MapAddonEndpoints();
 var quotaGroup = app.MapGroup("/api/userquota");
-quotaGroup.MapUserQuotaEndpoints();
+quotaGroup.MapUserQuotaEndpoints();*/
 
 
 var newsGroup = app.MapGroup("/api/v2/news");

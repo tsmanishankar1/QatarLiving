@@ -7,6 +7,7 @@
         public const string NewsPath = "/qlnapi/articles";
         public const string CategoriesPath = "/qlnapi/categories";
         public const string CommunityPath = "/qlnapi/community";
+        public const string CommunityMigrationPath = "/qlnapi/migrate/community";
         public const string CommentsSavePath = "/qlnapi/comment/save";
         public const string CommentsGetPath = "/qlnapi/comments";
         public const string PostsSavePath = "/qlnapi/node/save";

@@ -1,6 +1,7 @@
 @using QLN.ContentBO.WebUI.Pages.Community
 @using QLN.ContentBO.WebUI.Components.ToggleTabs
 @using QLN.ContentBO.WebUI.Components.Banner.BannerPreviewCard
+@using QLN.ContentBO.WebUI.Models;
 @using QLN.ContentBO.WebUI.Components.EmptyCard
 @inherits ManageBannerBase
 <MudPaper Style="padding: 20px; margin-top: 16px; background-color: white;" Elevation="0">
@@ -45,6 +46,7 @@
     <MudExpansionPanels Elevation="0" Class="mt-2">
         @foreach (var location in bannerPageTypes)
         {
+            
             @foreach (var Page in location.bannertypes)
         {
             <MudExpansionPanel Class="custom-expansion-panel" Style="border: 1px solid #e0e0e0;">
@@ -53,10 +55,21 @@
                         <MudItem xs="12">
                             <div class="d-flex align-center flex-wrap">
                                 <MudText Typo="Typo.subtitle1" Style="font-weight:600;">@Page.BannerTypeName</MudText>
+                                <MudChip T="string" Color="Color.Primary" Variant="Variant.Text">
+                                @(location.SubVerticalId.HasValue
+                                ? ((SubVertical)location.SubVerticalId.Value).ToString() 
+                                : string.Empty)
+                                </MudChip>
                                 <MudChip T="string" Color="Color.Primary" Variant="Variant.Filled" Class="ml-2 px-3"
-                                        Size="Size.Medium">
-                                        @location.BannerPageName
-                                    </MudChip>
+                                Size="Size.Medium">
+                                @{
+                                    var pageName = Enum.IsDefined(typeof(BannerPageId), location.PageId)
+                                    ? ((BannerPageId)location.PageId).ToString()
+                                    : "Unknown";
+                                    }
+                                    @pageName
+                                </MudChip>
+
                             </div>
                         </MudItem>
                         <MudItem xs="12">
@@ -85,7 +98,7 @@
                         BannerDetailsList="@Page.BannerDetails" 
                         verticalId="@(location.VerticalId ?? 0)" 
                         subVerticalId="@(location.SubVerticalId ?? 0)" 
-                        pageId="@location.Id.ToString()" 
+                        pageId="@location.PageId" 
                         OnReorderCallBack="ReOrderBanners" />
                     }
                     else

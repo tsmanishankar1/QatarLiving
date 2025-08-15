@@ -24,11 +24,11 @@ namespace QLN.ContentBO.WebUI.Components.Banner.BannerPreviewCard
         [Parameter]
         public int subVerticalId { get; set; }
         [Parameter]
-        public string pageId { get; set; }
+        public int pageId { get; set; }
         [Parameter]
         public List<BannerDTO> BannerDetailsList { get; set; } = [];
         [Parameter]
-        public EventCallback<(List<string> NewOrder, int Vertical, int SubVertical, string PageId)> OnReorderCallBack { get; set; }
+        public EventCallback<(List<string> NewOrder, int Vertical, int SubVertical, int PageId)> OnReorderCallBack { get; set; }
         public class BannerModel
         {
             public string Id { get; set; }

@@ -607,6 +607,54 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
 
             return group;
         }
+        public static RouteGroupBuilder MapServiceGetBySlugEndpoint(this RouteGroupBuilder group)
+        {
+            group.MapGet("/getbyslug/{slug}", async Task<Results<Ok<Services>, NotFound<ProblemDetails>, ProblemHttpResult>> (
+                string? slug,
+                IServices service,
+                CancellationToken cancellationToken) =>
+            {
+                try
+                {
+                    var result = await service.GetServiceAdBySlug(slug, cancellationToken);
+                    if (result == null)
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Service Ad Not Found",
+                            Detail = "No service ad found with Slug",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+
+                    return TypedResults.Ok(result);
+                }
+                catch (InvalidDataException ex)
+                {
+                    var details = new ProblemDetails
+                    {
+                        Title = "Service Ad Not Found",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    };
+                    return TypedResults.NotFound(details);
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem("Internal Server Error", ex.Message);
+                }
+            })
+            .AllowAnonymous()
+            .WithName("GetServiceAdBySlug")
+            .WithTags("Service")
+            .WithSummary("Get a service ad by Slug")
+            .WithDescription("Retrieves a specific service ad by its unique identifier. If not found, returns 404.")
+            .Produces<Services>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            return group;
+        }
         public static RouteGroupBuilder MapDetailedGetByIdEndpoint(this RouteGroupBuilder group)
         {
             group.MapGet("/getbyserviceid/{id:long}", async Task<Results<

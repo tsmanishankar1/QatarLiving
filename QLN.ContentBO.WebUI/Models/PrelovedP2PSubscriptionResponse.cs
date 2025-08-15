@@ -11,6 +11,7 @@
 
     public class PrelovedP2PSubscriptionQuery
     {
+        public string? Status { get; set; }
         public string? CreatedDate { get; set; }
         public string? PublishedDate { get; set; }
         public int Page { get; set; } = 1;

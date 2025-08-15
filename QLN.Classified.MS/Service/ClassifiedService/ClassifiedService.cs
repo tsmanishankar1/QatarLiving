@@ -65,6 +65,109 @@ namespace QLN.Classified.MS.Service
             _subscriptionContext = subscriptionContext;
         }
 
+        public async Task<bool> SaveSearchByVertical(SaveSearchRequestDto dto, string userId, CancellationToken cancellationToken = default)
+        {
+            try
+            {                
+                var actualUserId = !string.IsNullOrWhiteSpace(dto.UserId) ? dto.UserId : userId;
+
+                if (string.IsNullOrWhiteSpace(actualUserId))
+                {
+                    _logger.LogError("UserId is required to save search");
+                    return false;
+                }
+
+                bool isValidSubVertical = ValidateVerticalAndSubVertical(dto.Vertical, dto.SubVertical);
+                if (!isValidSubVertical)
+                {
+                    _logger.LogError("Invalid SubVertical {SubVertical} for Vertical {Vertical}", dto.SubVertical, dto.Vertical);
+                    return false;
+                }
+
+                var saveSearch = new SaveSearch
+                {
+                    Name = dto.Name,
+                    SubVertical = dto.SubVertical,
+                    Vertical = dto.Vertical,
+                    SearchQuery = dto.SearchQuery,
+                    CreatedAt = DateTime.UtcNow, 
+                    UserId = actualUserId
+                };
+
+                _context.saveSearches.Add(saveSearch);
+                await _context.SaveChangesAsync(cancellationToken);
+
+                _logger.LogInformation("Search '{SearchName}' saved successfully for user {UserId}", dto.Name, actualUserId);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to save the search '{SearchName}' for user {UserId}", dto.Name, userId);
+                throw new InvalidOperationException("Failed to save the search", ex);
+            }
+        }
+
+        private bool ValidateVerticalAndSubVertical(Vertical vertical, SubVertical? subVertical)
+        {
+            if ((int)vertical == 3) 
+            {
+                return subVertical == SubVertical.Items ||
+                       subVertical == SubVertical.Deals ||
+                       subVertical == SubVertical.Stores ||
+                       subVertical == SubVertical.Preloved ||
+                       subVertical == SubVertical.Collectibles;
+            }
+
+            if ((int)vertical == 4) 
+            {
+                return subVertical == null;
+            }
+            return false;
+        }
+
+        public async Task<List<SavedSearchResponseDto>> GetSearches(string userId, Vertical vertical, SubVertical? subVertical = null, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(userId))
+                    throw new ArgumentException("UserId is required.", nameof(userId));
+                
+                var query = _context.saveSearches
+                    .Where(s => s.UserId == userId && s.Vertical == vertical);
+
+                if (subVertical.HasValue)
+                {
+                    query = query.Where(s => s.SubVertical == subVertical.Value);
+                }
+
+                var savedSearches = await query
+                    .OrderByDescending(s => s.CreatedAt)
+                    .ToListAsync(cancellationToken);
+
+                var responseDto = savedSearches.Select(s => new SavedSearchResponseDto
+                {
+                    Id = s.Id,
+                    Name = s.Name,
+                    Vertical = s.Vertical,
+                    SubVertical = s.SubVertical,
+                    SearchQuery = s.SearchQuery,
+                    CreatedAt = s.CreatedAt,
+                    UserId = s.UserId
+                }).ToList();
+
+                //_logger.LogInformation("Retrieved {Count} saved searches from database for user {UserId}, vertical {Vertical}, subVertical {SubVertical}",
+                //    responseDto.Count, userId, vertical, subVertical);
+
+                return responseDto;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to retrieve saved searches from database for user {UserId}, vertical {Vertical}, subVertical {SubVertical}",
+                    userId, vertical, subVertical);
+                throw new InvalidOperationException("Failed to retrieve saved searches from database.", ex);
+            }
+        }
+
         public async Task<bool> SaveSearchById(SaveSearchRequestByIdDto dto, CancellationToken cancellationToken = default)
         {
             if (dto == null)
@@ -118,31 +221,7 @@ namespace QLN.Classified.MS.Service
                 throw new InvalidOperationException("An unexpected error occurred while saving search.", ex);
             }
         }
-
-        public async Task<List<SavedSearchResponseDto>> GetSearches(string userId, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                if (string.IsNullOrWhiteSpace(userId))
-                    throw new ArgumentException("UserId is required.");
-
-                var key = $"search:{userId}";
-                var result = await _dapr.GetStateAsync<List<SavedSearchResponseDto>>(UnifiedStore, key);
-
-                return result ?? new List<SavedSearchResponseDto>();
-            }
-            catch (DaprException dex)
-            {
-                Console.WriteLine($"Dapr error: {dex.Message}");
-                throw new InvalidOperationException("Failed to retrieve saved searches due to Dapr error.", dex);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Unexpected error: {ex.Message}");
-                throw new InvalidOperationException("An unexpected error occurred while retrieving saved searches.", ex);
-            }
-        }
-
+     
         public Task<bool> SaveSearch(SaveSearchRequestDto dto, string userId, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
@@ -180,8 +259,9 @@ namespace QLN.Classified.MS.Service
             {
                 _logger.LogInformation("Starting CreateClassifiedItemsAd for UserId={UserId}, Title='{Title}'", dto.UserId, dto.Title);
 
-                dto.Status = AdStatus.PendingApproval;
-
+                dto.Status = AdStatus.Draft;
+                dto.CreatedAt = DateTime.UtcNow;
+                
                 _logger.LogDebug("Adding Items ad to EF context...");
                 _context.Item.Add(dto);
 
@@ -196,7 +276,7 @@ namespace QLN.Classified.MS.Service
                 return new AdCreatedResponseDto
                 {
                     AdId = dto.Id,
-                    Title = dto.Title,
+                    Title = dto.Title,                    
                     CreatedAt = DateTime.UtcNow,
                     Message = "Items Ad created successfully"
                 };
@@ -515,13 +595,13 @@ namespace QLN.Classified.MS.Service
             if (string.IsNullOrWhiteSpace(dto.UserId)) throw new ArgumentException("UserId is required.");
             if (string.IsNullOrWhiteSpace(dto.Offertitle)) throw new ArgumentException("Title is required.");
             if (string.IsNullOrWhiteSpace(dto.FlyerFileUrl)) throw new ArgumentException("Flyer URL must be provided.");
-            if (dto.Images == null || !dto.Images.Any()) throw new ArgumentException("At least one image is required.");
+            if (dto.CoverImage == null || !dto.CoverImage.Any()) throw new ArgumentException("At least one image is required.");
 
           
             try
             {
                 var company = await _companyContext.Companies
-                    .FirstOrDefaultAsync(c => c.UserId == dto.UserId && c.IsActive, cancellationToken);
+                    .FirstOrDefaultAsync(c => c.UserId == dto.UserId && c.SubVertical == SubVertical.Deals && c.IsActive, cancellationToken);
 
                 if (company == null)
                     throw new InvalidOperationException($"No company found for user ID: {dto.UserId}");
@@ -544,6 +624,8 @@ namespace QLN.Classified.MS.Service
                 dto.SocialMediaLinks = socialLinks.Any() ? string.Join(", ", socialLinks) : null;
                 dto.Status = AdStatus.Draft; 
                 dto.CreatedAt = dto.CreatedAt == default ? DateTime.UtcNow : dto.CreatedAt;
+                dto.CompanyLogo = company.CompanyLogo;
+
 
                 _context.Deal.Add(dto);
                 await _context.SaveChangesAsync(cancellationToken);
@@ -694,6 +776,7 @@ namespace QLN.Classified.MS.Service
                 return null;
             }
         }
+
         public async Task<Items> GetItemAdById(long adId, CancellationToken cancellationToken = default)
         {
             if (adId <= 0)
@@ -716,6 +799,56 @@ namespace QLN.Classified.MS.Service
             {
                 _logger.LogError(ex, "Error while fetching classified item details by adId: {AdId}", adId);
                 throw new InvalidOperationException("Failed to fetch classified item ad by ID.", ex);
+            }
+        }
+
+        public async Task<Items> GetItemAdBySlug(string slug, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(slug))
+                throw new ArgumentException("Slug must not be null or empty.", nameof(slug));
+
+            try
+            {
+                var adItem = await _context.Item.AsNoTracking()
+                    .FirstOrDefaultAsync(i => i.Slug == slug && i.IsActive == true, cancellationToken);
+
+                if (adItem == null)
+                {
+                    _logger.LogWarning("Slug '{Slug}' not found in database or IsActive.", slug);
+                    throw new KeyNotFoundException($"Ad with Slug '{slug}' does not exist.");
+                }
+
+                return adItem;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while fetching classified item details by slug: {Slug}", slug);
+                throw new InvalidOperationException("Failed to fetch classified item ad by Slug.", ex);
+            }
+        }
+
+        public async Task<Preloveds> GetPrelovedAdBySlug(string slug, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(slug))
+                throw new ArgumentException("Slug must not be null or empty.", nameof(slug));
+
+            try
+            {
+                var adItem = await _context.Preloved.AsNoTracking()
+                    .FirstOrDefaultAsync(i => i.Slug == slug && i.IsActive == true, cancellationToken);
+
+                if (adItem == null)
+                {
+                    _logger.LogWarning("Slug '{Slug}' not found in database or IsActive.", slug);
+                    throw new KeyNotFoundException($"Ad with Slug '{slug}' does not exist.");
+                }
+
+                return adItem;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while fetching classified preloved details by slug: {Slug}", slug);
+                throw new InvalidOperationException("Failed to fetch classified preloved ad by Slug.", ex);
             }
         }
 
@@ -791,6 +924,56 @@ namespace QLN.Classified.MS.Service
             }
         }
 
+        public async Task<Collectibles> GetCollectiblesAdBySlug(string slug, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(slug))
+                throw new ArgumentException("Slug must not be null or empty.", nameof(slug));
+
+            try
+            {
+                var adItem = await _context.Collectible.AsNoTracking()
+                    .FirstOrDefaultAsync(i => i.Slug == slug && i.IsActive == true, cancellationToken);
+
+                if (adItem == null)
+                {
+                    _logger.LogWarning("Slug '{Slug}' not found in database or IsActive.", slug);
+                    throw new KeyNotFoundException($"Ad with Slug '{slug}' does not exist.");
+                }
+
+                return adItem;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while fetching classified collectibles details by slug: {Slug}", slug);
+                throw new InvalidOperationException("Failed to fetch classified preloved ad by Slug.", ex);
+            }
+        }
+
+        public async Task<Deals> GetDealsAdBySlug(string slug, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(slug))
+                throw new ArgumentException("Slug must not be null or empty.", nameof(slug));
+
+            try
+            {
+                var adItem = await _context.Deal.AsNoTracking()
+                    .FirstOrDefaultAsync(i => i.Slug == slug && i.IsActive == true, cancellationToken);
+
+                if (adItem == null)
+                {
+                    _logger.LogWarning("Slug '{Slug}' not found in database or IsActive.", slug);
+                    throw new KeyNotFoundException($"Ad with Slug '{slug}' does not exist.");
+                }
+
+                return adItem;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while fetching classified deals details by slug: {Slug}", slug);
+                throw new InvalidOperationException("Failed to fetch classified deals ad by Slug.", ex);
+            }
+        }
+
         public async Task<List<Deals>> GetAllDealsAdByUser(string userId, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(userId))
@@ -823,7 +1006,7 @@ namespace QLN.Classified.MS.Service
             try
             {
                 var adPreloved = await _context.Preloved.AsNoTracking()
-                    .FirstOrDefaultAsync(p => p.Id == adId && p.IsActive == true, cancellationToken);
+                    .FirstOrDefaultAsync(p => p.Id == adId, cancellationToken);
 
                 if (adPreloved == null)
                 {
@@ -1458,7 +1641,10 @@ namespace QLN.Classified.MS.Service
                     if (string.IsNullOrWhiteSpace(existingAd.WhatsappNumber))
                         existingAd.WhatsappNumber = company.WhatsAppNumber;
 
-                    if (string.IsNullOrWhiteSpace(existingAd.SocialMediaLinks))
+                    if (string.IsNullOrWhiteSpace(existingAd.CompanyLogo))
+                        existingAd.CompanyLogo = company.CompanyLogo;
+
+                        if (string.IsNullOrWhiteSpace(existingAd.SocialMediaLinks))
                     {
                         var socialLinks = new List<string>();
                         if (!string.IsNullOrWhiteSpace(company.FacebookUrl))
@@ -1487,9 +1673,8 @@ namespace QLN.Classified.MS.Service
                 existingAd.ContactNumber = dto.ContactNumber;
                 existingAd.WhatsappNumber = dto.WhatsappNumber;
                 existingAd.WebsiteUrl = dto.WebsiteUrl;
-                existingAd.Locations = dto.Locations;
                 existingAd.XMLlink = dto.XMLlink;
-                existingAd.Images = dto.Images;
+                existingAd.CoverImage = dto.CoverImage;
                 existingAd.CreatedAt = existingAd.CreatedAt;
                 existingAd.CreatedBy = existingAd.CreatedBy;
                 existingAd.UpdatedBy = dto.UpdatedBy;
@@ -1764,6 +1949,7 @@ namespace QLN.Classified.MS.Service
                 SubVertical = SubVertical.Items.ToString(),
                 AdType = dto.AdType.ToString(),
                 Title = dto.Title,
+                Slug = dto.Slug,
                 Description = dto.Description,
                 CategoryId = dto.CategoryId.ToString(),
                 L1CategoryId = dto.L1CategoryId.ToString(),
@@ -1842,6 +2028,7 @@ namespace QLN.Classified.MS.Service
                 SubscriptionId = dto.SubscriptionId.ToString(),
                 SubVertical = SubVertical.Preloved.ToString(),
                 AdType = dto.AdType.ToString(),
+                Slug = dto.Slug,
                 Title = dto.Title,
                 Description = dto.Description,
                 Price = dto.Price,
@@ -1927,6 +2114,7 @@ namespace QLN.Classified.MS.Service
                 AdType = dto.AdType.ToString(),
                 Title = dto.Title,
                 Description = dto.Description,
+                Slug = dto.Slug,
                 Price = dto.Price,
                 PriceType = dto.PriceType,
                 CategoryId = dto.CategoryId.ToString(),
@@ -2010,6 +2198,7 @@ namespace QLN.Classified.MS.Service
                 BusinessName = dto.BusinessName,
                 BranchNames = dto.BranchNames,
                 BusinessType = dto.BusinessType,
+                Slug = dto.Slug,
                 offertitle = dto.Offertitle,
                 Description = dto.Description,
                 StartDate = dto.StartDate,
@@ -2028,7 +2217,7 @@ namespace QLN.Classified.MS.Service
                 UpdatedAt = dto.UpdatedAt,
                 UpdatedBy = dto.UpdatedBy,
                 ExpiryDate = dto.ExpiryDate,
-                Images = dto.Images,
+                CoverImage = dto.CoverImage,
                 PromotedExpiryDate = dto.PromotedExpiryDate,
                 IsPromoted = dto.IsPromoted,
                 FeaturedExpiryDate = dto.FeaturedExpiryDate,
