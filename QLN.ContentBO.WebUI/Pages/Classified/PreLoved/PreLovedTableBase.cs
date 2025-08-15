@@ -45,7 +45,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved
             new() { Label = "Published", Value = "Published" },
             new() { Label = "Unpublished", Value = "Unpublished" },
             new() { Label = "Promoted", Value = "Promoted" },
-            new() { Label = "Promoted", Value = "Promoted"  }
+            new() { Label = "Featured", Value = "Featured"  }
         ];
 
         protected async Task HandleTabChanged(string newTab)
