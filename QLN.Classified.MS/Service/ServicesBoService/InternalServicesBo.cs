@@ -266,7 +266,7 @@ namespace QLN.Classified.MS.Service.ServicesBoService
 
                     var matchingPayment = matchingSubscription.PaymentId.HasValue
                         ? payments.FirstOrDefault(p => p.PaymentId == matchingSubscription.PaymentId.Value)
-                        : (PaymentId: 0, Fee: 0m, AdId:0);
+                        : (PaymentId: 0, Fee: 0m, AdId: 0);
 
                     string subscriptionPlan = "N/A";
                     if (matchingSubscription.UserId != string.Empty)
