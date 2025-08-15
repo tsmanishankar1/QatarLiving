@@ -95,7 +95,7 @@
                 </TemplateColumn>
                 <TemplateColumn Title="End Date">
                     <CellTemplate>
-                        @(context.Item.CreationDate != default ? context.Item.CreationDate.ToString("dd-MM-yyyy hh:mmtt") : "-")
+                        @(context.Item.ExpiryDate != default ? context.Item.ExpiryDate.ToString("dd-MM-yyyy hh:mmtt") : "-")
                     </CellTemplate>
                 </TemplateColumn>
                 <TemplateColumn Title="Whatsapp Leads">

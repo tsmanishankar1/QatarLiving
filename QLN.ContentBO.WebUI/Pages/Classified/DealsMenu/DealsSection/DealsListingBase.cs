@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Components;
 using MudBlazor;
+using QLN.ContentBO.WebUI.Components.ConfirmationDialog;
 using QLN.ContentBO.WebUI.Components;
+using Microsoft.JSInterop;
 using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Models;
 using System.Text.Json;
@@ -12,7 +14,8 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.DealsSection
 
         [Inject]
         protected IClassifiedService ClassifiedService { get; set; } = default!;
-
+        [Inject] protected IDialogService DialogService { get; set; } = default!;
+         [Inject] protected IJSRuntime JS { get; set; } = default!;
         protected List<DealsListingModal> Listings { get; set; } = new();
         protected string SearchText { get; set; } = string.Empty;
          protected string SubscriptionType { get; set; } = string.Empty;
@@ -98,6 +101,67 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.DealsSection
                 StateHasChanged();
             }
         }
+        protected async Task ShowConfirmationExport()
+        {
+            var parameters = new DialogParameters
+            {
+                { "Title", "Export Classified Items" },
+                { "Descrption", "Do you want to export the current classified item data to Excel?" },
+                { "ButtonTitle", "Export" },
+                { "OnConfirmed", EventCallback.Factory.Create(this, ExportToExcel) }
+            };
+
+            var options = new DialogOptions
+            {
+                CloseButton = false,
+                MaxWidth = MaxWidth.Small,
+                FullWidth = true
+            };
+
+            var dialog = DialogService.Show<ConfirmationDialog>("", parameters, options);
+            var result = await dialog.Result;
+        }
+        private async Task ExportToExcel()
+        {
+            try
+            {
+                if (Listings == null || !Listings.Any())
+                {
+                    Snackbar.Add("No data available to export.", Severity.Warning);
+                    return;
+                }
+                var exportData = Listings.Select((x, index) => new Dictionary<string, object?>
+                {
+                    ["S.No."] = index + 1,
+                    ["Ad ID"] = x.AdId ?? 0,
+                    ["Deals Title"] = string.IsNullOrWhiteSpace(x.DealTitle) ? "-" : x.DealTitle,
+                    ["Subscription Type"] = string.IsNullOrWhiteSpace(x.SubscriptionType) ? "-" : x.SubscriptionType,
+                    ["Location"] = (x.Location?.Any() == true) ? string.Join(", ", x.Location) : "-",
+                    ["Date Created"] = x.DateCreated?.ToString("dd-MM-yyyy") ?? "-",
+                    ["Start Date"] = x.StartDate?.ToString("dd-MM-yyyy") ?? "-", 
+                    ["Expiry Date"] = x.ExpiryDate?.ToString("dd-MM-yyyy") ?? "-",
+                    ["Mobile"] = string.IsNullOrWhiteSpace(x.ContactNumber) ? "-" : x.ContactNumber,
+                    ["Whatsapp"] = string.IsNullOrWhiteSpace(x.WhatsappNumber) ? "-" : x.WhatsappNumber,
+                    ["Web URL"] = string.IsNullOrWhiteSpace(x.WebUrl) ? "-" : x.WebUrl,
+                    ["Web Clicks"] = x.WebClick,
+                    ["Views"] = x.Views,
+                    ["Impression"] = x.Impression,
+                    ["Phone Leads"] = x.PhoneLead
+                }).ToList();
+
+                await JS.InvokeVoidAsync("exportToExcel", exportData, "Deals_Listings.xlsx", "Deals Listings");
+
+                Snackbar.Add("Export successful!", Severity.Success);
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Export failed: {ex.Message}", Severity.Error);
+            }
+        }
+
+
+
+
 
         protected async Task HandleTabChange(string newTab)
         {

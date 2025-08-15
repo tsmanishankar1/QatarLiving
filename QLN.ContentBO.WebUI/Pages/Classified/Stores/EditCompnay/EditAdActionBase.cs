@@ -10,7 +10,9 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.EditCompnay
     {
         [Inject] public IDialogService DialogService { get; set; }
         [Parameter] public CompanyProfileItem Company { get; set; } = new();
-        protected VerifiedStatus CurrentStatus => (VerifiedStatus)Company.Status;
+        protected VerifiedStatus CurrentStatus => 
+        (VerifiedStatus)(Company.CompanyVerificationStatus ?? (int)VerifiedStatus.Pending);
+        [Parameter] public EventCallback<CompanyUpdateActions> OnCompanyAction { get; set; }
         protected async Task NeedChangesAsync()
         {
             await ShowReasonDialog(
@@ -19,7 +21,14 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.EditCompnay
                 "Submit",
                 async (reason) =>
                 {
-                    await Task.CompletedTask;
+                    var companyUpdateAction = new CompanyUpdateActions
+                    {
+                        CompanyId = Company.Id,
+                        Status = (VerifiedStatus)Company.CompanyVerificationStatus.GetValueOrDefault(1), 
+                        CompanyVerificationStatus = VerifiedStatus.NeedChanges,
+                        Reason = reason
+                    };
+                    await OnCompanyAction.InvokeAsync(companyUpdateAction);
                 });
         }
 
@@ -44,15 +53,21 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.EditCompnay
         }
 
      
-        protected async Task ShowConfirmation(string title, string message, string buttonTitle)
+        protected async Task ShowConfirmation(string title, string message, string buttonTitle,VerifiedStatus action)
         {
+            var companyUpdateAction = new CompanyUpdateActions
+            {
+                    CompanyId = Company.Id,
+                    Status = (VerifiedStatus)Company.CompanyVerificationStatus.GetValueOrDefault(0), 
+                    CompanyVerificationStatus = action,
+            };
             var parameters = new DialogParameters
             {
                 { "Title", title },
                 { "Descrption", message },
                 { "ButtonTitle", buttonTitle },
                 { "OnConfirmed", EventCallback.Factory.Create(this, async () => {
-                    Console.WriteLine($"{buttonTitle} confirmed.");
+                    await OnCompanyAction.InvokeAsync(companyUpdateAction);
                 })}
             };
 

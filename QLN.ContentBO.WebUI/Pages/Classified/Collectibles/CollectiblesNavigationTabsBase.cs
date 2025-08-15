@@ -12,8 +12,8 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles
         {
             new TabItem("View Listing", "/manage/classified/collectibles/view/listing"),
             new TabItem("View Transactions", "/manage/classified/collectibles/view/transactions"),
-            new TabItem("User Verification Profile", "/manage/classified/collectibles/user/verification/profile"),
-            new TabItem("Reports", "/manage/classified/collectibles/reports")
+            new TabItem("User Verification Profile", "/manage/classified/collectibles/user/verification/profile")
+            // new TabItem("Reports", "/manage/classified/collectibles/reports")
         };
 
         protected class TabItem

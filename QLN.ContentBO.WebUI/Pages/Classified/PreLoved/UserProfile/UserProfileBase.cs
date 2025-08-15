@@ -21,7 +21,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.UserProfile
         protected int TotalCount { get; set; }
         protected int currentPage { get; set; } = 1;
         protected int pageSize { get; set; } = 12;
-        public string? SortBy { get; set; }
+        public string? SortBy { get; set; } = "asc";
         protected string? SearchText { get; set; } = string.Empty;
         public int? Status { get; set; }
         protected string SortIcon { get; set; } = Icons.Material.Filled.Sort;
@@ -44,12 +44,14 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.UserProfile
             Listings = await GetCompanyProfiles();
             StateHasChanged();
         }
-        protected void ToggleSort()
+        protected async void ToggleSort()
         {
-            SortIcon = SortIcon == Icons.Material.Filled.ArrowDownward
+            SortBy = SortBy == "asc" ? "desc" : "asc";
+            SortIcon = SortBy == "asc"
                 ? Icons.Material.Filled.ArrowUpward
                 : Icons.Material.Filled.ArrowDownward;
-
+            Listings = await GetCompanyProfiles();
+            StateHasChanged();
         }
         protected string selectedTab = "verificationrequests";
         protected List<ToggleTabs.TabOption> tabOptions = new()
