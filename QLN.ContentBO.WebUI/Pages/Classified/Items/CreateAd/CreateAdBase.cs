@@ -276,7 +276,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.CreateAd
                 var uploadedImages = await UploadImagesAsync(adPostModel.Images);
                 var payload = new
                 {
-                    adType = 1,
+                    adType = 0, // Setting it to zero as Backend will handle it
                     title = adPostModel.Title,
                     description = adPostModel.Description,
                     price = adPostModel.Price,
