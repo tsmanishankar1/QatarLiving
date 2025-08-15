@@ -15,7 +15,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewListing
         [Inject] private ILogger<ViewListingBase> Logger { get; set; } = default!;
         protected string SearchTerm { get; set; } = string.Empty;
         protected bool Ascending { get; set; } = true;
-        protected List<ClassifiedItemViewListing> ClassifiedItems { get; set; } = new();
+        protected List<ClassifiedItemViewListing> ClassifiedItems { get; set; } = [];
         protected int TotalCount { get; set; }
         private DateTime? DateCreatedFilter { get; set; }
         private DateTime? DatePublishedFilter { get; set; }
@@ -165,15 +165,16 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewListing
                 IsLoading = false;
             }
         }
+
         protected async Task HandleAddClicked()
         {
             var parameters = new DialogParameters
-        {
-            { "Title", "Create Ad" },
-            { "Label", "User Email*" },
-            { "ButtonText", "Continue" },
-            { "OnSelect", EventCallback.Factory.Create<DropdownItem>(this, HandleSelect) }
-        };
+            {
+                { "Title", "Create Ad" },
+                { "Label", "User Email*" },
+                { "ButtonText", "Continue" },
+                { "OnSelect", EventCallback.Factory.Create<DropdownItem>(this, HandleSelect) }
+            };
 
             await DialogService.ShowAsync<AutoSelectDialog>("", parameters);
         }
@@ -185,7 +186,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewListing
                 return Task.CompletedTask;
             }
             var targetUrl = $"/manage/classified/items/createform?email={selected.Label}&uid={selected.Id}";
-            NavManager.NavigateTo(targetUrl);
+            NavManager.NavigateTo(targetUrl, true);
             return Task.CompletedTask;
         }
     }
