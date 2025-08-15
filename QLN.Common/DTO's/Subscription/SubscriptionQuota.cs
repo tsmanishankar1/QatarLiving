@@ -106,11 +106,10 @@ namespace QLN.Common.DTO_s.Subscription
 
         public ValidationResult ValidateAction(string actionType, int quantity = 1)
         {
-            Console.WriteLine("ValidateActioncalled1:");
+            
 
             CheckAndResetDailyQuotas();
             var r = new ValidationResult { ActionType = actionType, RequestedQuantity = quantity, IsValid = false, Message = "Unknown action type" };
-            Console.WriteLine("ValidateAction:" + actionType.ToString());
             switch (actionType.ToLower())
             {
                 case ActionTypes.Publish:
@@ -124,8 +123,6 @@ namespace QLN.Common.DTO_s.Subscription
                     r.Message = r.IsValid ? "Can unpublish" : (!CanUnPublishAds ? "UnPublishing not allowed" : "Insufficient ads quota");
                     break;
                 case ActionTypes.Promote:
-                    Console.WriteLine("CanPromoteAds:" + CanPromoteAds.ToString());
-                    Console.WriteLine("RemainingPromotions:" + RemainingPromotions.ToString());
                     r.IsValid = CanPromoteAds && RemainingPromotions >= quantity;
                     r.RemainingQuota = RemainingPromotions;
                     r.Message = r.IsValid ? "Can promote" : (!CanPromoteAds ? "Promotion not allowed" : "Insufficient promotion quota");
@@ -161,13 +158,13 @@ namespace QLN.Common.DTO_s.Subscription
                         (!CanPostSocialMedia ? "Social posting not allowed" : "Insufficient social quota");
                     break;
             }
-            Console.WriteLine("Value:" + r.IsValid.ToString());
+            
             return r;
         }
 
         public bool RecordUsage(string actionType, int quantity = 1, Dictionary<string, object>? metadata = null)
         {
-            Console.WriteLine("Recordusage-internal1:");
+            
 
             var v = ValidateAction(actionType, quantity);
             if (!v.IsValid) return false;

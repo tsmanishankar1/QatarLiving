@@ -1038,7 +1038,7 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
                         usageCount,
                         cancellationToken
                     );
-                    Console.WriteLine("RecordUsage1:");
+                    
                     if (!reserved)
                     {
                         failedIds.AddRange(group.Select(x => x.Id));
@@ -1082,7 +1082,7 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
                             -usageCount,
                             cancellationToken
                         );
-                        Console.WriteLine("RecordUsage3:");
+                        
 
                         failedIds.AddRange(group.Select(x => x.Id));
                         continue;

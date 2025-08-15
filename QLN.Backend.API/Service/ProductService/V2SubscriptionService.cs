@@ -316,7 +316,7 @@ namespace QLN.Backend.API.Service.ProductService
         {
             try
             {
-                Console.WriteLine("Subscriptionid");
+                
                 var actor = GetV2SubscriptionActorProxy(subscriptionId);
                 return await actor.ValidateUsageAsync(quotaType, requestedAmount, cancellationToken);
             }
@@ -332,7 +332,7 @@ namespace QLN.Backend.API.Service.ProductService
             using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
             try
             {
-                Console.WriteLine(subscriptionId.ToString());
+                
                 var actor = GetV2SubscriptionActorProxy(subscriptionId);
                 var actorResult = await actor.RecordUsageAsync(quotaType, amount, cancellationToken);
                 if (!actorResult)
