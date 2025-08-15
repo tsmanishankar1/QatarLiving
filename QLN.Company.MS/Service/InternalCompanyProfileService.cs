@@ -577,7 +577,7 @@ namespace QLN.Company.MS.Service
 
                 company.Status = dto.Status;
                 company.CompanyVerificationStatus = dto.CompanyVerificationStatus;
-                if (dto.Status == VerifiedStatus.Removed)
+                if (dto.Status == VerifiedStatus.Removed || dto.CompanyVerificationStatus == VerifiedStatus.Removed)
                 {
                     company.IsActive = false;
                 }
