@@ -293,7 +293,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.CreateAd
                     condition = adPostModel.DynamicFields.GetValueOrDefault("Condition"),
                     color = adPostModel.DynamicFields.GetValueOrDefault("Color"),
                     location = adPostModel.DynamicFields.GetValueOrDefault("Location"),
-
+                    
                     latitude = adPostModel.Latitude ?? 0,
                     longitude = adPostModel.Longitude ?? 0,
                     contactNumber = adPostModel.PhoneNumber,
@@ -305,6 +305,8 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.CreateAd
                     buildingNumber = adPostModel.BuildingNumber?.ToString(),
                     zone = adPostModel.Zone,
                     images = uploadedImages,
+                    userId = UserId,
+                    userName = string.IsNullOrWhiteSpace(UserEmail) ? null : UserEmail,
                     attributes = adPostModel.DynamicFields
                         .Where(kv => !IsBasicField(kv.Key))
                         .ToDictionary(kv => kv.Key, kv => (object)kv.Value)
