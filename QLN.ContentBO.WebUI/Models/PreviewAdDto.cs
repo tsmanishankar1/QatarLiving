@@ -2,9 +2,9 @@ namespace QLN.ContentBO.WebUI.Models
 {
     public interface PreviewAdDto
     {
-        string? CategoryId { get; set; }
-        string? L1CategoryId { get; set; }
-        string? L2CategoryId { get; set; }
+        long? CategoryId { get; set; }
+        long? L1CategoryId { get; set; }
+        long? L2CategoryId { get; set; }
 
         Dictionary<string, string> DynamicFields { get; set; }
 
@@ -29,7 +29,7 @@ namespace QLN.ContentBO.WebUI.Models
 
         List<AdImage> Images { get; set; }
 
-        string? Id { get; set; }
+        long? Id { get; set; }
         string? UserId { get; set; }
         string? UserName { get; set; }
         string? ContactEmail { get; set; }

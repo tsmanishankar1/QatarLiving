@@ -17,6 +17,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.ViewStores
         protected int pageSize = 12;
         protected int TotalCount { get; set; }
         protected string? SearchTerm { get; set; } = null;
+        protected string? SortBy { get; set; } = null;
         protected string? SubscriptionType { get; set; } = null;
         public DateTime? StartDate { get; set; }
         public DateTime? EndDate { get; set; }
@@ -53,7 +54,6 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.ViewStores
                 PageNumber = currentPage,
                 PageSize = pageSize
             };
-
             var companyProfileResponse = await GetAllStoresListingAsync(payload);
             StoreItems = companyProfileResponse?.Records ?? [];
             TotalCount = companyProfileResponse?.TotalRecords ?? 0;
@@ -71,7 +71,6 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.ViewStores
                 PageNumber = currentPage,
                 PageSize = pageSize
             };
-
             var companyProfileResponse = await GetAllStoresListingAsync(payload);
             StoreItems = companyProfileResponse?.Records ?? [];
             TotalCount = companyProfileResponse?.TotalRecords ?? 0;
@@ -90,7 +89,6 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.ViewStores
                 PageNumber = currentPage,
                 PageSize = pageSize
             };
-
             var companyProfileResponse = await GetAllStoresListingAsync(payload);
             StoreItems = companyProfileResponse?.Records ?? [];
             TotalCount = companyProfileResponse?.TotalRecords ?? 0;
@@ -129,7 +127,6 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.ViewStores
                 PageNumber = newPage,
                 PageSize = pageSize
             };
-
             var companyProfileResponse = await GetAllStoresListingAsync(payload);
             StoreItems = companyProfileResponse?.Records ?? [];
             TotalCount = companyProfileResponse?.TotalRecords ?? 0;
@@ -138,7 +135,6 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.ViewStores
         protected async Task HandlePageSizeChange(int newPageSize)
         {
             pageSize = newPageSize;
-            currentPage = 1; // reset to first page
             
              var payload = new CompanySubscriptionFilter
             {
@@ -147,7 +143,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.ViewStores
                 EndDate = EndDate,
                 SearchTerm = SearchTerm,
                 SortBy = Ascending ? "asc" : "desc",
-                // PageNumber = newPage,
+                PageNumber = currentPage,
                 PageSize = pageSize
             };
             var companyProfileResponse = await GetAllStoresListingAsync(payload);
@@ -172,7 +168,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.ViewStores
                     StartDate = StartDate,
                     EndDate = EndDate,
                     SearchTerm = SearchTerm,
-                    // SortBy = ,
+                    SortBy = SortBy,
                     PageNumber = currentPage,
                     PageSize = pageSize
                 };

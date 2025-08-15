@@ -100,7 +100,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.EditCompnay
                     {
                         Snackbar.Add("Bad Request", Severity.Error);
                     }
-    
+
                 }
                 else if (response.StatusCode == HttpStatusCode.Unauthorized)
                 {
@@ -169,5 +169,30 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.EditCompnay
 
             return null;
         }
+        protected async Task UpdateStatus(CompanyUpdateActions actionRequest)
+        {
+            var response = await ClassifiedService.UpdateCompanyActions(actionRequest);
+            if (response.IsSuccessStatusCode)
+            {
+                Snackbar.Add(
+                actionRequest.CompanyVerificationStatus switch
+                {
+                    VerifiedStatus.Approved => "User Profile Approved Successfully",
+                    VerifiedStatus.Rejected => "User Profile Rejected Successfully",
+                    VerifiedStatus.NeedChanges => "Status Moved to Need Changes Successfully",
+                    VerifiedStatus.OnHold => "User Profile is moved to on Hold Successfully",
+                    _ => "User Profile Updated Successfully"
+                },
+                    Severity.Success
+                );
+                Navigation.NavigateTo($"/manage/classified/stores/view/stores");
+                
+            }
+            else
+            {
+                Snackbar.Add("Failed to update ad status", Severity.Error);
+            }
+        }
+
     }
 }
