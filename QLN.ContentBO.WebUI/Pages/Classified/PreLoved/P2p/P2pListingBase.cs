@@ -33,7 +33,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.P2p
         protected int TotalCount { get; set; }
         protected int CurrentPage { get; set; } = 1;
         protected int PageSize { get; set; } = 12;
-        protected string SelectedTab { get; set; } = "PendingApproval";
+        protected string SelectedTab { get; set; } = "Pending Approval";
         
         protected List<TabOption> tabOptions =
         [
