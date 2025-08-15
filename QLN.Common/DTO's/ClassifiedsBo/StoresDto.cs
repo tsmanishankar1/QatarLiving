@@ -126,11 +126,11 @@ namespace QLN.Common.DTO_s.ClassifiedsBo
     public class StoreCompanyDto
     {
         public Guid Id { get; set; }
-        public string CompanyName { get; set; } = string.Empty;
-        public string CompanyLogo { get; set; } = string.Empty;
+        public string CompanyName { get; set; } 
+        public string CompanyLogo { get; set; }
         public string? CoverImage1 { get; set; }
-        public string PhoneNumber { get; set; } = string.Empty;
-        public string Email { get; set; } = string.Empty;
+        public string PhoneNumber { get; set; } 
+        public string Email { get; set; } 
         public string? WebsiteUrl { get; set; }
         public List<string>? BranchLocations { get; set; }
         public string? Slug { get; set; }
