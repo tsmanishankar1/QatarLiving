@@ -59,4 +59,24 @@ namespace QLN.Common.Infrastructure.DTO_s
         public QlnEvents QlnEvents { get; set; }
     }
 
+    public class DailyTopicsOnlyResponse
+    {
+        const string QueuePrefix = DrupalContentConstants.QlnContentsDaily;
+
+        [JsonPropertyName($"{QueuePrefix}_topics_1")]
+        public BaseQueueResponse<ContentEvent> DailyTopics1 { get; set; }
+
+        [JsonPropertyName($"{QueuePrefix}_topics_2")]
+        public BaseQueueResponse<ContentEvent> DailyTopics2 { get; set; }
+
+        [JsonPropertyName($"{QueuePrefix}_topics_3")]
+        public BaseQueueResponse<ContentEvent> DailyTopics3 { get; set; }
+
+        [JsonPropertyName($"{QueuePrefix}_topics_4")]
+        public BaseQueueResponse<ContentEvent> DailyTopics4 { get; set; }
+
+        [JsonPropertyName($"{QueuePrefix}_topics_5")]
+        public BaseQueueResponse<ContentEvent> DailyTopics5 { get; set; }
+    }
+
 }
