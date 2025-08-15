@@ -11,11 +11,11 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.DealsSection
     {
 
         [Inject]
-        protected IClassifiedService ClassifiedService { get; set; } = default!;
+        protected IDealsService DealsService { get; set; } = default!;
 
-        protected List<DealsListingModal> Listings { get; set; } = new();
+        protected List<DealsItem> Listings { get; set; } = new();
         protected string SearchText { get; set; } = string.Empty;
-         protected string SubscriptionType { get; set; } = string.Empty;
+        protected string SubscriptionType { get; set; } = string.Empty;
         protected string SortIcon { get; set; } = Icons.Material.Filled.Sort;
         protected string SortDirection { get; set; } = "asc";
         protected string SortField { get; set; } = "creationDate";
@@ -62,29 +62,31 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.DealsSection
                     else if (SelectedTab == "featured")
                         isFeatured = true;
                 }
-                var request = new FilterRequest
+
+                var request = new DealsItemQuery
                 {
                     PageNumber = currentPage,
                     PageSize = pageSize,
-                    SubscriptionType = SubscriptionType,
-                    SearchText = SearchText,
-                    StartDate = dateCreated,
-                    PublishedDate = datePublished,
+                    StartDate = "",
+                    EndDate = "",
+                    Search = SearchText,
                     SortBy = SortDirection,
+                    Status = SelectedTab,
+                    IsPromoted = null,
+                    IsFeatured = null
                 };
 
-
-                var response = await ClassifiedService.GetDealsListing(request);
+                var response = await DealsService.GetAllDealsListing(request);
 
                 if (response?.IsSuccessStatusCode ?? false)
                 {
                     var content = await response.Content.ReadAsStringAsync();
-                    var result = JsonSerializer.Deserialize<PagedResult<DealsListingModal>>(content, new JsonSerializerOptions
+                    var result = JsonSerializer.Deserialize<DealsItemResponse>(content, new JsonSerializerOptions
                     {
                         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
                         PropertyNameCaseInsensitive = true
                     });
-                    Listings = result?.Items ?? new List<DealsListingModal>();
+                    Listings = result?.Items ?? [];
                     TotalCount = result?.TotalCount ?? 0;
                 }
             }
@@ -112,7 +114,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.DealsSection
 
         protected async void OnSearchChanged(ChangeEventArgs e)
         {
-            SearchText = e.Value?.ToString();
+            SearchText = e.Value?.ToString() ?? "";
             currentPage = 1;
             await LoadData();
         }
@@ -125,7 +127,6 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.DealsSection
                 : Icons.Material.Filled.ArrowDownward;
             await LoadData();
         }
-
 
         protected async Task HandlePageChanged(int newPage)
         {

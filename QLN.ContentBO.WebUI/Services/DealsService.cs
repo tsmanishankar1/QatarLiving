@@ -41,9 +41,37 @@ namespace QLN.ContentBO.WebUI.Services
             }
         }
 
-        public Task<HttpResponseMessage> GetAllDealsListing(CompanySubscriptionFilter companyRequestPayload)
+        public async Task<HttpResponseMessage> GetAllDealsListing(DealsItemQuery query)
         {
-            throw new NotImplementedException();
+            try
+            {
+                var queryParams = new Dictionary<string, string>
+                {
+                    { "pageNumber", query.PageNumber.ToString() },
+                    { "pageSize", query.PageSize.ToString() },
+                    { "startDate", query.StartDate },
+                    { "endDate", query.EndDate },
+                    { "search", query.Search },
+                    { "sortBy", query.SortBy },
+                    { "status", query.Status },
+                    { "isPromoted", query.IsPromoted.ToString() ?? "false"},
+                    { "isFeatured", query.IsFeatured.ToString() ?? "false"}
+                };
+                var queryString = string.Join("&", queryParams
+                    .Where(kv => !string.IsNullOrEmpty(kv.Value))
+                    .Select(kv => $"{kv.Key}={Uri.EscapeDataString(kv.Value)}"));
+
+                var requestUrl = $"/api/v2/classifiedbo/DealsViewSummary?{queryString}";
+
+                var request = new HttpRequestMessage(HttpMethod.Get, requestUrl);
+
+                return await _httpClient.SendAsync(request);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "GetAllDealsListing");
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
         }
 
         public async Task<HttpResponseMessage> GetAllDealsSubscription(DealsSubscriptionQuery query)

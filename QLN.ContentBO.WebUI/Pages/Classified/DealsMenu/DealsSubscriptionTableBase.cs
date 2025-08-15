@@ -129,7 +129,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu
 
         protected Task RequestChanges(DealsSubscriptionItem item)
         {
-            Console.WriteLine($"Requested changes for: {item.Id}");
+            Console.WriteLine($"Requested changes for: {item.AdId}");
             OpenRejectDialog();
             return Task.CompletedTask;
         }
