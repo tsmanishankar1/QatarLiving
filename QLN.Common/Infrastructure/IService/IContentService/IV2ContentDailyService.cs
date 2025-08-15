@@ -23,6 +23,6 @@ namespace QLN.Common.Infrastructure.IService.IContentService
         Task<bool> UpdatePublishStatusAsync(Guid id, bool isPublished, CancellationToken cancellationToken = default);
         Task<List<V2NewsArticleDTO>> GetUnusedNewsArticlesForTopicAsync(Guid topicId, int? page = null, int? pageSize = null, CancellationToken cancellationToken = default);
         Task<ContentsDailyPageResponse> GetDailyLivingLandingAsync(CancellationToken ct);
-
+        Task<DailyTopicsOnlyResponse> GetDailyTopicsOnlyAsync(int? pageNumber, int? pageSize, Guid topicId, CancellationToken ct);
     }
 }

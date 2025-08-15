@@ -27,6 +27,8 @@ namespace QLN.Common.DTO_s.Payments
         /// </summary>
         public double? RefreshBudget { get; set; }
 
+        public int? PromoteBudget { get; set; }
+
         /// <summary>
         /// The duration in days
         /// </summary>

@@ -31,6 +31,8 @@ namespace QLN.Common.Infrastructure.Model
 
         public int? PaymentId { get; set; }
 
+        public long? AdId { get; set; }
+
         [Required]
         public Vertical Vertical { get; set; }
 

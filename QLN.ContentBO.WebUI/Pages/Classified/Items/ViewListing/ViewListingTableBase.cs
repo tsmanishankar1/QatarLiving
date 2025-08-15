@@ -162,7 +162,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewListing
         protected Task ApproveSelected() => PerformBulkAction(AdBulkActionType.Approve);
         protected Task RemoveSelected()
         {
-            if (!SelectedListings.Any())
+            if (SelectedListings.Count == 0)
             {
                 Snackbar.Add("Please select at least one listing to remove.", Severity.Warning);
                 return Task.CompletedTask;
@@ -190,7 +190,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewListing
         private async Task RunSingleAction(long? itemId, AdBulkActionType action)
         {
             singleItemLoadingId = itemId;
-            await PerformBulkAction(action, "", new List<long?> { itemId });
+            await PerformBulkAction(action, "", [itemId]);
         }
 
         private async Task HandleRejection(string reason)
@@ -201,7 +201,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewListing
 
             singleItemLoadingId = rejectionTargetItemId;
 
-            await PerformBulkAction(AdBulkActionType.NeedChanges, reason, new List<long?> { rejectionTargetItemId });
+            await PerformBulkAction(AdBulkActionType.NeedChanges, reason, [rejectionTargetItemId]);
 
             rejectionTargetItemId = null;
         }

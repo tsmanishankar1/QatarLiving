@@ -1,17 +1,13 @@
 ﻿using Dapr.Actors.Client;
 using Dapr.Actors;
-using Microsoft.Extensions.Logging;
 using QLN.Common.Infrastructure.IService.IProductService;
 using QLN.Common.Infrastructure.QLDbContext;
 using QLN.Common.Infrastructure.Subscriptions;
 using Microsoft.EntityFrameworkCore;
 using QLN.Common.Infrastructure.Model;
 using QLN.Common.DTO_s.Subscription;
-using System;
-using System.Linq;
 using QLN.Common.DTO_s.Payments;
 using QLN.Common.DTO_s;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace QLN.Backend.API.Service.ProductService
 {
@@ -106,7 +102,7 @@ namespace QLN.Backend.API.Service.ProductService
             };
         }
 
-        public async Task<Guid> PurchaseSubscriptionAsync(V2SubscriptionPurchaseRequestDto request, string userID, CancellationToken cancellationToken = default)
+        public async Task<Guid> PurchaseSubscriptionAsync(V2SubscriptionPurchaseRequestDto request, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(request);
 
@@ -119,8 +115,8 @@ namespace QLN.Backend.API.Service.ProductService
                 if (product == null)
                     throw new InvalidOperationException($"Product with code {request.ProductCode} not found or inactive");
 
-                if (product.ProductType != ProductType.SUBSCRIPTION)
-                    throw new InvalidOperationException($"Product {request.ProductCode} is not a subscription product");
+                if (product.ProductType != ProductType.SUBSCRIPTION && product.ProductType != ProductType.PUBLISH)
+                    throw new InvalidOperationException($"Product {request.ProductCode} is not a subscription or P2P product");
 
                 var subscriptionId = Guid.NewGuid();
 
@@ -129,7 +125,8 @@ namespace QLN.Backend.API.Service.ProductService
                     SubscriptionId = subscriptionId,
                     ProductCode = product.ProductCode,
                     ProductName = product.ProductName,
-                    UserId = userID,
+                    UserId = request.UserId,
+                    AdId = request.AdId ?? null,
                     CompanyId = request.CompanyId,
                     PaymentId = request.PaymentId,
                     Vertical = product.Vertical,
@@ -137,7 +134,7 @@ namespace QLN.Backend.API.Service.ProductService
                     Quota = BuildSubscriptionQuotaFromProduct(product),
                     StartDate = DateTime.UtcNow,
                     EndDate = DateTime.UtcNow.Add(GetDurationFromProduct(product)),
-                    Status = SubscriptionStatus.Active, // this should likely be created in an PendingPayment status ?
+                    Status = SubscriptionStatus.PaymentPending,
                     CreatedAt = DateTime.UtcNow
                 };
 
@@ -149,7 +146,7 @@ namespace QLN.Backend.API.Service.ProductService
                     Id = subscriptionId,
                     ProductCode = product.ProductCode,
                     ProductName = product.ProductName,
-                    //UserId = request.UserId,
+                    UserId = request.UserId,
                     CompanyId = request.CompanyId,
                     PaymentId = request.PaymentId,
                     Vertical = product.Vertical,                    
@@ -319,6 +316,7 @@ namespace QLN.Backend.API.Service.ProductService
         {
             try
             {
+                
                 var actor = GetV2SubscriptionActorProxy(subscriptionId);
                 return await actor.ValidateUsageAsync(quotaType, requestedAmount, cancellationToken);
             }
@@ -334,6 +332,7 @@ namespace QLN.Backend.API.Service.ProductService
             using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
             try
             {
+                
                 var actor = GetV2SubscriptionActorProxy(subscriptionId);
                 var actorResult = await actor.RecordUsageAsync(quotaType, amount, cancellationToken);
                 if (!actorResult)
@@ -373,7 +372,7 @@ namespace QLN.Backend.API.Service.ProductService
 
         #region Addon Operations
 
-        public async Task<Guid> PurchaseAddonAsync(V2UserAddonPurchaseRequestDto request,string userid, CancellationToken cancellationToken = default)
+        public async Task<Guid> PurchaseAddonAsync(V2UserAddonPurchaseRequestDto request, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(request);
 
@@ -397,7 +396,7 @@ namespace QLN.Backend.API.Service.ProductService
                     UserAddOnId = addonId,
                     ProductCode = product.ProductCode,
                     ProductName = product.ProductName,
-                    UserId = userid,
+                    UserId = request.UserId,
                     CompanyId = request.CompanyId,
                     SubscriptionId = request.SubscriptionId,
                     PaymentId = request.PaymentId,
@@ -418,7 +417,7 @@ namespace QLN.Backend.API.Service.ProductService
                     Id = addonId,
                     ProductCode = product.ProductCode,
                     ProductName = product.ProductName,
-                    UserId = userid,
+                    UserId = request.UserId,
                     CompanyId = request.CompanyId,
                     SubscriptionId = request.SubscriptionId,
                     PaymentId = request.PaymentId,
@@ -439,7 +438,7 @@ namespace QLN.Backend.API.Service.ProductService
                 if (!actorResult) throw new Exception("Failed to save addon to actor");
 
                 await transaction.CommitAsync(cancellationToken);
-                _logger.LogInformation("V2 Addon purchased successfully: {Id} for user: {UserId}", addonId, userid);
+                _logger.LogInformation("V2 Addon purchased successfully: {Id} for user: {UserId}", addonId, request.UserId);
                 return addonId;
             }
             catch (Exception ex)
@@ -627,7 +626,7 @@ namespace QLN.Backend.API.Service.ProductService
             if (filter.CompanyId.HasValue)
                 query = query.Where(s => s.CompanyId == filter.CompanyId);
 
-            // ✅ new filter fields
+            
             query = query.Where(s => s.Vertical == filter.Vertical);
 
             if (filter.SubVertical.HasValue)
@@ -837,8 +836,8 @@ namespace QLN.Backend.API.Service.ProductService
                 UserId = dbSub.UserId,
                 CompanyId = dbSub.CompanyId,
                 PaymentId = dbSub.PaymentId,
-                Vertical = dbSub.Vertical,              // ✅
-                SubVertical = dbSub.SubVertical,        // ✅
+                Vertical = dbSub.Vertical,              // 
+                SubVertical = dbSub.SubVertical,        // 
                 Price = 0,
                 Currency = "QAR",
                 Quota = dbSub.Quota,
@@ -861,8 +860,8 @@ namespace QLN.Backend.API.Service.ProductService
                 CompanyId = dbAddon.CompanyId,
                 SubscriptionId = dbAddon.SubscriptionId,
                 PaymentId = dbAddon.PaymentId,
-                Vertical = dbAddon.Vertical,            // ✅
-                SubVertical = dbAddon.SubVertical,      // ✅
+                Vertical = dbAddon.Vertical,            
+                SubVertical = dbAddon.SubVertical,       
                 Price = 0,
                 Currency = "QAR",
                 Quota = dbAddon.Quota,
@@ -886,8 +885,8 @@ namespace QLN.Backend.API.Service.ProductService
                 ProductName = v2Data.ProductName,
                 UserId = v2Data.UserId,
                 VerticalName = v2Data.Vertical.ToString(),
-                Vertical = v2Data.Vertical,                 // ✅
-                SubVertical = v2Data.SubVertical,           // ✅ nullable
+                Vertical = v2Data.Vertical,                 
+                SubVertical = v2Data.SubVertical,           
                 Price = v2Data.Price,
                 Currency = v2Data.Currency,
                 Quota = v2Data.Quota,
@@ -914,8 +913,8 @@ namespace QLN.Backend.API.Service.ProductService
                 UserId = v2Data.UserId,
                 SubscriptionId = v2Data.SubscriptionId,
                 VerticalName = v2Data.Vertical.ToString(),
-                Vertical = v2Data.Vertical,                 // ✅
-                SubVertical = v2Data.SubVertical,           // ✅
+                Vertical = v2Data.Vertical,                 
+                SubVertical = v2Data.SubVertical,           
                 Price = v2Data.Price,
                 Currency = v2Data.Currency,
                 Quota = v2Data.Quota,
@@ -951,8 +950,8 @@ namespace QLN.Backend.API.Service.ProductService
                 CanRefreshAds = (c.RefreshBudgetPerDay ?? 0) > 0,
                 CanPostSocialMedia = false,
 
-                RefreshInterval = "Every 72 Hours",
-                RefreshIntervalHours = 72
+                RefreshInterval = product.ProductType== ProductType.FREE ?"Every 72 Hours": "Every Hour",
+                RefreshIntervalHours = product.ProductType == ProductType.FREE ? 72: 1
             };
 
             return q;
@@ -1021,7 +1020,7 @@ namespace QLN.Backend.API.Service.ProductService
 
         private TimeSpan GetDurationFromProduct(Product product)
         {
-            // ✅ Duration is TimeSpan? now
+            
             if (product.Constraints?.Duration.HasValue == true)
             {
                 return product.Constraints.Duration.Value;

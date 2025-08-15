@@ -13,12 +13,15 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.DealsSection
     {
 
         [Inject]
+        protected IDealsService DealsService { get; set; } = default!;
+         [Inject]
         protected IClassifiedService ClassifiedService { get; set; } = default!;
         [Inject] protected IDialogService DialogService { get; set; } = default!;
          [Inject] protected IJSRuntime JS { get; set; } = default!;
-        protected List<DealsListingModal> Listings { get; set; } = new();
+
+        protected List<DealsItem> Listings { get; set; } = new();
         protected string SearchText { get; set; } = string.Empty;
-         protected string SubscriptionType { get; set; } = string.Empty;
+        protected string SubscriptionType { get; set; } = string.Empty;
         protected string SortIcon { get; set; } = Icons.Material.Filled.Sort;
         protected string SortDirection { get; set; } = "asc";
         protected string SortField { get; set; } = "creationDate";
@@ -65,35 +68,37 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.DealsSection
                     else if (SelectedTab == "featured")
                         isFeatured = true;
                 }
-                var request = new FilterRequest
+
+                var request = new DealsItemQuery
                 {
                     PageNumber = currentPage,
                     PageSize = pageSize,
-                    SubscriptionType = SubscriptionType,
-                    SearchText = SearchText,
-                    StartDate = dateCreated,
-                    PublishedDate = datePublished,
+                    StartDate = "",
+                    EndDate = "",
+                    Search = SearchText,
                     SortBy = SortDirection,
+                    Status = SelectedTab,
+                    IsPromoted = null,
+                    IsFeatured = null
                 };
 
-
-                var response = await ClassifiedService.GetDealsListing(request);
+                var response = await DealsService.GetAllDealsListing(request);
 
                 if (response?.IsSuccessStatusCode ?? false)
                 {
                     var content = await response.Content.ReadAsStringAsync();
-                    var result = JsonSerializer.Deserialize<PagedResult<DealsListingModal>>(content, new JsonSerializerOptions
+                    var result = JsonSerializer.Deserialize<DealsItemResponse>(content, new JsonSerializerOptions
                     {
                         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
                         PropertyNameCaseInsensitive = true
                     });
-                    Listings = result?.Items ?? new List<DealsListingModal>();
+                    Listings = result?.Items ?? [];
                     TotalCount = result?.TotalCount ?? 0;
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error loading data: {ex.Message}");
+                Logger.LogError(ex, "LoadData Error loading deals listings");
             }
             finally
             {
@@ -133,20 +138,19 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.DealsSection
                 var exportData = Listings.Select((x, index) => new Dictionary<string, object?>
                 {
                     ["S.No."] = index + 1,
-                    ["Ad ID"] = x.AdId ?? 0,
-                    ["Deals Title"] = string.IsNullOrWhiteSpace(x.DealTitle) ? "-" : x.DealTitle,
-                    ["Subscription Type"] = string.IsNullOrWhiteSpace(x.SubscriptionType) ? "-" : x.SubscriptionType,
-                    ["Location"] = (x.Location?.Any() == true) ? string.Join(", ", x.Location) : "-",
-                    ["Date Created"] = x.DateCreated?.ToString("dd-MM-yyyy") ?? "-",
-                    ["Start Date"] = x.StartDate?.ToString("dd-MM-yyyy") ?? "-", 
-                    ["Expiry Date"] = x.ExpiryDate?.ToString("dd-MM-yyyy") ?? "-",
+                    ["Ad ID"] = x.AdId,
+                    ["Deals Title"] =  x.Dealtitle,
+                    ["Subscription Type"] =  x.subscriptiontype,
+                    ["Date Created"] = x.DateCreated.ToString("dd-MM-yyyy") ?? "-",
+                    ["Start Date"] = x.StartDate.ToString("dd-MM-yyyy") ?? "-", 
+                    ["Expiry Date"] = x.EndDate.ToString("dd-MM-yyyy") ?? "-",
                     ["Mobile"] = string.IsNullOrWhiteSpace(x.ContactNumber) ? "-" : x.ContactNumber,
                     ["Whatsapp"] = string.IsNullOrWhiteSpace(x.WhatsappNumber) ? "-" : x.WhatsappNumber,
-                    ["Web URL"] = string.IsNullOrWhiteSpace(x.WebUrl) ? "-" : x.WebUrl,
+                    ["Web URL"] = string.IsNullOrWhiteSpace(x.Weburl) ? "-" : x.Weburl,
                     ["Web Clicks"] = x.WebClick,
                     ["Views"] = x.Views,
                     ["Impression"] = x.Impression,
-                    ["Phone Leads"] = x.PhoneLead
+                    ["Phone Leads"] = x.Phonelead
                 }).ToList();
 
                 await JS.InvokeVoidAsync("exportToExcel", exportData, "Deals_Listings.xlsx", "Deals Listings");
@@ -176,7 +180,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.DealsSection
 
         protected async void OnSearchChanged(ChangeEventArgs e)
         {
-            SearchText = e.Value?.ToString();
+            SearchText = e.Value?.ToString() ?? "";
             currentPage = 1;
             await LoadData();
         }
@@ -189,7 +193,6 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.DealsSection
                 : Icons.Material.Filled.ArrowDownward;
             await LoadData();
         }
-
 
         protected async Task HandlePageChanged(int newPage)
         {
