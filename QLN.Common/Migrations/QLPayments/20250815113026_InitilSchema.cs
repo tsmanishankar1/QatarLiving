@@ -7,7 +7,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace QLN.Common.Migrations.QLPayments
 {
     /// <inheritdoc />
-    public partial class InitialPayments : Migration
+    public partial class InitilSchema : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -76,7 +76,7 @@ namespace QLN.Common.Migrations.QLPayments
                     UserAddonId = table.Column<Guid>(type: "uuid", nullable: true),
                     Vertical = table.Column<int>(type: "integer", nullable: false),
                     SubVertical = table.Column<int>(type: "integer", nullable: true),
-                    AdId = table.Column<string>(type: "text", nullable: true),
+                    AdId = table.Column<long>(type: "bigint", nullable: true),
                     Status = table.Column<int>(type: "integer", nullable: false),
                     Fee = table.Column<decimal>(type: "numeric", nullable: false),
                     PaidByUid = table.Column<string>(type: "text", nullable: false),

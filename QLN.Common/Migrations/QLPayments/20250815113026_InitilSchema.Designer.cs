@@ -12,8 +12,8 @@ using QLN.Common.Infrastructure.QLDbContext;
 namespace QLN.Common.Migrations.QLPayments
 {
     [DbContext(typeof(QLPaymentsContext))]
-    [Migration("20250814132233_InitialPayments")]
-    partial class InitialPayments
+    [Migration("20250815113026_InitilSchema")]
+    partial class InitilSchema
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -119,8 +119,8 @@ namespace QLN.Common.Migrations.QLPayments
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("PaymentId"));
 
-                    b.Property<string>("AdId")
-                        .HasColumnType("text");
+                    b.Property<long?>("AdId")
+                        .HasColumnType("bigint");
 
                     b.Property<int?>("AttachedPaymentId")
                         .HasColumnType("integer");
