@@ -92,7 +92,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.DealsSection
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error loading data: {ex.Message}");
+                Logger.LogError(ex, "LoadData Error loading deals listings");
             }
             finally
             {
