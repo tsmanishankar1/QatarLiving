@@ -10,7 +10,7 @@ namespace QLN.Common.DTO_s.ClassifiedsBoIndex
     public class TransactionDto
     {
         public string Id { get; set; } 
-        public string AdId { get; set; }
+        public long AdId { get; set; }
         public int PaymentId { get; set; }
         public int OrderId { get; set; } 
         public string UserId { get; set; } = string.Empty;
