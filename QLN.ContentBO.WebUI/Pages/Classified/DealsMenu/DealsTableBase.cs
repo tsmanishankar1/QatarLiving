@@ -1,60 +1,43 @@
 using Microsoft.AspNetCore.Components;
-using System;
-using QLN.ContentBO.WebUI.Components.ToggleTabs;
-using QLN.ContentBO.WebUI.Models;
 using MudBlazor;
+using QLN.ContentBO.WebUI.Components;
 using QLN.ContentBO.WebUI.Components.ConfirmationDialog;
 using QLN.ContentBO.WebUI.Components.RejectVerificationDialog;
-using QLN.ContentBO.WebUI.Components;
-using QLN.ContentBO.WebUI.Pages.Classified.PreLoved;
-using System.Text.Json;
+using QLN.ContentBO.WebUI.Components.ToggleTabs;
 using QLN.ContentBO.WebUI.Interfaces;
-using static MudBlazor.Colors;
+using QLN.ContentBO.WebUI.Models;
+using System.Text.Json;
 
 namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu
 {
     public partial class DealsTableBase : QLComponentBase
     {
-        [Parameter]
-        public List<DealsListingModal> Listings { get; set; }
-        [Parameter]
-        public bool IsLoading { get; set; }
-        [Parameter]
-        public bool IsEmpty { get; set; }
+        [Inject] public IDealsService DealsService { get; set; }
+        [Inject] public ISnackbar Snackbar { get; set; }
+        [Inject] public ILogger<DealsTableBase> Logger { get; set; }
+        [Parameter] public List<DealsListingModal> Listings { get; set; }
+        [Parameter] public bool IsLoading { get; set; }
+        [Parameter] public bool IsEmpty { get; set; }
         [Inject] public IDialogService DialogService { get; set; }
 
-        [Parameter]
-        public int TotalCount { get; set; }
-        [Parameter]
-        public EventCallback<int> OnPageChanged { get; set; }
+        [Parameter] public int TotalCount { get; set; }
+        [Parameter] public EventCallback<int> OnPageChanged { get; set; }
+        [Parameter] public EventCallback<int> OnPageSizeChanged { get; set; }
+        [Parameter] public string SelectedTab { get; set; }
+        [Parameter] public EventCallback<string> OnTabChanged { get; set; }
+        [Parameter] public EventCallback<string> SelectedTabChanged { get; set; }
 
-        [Parameter]
-        public EventCallback<int> OnPageSizeChanged { get; set; }
-
-        // In PreLovedTableBase.cs
-        [Parameter]
-        public string SelectedTab { get; set; }
-
-        [Parameter]
-        public EventCallback<string> OnTabChanged { get; set; }
-
-        [Inject]
-        public IClassifiedService ClassifiedService { get; set; }
-        [Inject] public ISnackbar Snackbar { get; set; }
         protected bool isBulkActionLoading = false;
         protected string singleItemLoadingId = null;
         protected string rejectionTargetItemId = null;
         protected string removeTargetItemId = null;
         protected bool isBulkRemove = false;
-        [Inject] public ILogger<DealsTableBase> Logger { get; set; }
 
         protected HashSet<DealsListingModal> SelectedListings { get; set; } = new();
         protected int currentPage = 1;
         protected int pageSize = 12;
 
         protected string _activeTab;
-        [Parameter]
-        public EventCallback<string> selectedTabChanged { get; set; }
 
         protected async Task HandleTabChanged(string newTab)
         {
@@ -62,12 +45,13 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu
             {
                 _activeTab = newTab;
                 await OnTabChanged.InvokeAsync(newTab);
-                await selectedTabChanged.InvokeAsync(newTab); 
+                await SelectedTabChanged.InvokeAsync(newTab);
             }
         }
+
         protected override void OnParametersSet()
         {
-           
+
             if (!string.IsNullOrEmpty(SelectedTab))
             {
                 _activeTab = SelectedTab;
@@ -78,16 +62,15 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu
             }
             Console.WriteLine($"Active tab set to: {_activeTab}");
         }
-        protected List<ToggleTabs.TabOption> tabOptions = new()
-        {
+
+        protected List<ToggleTabs.TabOption> tabOptions =
+        [
           new() { Label = "Published", Value = ((int)AdStatusEnum.Published).ToString() },
           new() { Label = "Unpublished", Value = ((int)AdStatusEnum.Unpublished).ToString() },
            new() { Label = "P2p", Value = ((int)AdStatusEnum.P2p).ToString() },
            new() { Label = "Promoted", Value = "promoted" },
            new() { Label = "Featured", Value = "featured"  }
-};
-
-
+        ];
 
         protected async Task HandlePageChange(int newPage)
         {
@@ -101,9 +84,6 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu
             currentPage = 1;
             await OnPageSizeChanged.InvokeAsync(newSize);
         }
-
-
-
 
         protected async Task ShowConfirmation(string title, string description, string buttonTitle, Func<Task> onConfirmedAction)
         {
@@ -124,9 +104,8 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu
 
             var dialog = await DialogService.ShowAsync<ConfirmationDialog>("", parameters, options);
             var result = await dialog.Result;
-
         }
-        private void OpenRejectDialog()
+        private async void OpenRejectDialog()
         {
             var parameters = new DialogParameters
             {
@@ -141,22 +120,24 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu
                 MaxWidth = MaxWidth.Small,
                 FullWidth = true
             };
-            var dialog = DialogService.Show<RejectVerificationDialog>("", parameters, options);
+            var dialog = await DialogService.ShowAsync<RejectVerificationDialog>("", parameters, options);
         }
 
         protected void OnEdit(long? adId)
         {
-            NavManager.NavigateTo($"/manage/classified/deals/edit/ad/{adId}");
+            NavManager.NavigateTo($"/manage/classified/deals/edit/ad/{adId}", true);
         }
+
         protected void OnPreview(DealsListingModal item)
         {
             Console.WriteLine($"Preview clicked: {item.DealTitle}");
         }
 
         protected Task ApproveSelected() => PerformBulkAction(BulkActionEnum.Approve);
+        
         protected Task RemoveSelected()
         {
-            if (!SelectedListings.Any())
+            if (SelectedListings.Count == 0)
             {
                 Snackbar.Add("Please select at least one listing to remove.", Severity.Warning);
                 return Task.CompletedTask;
@@ -175,6 +156,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu
         protected Task Approve(DealsListingModal item) => RunSingleAction(item.Id, BulkActionEnum.Approve);
         protected Task Publish(DealsListingModal item) => RunSingleAction(item.Id, BulkActionEnum.Publish);
         protected Task Unpublish(DealsListingModal item) => RunSingleAction(item.Id, BulkActionEnum.Unpublish);
+        
         protected Task OnRemove(DealsListingModal item)
         {
             removeTargetItemId = item.Id;
@@ -275,13 +257,14 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu
                 _ => "Action performed successfully."
             };
         }
-        private async Task PerformBulkAction(BulkActionEnum action, string reason = "", List<string> adIds = null)
+
+        private async Task PerformBulkAction(BulkActionEnum action, string reason = "", List<long> adIds = null)
         {
-            isBulkActionLoading = adIds == null; 
+            isBulkActionLoading = adIds == null;
 
-            adIds ??= SelectedListings.Select(x => x.Id).ToList();
+            adIds ??= [.. SelectedListings.Select(x => x.Id)];
 
-            if (!adIds.Any())
+            if (adIds.Count == 0)
                 return;
 
             var payload = new Dictionary<string, object>
@@ -295,7 +278,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu
             {
                 var payloadJson = JsonSerializer.Serialize(payload);
                 Logger.LogInformation("Performing bulk action: {Payload}", payloadJson);
-                var response = await ClassifiedService.PerformPrelovedBulkActionAsync(payload);
+                var response = await DealsService.BulkActionAsync(adIds, (int)action, reason);
 
                 if (response?.IsSuccessStatusCode == true)
                 {
@@ -306,8 +289,6 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu
                 }
                 else
                 {
-                    // Logger.LogWarning("Bulk action failed. StatusCode: {StatusCode}, Payload: {@Payload}",
-                    //     response?.StatusCode, payload);
                     Snackbar.Add("Something went wrong while performing the action.", Severity.Error);
                 }
             }
@@ -324,6 +305,4 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu
             }
         }
     }
-
-
 }
