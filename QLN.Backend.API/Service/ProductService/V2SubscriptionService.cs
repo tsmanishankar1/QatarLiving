@@ -319,6 +319,7 @@ namespace QLN.Backend.API.Service.ProductService
         {
             try
             {
+                Console.WriteLine("Subscriptionid");
                 var actor = GetV2SubscriptionActorProxy(subscriptionId);
                 return await actor.ValidateUsageAsync(quotaType, requestedAmount, cancellationToken);
             }
@@ -334,6 +335,7 @@ namespace QLN.Backend.API.Service.ProductService
             using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
             try
             {
+                Console.WriteLine(subscriptionId.ToString());
                 var actor = GetV2SubscriptionActorProxy(subscriptionId);
                 var actorResult = await actor.RecordUsageAsync(quotaType, amount, cancellationToken);
                 if (!actorResult)
@@ -837,8 +839,8 @@ namespace QLN.Backend.API.Service.ProductService
                 UserId = dbSub.UserId,
                 CompanyId = dbSub.CompanyId,
                 PaymentId = dbSub.PaymentId,
-                Vertical = dbSub.Vertical,              // ✅
-                SubVertical = dbSub.SubVertical,        // ✅
+                Vertical = dbSub.Vertical,              // 
+                SubVertical = dbSub.SubVertical,        // 
                 Price = 0,
                 Currency = "QAR",
                 Quota = dbSub.Quota,
@@ -861,8 +863,8 @@ namespace QLN.Backend.API.Service.ProductService
                 CompanyId = dbAddon.CompanyId,
                 SubscriptionId = dbAddon.SubscriptionId,
                 PaymentId = dbAddon.PaymentId,
-                Vertical = dbAddon.Vertical,            // ✅
-                SubVertical = dbAddon.SubVertical,      // ✅
+                Vertical = dbAddon.Vertical,            // 
+                SubVertical = dbAddon.SubVertical,      // 
                 Price = 0,
                 Currency = "QAR",
                 Quota = dbAddon.Quota,
@@ -886,8 +888,8 @@ namespace QLN.Backend.API.Service.ProductService
                 ProductName = v2Data.ProductName,
                 UserId = v2Data.UserId,
                 VerticalName = v2Data.Vertical.ToString(),
-                Vertical = v2Data.Vertical,                 // ✅
-                SubVertical = v2Data.SubVertical,           // ✅ nullable
+                Vertical = v2Data.Vertical,                 // 
+                SubVertical = v2Data.SubVertical,           // 
                 Price = v2Data.Price,
                 Currency = v2Data.Currency,
                 Quota = v2Data.Quota,

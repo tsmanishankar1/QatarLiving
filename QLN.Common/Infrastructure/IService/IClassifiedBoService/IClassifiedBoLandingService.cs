@@ -61,8 +61,14 @@ namespace QLN.Common.Infrastructure.IService.V2IClassifiedBoService
 
         Task<string> ReplaceFeaturedCategorySlots(string userId, string userName, LandingBoSlotReplaceRequest dto, CancellationToken cancellationToken = default);
 
-        Task<string> BulkItemsAction(BulkActionRequest request, string userId,  CancellationToken ct);
-        Task<string> BulkCollectiblesAction(BulkActionRequest request, string userId, CancellationToken ct);
+        Task<BulkAdActionResponseitems> BulkItemsAction(
+     BulkActionRequest request,
+     string userId,
+     CancellationToken cancellationToken = default);
+        Task<BulkAdActionResponseitems> BulkCollectiblesAction(
+    BulkActionRequest request,
+    string userId,
+    CancellationToken cancellationToken = default);
         Task<PaginatedResult<PrelovedAdPaymentSummaryDto>> GetAllPrelovedAdPaymentSummaries(int? pageNumber = 1, int? pageSize = 12, string? search = null,
             string? sortBy = null, CancellationToken cancellationToken = default);
 
