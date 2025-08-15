@@ -96,6 +96,7 @@ namespace QLN.Common.DTO_s
     public class PromoteServiceRequest
     {
         public long ServiceId { get; set; }
+        [JsonIgnore]
         public Guid? SubscriptionId { get; set; }
         public bool IsPromoted { get; set; }
         [JsonIgnore]
@@ -141,6 +142,7 @@ namespace QLN.Common.DTO_s
     {
         public List<long> AdIds { get; set; } = new();
         public BulkModerationAction Action { get; set; }
+        public Guid? SubscriptionId { get; set; }
         public string? Reason { get; set; }
         [JsonIgnore]
         public string? UpdatedBy { get; set; } 

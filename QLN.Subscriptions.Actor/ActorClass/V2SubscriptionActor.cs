@@ -59,7 +59,7 @@ namespace QLN.Subscriptions.Actor.ActorClass
                 var data = await SyncFromDatabaseAsync(force: true, CancellationToken.None);
                 if (data == null) return;
 
-                if (data.StatusId != V2Status.Expired && data.EndDate <= DateTime.UtcNow)
+                if (data.StatusId != SubscriptionStatus.Expired && data.EndDate <= DateTime.UtcNow)
                 {
                     _logger.LogInformation("Subscription {Id} expired by reminder.", data.Id);
                     await MarkExpiredAndPublishAsync(data, CancellationToken.None);
@@ -109,7 +109,7 @@ namespace QLN.Subscriptions.Actor.ActorClass
             var data = await SyncFromDatabaseAsync(force: false, cancellationToken);
             if (data == null) return false;
 
-            if (data.StatusId != V2Status.Active || data.EndDate <= DateTime.UtcNow)
+            if (data.StatusId != SubscriptionStatus.Active || data.EndDate <= DateTime.UtcNow)
                 return false;
 
             var qty = (int)Math.Ceiling(requestedAmount);
@@ -123,7 +123,7 @@ namespace QLN.Subscriptions.Actor.ActorClass
             var data = await SyncFromDatabaseAsync(force: false, cancellationToken);
             if (data == null) return false;
 
-            if (data.StatusId != V2Status.Active || data.EndDate <= DateTime.UtcNow)
+            if (data.StatusId != SubscriptionStatus.Active || data.EndDate <= DateTime.UtcNow)
                 return false;
 
             var qty = (int)Math.Ceiling(amount);
@@ -133,12 +133,13 @@ namespace QLN.Subscriptions.Actor.ActorClass
 
             return await FastSetDataAsync(data, cancellationToken);
         }
+
         public async Task<bool> IsActiveAsync(CancellationToken cancellationToken = default)
         {
             var data = await SyncFromDatabaseAsync(force: false, cancellationToken);
             if (data == null) return false;
 
-            return data.StatusId == V2Status.Active && data.EndDate > DateTime.UtcNow;
+            return data.StatusId == SubscriptionStatus.Active && data.EndDate > DateTime.UtcNow;
         }
 
         #endregion
@@ -225,7 +226,7 @@ namespace QLN.Subscriptions.Actor.ActorClass
                 await db.SaveChangesAsync(ct);
             }
 
-            data.StatusId = V2Status.Expired;
+            data.StatusId = SubscriptionStatus.Expired;
             data.lastUpdated = DateTime.UtcNow;
             await FastSetDataAsync(data, ct);
 
@@ -283,21 +284,13 @@ namespace QLN.Subscriptions.Actor.ActorClass
                 CompanyId = dbSub.CompanyId,
                 PaymentId = dbSub.PaymentId,
                 Vertical = dbSub.Vertical,
-                SubVertical = dbSub.SubVertical, 
-                Price = 0, 
+                SubVertical = dbSub.SubVertical,
+                Price = 0,
                 Currency = "QAR",
                 Quota = dbSub.Quota,
                 StartDate = dbSub.StartDate,
                 EndDate = dbSub.EndDate,
-                StatusId = dbSub.Status switch
-                {
-                    SubscriptionStatus.Active => V2Status.Active,
-                    SubscriptionStatus.Expired => V2Status.Expired,
-                    SubscriptionStatus.Cancelled => V2Status.Cancelled,
-                    SubscriptionStatus.Suspended => V2Status.Suspended,
-                    SubscriptionStatus.PaymentPending => V2Status.PaymentPending,
-                    _ => V2Status.PaymentPending
-                },
+                StatusId = dbSub.Status,
                 lastUpdated = dbSub.UpdatedAt ?? dbSub.CreatedAt,
                 Version = "V2"
             };

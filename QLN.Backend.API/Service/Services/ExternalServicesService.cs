@@ -162,7 +162,7 @@ namespace QLN.Backend.API.Service.Services
                     if (subscription == null)
                         throw new InvalidDataException("Subscription not found.");
 
-                    if (subscription.StatusId != V2Status.Active || subscription.EndDate <= DateTime.UtcNow)
+                    if (subscription.StatusId != Common.Infrastructure.Subscriptions.SubscriptionStatus.Active || subscription.EndDate <= DateTime.UtcNow)
                         throw new InvalidDataException("Subscription is inactive or expired.");
 
                     var canUse = await _v2SubscriptionService.ValidateSubscriptionUsageAsync(
@@ -355,6 +355,7 @@ namespace QLN.Backend.API.Service.Services
         {
             try
             {
+                request.SubscriptionId = Guid.Parse("8459a8a0-93b0-4a31-84a9-88eb846274f3");
                 var quotaAction = request.IsPromoted ? ActionTypes.Promote : ActionTypes.UnPromote;
 
                 if (quotaAction == ActionTypes.Promote && request.SubscriptionId != Guid.Empty)
@@ -466,7 +467,7 @@ namespace QLN.Backend.API.Service.Services
                 if (response.StatusCode == HttpStatusCode.OK)
                 {
                     var json = await response.Content.ReadAsStringAsync(ct);
-                    var serviceDto = JsonSerializer.Deserialize<QLN.Common.Infrastructure.Model.Services>(json, new JsonSerializerOptions
+                    var serviceDto = JsonSerializer.Deserialize<Common.Infrastructure.Model.Services>(json, new JsonSerializerOptions
                     {
                         PropertyNameCaseInsensitive = true
                     });

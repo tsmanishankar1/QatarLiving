@@ -64,8 +64,8 @@ namespace QLN.Common.DTO_s.Subscription
         public DateTime LastUsageUpdate { get; set; } = DateTime.UtcNow;
 
         // Refresh constraints
-        public string RefreshInterval { get; set; }
-        public int RefreshIntervalHours { get; set; }
+        public string RefreshInterval { get; set; } = "Every 72 Hours";
+        public int RefreshIntervalHours { get; set; } = 72;
 
         // Extra metadata
         public string Vertical { get; set; } = string.Empty;
@@ -104,13 +104,7 @@ namespace QLN.Common.DTO_s.Subscription
         public ValidationResult ValidateAction(string actionType, int quantity = 1)
         {
             CheckAndResetDailyQuotas();
-            var r = new ValidationResult
-            {
-                ActionType = actionType,
-                RequestedQuantity = quantity,
-                IsValid = false,
-                Message = "Unknown action type"
-            };
+            var r = new ValidationResult { ActionType = actionType, RequestedQuantity = quantity, IsValid = false, Message = "Unknown action type" };
 
             switch (actionType.ToLower())
             {
@@ -122,7 +116,7 @@ namespace QLN.Common.DTO_s.Subscription
 
                 case ActionTypes.UnPublish:
                     r.IsValid = true;
-                    r.RemainingQuota = RemainingAds;
+                    r.RemainingQuota = RemainingAds + quantity;
                     r.Message = "Can unpublish";
                     break;
 
@@ -134,7 +128,7 @@ namespace QLN.Common.DTO_s.Subscription
 
                 case ActionTypes.UnPromote:
                     r.IsValid = true;
-                    r.RemainingQuota = RemainingPromotions;
+                    r.RemainingQuota = RemainingPromotions + quantity;
                     r.Message = "Can unpromote";
                     break;
 
@@ -146,7 +140,7 @@ namespace QLN.Common.DTO_s.Subscription
 
                 case ActionTypes.UnFeature:
                     r.IsValid = true;
-                    r.RemainingQuota = RemainingFeatures;
+                    r.RemainingQuota = RemainingFeatures + quantity;
                     r.Message = "Can unfeature";
                     break;
 
@@ -155,7 +149,7 @@ namespace QLN.Common.DTO_s.Subscription
                     r.RemainingQuota = RemainingDailyRefreshes;
                     r.Message = r.IsValid ? "Can refresh" :
                         (!CanRefreshAds ? "Refresh not allowed" :
-                        (!CanRefreshNow() ? $"Must wait {RefreshIntervalHours}" : "Insufficient daily refresh quota"));
+                        (!CanRefreshNow() ? $"Must wait {RefreshIntervalHours} hours" : "Insufficient daily refresh quota"));
                     break;
 
                 case ActionTypes.SocialMediaPost:
@@ -165,9 +159,9 @@ namespace QLN.Common.DTO_s.Subscription
                         (!CanPostSocialMedia ? "Social posting not allowed" : "Insufficient social quota");
                     break;
             }
+
             return r;
         }
-
         public bool RecordUsage(string actionType, int quantity = 1, Dictionary<string, object>? metadata = null)
         {
             var v = ValidateAction(actionType, quantity);
@@ -178,25 +172,25 @@ namespace QLN.Common.DTO_s.Subscription
                 case ActionTypes.Publish:
                     AdsUsed += quantity;
                     break;
+
                 case ActionTypes.UnPublish:
-                    AdsUsed -= quantity;
-                    if (AdsUsed < 0) AdsUsed = 0; 
+                    AdsUsed = Math.Max(0, AdsUsed - quantity);
                     break;
 
                 case ActionTypes.Promote:
                     PromotionsUsed += quantity;
                     break;
+
                 case ActionTypes.UnPromote:
-                    PromotionsUsed -= quantity;
-                    if (PromotionsUsed < 0) PromotionsUsed = 0;
+                    PromotionsUsed = Math.Max(0, PromotionsUsed - quantity);
                     break;
 
                 case ActionTypes.Feature:
                     FeaturesUsed += quantity;
                     break;
+
                 case ActionTypes.UnFeature:
-                    FeaturesUsed -= quantity;
-                    if (FeaturesUsed < 0) FeaturesUsed = 0;
+                    FeaturesUsed = Math.Max(0, FeaturesUsed - quantity);
                     break;
 
                 case ActionTypes.Refresh:
@@ -215,5 +209,6 @@ namespace QLN.Common.DTO_s.Subscription
             LastUsageUpdate = DateTime.UtcNow;
             return true;
         }
+
     }
 }

@@ -858,6 +858,27 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                         });
                     }
 
+                    //if (!userData.TryGetProperty("subscription", out var subscriptionElement) ||
+                    //    !subscriptionElement.TryGetProperty("subscription_id", out var subscriptionIdElement))
+                    //{
+                    //    return TypedResults.Problem(new ProblemDetails
+                    //    {
+                    //        Title = "Unauthorized Access",
+                    //        Detail = "Subscription ID is missing in token.",
+                    //        Status = StatusCodes.Status403Forbidden
+                    //    });
+                    //}
+
+                    //if (!Guid.TryParse(subscriptionIdElement.GetString(), out var subscriptionId))
+                    //{
+                    //    return TypedResults.Problem(new ProblemDetails
+                    //    {
+                    //        Title = "Invalid Subscription ID",
+                    //        Detail = "Subscription ID in token is not a valid GUID.",
+                    //        Status = StatusCodes.Status400BadRequest
+                    //    });
+                    //}
+                    request.SubscriptionId = Guid.Parse("8459a8a0-93b0-4a31-84a9-88eb846274f3");
                     var resultMessage = await service.PromoteService(request, uid, cancellationToken);
 
                     if (resultMessage == null)

@@ -392,7 +392,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints
 
                     var isValid = await service.ValidateSubscriptionUsageAsync(
                         request.SubscriptionId,
-                       
                         request.QuotaType,
                         request.RequestedAmount,
                         cancellationToken);

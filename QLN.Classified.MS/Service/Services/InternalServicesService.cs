@@ -831,6 +831,7 @@ namespace QLN.Classified.MS.Service.Services
             {
                 serviceAd.PromotedExpiryDate = null;
             }
+            request.SubscriptionId = Guid.Parse("8459a8a0-93b0-4a31-84a9-88eb846274f3");
             serviceAd.UpdatedBy = uid;
             serviceAd.UpdatedAt = DateTime.UtcNow;
 

@@ -28,7 +28,7 @@ namespace QLN.Common.DTO_s.Subscription
         public SubscriptionQuota Quota { get; set; } = new();
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
-        public V2Status StatusId { get; set; }
+        public SubscriptionStatus StatusId { get; set; }
         public DateTime lastUpdated { get; set; }
         public string Version { get; set; } = "V2";
     }
@@ -88,11 +88,11 @@ namespace QLN.Common.DTO_s.Subscription
 
         [Required]
         [StringLength(100, ErrorMessage = "User ID must not exceed 100 characters")]
-   
+
         public Guid? CompanyId { get; set; }
 
         public int? PaymentId { get; set; }
-        
+
     }
 
     /// <summary>
@@ -106,7 +106,7 @@ namespace QLN.Common.DTO_s.Subscription
 
         [Required]
         [StringLength(100, ErrorMessage = "User ID must not exceed 100 characters")]
-        
+
 
         public Guid? CompanyId { get; set; }
 
@@ -127,7 +127,7 @@ namespace QLN.Common.DTO_s.Subscription
         [Required]
         [StringLength(50, ErrorMessage = "Quota type must not exceed 50 characters")]
         public string QuotaType { get; set; } = string.Empty;
-        
+
 
         [Required]
         [Range(1, 999999, ErrorMessage = "Requested amount must be between 0.01 and 999999.99")]
@@ -145,7 +145,7 @@ namespace QLN.Common.DTO_s.Subscription
         [Required]
         [StringLength(50, ErrorMessage = "Quota type must not exceed 50 characters")]
         public string QuotaType { get; set; } = string.Empty;
-      
+
 
         [Required]
         [Range(1, 999999, ErrorMessage = "Requested amount must be between 1 and 999,999")]
@@ -191,7 +191,7 @@ namespace QLN.Common.DTO_s.Subscription
         public SubscriptionQuota Quota { get; set; } = new();
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
-        public V2Status StatusId { get; set; }
+        public SubscriptionStatus StatusId { get; set; }
         public string StatusName { get; set; } = string.Empty;
         public bool IsActive { get; set; }
         public int DaysRemaining { get; set; }
@@ -247,7 +247,7 @@ namespace QLN.Common.DTO_s.Subscription
         public bool Success { get; set; }
         public DateTime PurchasedAt { get; set; }
         public DateTime ExpiresAt { get; set; }
-       
+
     }
 
     /// <summary>
@@ -262,7 +262,7 @@ namespace QLN.Common.DTO_s.Subscription
         public int RequestedAmount { get; set; }
         public decimal AvailableQuota { get; set; }
         public string Version { get; set; } = "V2";
-       
+
     }
 
     /// <summary>
@@ -278,7 +278,7 @@ namespace QLN.Common.DTO_s.Subscription
         public decimal RemainingQuota { get; set; }
         public DateTime RecordedAt { get; set; }
         public string Version { get; set; } = "V2";
-        
+
     }
 
     #endregion
