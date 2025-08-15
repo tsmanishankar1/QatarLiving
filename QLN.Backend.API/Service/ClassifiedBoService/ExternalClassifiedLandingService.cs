@@ -1128,12 +1128,6 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
                 return errorJson;
             }
         }
-
-
-
-
-
-
         public async Task<BulkAdActionResponseitems> BulkCollectiblesAction(
     BulkActionRequest request,
     string userId,
@@ -1147,7 +1141,6 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
 
             var failedIds = new List<long>();
             var succeededIds = new List<long>();
-            string? failReason = null;
 
             try
             {
@@ -1169,19 +1162,22 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
                 foreach (var group in groupedActions)
                 {
                     var subscriptionId = group.Key.SubscriptionId!.Value;
+
                     var actionName = group.Key.ActionType switch
                     {
                         BulkActionEnum.Promote => "promote",
-                        BulkActionEnum.Feature => "feature",  
+                        BulkActionEnum.Feature => "feature",
                         BulkActionEnum.UnPromote => "unpromote",
                         BulkActionEnum.UnFeature => "unfeature",
                         BulkActionEnum.Unpublish => "unpublish",
+                        BulkActionEnum.Publish => "publish",
+                        BulkActionEnum.Approve => "publish",
                         _ => throw new InvalidOperationException("Invalid bulk action.")
                     };
 
                     var usageCount = group.Count();
 
-                    // Validate subscription quota before making internal call
+                    // Step 1: validate subscription quota
                     var canUse = await _subscriptionContext.ValidateSubscriptionUsageAsync(
                         subscriptionId,
                         actionName,
@@ -1191,81 +1187,89 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
 
                     if (!canUse)
                     {
-                        failReason = $"Insufficient subscription quota for {actionName}";
-                        failedIds.AddRange(group.Select(x => x.Id));
-                        continue; // move to next subscription group
-                    }
-
-                    // Call internal service for this subscription group
-                    var firstSubId = subscriptionId;
-                    var url = $"api/v2/classifiedbo/bulk-collectibles-action-userid/{userId}&subscriptionId={firstSubId}";
-                    var serviceRequest = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, SERVICE_APP_ID, url);
-                    serviceRequest.Content = new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json");
-
-                    var response = await _dapr.InvokeMethodWithResponseAsync(serviceRequest, cancellationToken);
-
-                    if (!response.IsSuccessStatusCode)
-                    {
-                        var errorJson = await response.Content.ReadAsStringAsync(cancellationToken);
-                        failReason = ExtractErrorMessage(errorJson);
                         failedIds.AddRange(group.Select(x => x.Id));
                         continue;
                     }
 
-                    // Record quota usage
-                    var actionDisplay = group.Key.ActionType switch
-                    {
-                        BulkActionEnum.Promote => "Promote",
-                        BulkActionEnum.Feature => "Feature",
-                        BulkActionEnum.UnPromote => "unpromote",
-                        BulkActionEnum.UnFeature => "unfeature",
-                        BulkActionEnum.Unpublish => "unpublish",
-                        _ => throw new InvalidOperationException("Invalid bulk action.")
-                    };
-
-                    var success = await _subscriptionContext.RecordSubscriptionUsageAsync(
+                    // Step 2: reserve quota
+                    var reserved = await _subscriptionContext.RecordSubscriptionUsageAsync(
                         subscriptionId,
-                        actionDisplay,
+                        actionName,
                         usageCount,
                         cancellationToken
                     );
 
-                    if (success)
-                        succeededIds.AddRange(group.Select(x => x.Id));
-                    else
+                    if (!reserved)
                     {
-                        failReason = $"Failed to record usage for {actionDisplay}";
                         failedIds.AddRange(group.Select(x => x.Id));
+                        continue;
+                    }
+
+                    try
+                    {
+                        // Step 3: call internal service
+                        var url = $"api/v2/classifiedbo/bulk-collectibles-action-userid/{userId}&subscriptionId={subscriptionId}";
+                        var serviceRequest = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, SERVICE_APP_ID, url);
+                        serviceRequest.Content = new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json");
+
+                        var response = await _dapr.InvokeMethodWithResponseAsync(serviceRequest, cancellationToken);
+
+                        if (!response.IsSuccessStatusCode)
+                        {
+                            var errorJson = await response.Content.ReadAsStringAsync(cancellationToken);
+                            var failReason = ExtractErrorMessage(errorJson);
+
+                            // Rollback usage
+                            await _subscriptionContext.RecordSubscriptionUsageAsync(
+                                subscriptionId,
+                                actionName,
+                                -usageCount,
+                                cancellationToken
+                            );
+
+                            throw new InvalidOperationException($"Bulk collectibles action failed for {actionName}. Reason: {failReason}");
+                        }
+
+                        // API succeeded → mark ads as succeeded
+                        succeededIds.AddRange(group.Select(x => x.Id));
+                    }
+                    catch
+                    {
+                        // Rollback usage on exception
+                        await _subscriptionContext.RecordSubscriptionUsageAsync(
+                            subscriptionId,
+                            actionName,
+                            -usageCount,
+                            cancellationToken
+                        );
+
+                        failedIds.AddRange(group.Select(x => x.Id));
+                        continue;
                     }
                 }
 
-                // Final result
-                var result = new BulkAdActionResponseitems
+                return new BulkAdActionResponseitems
                 {
                     Failed = new ResultGroup
                     {
                         Count = failedIds.Count,
                         Ids = failedIds,
-                        Reason = failReason
+                        Reason = failedIds.Any() ? "Failed actions" : null
                     },
                     Succeeded = new ResultGroup
                     {
                         Count = succeededIds.Count,
-                        Ids = succeededIds
+                        Ids = succeededIds,
+                        Reason = "Success"
                     }
                 };
-
-                return result;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error in BulkCollectiblesAction");
-                throw new InvalidOperationException("Bulk collectibles action failed due to an unexpected error.", ex);
+                throw new InvalidOperationException("Bulk collectibles action failed unexpectedly.", ex);
             }
         }
-
-       
-
 
         public async Task<TransactionListResponseDto> GetTransactionsAsync(
             TransactionFilterRequestDto request,

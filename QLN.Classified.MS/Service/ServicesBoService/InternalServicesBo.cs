@@ -99,16 +99,16 @@ namespace QLN.Classified.MS.Service.ServicesBoService
                     .ToListAsync(cancellationToken);
 
               
-                var adIdStrings = pagedAds.Select(ad => ad.Id.ToString()).ToList();
+                var adIdStrings = pagedAds.Select(ad => ad.Id).ToList();
 
                 var matchingPayments = await _paymentsContext.Payments
-                    .Where(p => (int)p.Vertical == verticalId && adIdStrings.Contains(p.AdId))
+                    .Where(p => (int)p.Vertical == verticalId && adIdStrings.Contains((long)p.AdId))
                     .ToListAsync(cancellationToken);
 
                 
                 var resultItems = pagedAds.Select(serviceAd =>
                 {
-                    var matchingPayment = matchingPayments.FirstOrDefault(p => p.AdId == serviceAd.Id.ToString());
+                    var matchingPayment = matchingPayments.FirstOrDefault(p => p.AdId == serviceAd.Id);
 
                     return new ServiceAdSummaryDto
                     {
@@ -239,7 +239,7 @@ namespace QLN.Classified.MS.Service.ServicesBoService
                     .Distinct()
                     .ToList();
 
-                var payments = new List<(int PaymentId, decimal Fee, string AdId)>();
+                var payments = new List<(int PaymentId, decimal Fee, long? AdId)>();
                 if (paymentIds.Any())
                 {
                     var paymentData = await _paymentsContext.Payments
@@ -266,7 +266,7 @@ namespace QLN.Classified.MS.Service.ServicesBoService
 
                     var matchingPayment = matchingSubscription.PaymentId.HasValue
                         ? payments.FirstOrDefault(p => p.PaymentId == matchingSubscription.PaymentId.Value)
-                        : (PaymentId: 0, Fee: 0m, AdId: string.Empty);
+                        : (PaymentId: 0, Fee: 0m, AdId:0);
 
                     string subscriptionPlan = "N/A";
                     if (matchingSubscription.UserId != string.Empty)
@@ -438,14 +438,14 @@ namespace QLN.Classified.MS.Service.ServicesBoService
                 }
 
              
-                var adIdStrings = pagedAds.Select(ad => ad.Id.ToString()).ToList();
+                var adIdStrings = pagedAds.Select(ad => ad.Id).ToList();
                 var matchingPayments = await _paymentsContext.Payments
-                    .Where(p => (int)p.Vertical == verticalId && adIdStrings.Contains(p.AdId))
+                    .Where(p => (int)p.Vertical == verticalId && adIdStrings.Contains((long)p.AdId))
                     .ToListAsync(cancellationToken);
 
                 var pagedItems = pagedAds.Select(ad =>
                 {
-                    var matchingPayment = matchingPayments.FirstOrDefault(p => p.AdId == ad.Id.ToString());
+                    var matchingPayment = matchingPayments.FirstOrDefault(p => p.AdId == ad.Id);
 
                     var matchingSubscription = !string.IsNullOrWhiteSpace(ad.CreatedBy)
                         ? subscriptions.FirstOrDefault(s => s.UserId == ad.CreatedBy)
@@ -576,16 +576,16 @@ namespace QLN.Classified.MS.Service.ServicesBoService
                     .Take(pageSize)
                     .ToListAsync(cancellationToken);
 
-                var adIds = pagedAds.Select(ad => ad.Id.ToString()).ToList();
+                var adIds = pagedAds.Select(ad => ad.Id).ToList();
 
                
                 var matchingPayments = await _paymentsContext.Payments
-                    .Where(p => (int)p.Vertical == verticalId && adIds.Contains(p.AdId))
+                    .Where(p => (int)p.Vertical == verticalId && adIds.Contains((long)p.AdId))
                     .ToListAsync(cancellationToken);
 
                 var result = pagedAds.Select(ad =>
                 {
-                    var matchingPayment = matchingPayments.FirstOrDefault(p => p.AdId == ad.Id.ToString());
+                    var matchingPayment = matchingPayments.FirstOrDefault(p => p.AdId == ad.Id);
 
                     return new ServiceSubscriptionAdSummaryDto
                     {
