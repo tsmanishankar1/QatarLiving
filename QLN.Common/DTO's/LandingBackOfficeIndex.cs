@@ -53,7 +53,7 @@ namespace QLN.Common.DTO_s
 
         [SearchableField]
         public string? PayloadJson { get; set; }
-            // ✅ New property for UI only
+            
         [System.Text.Json.Serialization.JsonIgnore]
         public bool IsExpanded { get; set; } = false;
     }

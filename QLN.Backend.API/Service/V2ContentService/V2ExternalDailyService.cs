@@ -595,6 +595,51 @@ namespace QLN.Backend.API.Service.V2ContentService
                 return new List<ContentEvent>();
             }
         }
+
+        public async Task<DailyTopicsOnlyResponse> GetDailyTopicsOnlyAsync(int? page, int? pageSize, Guid topicId, CancellationToken ct)
+        {
+            var fullResponse = await GetDailyLivingLandingAsync(ct);
+
+            if (fullResponse?.ContentsDaily is null)
+                return new DailyTopicsOnlyResponse();
+
+            BaseQueueResponse<ContentEvent> PaginateIfMatch(BaseQueueResponse<ContentEvent> queue)
+            {
+                if (queue == null || queue.TopicId != topicId)
+                    return new BaseQueueResponse<ContentEvent>
+                    {
+                        QueueLabel = string.Empty,
+                        TopicId = null,
+                        Items = new List<ContentEvent>()
+                    };
+
+                var items = queue.Items;
+
+                if (page.HasValue && pageSize.HasValue)
+                {
+                    items = items
+                        .Skip((page.Value - 1) * pageSize.Value)
+                        .Take(pageSize.Value)
+                        .ToList();
+                }
+
+                return new BaseQueueResponse<ContentEvent>
+                {
+                    QueueLabel = queue.QueueLabel,
+                    TopicId = queue.TopicId,
+                    Items = items
+                };
+            }
+
+            return new DailyTopicsOnlyResponse
+            {
+                DailyTopics1 = PaginateIfMatch(fullResponse.ContentsDaily.DailyTopics1),
+                DailyTopics2 = PaginateIfMatch(fullResponse.ContentsDaily.DailyTopics2),
+                DailyTopics3 = PaginateIfMatch(fullResponse.ContentsDaily.DailyTopics3),
+                DailyTopics4 = PaginateIfMatch(fullResponse.ContentsDaily.DailyTopics4),
+                DailyTopics5 = PaginateIfMatch(fullResponse.ContentsDaily.DailyTopics5)
+            };
+        }
     }
 }
 

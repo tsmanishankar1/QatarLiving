@@ -1032,6 +1032,40 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
+            group.MapGet(
+                "/landing/topics",
+                async Task<Results<
+                    Ok<DailyTopicsOnlyResponse>,
+                    BadRequest<ProblemDetails>,
+                    ProblemHttpResult>>
+                (
+                    [FromServices] IV2ContentDailyService service,
+                    [FromQuery] int? pageNumber,
+                    [FromQuery] int? pageSize,
+                    [FromQuery] Guid topicId,
+                    CancellationToken ct
+                ) =>
+                {
+                    try
+                    {
+                        var topicsResponse = await service.GetDailyTopicsOnlyAsync(pageNumber, pageSize, topicId, ct);
+                        return TypedResults.Ok(topicsResponse);
+                    }
+                    catch (Exception ex)
+                    {
+                        return TypedResults.Problem(
+                            title: "Failed to build daily topics",
+                            detail: ex.Message
+                        );
+                    }
+                })
+                .WithName("GetDailyLivingTopicsOnly")
+                .WithTags("DailyLivingBO")
+                .WithSummary("Builds only the daily topics payload")
+                .Produces<DailyTopicsOnlyResponse>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
             return group;
         }
     }
