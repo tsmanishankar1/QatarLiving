@@ -128,6 +128,7 @@ namespace QLN.Subscriptions.Actor.ActorClass
 
             var qty = (int)Math.Ceiling(amount);
             var action = MapQuotaTypeToAction(quotaType);
+            Console.WriteLine("RecordusageAsync1:" );
             var ok = data.Quota.RecordUsage(action, qty);
             if (!ok) return false;
 

@@ -868,8 +868,10 @@ namespace QLN.Classified.MS.Service.Services
 
             return serviceAd;
         }
-        public async Task<Common.Infrastructure.Model.Services> FeatureService(FeatureServiceRequest request, string? uid, CancellationToken ct)
+        public async Task<Common.Infrastructure.Model.Services> FeatureService(FeatureServiceRequest request, string? uid, Guid subscriptionId, CancellationToken ct)
         {
+           // var subscriptionid = Guid.Parse("752ea67e-5fc3-4dae-ab96-4aa3822afc38");
+            var subscription = await _qLSubscriptionContext.Subscriptions.AsNoTracking().FirstOrDefaultAsync(s => s.SubscriptionId == subscriptionId, ct);
             var serviceAd = await _dbContext.Services
                 .FirstOrDefaultAsync(s => s.Id == request.ServiceId && s.IsActive, ct);
 

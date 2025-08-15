@@ -969,5 +969,10 @@ namespace QLN.Content.MS.Service.DailyInternalService
                 }
             };
         }
+
+        public Task<DailyTopicsOnlyResponse> GetDailyTopicsOnlyAsync(int? pageNumber, int? pageSize, Guid topicId, CancellationToken ct)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

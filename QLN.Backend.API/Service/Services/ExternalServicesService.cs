@@ -1,4 +1,5 @@
-﻿using Dapr.Client;
+﻿using Dapr;
+using Dapr.Client;
 using Microsoft.AspNetCore.Mvc;
 using QLN.Common.DTO_s;
 using QLN.Common.DTO_s.Subscription;
@@ -20,11 +21,11 @@ namespace QLN.Backend.API.Service.Services
         private readonly DaprClient _dapr;
         private readonly ILogger<ExternalServicesService> _logger;
         private readonly IV2SubscriptionService _v2SubscriptionService;
-        public ExternalServicesService(DaprClient dapr, ILogger<ExternalServicesService> logger, IV2SubscriptionService v2SubscriptionService)
+        public ExternalServicesService(DaprClient dapr, ILogger<ExternalServicesService> logger,IV2SubscriptionService v2SubscriptionService)
         {
             _dapr = dapr;
             _logger = logger;
-            _v2SubscriptionService = v2SubscriptionService;
+            _v2SubscriptionService=v2SubscriptionService;
         }
         public async Task<string> CreateCategory(CategoryDto dto, CancellationToken cancellationToken)
         {
@@ -460,17 +461,18 @@ namespace QLN.Backend.API.Service.Services
                 throw;
             }
         }
-        public async Task<Common.Infrastructure.Model.Services> FeatureService(FeatureServiceRequest request, string? uid, CancellationToken ct)
+        public async Task<Common.Infrastructure.Model.Services> FeatureService(FeatureServiceRequest request, string? uid, Guid subscriptionId, CancellationToken ct = default)
         {
+            HttpStatusCode? failedStatusCode = null;
+
             try
             {
-                var quotaAction = request.IsFeature ? ActionTypes.Feature : ActionTypes.UnFeature;
-
-                if (quotaAction == ActionTypes.Feature && request.SubscriptionId != Guid.Empty)
+                
+                if (subscriptionId != Guid.Empty)
                 {
                     var canUse = await _v2SubscriptionService.ValidateSubscriptionUsageAsync(
-                        request.SubscriptionId.Value,
-                        quotaAction,
+                        subscriptionId,
+                        "feature",
                         1,
                         ct
                     );
@@ -478,19 +480,22 @@ namespace QLN.Backend.API.Service.Services
                     if (!canUse)
                     {
                         _logger.LogWarning(
-                            "Subscription {SubscriptionId} has insufficient quota for {QuotaAction}.",
-                            request.SubscriptionId, quotaAction
+                            "Subscription {SubscriptionId} has insufficient quota for feature service.",
+                            subscriptionId
                         );
-                        throw new InvalidOperationException($"Insufficient subscription quota for {quotaAction.ToLower()}.");
+                        throw new InvalidOperationException("Insufficient subscription quota for featuring a service.");
                     }
                 }
-                var url = $"/api/service/featurebyuserid?uid={uid}";
+
+
+                var url = $"/api/service/featurebyuserid?uid={uid}&subscriptionId={subscriptionId}";
+
                 var serviceRequest = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, ConstantValues.Services.ServiceAppId, url);
                 serviceRequest.Content = new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json");
 
                 var response = await _dapr.InvokeMethodWithResponseAsync(serviceRequest, ct);
 
-                if (response.StatusCode == HttpStatusCode.OK)
+                if (response.IsSuccessStatusCode)
                 {
                     var json = await response.Content.ReadAsStringAsync(ct);
                     var serviceDto = JsonSerializer.Deserialize<Common.Infrastructure.Model.Services>(json, new JsonSerializerOptions
@@ -500,6 +505,24 @@ namespace QLN.Backend.API.Service.Services
 
                     if (serviceDto is null)
                         throw new InvalidDataException("Invalid data returned from service.");
+                    if (subscriptionId != Guid.Empty)
+                    {
+                        var success = await _v2SubscriptionService.RecordSubscriptionUsageAsync(
+                            subscriptionId,
+                            "feature",
+                            1,
+                            ct
+                        );
+
+                        if (!success)
+                        {
+                            _logger.LogWarning(
+                                "Failed to record subscription usage for SubscriptionId {SubscriptionId}",
+                                subscriptionId
+                            );
+                        }
+
+                    }
 
                     if (serviceDto.SubscriptionId != Guid.Empty)
                     {
@@ -520,20 +543,63 @@ namespace QLN.Backend.API.Service.Services
                     }
                     return serviceDto;
                 }
-                else if (response.StatusCode == HttpStatusCode.NotFound)
-                {
-                    throw new KeyNotFoundException("Service not found");
-                }
                 else
                 {
                     var errorJson = await response.Content.ReadAsStringAsync(ct);
-                    throw new InvalidDataException(errorJson);
+                    string errorMessage;
+
+                    if (!string.IsNullOrWhiteSpace(errorJson))
+                    {
+                        try
+                        {
+                            var problem = JsonSerializer.Deserialize<ProblemDetails>(errorJson);
+                            errorMessage = problem?.Detail ?? "Unknown validation error.";
+                        }
+                        catch (JsonException)
+                        {
+                            errorMessage = errorJson;
+                        }
+                    }
+                    else
+                    {
+                        errorMessage = "No error details returned from service.";
+                    }
+
+                    failedStatusCode = response.StatusCode;
+                    throw new InvalidDataException(errorMessage);
                 }
+            }
+            catch (InvalidOperationException)
+            {
+                throw; // Re-throw subscription quota exceptions as-is
+            }
+            catch (KeyNotFoundException)
+            {
+                throw; // Re-throw key not found exceptions as-is
+            }
+            catch (DaprException daprEx)
+            {
+                _logger.LogError(daprEx, "Failed to invoke internal service through Dapr");
+                throw new InvalidOperationException("Failed to invoke internal service through Dapr.", daprEx);
+            }
+            catch (HttpRequestException httpEx)
+            {
+                _logger.LogError(httpEx, "Failed to communicate with the internal service");
+                throw new InvalidOperationException("Failed to communicate with the internal service.", httpEx);
             }
             catch (Exception ex)
             {
+                if (failedStatusCode == HttpStatusCode.Conflict)
+                {
+                    throw new ConflictException(ex.Message);
+                }
+                else if (failedStatusCode == HttpStatusCode.NotFound)
+                {
+                    throw new KeyNotFoundException(ex.Message);
+                }
+
                 _logger.LogError(ex, "Error featuring service");
-                throw;
+                throw new InvalidOperationException("Failed to feature the service due to an unexpected error.", ex);
             }
         }
         public async Task<Common.Infrastructure.Model.Services> RefreshService(RefreshServiceRequest request, string? uid, CancellationToken ct)
