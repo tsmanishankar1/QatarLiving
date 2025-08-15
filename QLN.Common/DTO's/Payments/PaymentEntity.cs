@@ -13,6 +13,7 @@ namespace QLN.Common.DTO_s.Payments
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        [Column("paymentid")]
         public int PaymentId { get; set; }
 
         public ProductType ProductType { get; set; }

@@ -5,11 +5,16 @@
 namespace QLN.Common.Migrations.ClassifiedDev
 {
     /// <inheritdoc />
-    public partial class DealLocationchangev2 : Migration
+    public partial class ClassifiedsPrelovedCollectiblesFieldsAdd : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+//            migrationBuilder.AddColumn<string>(
+//name: "Locations",
+//table: "Deal",
+//type: "jsonb",
+//nullable: true);
 
         }
 
