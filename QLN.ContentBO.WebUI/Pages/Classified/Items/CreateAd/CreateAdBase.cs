@@ -18,30 +18,38 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.CreateAd
         [Inject] public IClassifiedService ClassifiedService { get; set; }
         [Inject] public IFileUploadService FileUploadService { get; set; }
         [Inject] protected IDialogService DialogService { get; set; }
-
-        protected List<LocationZoneDto> Zones { get; set; } = new();
         [Inject] ILogger<CreateAdBase> Logger { get; set; }
+        [Inject] ISnackbar Snackbar { get; set; }
+        [Inject] private IJSRuntime JS { get; set; }
+
+        protected List<LocationZoneDto> Zones { get; set; } = [];
         protected bool IsLoadingZones { get; set; } = true;
         protected bool IsLoadingCategories { get; set; } = true;
         protected bool IsSaving { get; set; } = false;
         protected bool IsLoadingMap { get; set; } = false;
-
         protected string? ErrorMessage { get; set; }
-        [Inject] ISnackbar Snackbar { get; set; }
-        [Inject] private IJSRuntime JS { get; set; }
 
-        protected void GoBack()
-        {
-            Navigation.NavigateTo("/manage/classified/items/view/listing");
-        }
         protected AdPost adPostModel { get; set; } = new();
         protected EditContext editContext;
         private ValidationMessageStore messageStore;
-
-
         protected string? UserEmail { get; set; }
-
         protected string? UserId { get; set; }
+
+        protected List<ClassifiedsCategory> CategoryTrees { get; set; } = new();
+        protected ClassifiedsCategory SelectedCategory => CategoryTrees.FirstOrDefault(x => x.Id.ToString() == adPostModel.SelectedCategoryId);
+        protected ClassifiedsCategoryField SelectedSubcategory => SelectedCategory?.Fields?.FirstOrDefault(x => x.Id.ToString() == adPostModel.SelectedSubcategoryId);
+        protected ClassifiedsCategoryField SelectedSubSubcategory => SelectedSubcategory?.Fields?.FirstOrDefault(x => x.Id.ToString() == adPostModel.SelectedSubSubcategoryId);
+        protected List<ClassifiedsCategoryField> AvailableFields =>
+                                        SelectedSubSubcategory?.Fields ??
+                                        SelectedSubcategory?.Fields ??
+                                        SelectedCategory?.Fields ??
+                                        [];
+        protected string[] ExcludedFields =>
+        [
+            ""// Add any other fields you want to hide here
+        ];
+
+        protected Dictionary<string, List<string>> DynamicFieldErrors { get; set; } = [];
 
         protected override async Task OnInitializedAsync()
         {
@@ -76,29 +84,13 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.CreateAd
             await LoadCategoryTreesAsync();
         }
 
-         protected List<ClassifiedsCategory> CategoryTrees { get; set; } = new();
-        protected ClassifiedsCategory SelectedCategory => CategoryTrees.FirstOrDefault(x => x.Id.ToString() == adPostModel.SelectedCategoryId);
-        protected ClassifiedsCategoryField SelectedSubcategory => SelectedCategory?.Fields?.FirstOrDefault(x => x.Id.ToString() == adPostModel.SelectedSubcategoryId);
-        protected ClassifiedsCategoryField SelectedSubSubcategory => SelectedSubcategory?.Fields?.FirstOrDefault(x => x.Id.ToString() == adPostModel.SelectedSubSubcategoryId);
-        protected List<ClassifiedsCategoryField> AvailableFields =>
-                                        SelectedSubSubcategory?.Fields ??
-                                        SelectedSubcategory?.Fields ??
-                                        SelectedCategory?.Fields ??
-                                        new List<ClassifiedsCategoryField>();
-         protected string[] ExcludedFields => new[]
-       {
-            ""// Add any other fields you want to hide here
-        };
-
-        protected Dictionary<string, List<string>> DynamicFieldErrors { get; set; } = new();
-
         protected List<string> GetDynamicFieldErrors(string fieldName)
         {
             if (DynamicFieldErrors.TryGetValue(fieldName, out var errors))
             {
                 return errors;
             }
-            return new List<string>();
+            return [];
         }
 
         private void ValidateDynamicFields()
@@ -114,6 +106,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.CreateAd
                 }
             }
         }
+
         protected async Task SubmitForm()
         {
             messageStore.Clear();
@@ -168,12 +161,11 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.CreateAd
                 Snackbar.Add("Please check highlighted fields before creating ad.", Severity.Error);
                 return;
             }
-            // All good!
-            // Snackbar.Add("Form is valid and ready to submit!", Severity.Success);
-            // Proceed with form submission
+
             await OpenConfirmationDialog();
 
         }
+
         private async Task OpenConfirmationDialog()
         {
             var parameters = new DialogParameters
@@ -191,14 +183,16 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.CreateAd
                 FullWidth = true
             };
 
-            var dialog = DialogService.Show<ConfirmationDialog>("", parameters, options);
+            var dialog = await DialogService.ShowAsync<ConfirmationDialog>("", parameters, options);
             var result = await dialog.Result;
         }
-         private async Task HandleAdConfirmedAsync()
+
+        private async Task HandleAdConfirmedAsync()
         {
             await PostAdToApiAsync();
         }
-          protected async Task OpenDiscardDialog()
+
+        protected async Task OpenDiscardDialog()
         {
             var parameters = new DialogParameters
             {
@@ -207,14 +201,14 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.CreateAd
                 { "OnDiscard", EventCallback.Factory.Create(this, HandleDiscardAsync) }
             };
 
-                 var options = new DialogOptions
+            var options = new DialogOptions
             {
                 CloseButton = false,
                 MaxWidth = MaxWidth.Small,
                 FullWidth = true
             };
 
-            var dialog = DialogService.Show<DiscardDialog>("", parameters, options);
+            var dialog = await DialogService.ShowAsync<DiscardDialog>("", parameters, options);
             var result = await dialog.Result;
 
         }
@@ -240,14 +234,14 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.CreateAd
             // Notify UI to re-render
             StateHasChanged();
         }
+
         private async Task HandleDiscardAsync()
         {
             ResetFormState();
             Snackbar.Add("Ad creation form discarded successfully.", Severity.Info);
         }
 
-
-         private string GetCategoryNameById(string? id)
+        private string GetCategoryNameById(string? id)
         {
             if (string.IsNullOrEmpty(id)) return string.Empty;
 
@@ -293,7 +287,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.CreateAd
                     condition = adPostModel.DynamicFields.GetValueOrDefault("Condition"),
                     color = adPostModel.DynamicFields.GetValueOrDefault("Color"),
                     location = adPostModel.DynamicFields.GetValueOrDefault("Location"),
-                    
+
                     latitude = adPostModel.Latitude ?? 0,
                     longitude = adPostModel.Longitude ?? 0,
                     contactNumber = adPostModel.PhoneNumber,
@@ -336,7 +330,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.CreateAd
             }
         }
 
-         private async Task<List<object>> UploadImagesAsync(List<AdImage> images)
+        private async Task<List<object>> UploadImagesAsync(List<AdImage> images)
         {
             var uploadedImages = new List<object>();
 
@@ -444,14 +438,14 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.CreateAd
                 IsLoadingZones = false;
             }
         }
-             protected async Task TrySetCoordinatesFromAddressAsync()
+
+        protected async Task TrySetCoordinatesFromAddressAsync()
         {
             // Ensure all required fields are available
             if (string.IsNullOrWhiteSpace(adPostModel.Zone) ||
                 !adPostModel.StreetNumber.HasValue ||
                 !adPostModel.BuildingNumber.HasValue)
             {
-                // Logger?.LogWarning("Address fields are incomplete, skipping coordinates lookup.");
                 return;
             }
             IsLoadingMap = true;
@@ -478,11 +472,8 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.CreateAd
                         adPostModel.Latitude = latitude;
                         adPostModel.Longitude = longitude;
 
-                        // Logger?.LogInformation($"Coordinates set: {latitude}, {longitude}");
-                        // Trigger JS to update the map without manual interaction
                         await JS.InvokeVoidAsync("updateMapCoordinates", latitude, longitude);
                     }
-
                 }
                 else
                 {
@@ -499,5 +490,9 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.CreateAd
             }
         }
 
+        protected void GoBack()
+        {
+            Navigation.NavigateTo("/manage/classified/items/view/listing", true);
+        }
     }
 }
