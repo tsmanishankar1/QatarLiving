@@ -1560,11 +1560,11 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                               join s in subscriptions on p.PaymentId equals s.PaymentId
                               join u in users on s.UserId equals u.Id.ToString() into userJoin
                               from u in userJoin.DefaultIfEmpty()
-                              join i in publisheddate on p.AdId equals i.Id.ToString() into itemJoin
+                              join i in publisheddate on p.AdId equals i.Id into itemJoin
                               from i in itemJoin.DefaultIfEmpty()
                               select new TransactionDto
                               {
-                                  AdId = p.AdId,
+                                  AdId = (long)p.AdId,
                                   OrderId = p.PaymentId,
                                   Username = u?.UserName,
                                   UserId = s.UserId,
@@ -1591,11 +1591,11 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                               join s in subscriptions on p.PaymentId equals s.PaymentId
                               join u in users on s.UserId equals u.Id.ToString() into userJoin
                               from u in userJoin.DefaultIfEmpty()
-                              join i in publisheddate on p.AdId equals i.Id.ToString() into itemJoin
+                              join i in publisheddate on p.AdId equals i.Id into itemJoin
                               from i in itemJoin.DefaultIfEmpty()
                               select new TransactionDto
                               {
-                                  AdId = p.AdId,
+                                  AdId = (long)p.AdId,
                                   OrderId = p.PaymentId,
                                   Username = u?.UserName,
                                  // ProductType = p.ProductType,
@@ -1641,7 +1641,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                         t.Mobile.ToLower().Contains(search) ||
                         t.Whatsapp.ToLower().Contains(search) ||
                         t.Status.ToLower().Contains(search) ||
-                        t.AdId.ToLower().Contains(search) ||
+                        t.AdId.ToString().Contains(search) ||
                         t.OrderId.ToString().Contains(search)
                     );
                     _logger.LogInformation("Filtered by search text: {SearchText}", request.SearchText);
@@ -1960,7 +1960,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                               join s in subscriptions on p.PaymentId equals s.PaymentId
                               join u in users on s.UserId equals u.Id.ToString() into userJoin
                               from u in userJoin.DefaultIfEmpty()
-                              join d in deals on p.AdId equals d.Id.ToString() into dealJoin
+                              join d in deals on p.AdId equals d.Id into dealJoin
                               from d in dealJoin.DefaultIfEmpty()
                               select new DealsAdSummaryDto
                               {
@@ -2084,7 +2084,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                               join s in subscriptions on p.PaymentId equals s.PaymentId
                               join u in users on s.UserId equals u.Id.ToString() into userJoin
                               from u in userJoin.DefaultIfEmpty()
-                              join d in deals on p.AdId equals d.Id.ToString() into dealJoin
+                              join d in deals on p.AdId equals d.Id into dealJoin
                               from d in dealJoin.DefaultIfEmpty()
                               where d != null && d.IsActive
                               select new DealsViewSummaryDto
