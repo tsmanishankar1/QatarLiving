@@ -126,9 +126,9 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status500InternalServerError);
 
-            group.MapGet("/classifieds/details/{subVertical}/{id}", async (
+            group.MapGet("/classifieds/details/{subVertical}/{slug}", async (
                 [FromRoute] string subVertical,
-                [FromRoute] string id,
+                [FromRoute] string slug,
                 [FromQuery] int similarPageSize,
                 [FromServices] ISearchService svc,
                 [FromServices] ILoggerFactory logFac
@@ -136,7 +136,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             {
                 var logger = logFac.CreateLogger("ClassifiedEndpoints");
 
-                if (string.IsNullOrWhiteSpace(id))
+                if (string.IsNullOrWhiteSpace(slug))
                 {
                     logger.LogWarning("GetDetails called with empty id");
                     return Results.BadRequest(new ProblemDetails
@@ -144,7 +144,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         Title = "Bad Request",
                         Detail = "Document ID is required.",
                         Status = StatusCodes.Status400BadRequest,
-                        Instance = $"/api/classifieds/details/{subVertical}/{id}"
+                        Instance = $"/api/classifieds/details/{subVertical}/{slug}"
                     });
                 }
 
@@ -155,6 +155,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         "items" => (ConstantValues.IndexNames.ClassifiedsItemsIndex, typeof(ClassifiedsItemsIndex)),
                         "preloved" => (ConstantValues.IndexNames.ClassifiedsPrelovedIndex, typeof(ClassifiedsPrelovedIndex)),
                         "collectibles" => (ConstantValues.IndexNames.ClassifiedsCollectiblesIndex, typeof(ClassifiedsCollectiblesIndex)),
+                        "deals" => (ConstantValues.IndexNames.ClassifiedsDealsIndex,typeof(ClassifiedsDealsIndex)),
+                        "stores" => (ConstantValues.IndexNames.ClassifiedStoresIndex,typeof(ClassifiedStoresIndex)),
                         _ => (null, null)
                     };
 
@@ -165,18 +167,18 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                             Title = "Invalid SubVertical",
                             Detail = $"Unsupported subVertical: '{subVertical}'",
                             Status = StatusCodes.Status400BadRequest,
-                            Instance = $"/api/classifieds/details/{subVertical}/{id}"
+                            Instance = $"/api/classifieds/details/{subVertical}/{slug}"
                         });
                     }
 
                     var method = typeof(ISearchService)
-                        .GetMethod("GetByIdWithSimilarAsync")?
+                        .GetMethod("GetBySlugWithSimilarAsync")?
                         .MakeGenericMethod(modelType);
 
                     if (method == null)
                         throw new InvalidOperationException("Method resolution failed");
 
-                    var task = (Task)method.Invoke(svc, new object[] { indexName, id, similarPageSize });
+                    var task = (Task)method.Invoke(svc, new object[] { indexName, slug, similarPageSize });
                     await task.ConfigureAwait(false);
 
                     var resultProperty = task.GetType().GetProperty("Result");
@@ -189,9 +191,9 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                     return Results.NotFound(new ProblemDetails
                     {
                         Title = "Not Found",
-                        Detail = $"No document '{id}' in '{subVertical}'.",
+                        Detail = $"No document '{slug}' in '{subVertical}'.",
                         Status = StatusCodes.Status404NotFound,
-                        Instance = $"/api/classifieds/details/{subVertical}/{id}"
+                        Instance = $"/api/classifieds/details/{subVertical}/{slug}"
                     });
                 }
                 catch (ArgumentException ex)
@@ -202,7 +204,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         Title = "Invalid Request",
                         Detail = ex.Message,
                         Status = StatusCodes.Status400BadRequest,
-                        Instance = $"/api/classifieds/details/{subVertical}/{id}"
+                        Instance = $"/api/classifieds/details/{subVertical}/{slug}"
                     });
                 }
                 catch (RequestFailedException ex)
@@ -212,7 +214,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         title: "Search Error",
                         detail: ex.Message,
                         statusCode: StatusCodes.Status502BadGateway,
-                        instance: $"/api/classifieds/details/{subVertical}/{id}"
+                        instance: $"/api/classifieds/details/{subVertical}/{slug}"
                     );
                 }
                 catch (Exception ex)
@@ -222,7 +224,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         title: "Lookup Error",
                         detail: ex.Message,
                         statusCode: StatusCodes.Status500InternalServerError,
-                        instance: $"/api/classifieds/details/{subVertical}/{id}"
+                        instance: $"/api/classifieds/details/{subVertical}/{slug}"
                     );
                 }
             })

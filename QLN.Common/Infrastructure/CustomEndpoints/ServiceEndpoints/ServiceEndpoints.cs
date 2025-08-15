@@ -657,20 +657,20 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
         }
         public static RouteGroupBuilder MapDetailedGetByIdEndpoint(this RouteGroupBuilder group)
         {
-            group.MapGet("/getbyserviceid/{id:long}", async Task<Results<
+            group.MapGet("/getbyserviceid/{slug}", async Task<Results<
                 Ok<GetWithSimilarResponse<ServicesIndex>>,
                 NotFound<ProblemDetails>,
                 ProblemHttpResult>> (
 
-                long id,
+                string slug,
                 [FromServices] ISearchService service,
                 CancellationToken cancellationToken) =>
             {
                 try
                 {
-                    var result = await service.GetByIdWithSimilarAsync<ServicesIndex>(
+                    var result = await service.GetBySlugWithSimilarAsync<ServicesIndex>(
                         ConstantValues.IndexNames.ServicesIndex,
-                        id.ToString(),
+                        slug,
                         10
                     );
 
@@ -679,7 +679,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                         return TypedResults.NotFound(new ProblemDetails
                         {
                             Title = "Service Ad Not Found",
-                            Detail = $"No service ad found with ID: {id}",
+                            Detail = $"No service ad found with ID: {slug}",
                             Status = 404
                         });
                     }
