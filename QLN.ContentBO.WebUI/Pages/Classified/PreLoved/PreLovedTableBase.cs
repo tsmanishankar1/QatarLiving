@@ -12,7 +12,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved
 {
     public partial class PreLovedTableBase : QLComponentBase
     {
-        [Inject] public IClassifiedService ClassifiedService { get; set; }
+        [Inject] public IPrelovedService PrelovedService { get; set; }
         [Inject] public ISnackbar Snackbar { get; set; }
         [Inject] public ILogger<PreLovedTableBase> Logger { get; set; }
         [Inject] public IDialogService DialogService { get; set; }
@@ -264,7 +264,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved
             };
         }
 
-        private async Task PerformBulkAction(BulkActionEnum action, string reason = "", List<int>? adIds = null)
+        private async Task PerformBulkAction(BulkActionEnum action, string reason = "", List<long?> adIds = null)
         {
             isBulkActionLoading = adIds == null; // only bulk shows spinner
 
@@ -284,19 +284,17 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved
             {
                 var payloadJson = JsonSerializer.Serialize(payload);
                 Logger.LogInformation("Performing bulk action: {Payload}", payloadJson);
-                var response = await ClassifiedService.PerformPrelovedBulkActionAsync(payload);
+                var response = await PrelovedService.BulkActionAsync(adIds, (int)action);
 
                 if (response?.IsSuccessStatusCode == true)
                 {
                     SelectedListings.Clear();
-                    Listings = Listings.Where(i => !adIds.Contains(i.AdId)).ToList();
+                    Listings = [.. Listings.Where(i => !adIds.Contains(i.AdId))];
                     Snackbar.Add(GetSuccessMessage(action), Severity.Success);
 
                 }
                 else
                 {
-                    // Logger.LogWarning("Bulk action failed. StatusCode: {StatusCode}, Payload: {@Payload}",
-                    //     response?.StatusCode, payload);
                     Snackbar.Add("Something went wrong while performing the action.", Severity.Error);
                 }
             }

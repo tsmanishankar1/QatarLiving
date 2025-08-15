@@ -116,7 +116,6 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.P2p
             await LoadData();
         }
 
-
         protected async Task HandlePageChanged(int newPage)
         {
             PageSize = 12;
