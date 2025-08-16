@@ -21,6 +21,7 @@
             public int SlotNumber { get; set; }
             public LandingPageItem? Event { get; set; }
         }
+
         public class SeasonalPickDto
         {
             public string Id { get; set; } = "";
@@ -29,6 +30,5 @@
             public DateTime EndDate { get; set; }
             public int SlotOrder { get; set; }
         }
-
     }
 }

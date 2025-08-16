@@ -805,6 +805,10 @@ namespace QLN.ContentBO.WebUI.Services
 
                 // Serialize the payload exactly as it will be sent
                 var jsonPayload = JsonSerializer.Serialize(payload, serializeOptions);
+
+                // Print the exact JSON that will be sent
+                Console.WriteLine("Payload JSON Sent: " + jsonPayload);
+
                 using var request = new HttpRequestMessage(HttpMethod.Post, endpoint)
                 {
                     Content = new StringContent(jsonPayload, Encoding.UTF8, "application/json")
@@ -812,11 +816,9 @@ namespace QLN.ContentBO.WebUI.Services
 
                 var response = await _httpClient.SendAsync(request);
 
-                if (!response.IsSuccessStatusCode)
-                {
-                    var errorBody = await response.Content.ReadAsStringAsync();
-                    Console.WriteLine("API Error Response: " + errorBody);
-                }
+                // Print full response for debugging
+                var responseContent = await response.Content.ReadAsStringAsync();
+                Console.WriteLine("API Response (" + response.StatusCode + "): " + responseContent);
 
                 return response;
             }
@@ -836,6 +838,7 @@ namespace QLN.ContentBO.WebUI.Services
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
+
 
         public async Task<HttpResponseMessage?> UpdateAdAsync(string vertical, object payload)
         {

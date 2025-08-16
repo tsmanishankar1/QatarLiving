@@ -13,7 +13,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
     public class EditDealsBase : QLComponentBase
     {
         [Parameter]
-        public long? AdId { get; set; }
+        public long AdId { get; set; }
         [Inject] public NavigationManager Navigation { get; set; }
         protected DealsModal adPostModel { get; set; } = new();
 
