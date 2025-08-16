@@ -451,10 +451,17 @@ namespace QLN.Common.Infrastructure.Service.AuthService
 
                 var usernameOrEmailOrPhone = request.UsernameOrEmailOrPhone;
 
-                var user = await _userManager.FindByNameAsync(usernameOrEmailOrPhone)
-                    ?? await _userManager.FindByEmailAsync(usernameOrEmailOrPhone)
-                    ?? await _userManager.Users.FirstOrDefaultAsync(u =>
-                    u.PhoneNumber == usernameOrEmailOrPhone);
+                /* var user = await _userManager.FindByNameAsync(usernameOrEmailOrPhone)
+                     ?? await _userManager.FindByEmailAsync(usernameOrEmailOrPhone)
+                     ?? await _userManager.Users.FirstOrDefaultAsync(u =>
+                     u.PhoneNumber == usernameOrEmailOrPhone);*/
+                var user = await _userManager.Users
+            .Include(u => u.Subscriptions) 
+            .Include(x => x.Companies)
+            .FirstOrDefaultAsync(u =>
+                u.UserName == usernameOrEmailOrPhone ||
+                u.Email == usernameOrEmailOrPhone ||
+                u.PhoneNumber == usernameOrEmailOrPhone);
 
 
                 var isValid = await _userManager.CheckPasswordAsync(user, request.Password);
@@ -480,8 +487,8 @@ namespace QLN.Common.Infrastructure.Service.AuthService
                         IsTwoFactorEnabled = true
                     });
                 }
-
-                var accessToken = await _tokenService.GenerateAccessToken(user);
+                var drupaluser = new DrupalUser();
+                var accessToken = await _tokenService.GenerateEnrichedAccessToken(user, drupaluser, DateTime.UtcNow.AddDays(30),null);
                 var refreshToken = _tokenService.GenerateRefreshToken();
 
                 await _userManager.SetAuthenticationTokenAsync(user, Constants.ConstantValues.QLNProvider, Constants.ConstantValues.RefreshToken, refreshToken);
