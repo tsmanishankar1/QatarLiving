@@ -14,8 +14,8 @@ using QLN.Common.Infrastructure.QLDbContext;
 namespace QLN.Common.Migrations.ClassifiedDev
 {
     [DbContext(typeof(QLClassifiedContext))]
-    [Migration("20250815155134_ClassifiedsPrelovedCollectiblesFieldsAdded-v3")]
-    partial class ClassifiedsPrelovedCollectiblesFieldsAddedv3
+    [Migration("20250816074021_DealsCompanyLogoLength")]
+    partial class DealsCompanyLogoLength
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -65,6 +65,53 @@ namespace QLN.Common.Migrations.ClassifiedDev
                     b.HasIndex("StoreProductId");
 
                     b.ToTable("ProductImage");
+                });
+
+            modelBuilder.Entity("QLN.Common.DTO_s.ClassifiedsBo.StoreCompanyDto", b =>
+                {
+                    b.Property<string>("BranchLocations")
+                        .HasColumnType("text")
+                        .HasColumnName("BranchLocations");
+
+                    b.Property<string>("CompanyLogo")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("CompanyLogo");
+
+                    b.Property<string>("CompanyName")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("CompanyName");
+
+                    b.Property<string>("CoverImage1")
+                        .HasColumnType("text")
+                        .HasColumnName("CoverImage1");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("Email");
+
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("Id");
+
+                    b.Property<string>("PhoneNumber")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("PhoneNumber");
+
+                    b.Property<string>("Slug")
+                        .HasColumnType("text")
+                        .HasColumnName("Slug");
+
+                    b.Property<string>("WebsiteUrl")
+                        .HasColumnType("text")
+                        .HasColumnName("WebsiteUrl");
+
+                    b.ToTable("StoreCompanyDto");
+
+                    b.ToSqlQuery("\r\n        SELECT \r\n            \"Id\",\r\n            \"CompanyName\",\r\n            \"CompanyLogo\",\r\n            \"CoverImage1\",\r\n            \"PhoneNumber\",\r\n            \"Email\",\r\n            \"WebsiteUrl\",\r\n            \"BranchLocations\",\r\n            \"Slug\"\r\n        FROM public.\"Companies\"\r\n    ");
                 });
 
             modelBuilder.Entity("QLN.Common.DTO_s.ClassifiedsBo.StoreFlyers", b =>
@@ -123,6 +170,9 @@ namespace QLN.Common.Migrations.ClassifiedDev
 
                     b.Property<string>("ProductSummary")
                         .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Slug")
                         .HasColumnType("text");
 
                     b.HasKey("StoreProductId");
@@ -607,8 +657,8 @@ namespace QLN.Common.Migrations.ClassifiedDev
                         .HasColumnType("character varying(100)");
 
                     b.Property<string>("CompanyLogo")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
 
                     b.Property<string>("ContactNumber")
                         .IsRequired()
@@ -762,6 +812,10 @@ namespace QLN.Common.Migrations.ClassifiedDev
 
                     b.Property<int>("SlotOrder")
                         .HasColumnType("integer");
+
+                    b.Property<string>("Slug")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
 
                     b.Property<DateOnly>("StartDate")
                         .HasColumnType("date");
@@ -1322,6 +1376,10 @@ namespace QLN.Common.Migrations.ClassifiedDev
 
                     b.Property<int>("SlotOrder")
                         .HasColumnType("integer");
+
+                    b.Property<string>("Slug")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
 
                     b.Property<DateOnly>("StartDate")
                         .HasColumnType("date");

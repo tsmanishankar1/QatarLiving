@@ -1452,7 +1452,7 @@ namespace QLN.Classified.MS.Service
                 existingAd.Attributes = dto.Attributes;
                 existingAd.IsActive = true;
                 existingAd.CreatedAt = existingAd.CreatedAt;
-                existingAd.CreatedBy = existingAd.CreatedBy;                
+                existingAd.CreatedBy = existingAd.CreatedBy;               
                 existingAd.UpdatedAt = DateTime.UtcNow;
 
                 _context.Item.Update(existingAd);
@@ -2772,6 +2772,9 @@ namespace QLN.Classified.MS.Service
         }
 
         #endregion
+
+
+
 
 
     }
