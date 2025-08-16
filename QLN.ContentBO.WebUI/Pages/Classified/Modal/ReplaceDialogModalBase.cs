@@ -13,7 +13,7 @@ public class ReplaceDialogModalBase : ComponentBase
     [Inject]
     public ISnackbar Snackbar { get; set; } = default!;
 
-    [Parameter] public int SlotNumber { get; set; } 
+    [Parameter] public int SlotNumber { get; set; }
 
     [Parameter]
     public string Title { get; set; } = "Featured Event";
@@ -27,25 +27,25 @@ public class ReplaceDialogModalBase : ComponentBase
     [Parameter]
     public int ActiveIndex { get; set; }
 
+    [Parameter] public List<SeasonalPickDto> events { get; set; } = new();
+    [Parameter] public EventCallback<SeasonalPickDto> OnAdd { get; set; }
+
     protected override void OnInitialized()
     {
         SelectedPick.SlotNumber = SlotNumber;
     }
 
-
     public void Cancel() => MudDialog.Cancel();
-    [Parameter]
-    public List<SeasonalPickDto> events { get; set; } = new();
-    [Parameter] public EventCallback<SeasonalPickDto> OnAdd { get; set; }
-
     protected string? _autocompleteError;
     protected string? _searchText;
     protected FeaturedLanding SelectedPick { get; set; } = new FeaturedLanding();
+
     public class FeaturedLanding
     {
         public int SlotNumber { get; set; }
         public SeasonalPickDto? Seasonal { get; set; }
     }
+
     protected async Task AddClicked()
     {
         _autocompleteError = null;
@@ -122,6 +122,7 @@ public class ReplaceDialogModalBase : ComponentBase
 
         return Task.FromResult(result);
     }
+
     protected void ValidateTypedText(string text)
     {
         _searchText = text;
@@ -133,5 +134,4 @@ public class ReplaceDialogModalBase : ComponentBase
         var matched = events.Any(e => e.CategoryName.Equals(text, StringComparison.InvariantCultureIgnoreCase));
         _autocompleteError = matched ? null : "No matching event found.";
     }
-    
 }

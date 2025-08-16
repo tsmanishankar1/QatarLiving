@@ -1045,7 +1045,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                         });
                     }
 
-                    // --- Extract user info from token ---
                     var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
                     if (string.IsNullOrEmpty(userClaim))
                     {
@@ -1059,24 +1058,21 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
 
                     var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
                     uid = userData.GetProperty("uid").GetString();
-                    //var subscriptionId = new Guid("752ea67e-5fc3-4dae-ab96-4aa3822afc38");
-                    // --- Extract subscriptionId from token ---
-                    if (!userData.TryGetProperty("subscription", out var subscriptionElement) ||
-                        !subscriptionElement.TryGetProperty("subscription_id", out var subscriptionIdElement) ||
-                        !Guid.TryParse(subscriptionIdElement.GetString(), out var subscriptionId))
-                    {
-                        return Results.Problem(new ProblemDetails
-                        {
-                            Title = "Invalid Subscription",
-                            Detail = "Subscription ID is missing or invalid in the token.",
-                            Status = StatusCodes.Status403Forbidden
-                        });
-                    }
+                    var subscriptionId = new Guid("752ea67e-5fc3-4dae-ab96-4aa3822afc38");
+                    //if (!userData.TryGetProperty("subscription", out var subscriptionElement) ||
+                    //    !subscriptionElement.TryGetProperty("subscription_id", out var subscriptionIdElement) ||
+                    //    !Guid.TryParse(subscriptionIdElement.GetString(), out var subscriptionId))
+                    //{
+                    //    return Results.Problem(new ProblemDetails
+                    //    {
+                    //        Title = "Invalid Subscription",
+                    //        Detail = "Subscription ID is missing or invalid in the token.",
+                    //        Status = StatusCodes.Status403Forbidden
+                    //    });
+                    //}
 
-                    // --- Call external method ---
                     var result = await service.FeatureService(request, uid, subscriptionId, cancellationToken);
 
-                    // --- Audit Log ---
                     await auditLogger.LogAuditAsync(
                         module: "Service",
                         httpMethod: "POST",
@@ -1114,8 +1110,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-
-
 
             group.MapPost("/featurebyuserid", async Task<IResult> (
                 FeatureServiceRequest request,
