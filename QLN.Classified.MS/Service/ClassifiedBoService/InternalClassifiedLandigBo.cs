@@ -605,6 +605,29 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
             }
         }
 
+        public async Task<List<FeaturedStore>> GetFeatureStoreBySlug(string slug, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var featuredStores = await _context.FeaturedStores
+                    .Where(p => p.IsActive == true && p.Slug == slug).ToListAsync();
+
+                if (featuredStores == null || !featuredStores.Any())
+                {
+                    _logger.LogWarning("No featured stores found for slug: {Slug}", slug);
+                    throw new KeyNotFoundException($"No featured stores found for slug: {slug}");
+                }
+
+                return featuredStores;
+
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to retrieve featured stores by slug: {Slug}", slug);
+                throw new Exception($"An error occurred while fetching featured stores for the slug '{slug}'", ex);
+            }
+        }
+
         public async Task<string> ReplaceSlotWithFeaturedStore(string userId, string userName, ReplaceFeaturedStoresSlotRequest dto, CancellationToken cancellationToken = default)
         {
             if (dto.TargetSlotId < 1 || dto.TargetSlotId > 6)
@@ -983,8 +1006,29 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                 throw new Exception(ex.Message);
             }
         }
-        
 
+        public async Task<List<FeaturedCategory>> GetFeatureCategoryBySlug(string slug, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var featuredCategories = await _context.FeaturedCategories
+                    .Where(p => p.IsActive == true && p.Slug == slug).ToListAsync();
+
+                if (featuredCategories == null || !featuredCategories.Any())
+                {
+                    _logger.LogWarning("No featured categories found for slug: {Slug}", slug);
+                    throw new KeyNotFoundException($"No featured categories found for slug: {slug}");
+                }
+
+                return featuredCategories;
+
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to retrieve featured categories by slug: {Slug}", slug);
+                throw new Exception($"An error occurred while fetching featured categories for the slug '{slug}'", ex);
+            }
+        }
         public async Task<FeaturedCategory> GetFeaturedCategoryById(string id, CancellationToken cancellationToken = default)
         {
             try
@@ -3031,7 +3075,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                 Model = dto.Model,
                 Color = dto.Color,
                 Condition = dto.Condition,
-                //SubscriptionId = dto.SubscriptionId,
+                SubscriptionId = dto.SubscriptionId.ToString(),
                 Price = (double)dto.Price,
                 PriceType = dto.PriceType,
                 Location = dto.Location,
@@ -3480,8 +3524,6 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                 throw;
             }
         }
-
-
 
         //public async Task<List<SubscriptionTypes>> GetSubscriptionTypes(CancellationToken cancellationToken = default)
         //{
