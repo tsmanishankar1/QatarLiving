@@ -67,44 +67,35 @@ namespace QLN.Common.Migrations
             modelBuilder.Entity("QLN.Common.DTO_s.ClassifiedsBo.StoreCompanyDto", b =>
                 {
                     b.Property<string>("BranchLocations")
-                        .HasColumnType("text")
-                        .HasColumnName("BranchLocations");
+                        .HasColumnType("text");
 
                     b.Property<string>("CompanyLogo")
                         .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("CompanyLogo");
+                        .HasColumnType("text");
 
                     b.Property<string>("CompanyName")
                         .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("CompanyName");
+                        .HasColumnType("text");
 
                     b.Property<string>("CoverImage1")
-                        .HasColumnType("text")
-                        .HasColumnName("CoverImage1");
+                        .HasColumnType("text");
 
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("Email");
+                        .HasColumnType("text");
 
                     b.Property<Guid>("Id")
-                        .HasColumnType("uuid")
-                        .HasColumnName("Id");
+                        .HasColumnType("uuid");
 
                     b.Property<string>("PhoneNumber")
                         .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("PhoneNumber");
+                        .HasColumnType("text");
 
                     b.Property<string>("Slug")
-                        .HasColumnType("text")
-                        .HasColumnName("Slug");
+                        .HasColumnType("text");
 
                     b.Property<string>("WebsiteUrl")
-                        .HasColumnType("text")
-                        .HasColumnName("WebsiteUrl");
+                        .HasColumnType("text");
 
                     b.ToTable("StoreCompanyDto");
 

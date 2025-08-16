@@ -510,6 +510,26 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
             }
         }
 
+        public async Task<List<SeasonalPicks>> GetSeasonalPickBySlug(string slug, CancellationToken cancellationToken = default)
+        {
+            try
+            {               
+                var response = await _dapr.InvokeMethodAsync<List<SeasonalPicks>>(
+                    HttpMethod.Get,
+                    SERVICE_APP_ID,
+                    $"api/v2/classifiedbo/getseasonalpicksbyslug?slug={slug}",
+                    cancellationToken
+                );
+                
+                return response ?? new List<SeasonalPicks>();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error in GetSeasonalPickBySlug.");
+                throw new Exception($"Error fetching seasonal picks for slug: {slug}", ex);
+            }
+        }
+
         public async Task<string> ReplaceSlotWithSeasonalPick(string userId, string userName, ReplaceSeasonalPickSlotRequest dto, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(userId))

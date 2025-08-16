@@ -16,6 +16,7 @@ namespace QLN.Common.Infrastructure.IService.V2IClassifiedBoService
     public interface IClassifiedBoLandingService
     {
         Task<string> CreateSeasonalPick(string userId, string userName, SeasonalPicksDto dto, CancellationToken cancellationToken = default);
+        Task<List<SeasonalPicks>> GetSeasonalPickBySlug(string slug, CancellationToken cancellationToken = default);
 
         Task<List<SeasonalPicks>> GetSeasonalPicks(Vertical vertical, CancellationToken cancellationToken = default);
 
