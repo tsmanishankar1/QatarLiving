@@ -466,7 +466,6 @@ namespace QLN.Backend.API.Service.V2ContentService
                 }
             };
         }
-
         private async Task<ContentNewsIndex?> LoadNewsAsync(Guid id, CancellationToken ct)
         {
             if (id == Guid.Empty) return null;

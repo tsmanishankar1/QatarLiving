@@ -361,9 +361,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
             if (dto.UserId == null) throw new ArgumentException("UserId is required.");
             if (string.IsNullOrWhiteSpace(dto.Title)) throw new ArgumentException("Title is required.");
             if (dto.Images == null || dto.Images.Count == 0)
-                throw new ArgumentException("At least one ad image is required.");
-            if (string.IsNullOrWhiteSpace(dto.AuthenticityCertificateUrl))
-                throw new ArgumentException("Certificate image is required.");
+                throw new ArgumentException("At least one ad image is required.");           
 
             if(dto.SubVertical != SubVertical.Preloved)
                 throw new InvalidOperationException("This endpoint only supports posting ads under the 'Preloved' subvertical.");
@@ -407,9 +405,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
             if (dto.UserId == null) throw new ArgumentException("UserId is required.");
             if (string.IsNullOrWhiteSpace(dto.Title)) throw new ArgumentException("Title is required.");
             if (dto.Images == null || dto.Images.Count == 0)
-                throw new ArgumentException("At least one ad image is required.");
-            if (string.IsNullOrWhiteSpace(dto.AuthenticityCertificateUrl))
-                throw new ArgumentException("Certificate image is required.");
+                throw new ArgumentException("At least one ad image is required.");          
 
             if (dto.SubVertical != SubVertical.Collectibles)
                 throw new InvalidOperationException("This endpoint only supports posting ads under the 'Collectibles' subvertical.");
@@ -1468,6 +1464,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                     throw;
                 }
             }
+
         public async Task<BulkAdActionResponse> BulkUpdateAdPublishStatusAsync(
      int subVertical,
      string userId,

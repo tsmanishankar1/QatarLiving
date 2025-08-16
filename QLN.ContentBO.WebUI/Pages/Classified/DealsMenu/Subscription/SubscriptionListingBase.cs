@@ -1,7 +1,9 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using MudBlazor;
+using QLN.ContentBO.WebUI.Components.ConfirmationDialog;
 using QLN.ContentBO.WebUI.Components;
+using Microsoft.JSInterop;
 using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Models;
 using System.Text.Json;
@@ -11,9 +13,11 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.Subscription
     public class SubscriptionListingBase : QLComponentBase
     {
         [Inject] protected ILogger<SubscriptionListingBase> _logger { get; set; } = default!;
-
+        [Inject] protected IDealsService DealsService { get; set; } = default!;
+        [Parameter] public EventCallback<(string from, string to)> OnDateChanged { get; set; }
+        [Inject] protected IDialogService DialogService { get; set; } = default!;
+         [Inject] protected IJSRuntime JS { get; set; } = default!;
         protected string SearchText { get; set; } = string.Empty;
-
         protected string SortIcon { get; set; } = Icons.Material.Filled.Sort;
 
         protected DateTime? dateCreated { get; set; }
@@ -28,8 +32,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.Subscription
         protected bool _showDatePicker = false;
         public string? _timeTypeError;
         public string? _eventTypeError;
-        protected List<LocationEventDto> Locations = new();
-        public EventDTO CurrentEvent { get; set; } = new EventDTO();
+        protected List<LocationEventDto> Locations = [];
         public string selectedLocation { get; set; } = string.Empty;
         public bool _isTimeDialogOpen = true;
         protected string? _DateError;
@@ -52,12 +55,12 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.Subscription
         protected int currentPage { get; set; } = 1;
         protected int pageSize { get; set; } = 12;
 
-        protected readonly List<string> Categories = new()
-        {
+        protected readonly List<string> Categories =
+        [
             "12 Months Basic",
-    "12 Months Plus",
-    "12 Months Super"
-        };
+            "12 Months Plus",
+            "12 Months Super"
+        ];
 
         public class DayTimeEntry
         {
@@ -74,80 +77,140 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.Subscription
 
         protected ElementReference _popoverDiv;
 
-        [Parameter] public EventCallback<(string from, string to)> OnDateChanged { get; set; }
+        protected List<string> SubscriptionTypes =
+        [
+            "Free",
+            "Basic",
+            "Pro",
+            "Enterprise"
+        ];
+        protected string SelectedSubscriptionType { get; set; } = string.Empty;
+        // Date range logic
+        protected DateRange _dateRange = new();
+        protected DateRange _tempDateRange = new();
+        protected bool showDatePopover = false;
 
-        [Inject] protected IClassifiedService ClassifiedService { get; set; } = default!;
-        protected List<SubscriptionListingModal> Listings { get; set; } = new();
+        protected List<DealsSubscriptionItem> Listings { get; set; } = [];
 
         protected override async Task OnInitializedAsync()
         {
-            await LoadPrelovedListingsAsync();
+            await LoadDealsAsync();
         }
 
-        private async Task LoadPrelovedListingsAsync()
+        private async Task LoadDealsAsync()
         {
             try
             {
                 IsLoading = true;
 
-                var request = new FilterRequest
+                var request = new DealsSubscriptionQuery
                 {
-
+                    Search = SearchText,
+                    StartDate = _dateRange.Start.ToString() ?? "",
+                    EndDate = _dateRange.End.ToString() ?? "",
                     PageNumber = currentPage,
-                    PageSize = pageSize
+                    PageSize = pageSize,
+                    SortBy = "CreatedDate",
+                    SubscriptionType = SelectedSubscriptionType
                 };
 
-                var response = await ClassifiedService.GetPrelovedSubscription(request);
+                var response = await DealsService.GetAllDealsSubscription(request);
 
                 if (response?.IsSuccessStatusCode == true)
                 {
                     var content = await response.Content.ReadAsStringAsync();
-                    var data = JsonSerializer.Deserialize<PrelovedSubscriptionResponse>(content, new JsonSerializerOptions
+                    var data = JsonSerializer.Deserialize<DealsSubscriptionResponse>(content, new JsonSerializerOptions
                     {
                         PropertyNameCaseInsensitive = true
                     });
 
-                    Listings = [];
+                    Listings = data?.Items ?? [];
 
                     TotalCount = data?.TotalCount ?? 0;
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Failed to load preloved subscriptions: {ex.Message}");
+                _logger.LogError($"Failed to load deals subscriptions data: {ex.Message}");
             }
             finally
             {
                 IsLoading = false;
             }
         }
+        protected async Task ShowConfirmationExport()
+        {
+            var parameters = new DialogParameters
+            {
+                { "Title", "Export Classified Items" },
+                { "Descrption", "Do you want to export the current classified item data to Excel?" },
+                { "ButtonTitle", "Export" },
+                { "OnConfirmed", EventCallback.Factory.Create(this, ExportToExcel) }
+            };
+
+            var options = new DialogOptions
+            {
+                CloseButton = false,
+                MaxWidth = MaxWidth.Small,
+                FullWidth = true
+            };
+
+            var dialog = DialogService.Show<ConfirmationDialog>("", parameters, options);
+            var result = await dialog.Result;
+        }
+        private async Task ExportToExcel()
+        {
+            try
+            {
+                if (Listings == null || !Listings.Any())
+                {
+                    Snackbar.Add("No data available to export.", Severity.Warning);
+                    return;
+                }
+                var exportData = Listings.Select((x, index) => new Dictionary<string, object?>
+                {
+                    ["S.No."] = index + 1,
+                    ["Order ID"] = x.OrderId,
+                    ["Subscription Type"] = string.IsNullOrWhiteSpace(x.SubscriptionType) ? "-" : x.SubscriptionType,
+                     ["User Name"] = string.IsNullOrWhiteSpace(x.UserName) ? "-" : x.UserName,
+                     ["Email"] = string.IsNullOrWhiteSpace(x.Email) ? "-" : x.Email,
+                    ["Mobile"] = string.IsNullOrWhiteSpace(x.ContactNumber) ? "-" : x.ContactNumber,
+                    ["Whatsapp"] = string.IsNullOrWhiteSpace(x.WhatsappNumber) ? "-" : x.WhatsappNumber,
+                    ["Amount"] = x.Price == null ? "-" : x.Price,
+                    ["Status"] = string.IsNullOrWhiteSpace(x.Status) ? "-" : x.Status,
+                     ["Start Date"] = x.StartDate ?? "-",
+                    ["Expiry Date"] = x.EndDate ?? "-",
+                    ["Web Clicks"] = x.WhatsAppLeads,
+                    ["Views"] = x.PhoneLeads,
+                }).ToList();
+                await JS.InvokeVoidAsync("exportToExcel", exportData, "Deals_Listings.xlsx", "Deals Listings");
+
+                Snackbar.Add("Export successful!", Severity.Success);
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Export failed: {ex.Message}", Severity.Error);
+            }
+        }
 
         protected async Task HandlePageChanged(int newPage)
         {
-            await LoadPrelovedListingsAsync();
+            currentPage = newPage;
+            await LoadDealsAsync();
         }
 
         protected async Task HandlePageSizeChanged(int newSize)
         {
             pageSize = newSize;
             currentPage = 1;
-            await LoadPrelovedListingsAsync();
+            await LoadDealsAsync();
         }
         protected async Task OnSearchChanged(ChangeEventArgs e)
         {
             SearchText = e.Value?.ToString() ?? string.Empty;
             currentPage = 1;
-            await LoadPrelovedListingsAsync();
+            await LoadDealsAsync();
         }
-
-
-        private DateTime ParseDate(string date)
-        {
-            return DateTime.TryParse(date, out var result) ? result : DateTime.MinValue;
-        }
-
-
-
 
         protected void ToggleSort()
         {
@@ -201,6 +264,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.Subscription
             _dateRange = new();
             _tempDateRange = new();
         }
+
         protected async void CancelDatePicker()
         {
             _showDatePicker = false;
@@ -212,32 +276,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.Subscription
             }
             StateHasChanged();
         }
-        protected async Task ApplyDatePicker()
-        {
-            if (_dateRange?.Start != null)
-            {
-                var startDate = _dateRange.Start.Value;
-                var endDate = _dateRange.End ?? _dateRange.Start.Value;
-                _confirmedDateRange = new DateRange(startDate, endDate);
-                CurrentEvent.EventSchedule.StartDate = DateOnly.FromDateTime(startDate);
-                CurrentEvent.EventSchedule.EndDate = DateOnly.FromDateTime(endDate);
-                if (startDate.Date == endDate.Date)
-                {
-                    SelectedDateLabel = $"{startDate:dd-MM-yyyy}";
-                    await OnDateChanged.InvokeAsync((startDate.ToString("yyyy-MM-dd"), null));
-                }
-                else
-                {
-                    SelectedDateLabel = $"{startDate:dd-MM-yyyy} to {endDate:dd-MM-yyyy}";
-                    await OnDateChanged.InvokeAsync((startDate.ToString("yyyy-MM-dd"), endDate.ToString("yyyy-MM-dd")));
-                }
-                _editContext.NotifyFieldChanged(FieldIdentifier.Create(() => CurrentEvent.EventSchedule.StartDate));
-                _editContext.NotifyFieldChanged(FieldIdentifier.Create(() => CurrentEvent.EventSchedule.EndDate));
-                _showDatePicker = false;
-                GenerateDayTimeList();
-                StateHasChanged();
-            }
-        }
+
         protected void ToggleDatePicker()
         {
             _showDatePicker = !_showDatePicker;
@@ -247,11 +286,12 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.Subscription
                 _dateRange = new DateRange(_confirmedDateRange.Start, _confirmedDateRange.End);
             }
         }
+
         protected void ClearSelectedDate()
         {
             if (!string.IsNullOrWhiteSpace(SelectedDateLabel))
             {
-                SelectedDateLabel = null;
+                SelectedDateLabel = string.Empty;
             }
             else
             {
@@ -262,8 +302,8 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.Subscription
                     _dateRange = new DateRange(_confirmedDateRange.Start, _confirmedDateRange.End);
                 }
             }
-
         }
+
         protected void GenerateDayTimeList()
         {
             DayTimeList.Clear();
@@ -283,28 +323,12 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.Subscription
                 });
             }
         }
-        protected List<string> SubscriptionTypes = new()
-        {
-            "Free",
-            "Basic",
-            "Pro",
-            "Enterprise"
-        };
-
-        protected string SelectedSubscriptionType { get; set; } = null;
 
         protected Task OnSubscriptionChanged(string selected)
         {
             SelectedSubscriptionType = selected;
             return Task.CompletedTask;
         }
-        // Date range logic
-        protected DateRange _dateRange = new();
-        protected DateRange _tempDateRange = new();
-
-
-
-        protected bool showDatePopover = false;
 
         protected void ToggleDatePopover()
         {
@@ -323,7 +347,5 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.Subscription
             showDatePopover = false;
             StateHasChanged();
         }
-
-
     }
 }

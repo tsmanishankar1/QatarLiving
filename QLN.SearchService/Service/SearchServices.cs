@@ -1352,73 +1352,87 @@ namespace QLN.SearchService.Service
             }
         }
 
-        public async Task<GetWithSimilarResponse<T>> GetByIdWithSimilarAsync<T>(
-           string indexName,
-           string key,
-           int similarPageSize = 10
-       ) where T : class
+        public async Task<GetWithSimilarResponse<T>> GetBySlugWithSimilarAsync<T>(
+            string indexName,
+            string slug,
+            int similarPageSize = 10
+        ) where T : class
         {
             if (string.IsNullOrWhiteSpace(indexName))
                 throw new ArgumentException("IndexName is required.", nameof(indexName));
-            if (string.IsNullOrWhiteSpace(key))
-                throw new ArgumentException("Key is required.", nameof(key));
+            if (string.IsNullOrWhiteSpace(slug))
+                throw new ArgumentException("Slug is required.", nameof(slug));
             if (similarPageSize <= 0 || similarPageSize > 100)
                 throw new ArgumentException("SimilarPageSize must be between 1 and 100.", nameof(similarPageSize));
 
             try
             {
-                var detail = await _repo.GetByIdAsync<T>(indexName, key);
+                var baseFilter = BuildBaseFilter(indexName);
+                var slugFilter = $"Slug eq '{Esc(slug)}'";
+                var detailFilter = string.IsNullOrWhiteSpace(baseFilter) ? slugFilter : $"{baseFilter} and {slugFilter}";
 
-                if (detail != null)
+                var detailOpts = new SearchOptions
                 {
-                    var types = typeof(T);
-                    var isActiveProp = types.GetProperty("IsActive", BindingFlags.Public | BindingFlags.Instance);
+                    SearchMode = SearchMode.All,
+                    IncludeTotalCount = false,
+                    Size = 1,
+                    Filter = detailFilter
+                };
 
-                    if (isActiveProp != null)
-                    {
-                        var isActiveValue = isActiveProp.GetValue(detail);
-
-                        if (isActiveValue is bool isActive && !isActive)
-                        {
-                            throw new KeyNotFoundException($"No active record with key '{key}' found in '{indexName}'.");
-                        }
-                    }
-                }
-
+                var detailSearch = await _repo.SearchAsync<T>(indexName, detailOpts, "*");
+                var detail = detailSearch.Items?.FirstOrDefault();
                 if (detail == null)
-                    throw new KeyNotFoundException($"No '{key}' in '{indexName}'.");
+                    throw new KeyNotFoundException($"No active record with slug '{slug}' found in '{indexName}'.");
 
-                var type = typeof(T);
-                var propL2 = type.GetProperty("L2CategoryId", BindingFlags.Public | BindingFlags.Instance);
-                var propL1 = type.GetProperty("L1CategoryId", BindingFlags.Public | BindingFlags.Instance);
+                var t = typeof(T);
+                var isActiveProp = t.GetProperty("IsActive", BindingFlags.Public | BindingFlags.Instance);
+                if (isActiveProp != null && isActiveProp.GetValue(detail) is bool isActive && !isActive)
+                    throw new KeyNotFoundException($"No active record with slug '{slug}' found in '{indexName}'.");
+
+                var propL2 = t.GetProperty("L2CategoryId", BindingFlags.Public | BindingFlags.Instance);
+                var propL1 = t.GetProperty("L1CategoryId", BindingFlags.Public | BindingFlags.Instance);
                 var l2Value = propL2?.GetValue(detail)?.ToString();
                 var l1Value = propL1?.GetValue(detail)?.ToString();
 
                 var useL2 = !string.IsNullOrWhiteSpace(l2Value);
                 var filterField = useL2 ? "L2CategoryId" : "L1CategoryId";
-                var filterValue = useL2 ? l2Value! : l1Value;
+                var filterValue = useL2 ? l2Value : l1Value;
 
                 if (string.IsNullOrWhiteSpace(filterValue))
                 {
                     return new GetWithSimilarResponse<T> { Detail = detail };
                 }
 
-                var opts = new SearchOptions
+                var similarFilterParts = new List<string>();
+                if (!string.IsNullOrWhiteSpace(baseFilter))
+                    similarFilterParts.Add(baseFilter);
+
+                similarFilterParts.Add($"{filterField} eq '{Esc(filterValue!)}'");
+
+                var similarOpts = new SearchOptions
                 {
                     SearchMode = SearchMode.All,
                     IncludeTotalCount = false,
-                    Size = similarPageSize
+                    Size = similarPageSize,
+                    Filter = string.Join(" and ", similarFilterParts)
                 };
-                opts.Filter = $"IsActive eq true and {filterField} eq '{filterValue.Replace("'", "''")}'";
 
-                var simResults = await _repo.SearchAsync<T>(indexName, opts, "*");
+                var simResults = await _repo.SearchAsync<T>(indexName, similarOpts, "*");
 
-                var idProp = type.GetProperty("Id", BindingFlags.Public | BindingFlags.Instance);
+                var idProp = t.GetProperty("Id", BindingFlags.Public | BindingFlags.Instance);
+                var slugProp = t.GetProperty("Slug", BindingFlags.Public | BindingFlags.Instance);
+
+                var currentId = idProp?.GetValue(detail)?.ToString();
+                var currentSlug = slugProp?.GetValue(detail)?.ToString();
+
                 var similar = simResults.Items
                     .Where(item =>
                     {
                         var idVal = idProp?.GetValue(item)?.ToString();
-                        return idVal != key;
+                        var slugVal = slugProp?.GetValue(item)?.ToString();
+                        if (!string.IsNullOrEmpty(currentId) && idVal == currentId) return false;
+                        if (!string.IsNullOrEmpty(currentSlug) && slugVal == currentSlug) return false;
+                        return true;
                     })
                     .ToList();
 
@@ -1428,25 +1442,40 @@ namespace QLN.SearchService.Service
                     Similar = similar
                 };
             }
-            catch (ArgumentException)
-            {
-                throw;
-            }
-            catch (KeyNotFoundException)
-            {
-                throw;
-            }
+            catch (ArgumentException) { throw; }
+            catch (KeyNotFoundException) { throw; }
             catch (RequestFailedException ex)
             {
-                _logger.LogError(ex, "Azure Search GetByIdWithSimilar failed for index '{IndexName}', key '{Key}'", indexName, key);
+                _logger.LogError(ex, "Azure Search GetBySlugWithSimilar failed for index '{IndexName}', slug '{Slug}'", indexName, slug);
                 throw;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unexpected error during GetByIdWithSimilar for index '{IndexName}', key '{Key}'", indexName, key);
-                throw new InvalidOperationException($"GetByIdWithSimilar operation failed for index '{indexName}', key '{key}'. Please try again.", ex);
+                _logger.LogError(ex, "Unexpected error during GetBySlugWithSimilar for index '{IndexName}', slug '{Slug}'", indexName, slug);
+                throw new InvalidOperationException($"GetBySlugWithSimilar operation failed for index '{indexName}', slug '{slug}'. Please try again.", ex);
             }
         }
+        private static string BuildBaseFilter(string indexName)
+        {
+            var key = indexName?.Trim().ToLowerInvariant();
+            // Match your SearchAsync defaults
+            return key switch
+            {
+                ConstantValues.IndexNames.ClassifiedsItemsIndex => "IsActive eq true and Status eq 'Published'",
+                ConstantValues.IndexNames.ClassifiedsPrelovedIndex => "IsActive eq true and Status eq 'Published'",
+                ConstantValues.IndexNames.ClassifiedsCollectiblesIndex => "IsActive eq true and Status eq 'Published'",
+                ConstantValues.IndexNames.ServicesIndex => "IsActive eq true and Status eq 'Published'",
+                ConstantValues.IndexNames.ClassifiedsDealsIndex => "IsActive eq true",
+                ConstantValues.IndexNames.ClassifiedStoresIndex => "IsActive eq true",
+                ConstantValues.IndexNames.ContentNewsIndex => "IsActive eq true",
+                ConstantValues.IndexNames.ContentEventsIndex => "IsActive eq true",
+                ConstantValues.IndexNames.ContentCommunityIndex => "IsActive eq true",
+                ConstantValues.IndexNames.CompanyProfileIndex => "IsActive eq true",
+                _ => "IsActive eq true" // safe default
+            };
+        }
+
+        private static string Esc(string v) => v.Replace("'", "''");
         public async Task<AzureSearchResults<T>> SearchRawAsync<T>(
             string indexName,
             RawSearchRequest request,

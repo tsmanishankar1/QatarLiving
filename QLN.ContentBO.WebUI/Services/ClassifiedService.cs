@@ -742,15 +742,27 @@ namespace QLN.ContentBO.WebUI.Services
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
-        public async Task<HttpResponseMessage?> GetAdByIdAsync(string vertical, string adId)
+        public async Task<HttpResponseMessage?> GetAdByIdAsync(long adId)
         {
             try
             {
-                return await _httpClient.GetAsync($"/api/classified/{vertical}/{adId}");
+                return await _httpClient.GetAsync($"/api/classified/items/{adId}");
             }
             catch (Exception ex)
             {
                 _logger.LogError("GetAdByIdAsync Error: " + ex.Message);
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+        public async Task<HttpResponseMessage?> GetCollectibleIdAsync(long adId)
+        {
+            try
+            {
+                return await _httpClient.GetAsync($"/api/classified/collectibles/{adId}");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("GetCollectibleIdAsync: " + ex.Message);
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
@@ -783,23 +795,29 @@ namespace QLN.ContentBO.WebUI.Services
         {
             try
             {
-                var endpoint = $"/api/classified/{vertical}";
+                var endpoint = $"/api/classified/items";
 
-                // Create request manually with correct headers
+                var serializeOptions = new JsonSerializerOptions
+                {
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                    WriteIndented = false
+                };
+
+                // Serialize the payload exactly as it will be sent
+                var jsonPayload = JsonSerializer.Serialize(payload, serializeOptions);
                 using var request = new HttpRequestMessage(HttpMethod.Post, endpoint)
                 {
-                    Content = JsonContent.Create(payload, options: new JsonSerializerOptions
-                    {
-                        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                        WriteIndented = false
-                    })
+                    Content = new StringContent(jsonPayload, Encoding.UTF8, "application/json")
                 };
 
                 var response = await _httpClient.SendAsync(request);
+
                 if (!response.IsSuccessStatusCode)
                 {
                     var errorBody = await response.Content.ReadAsStringAsync();
+                    Console.WriteLine("API Error Response: " + errorBody);
                 }
+
                 return response;
             }
             catch (HttpRequestException ex)
@@ -809,15 +827,16 @@ namespace QLN.ContentBO.WebUI.Services
             }
             catch (TaskCanceledException ex) when (!ex.CancellationToken.IsCancellationRequested)
             {
-                 _logger.LogError("PostAdAsync " + ex);
+                _logger.LogError("PostAdAsync " + ex);
                 return new HttpResponseMessage(HttpStatusCode.RequestTimeout);
             }
             catch (Exception ex)
             {
-                 _logger.LogError("PostAdAsync " + ex);
+                _logger.LogError("PostAdAsync " + ex);
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
+
         public async Task<HttpResponseMessage?> UpdateAdAsync(string vertical, object payload)
         {
             try
@@ -850,12 +869,12 @@ namespace QLN.ContentBO.WebUI.Services
             }
             catch (TaskCanceledException ex) when (!ex.CancellationToken.IsCancellationRequested)
             {
-                 _logger.LogError("UpdateAdAsyn " + ex);
+                _logger.LogError("UpdateAdAsyn " + ex);
                 return new HttpResponseMessage(HttpStatusCode.RequestTimeout);
             }
             catch (Exception ex)
             {
-                 _logger.LogError("UpdateAdAsyn " + ex);
+                _logger.LogError("UpdateAdAsyn " + ex);
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
@@ -903,7 +922,7 @@ namespace QLN.ContentBO.WebUI.Services
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
-        public async Task<HttpResponseMessage?> RefreshAdAsync(string adId, int subVertical)
+        public async Task<HttpResponseMessage?> RefreshAdAsync(long adId, int subVertical)
         {
             try
             {

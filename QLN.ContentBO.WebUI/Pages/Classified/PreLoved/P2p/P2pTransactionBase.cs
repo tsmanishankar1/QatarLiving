@@ -2,6 +2,8 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using MudBlazor;
+using Microsoft.JSInterop;
+using QLN.ContentBO.WebUI.Components.ConfirmationDialog;
 using QLN.ContentBO.WebUI.Components;
 using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Models;
@@ -14,7 +16,8 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.P2p
         [Inject] protected IPrelovedService PrelovedService { get; set; } = default!;
         [Inject] protected ILogger<P2pTransactionBase> Logger { get; set; } = default!;
         [Parameter] public EventCallback<(string from, string to)> OnDateChanged { get; set; }
-
+        [Inject] protected IJSRuntime JS { get; set; } = default!;
+         [Inject] protected IDialogService DialogService { get; set; } = default!;
         protected string SearchText { get; set; } = string.Empty;
 
         protected string SortIcon { get; set; } = Icons.Material.Filled.Sort;
@@ -319,5 +322,67 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.P2p
             showDatePopover = false;
             StateHasChanged();
         }
+        protected async Task ShowConfirmationExport()
+        {
+            var parameters = new DialogParameters
+            {
+                { "Title", "Export Classified Items" },
+                { "Descrption", "Do you want to export the current classified item data to Excel?" },
+                { "ButtonTitle", "Export" },
+                { "OnConfirmed", EventCallback.Factory.Create(this, ExportToExcel) }
+            };
+
+            var options = new DialogOptions
+            {
+                CloseButton = false,
+                MaxWidth = MaxWidth.Small,
+                FullWidth = true
+            };
+
+            var dialog = DialogService.Show<ConfirmationDialog>("", parameters, options);
+            var result = await dialog.Result;
+        }
+        private async Task ExportToExcel()
+        {
+            try
+            {
+                if (Listings == null || !Listings.Any())
+                {
+                    Snackbar.Add("No data available to export.", Severity.Warning);
+                    return;
+                }
+
+                var exportData = Listings.Select((x, index) => new Dictionary<string, object?>
+                {
+                    ["S.No."] = index + 1,
+                    ["Ad ID"] = x?.AdId == null ? "-" : x.AdId,
+                    ["Order Id"] = x?.OrderId == null ? "-" : x.OrderId,
+                    ["Subscription Type"] = string.IsNullOrWhiteSpace(x.SubscriptionType) ? "-" : x.SubscriptionType,
+                    ["User Name"] = string.IsNullOrWhiteSpace(x.UserName) ? "-" : x.UserName,
+                    ["Email"] = string.IsNullOrWhiteSpace(x.Email) ? "-" : x.Email,
+                    ["Mobile"] = string.IsNullOrWhiteSpace(x.Mobile) ? "-" : x.Mobile,
+                    ["Whatsapp"] = string.IsNullOrWhiteSpace(x.Whatsapp) ? "-" : x.Whatsapp,
+                    ["Amount"] = (x.Amount != 0) ? x.Amount.ToString("0.00") : "-",
+                    ["Status"] = string.IsNullOrWhiteSpace(x.Status) ? "-" : x.Status,
+                    ["Created Date"] = x.CreateDate.ToString("dd-MM-yyyy") ?? "-",
+                    ["Published Date"] = (x.PublishedDate != default) ? x.PublishedDate.ToString("dd-MM-yyyy") : "-",
+                    ["Start Date"] = (x.StartDate != default) ? x.StartDate.ToString("dd-MM-yyyy hh:mmtt") : "-",
+                    ["End Date"] = (x.EndDate != default) ? x.EndDate.ToString("dd-MM-yyyy hh:mmtt") : "-",
+                    ["Views"] = x.Views,
+                    ["WhatsApp Click"] = x.WhatsAppLeads,
+                    ["Phone Click"] = x.PhoneLeads
+                }).ToList();
+
+                await JS.InvokeVoidAsync("exportToExcel", exportData, "P2P_Listings.xlsx", "P2P Listings");
+
+                Snackbar.Add("Export successful!", Severity.Success);
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Export failed: {ex.Message}", Severity.Error);
+            }
+        }
+
+
     }
 }

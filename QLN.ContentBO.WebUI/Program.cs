@@ -125,6 +125,11 @@ try
         client.BaseAddress = new Uri(contentBOAPIURL);
     }).AddHttpMessageHandler<JwtTokenHeaderHandler>();
 
+    builder.Services.AddHttpClient<IDealsService, DealsService>(client =>
+    {
+        client.BaseAddress = new Uri(contentBOAPIURL);
+    }).AddHttpMessageHandler<JwtTokenHeaderHandler>();
+
     var app = builder.Build();
 
     // Configure the HTTP request pipeline.

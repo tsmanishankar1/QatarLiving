@@ -14,11 +14,11 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.EditCompnay
         [Parameter] 
         public EventCallback<string> OnImageProcessed { get; set; }
         protected bool HasLogo => !string.IsNullOrEmpty(LocalLogoBase64) || !string.IsNullOrEmpty(Company.CompanyLogo);
-        protected string LogoSource { get; set; } = string.Empty;
+        protected string? LogoSource { get; set; } 
         protected override async Task OnParametersSetAsync()
         {
             await base.OnParametersSetAsync();
-            if (!string.IsNullOrEmpty(Company?.CompanyLogo))
+            if (!string.IsNullOrEmpty(Company?.CompanyLogo) && string.IsNullOrEmpty(LogoSource))
             {
                 LogoSource = Company?.CompanyLogo ?? string.Empty;
             }
@@ -29,34 +29,33 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.EditCompnay
             try
             {
                 var file = e.File;
-                if (file != null)
+                if (file == null)
                 {
-                    var allowedImageTypes = new[] { "image/png", "image/jpg", "image/jpeg" };
-                    if (!allowedImageTypes.Contains(file.ContentType))
-                    {
-                        Snackbar.Add("Only PNG and JPG images are allowed.", Severity.Warning);
-                        return;
-                    }
-                    if (file.Size > 10 * 1024 * 1024)
-                    {
-                        Snackbar.Add("Logo must be less than 10MB.", Severity.Warning);
-                        return;
-                    }
-                    using var stream = file.OpenReadStream(5 * 1024 * 1024);
-                    using var memoryStream = new MemoryStream();
-                    await stream.CopyToAsync(memoryStream);
-                    LocalLogoBase64 = Convert.ToBase64String(memoryStream.ToArray());
-                    LogoSource = $"data:{file.ContentType};base64,{LocalLogoBase64}";
-                    if (OnImageProcessed.HasDelegate)
-                    {
-                        await OnImageProcessed.InvokeAsync(LocalLogoBase64);
-                    }
-                }
-                else
-                { 
                     Console.WriteLine("No file selected.");
+                    return;
                 }
-
+                var allowedImageTypes = new[] { "image/png", "image/jpg", "image/jpeg" };
+                if (!allowedImageTypes.Contains(file.ContentType))
+                {
+                    Snackbar.Add("Only PNG and JPG images are allowed.", Severity.Warning);
+                    return;
+                }
+                if (file.Size > 10 * 1024 * 1024)
+                {
+                    Snackbar.Add("Logo must be less than 10MB.", Severity.Warning);
+                    return;
+                }
+                LocalLogoBase64 = null;
+                LogoSource = string.Empty;
+                using var stream = file.OpenReadStream(5 * 1024 * 1024);
+                using var memoryStream = new MemoryStream();
+                await stream.CopyToAsync(memoryStream);
+                LocalLogoBase64 = Convert.ToBase64String(memoryStream.ToArray());
+                LogoSource = $"data:{file.ContentType};base64,{LocalLogoBase64}";
+                if (OnImageProcessed.HasDelegate)
+                {
+                    await OnImageProcessed.InvokeAsync(LocalLogoBase64);
+                }  
             }
             catch (Exception ex)
             {

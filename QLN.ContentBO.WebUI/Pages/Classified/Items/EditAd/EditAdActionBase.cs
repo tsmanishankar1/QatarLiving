@@ -151,7 +151,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
 
         private async Task PerformSingleActionAsync(AdBulkActionType actionType, string? reason = null)
         {
-            if (string.IsNullOrWhiteSpace(AdModel?.Id))
+            if (AdModel?.Id == null)
             {
                 Snackbar.Add("Ad ID is missing.", Severity.Warning);
                 return;
@@ -159,7 +159,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
 
             var payload = new Dictionary<string, object>
             {
-                ["adIds"] = new List<string> { AdModel.Id },
+                ["adIds"] = new List<long> { AdModel.Id ?? 0 },
                 ["action"] = (int)actionType,
                 ["reason"] = reason ?? string.Empty
             };
@@ -196,7 +196,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
         }
       private async Task PerformRefreshActionAsync()
         {
-            if (string.IsNullOrWhiteSpace(AdModel?.Id))
+            if (AdModel?.Id == null)
             {
                 Snackbar.Add("Ad ID is missing.", Severity.Warning);
                 return;
@@ -204,7 +204,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
 
             try
             {
-                var response = await ClassifiedService.RefreshAdAsync(AdModel.Id, 1);
+                var response = await ClassifiedService.RefreshAdAsync(AdModel.Id ?? 0, 1);
 
                 if (response?.IsSuccessStatusCode == true)
                 {

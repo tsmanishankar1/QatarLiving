@@ -46,7 +46,7 @@ namespace QLN.ContentBO.WebUI.Models
         public long CrNumber { get; set; }
         public string CrDocument { get; set; } = string.Empty;
         public int? CompanyVerificationStatus { get; set; }
-        public int Status { get; set; }
+        public int? Status { get; set; }
         public int Vertical { get; set; }
         public int SubVertical { get; set; }
         public string UserId { get; set; } = string.Empty;
