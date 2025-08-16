@@ -102,7 +102,8 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu
 
         protected void OnEdit(DealsSubscriptionItem item)
         {
-            NavManager.NavigateTo($"/manage/classified/deals/createform/{item.AdId}", true);
+            // /manage/classified/deals/createform/
+            // NavManager.NavigateTo($"/manage/classified/deals/createform/{item.AdId}", true);
         }
 
         protected void OnPreview(DealsSubscriptionItem item)

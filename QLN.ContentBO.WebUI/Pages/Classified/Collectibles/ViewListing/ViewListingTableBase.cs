@@ -150,7 +150,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.ViewListing
         {
             if (item?.Id is long id) 
             {
-                var targetUrl = $"/manage/classified/collectibles/edit/ad/{item.Id}";
+                var targetUrl = $"/manage/classified/collectibles/edit/ad/{id}";
                 NavManager.NavigateTo(targetUrl, true);
             }
         }
