@@ -60,7 +60,6 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu
             {
                 _activeTab = ((int)AdStatusEnum.PendingApproval).ToString();
             }
-            Console.WriteLine($"Active tab set to: {_activeTab}");
         }
 
         protected List<ToggleTabs.TabOption> tabOptions =
