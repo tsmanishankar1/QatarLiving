@@ -6,41 +6,30 @@ using QLN.ContentBO.WebUI.Components;
 using QLN.ContentBO.WebUI.Pages.Classified.Modal;
 using static QLN.ContentBO.WebUI.Models.ClassifiedLanding;
 using QLN.ContentBO.WebUI.Models;
+using QLN.ContentBO.WebUI.Enums;
 
 namespace QLN.ContentBO.WebUI.Pages.Classified.Landing
 {
     public class LandingPageComponentBase : QLComponentBase
     {
-        [Parameter]
-        public bool IsLoading { get; set; }
-
-        [Parameter]
-        public List<LandingPageItem> Items { get; set; } = new();
-
-        [Parameter]
-        public LandingPageItemType ItemType { get; set; }
-
-        [Parameter]
-        public EventCallback<LandingPageItem> ReplaceItem { get; set; }
-        [Inject]
-        public IDialogService DialogService { get; set; } = default!;
-        [Parameter]
-        public EventCallback<string> OnDelete { get; set; }
-        [Inject]
-        public IClassifiedService ClassifiedService { get; set; }
-        [Parameter]
-        public EventCallback ReloadData { get; set; }
-
-        // Services and injections
+        [Inject] public IClassifiedService ClassifiedService { get; set; }
         [Inject] public ISnackbar Snackbar { get; set; }
         [Inject] protected IJSRuntime JS { get; set; }
         [Inject] protected IEventsService EventsService { get; set; }
         [Inject] protected ILogger<LandingPageComponentBase> Logger { get; set; }
+        [Inject] protected IDialogService DialogService { get; set; }
 
+        [Parameter] public bool IsLoading { get; set; }
+        [Parameter] public List<LandingPageItem> Items { get; set; } = [];
+        [Parameter] public LandingPageItemType ItemType { get; set; }
+        [Parameter] public EventCallback<LandingPageItem> ReplaceItem { get; set; }
+        [Parameter] public EventCallback<string> OnDelete { get; set; }
+        [Parameter] public EventCallback ReloadData { get; set; }
 
         private bool shouldInitializeSortable = false;
 
         protected List<IndexedLandingItem> IndexedItems { get; set; } = [];
+        protected string EmptyCardTitle => $"No {GetItemTypeName()} found";
 
         protected override async Task OnInitializedAsync()
         {
@@ -96,26 +85,26 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Landing
                     switch (ItemType)
                     {
                         case LandingPageItemType.FeaturedCategory:
-                            slotAssignments = newSlotOrder.Select((originalSlotNumber, newIndex) => new
+                            slotAssignments = [.. newSlotOrder.Select((originalSlotNumber, newIndex) => new
                             {
                                 slotOrder = newIndex + 1,
                                 categoryId = pickMap.TryGetValue(originalSlotNumber, out var id) && id != Guid.Empty ? (Guid?)id : null
-                            }).Cast<object>().ToList();
+                            }).Cast<object>()];
                             break;
 
                         case LandingPageItemType.SeasonalPick:
-                            slotAssignments = newSlotOrder.Select((originalSlotNumber, newIndex) => new
+                            slotAssignments = [.. newSlotOrder.Select((originalSlotNumber, newIndex) => new
                             {
                                 slotOrder = newIndex + 1,
                                 pickId = pickMap.TryGetValue(originalSlotNumber, out var id) && id != Guid.Empty ? (Guid?)id : null
-                            }).Cast<object>().ToList();
+                            }).Cast<object>()];
                             break;
                         case LandingPageItemType.FeaturedStore:
-                            slotAssignments = newSlotOrder.Select((originalSlotNumber, newIndex) => new
+                            slotAssignments = [.. newSlotOrder.Select((originalSlotNumber, newIndex) => new
                             {
                                 slotOrder = newIndex + 1,
                                 storeId = pickMap.TryGetValue(originalSlotNumber, out var id) && id != Guid.Empty ? (Guid?)id : null
-                            }).Cast<object>().ToList();
+                            }).Cast<object>()];
                             break;
 
                         default:
@@ -161,19 +150,6 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Landing
             }
         }
 
-
-        // UI Helper methods
-        protected string GetTableTitle()
-        {
-            return ItemType switch
-            {
-                LandingPageItemType.FeaturedCategory => "Featured Categories",
-                LandingPageItemType.SeasonalPick => "Seasonal Picks",
-                LandingPageItemType.FeaturedStore => "Featured Stores",
-                _ => "Items"
-            };
-        }
-
         protected string GetItemTypeName()
         {
             return ItemType switch
@@ -184,7 +160,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Landing
                 _ => "Item"
             };
         }
-        protected string EmptyCardTitle => $"No {GetItemTypeName()} found";
+
         protected async Task ResetOrder()
         {
             try
@@ -196,6 +172,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Landing
                 Logger.LogError(ex, "ResetOrder");
             }
         }
+
         protected string GetCurrentTabAddButtonText()
         {
             return ItemType switch
@@ -207,7 +184,6 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Landing
             };
         }
 
-
         protected async Task NavigateToAddItem(string Id)
         {
             var title = $"Edit {GetCurrentTabAddButtonText()}";
@@ -215,7 +191,9 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Landing
             {
                 CloseOnEscapeKey = true
             };
+
             IDialogReference dialog;
+
             if (ItemType == LandingPageItemType.FeaturedCategory)
             {
                 var parameters = new DialogParameters
@@ -251,14 +229,8 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Landing
             {
                 return;
             }
-            var result = await dialog.Result;
-            // if (!result.Canceled)
-            // {
-            //     await LoadDataForCurrentTab();
-            //     await LoadAllFeaturedCategory();
-            //     await LoadAllSeasonalPicks();
-            //     StateHasChanged();
-            // }
+
+            await dialog.Result;
         }
     }
 }
