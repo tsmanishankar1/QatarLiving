@@ -1,7 +1,9 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using MudBlazor;
+using QLN.ContentBO.WebUI.Components.ConfirmationDialog;
 using QLN.ContentBO.WebUI.Components;
+using Microsoft.JSInterop;
 using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Models;
 using System.Text.Json;
@@ -13,7 +15,8 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.Subscription
         [Inject] protected ILogger<SubscriptionListingBase> _logger { get; set; } = default!;
         [Inject] protected IDealsService DealsService { get; set; } = default!;
         [Parameter] public EventCallback<(string from, string to)> OnDateChanged { get; set; }
-
+        [Inject] protected IDialogService DialogService { get; set; } = default!;
+         [Inject] protected IJSRuntime JS { get; set; } = default!;
         protected string SearchText { get; set; } = string.Empty;
         protected string SortIcon { get; set; } = Icons.Material.Filled.Sort;
 
@@ -133,6 +136,60 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.Subscription
             finally
             {
                 IsLoading = false;
+            }
+        }
+        protected async Task ShowConfirmationExport()
+        {
+            var parameters = new DialogParameters
+            {
+                { "Title", "Export Classified Items" },
+                { "Descrption", "Do you want to export the current classified item data to Excel?" },
+                { "ButtonTitle", "Export" },
+                { "OnConfirmed", EventCallback.Factory.Create(this, ExportToExcel) }
+            };
+
+            var options = new DialogOptions
+            {
+                CloseButton = false,
+                MaxWidth = MaxWidth.Small,
+                FullWidth = true
+            };
+
+            var dialog = DialogService.Show<ConfirmationDialog>("", parameters, options);
+            var result = await dialog.Result;
+        }
+        private async Task ExportToExcel()
+        {
+            try
+            {
+                if (Listings == null || !Listings.Any())
+                {
+                    Snackbar.Add("No data available to export.", Severity.Warning);
+                    return;
+                }
+                var exportData = Listings.Select((x, index) => new Dictionary<string, object?>
+                {
+                    ["S.No."] = index + 1,
+                    ["Order ID"] = x.OrderId,
+                    ["Subscription Type"] = string.IsNullOrWhiteSpace(x.SubscriptionType) ? "-" : x.SubscriptionType,
+                     ["User Name"] = string.IsNullOrWhiteSpace(x.UserName) ? "-" : x.UserName,
+                     ["Email"] = string.IsNullOrWhiteSpace(x.Email) ? "-" : x.Email,
+                    ["Mobile"] = string.IsNullOrWhiteSpace(x.ContactNumber) ? "-" : x.ContactNumber,
+                    ["Whatsapp"] = string.IsNullOrWhiteSpace(x.WhatsappNumber) ? "-" : x.WhatsappNumber,
+                    ["Amount"] = x.Price == null ? "-" : x.Price,
+                    ["Status"] = string.IsNullOrWhiteSpace(x.Status) ? "-" : x.Status,
+                     ["Start Date"] = x.StartDate ?? "-",
+                    ["Expiry Date"] = x.EndDate ?? "-",
+                    ["Web Clicks"] = x.WhatsAppLeads,
+                    ["Views"] = x.PhoneLeads,
+                }).ToList();
+                await JS.InvokeVoidAsync("exportToExcel", exportData, "Deals_Listings.xlsx", "Deals Listings");
+
+                Snackbar.Add("Export successful!", Severity.Success);
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Export failed: {ex.Message}", Severity.Error);
             }
         }
 

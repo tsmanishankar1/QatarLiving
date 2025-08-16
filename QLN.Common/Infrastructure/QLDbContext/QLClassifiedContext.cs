@@ -40,6 +40,7 @@ namespace QLN.Common.Infrastructure.QLDbContext
         public DbSet<StoreCompanyDto> StoreCompanyDto { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+
             modelBuilder.Entity<StoreFlyers>()
                 .HasMany(s => s.Products)
                 .WithOne(s => s.StoreFlyer)

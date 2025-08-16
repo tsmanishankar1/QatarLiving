@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using QLN.Common.DTO_s;
 using QLN.Common.DTO_s.Payments;
 using QLN.Common.DTO_s.Subscription;

@@ -468,12 +468,22 @@ namespace QLN.Classified.MS.Service
             if (string.IsNullOrWhiteSpace(dto.UserId)) throw new ArgumentException("UserId is required.");
             if (string.IsNullOrWhiteSpace(dto.Title)) throw new ArgumentException("Title is required.");
             if (dto.Images == null || dto.Images.Count == 0)
-                throw new ArgumentException("Image URLs must be provided.");
-            if (string.IsNullOrWhiteSpace(dto.AuthenticityCertificateUrl))
-                throw new ArgumentException("Certificate URL must be provided.");            
+                throw new ArgumentException("Image URLs must be provided.");                
 
             try
-            {                
+            {
+                if (dto.HasAuthenticityCertificate == true)
+                {
+                    if (string.IsNullOrWhiteSpace(dto.AuthenticityCertificateUrl))
+                        throw new ArgumentException("AuthenticityCertificateUrl is required when HasAuthenticityCertificate is true.");                    
+                }
+                else
+                {
+                    dto.HasAuthenticityCertificate = false;
+                    dto.AuthenticityCertificateUrl = null;
+                    dto.AuthenticityCertificateName = null;
+                }
+
                 dto.Status = AdStatus.Draft;
                 dto.CreatedAt = DateTime.UtcNow;
 
@@ -517,9 +527,7 @@ namespace QLN.Classified.MS.Service
             if (dto == null) throw new ArgumentNullException(nameof(dto));
             if (dto.UserId == null) throw new ArgumentException("UserId is required.");
             if (string.IsNullOrWhiteSpace(dto.Title)) throw new ArgumentException("Title is required.");
-            if (dto.Images == null || dto.Images.Count == 0) throw new ArgumentException("Image URLs must be provided.");
-            if (string.IsNullOrWhiteSpace(dto.AuthenticityCertificateUrl) && dto.HasAuthenticityCertificate)
-                throw new ArgumentException("Certificate URL must be provided.");         
+            if (dto.Images == null || dto.Images.Count == 0) throw new ArgumentException("Image URLs must be provided.");                  
 
             try
             {
@@ -1438,12 +1446,13 @@ namespace QLN.Classified.MS.Service
                 existingAd.ContactEmail = dto.ContactEmail;
                 existingAd.StreetNumber = dto.StreetNumber;
                 existingAd.BuildingNumber = dto.BuildingNumber;
+                existingAd.Slug = existingAd.Slug;
                 existingAd.zone = dto.zone;
                 existingAd.Images = dto.Images;
                 existingAd.Attributes = dto.Attributes;
                 existingAd.IsActive = true;
                 existingAd.CreatedAt = existingAd.CreatedAt;
-                existingAd.CreatedBy = existingAd.CreatedBy;
+                existingAd.CreatedBy = existingAd.CreatedBy;                
                 existingAd.UpdatedAt = DateTime.UtcNow;
 
                 _context.Item.Update(existingAd);
@@ -1482,6 +1491,18 @@ namespace QLN.Classified.MS.Service
                 if (dto.SubVertical != SubVertical.Preloved)
                     throw new InvalidOperationException("This service only supports updating ads under the 'Preloved' vertical.");
 
+                if (dto.HasAuthenticityCertificate == true)
+                {
+                    if (string.IsNullOrWhiteSpace(dto.AuthenticityCertificateUrl))
+                        throw new ArgumentException("AuthenticityCertificateUrl is required when HasAuthenticityCertificate is true.");
+                }
+                else
+                {
+                    dto.HasAuthenticityCertificate = false;
+                    dto.AuthenticityCertificateUrl = null;
+                    dto.AuthenticityCertificateName = null;
+                }
+
                 AdUpdateHelper.ApplySelectiveUpdates(existingAd, dto);
 
                 existingAd.HasAuthenticityCertificate = dto.HasAuthenticityCertificate;
@@ -1506,6 +1527,7 @@ namespace QLN.Classified.MS.Service
                 existingAd.ContactEmail = dto.ContactEmail;
                 existingAd.StreetNumber = dto.StreetNumber;
                 existingAd.BuildingNumber = dto.BuildingNumber;
+                existingAd.Slug = existingAd.Slug;
                 existingAd.zone = dto.zone;
                 existingAd.Images = dto.Images;
                 existingAd.Attributes = dto.Attributes;
@@ -1579,6 +1601,7 @@ namespace QLN.Classified.MS.Service
                 existingAd.zone = dto.zone;
                 existingAd.Images = dto.Images;
                 existingAd.Attributes = dto.Attributes;
+                existingAd.Slug = existingAd.Slug;
                 existingAd.IsActive = true;
                 existingAd.CreatedAt = existingAd.CreatedAt;
                 existingAd.CreatedBy = existingAd.CreatedBy;
@@ -1673,6 +1696,7 @@ namespace QLN.Classified.MS.Service
                 existingAd.ContactNumber = dto.ContactNumber;
                 existingAd.WhatsappNumber = dto.WhatsappNumber;
                 existingAd.WebsiteUrl = dto.WebsiteUrl;
+                existingAd.Slug = dto.Slug;
                 existingAd.XMLlink = dto.XMLlink;
                 existingAd.CoverImage = dto.CoverImage;
                 existingAd.CreatedAt = existingAd.CreatedAt;
@@ -1818,7 +1842,7 @@ namespace QLN.Classified.MS.Service
         {
             try
             {
-                var targetStatus = isPublished ? AdStatus.Published : AdStatus.Unpublished;
+                var targetStatus = isPublished ? AdStatus.PendingApproval : AdStatus.Draft;
 
                 IQueryable<ClassifiedBase> query = subVertical switch
                 {
@@ -1884,7 +1908,14 @@ namespace QLN.Classified.MS.Service
                 foreach (var ad in ads)
                 {
                     ad.Status = targetStatus;
-                    ad.CreatedAt = DateTime.UtcNow;
+                    if (isPublished)
+                    {
+                        ad.CreatedAt = DateTime.UtcNow;     
+                    }
+                    else
+                    {
+                        ad.UpdatedAt = DateTime.UtcNow;     
+                    }
                     _logger.LogInformation("Ad {AdId} status updated to {Status}.", ad.Id, targetStatus);
                 }
 
@@ -2062,6 +2093,7 @@ namespace QLN.Classified.MS.Service
                 Condition = dto.Condition,
                 CreatedBy = dto.CreatedBy,
                 HasAuthenticityCertificate = dto.HasAuthenticityCertificate,
+                AuthenticityCertificateName = dto.AuthenticityCertificateName,
                 Inclusion = dto.Inclusion,
                 Model = dto.Model,
                 UserName = dto.UserName,

@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Components;
 using QLN.ContentBO.WebUI.Models;
+using PSC.Blazor.Components.MarkdownEditor;
+using PSC.Blazor.Components.MarkdownEditor.EventsArgs;
 using Microsoft.JSInterop;
 using Microsoft.AspNetCore.Components.Forms;
 using MudBlazor;
@@ -12,9 +14,18 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
     {
         [Parameter] public List<ClassifiedsCategory> CategoryTrees { get; set; } = new();
         [Parameter] public List<LocationZoneDto> Zones { get; set; } = new();
-        protected ClassifiedsCategory? SelectedCategory => CategoryTrees.FirstOrDefault(x => x.Id.ToString() == Ad.CategoryId);
-        protected ClassifiedsCategoryField? SelectedSubcategory => SelectedCategory?.Fields?.FirstOrDefault(x => x.Id.ToString() == Ad.L1CategoryId);
-        protected ClassifiedsCategoryField? SelectedSubSubcategory => SelectedSubcategory?.Fields?.FirstOrDefault(x => x.Id.ToString() == Ad.L2CategoryId);
+        protected string[] HiddenIcons = ["fullscreen"];
+        protected MarkdownEditor MarkdownEditorRef;
+        protected MudFileUpload<IBrowserFile> _markdownfileUploadRef;
+         protected ClassifiedsCategory SelectedCategory =>
+                CategoryTrees.FirstOrDefault(x => x.Id == Ad.CategoryId)
+                ?? new ClassifiedsCategory();
+        protected ClassifiedsCategoryField? SelectedSubcategory =>
+    SelectedCategory?.Fields?.FirstOrDefault(x => x.Id == Ad.L1CategoryId);
+
+protected ClassifiedsCategoryField? SelectedSubSubcategory =>
+    SelectedSubcategory?.Fields?.FirstOrDefault(x => x.Id == Ad.L2CategoryId);
+
 
         protected List<ClassifiedsCategoryField> AvailableFields =>
                                         SelectedSubSubcategory?.Fields ??
@@ -35,6 +46,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
         protected string? ErrorMessage { get; set; }
 
         [Inject] ISnackbar Snackbar { get; set; }
+        protected string UploadImageButtonName { get; set; } = "uploadImage";
         [Inject] private IJSRuntime JS { get; set; }
         protected MudExRichTextEdit Editor;
         private DotNetObjectReference<CreateFormListBase>? _dotNetRef;
@@ -47,6 +59,34 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
             SelectedPhoneCountry = model;
             Ad.ContactNumberCountryCode = model.Code;
             return Task.CompletedTask;
+        }
+        protected Task OnCustomButtonClicked(MarkdownButtonEventArgs eventArgs)
+        {
+            if (eventArgs.Name is not null)
+            {
+                if (eventArgs.Name == UploadImageButtonName)
+                {
+                    TriggerCustomImageUpload();
+                }
+
+                if (eventArgs.Name == "CustomPreview")
+                {
+                    ToggleMarkdownPreview();
+                }
+            }
+            return Task.CompletedTask;
+        }
+        protected void TriggerCustomImageUpload()
+        {
+            _markdownfileUploadRef.OpenFilePickerAsync();
+        }
+ 
+        protected async void ToggleMarkdownPreview()
+        {
+            if (MarkdownEditorRef != null)
+            {
+                await MarkdownEditorRef.TogglePreviewAsync();
+            }
         }
 
         protected Task OnWhatsappCountryChanged(CountryModel model)
@@ -66,7 +106,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
             Ad.WhatsappNumber = phone;
             return Task.CompletedTask;
         }
-         protected async Task OnCategoryChanged(string categoryId)
+         protected async Task OnCategoryChanged(long? categoryId)
         {
             Ad.CategoryId = categoryId;
             Ad.L1CategoryId = null;
@@ -79,7 +119,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
             StateHasChanged();
         }
 
-        protected async Task OnSubCategoryChanged(string subcategoryId)
+        protected async Task OnSubCategoryChanged(long? subcategoryId)
         {
             Ad.L1CategoryId = subcategoryId;
             Ad.L2CategoryId = null;
@@ -90,7 +130,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
             StateHasChanged();
         }
 
-        protected async Task OnSubSubCategoryChanged(string subsubcategoryId)
+        protected async Task OnSubSubCategoryChanged(long? subsubcategoryId)
         {
             Ad.L2CategoryId = subsubcategoryId;
             Ad.DynamicFields.Clear();

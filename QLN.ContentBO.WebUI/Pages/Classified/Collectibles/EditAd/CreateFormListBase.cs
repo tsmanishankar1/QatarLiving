@@ -12,9 +12,9 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.EditAd
     {
         [Parameter] public List<ClassifiedsCategory> CategoryTrees { get; set; } = new();
         [Parameter] public List<LocationZoneDto> Zones { get; set; } = new();
-        protected ClassifiedsCategory? SelectedCategory => CategoryTrees.FirstOrDefault(x => x.Id.ToString() == Ad.CategoryId);
-        protected ClassifiedsCategoryField? SelectedSubcategory => SelectedCategory?.Fields?.FirstOrDefault(x => x.Id.ToString() == Ad.L1CategoryId);
-        protected ClassifiedsCategoryField? SelectedSubSubcategory => SelectedSubcategory?.Fields?.FirstOrDefault(x => x.Id.ToString() == Ad.L2CategoryId);
+        protected ClassifiedsCategory? SelectedCategory => CategoryTrees.FirstOrDefault(x => x.Id == Ad.CategoryId);
+        protected ClassifiedsCategoryField? SelectedSubcategory => SelectedCategory?.Fields?.FirstOrDefault(x => x.Id == Ad.L1CategoryId);
+        protected ClassifiedsCategoryField? SelectedSubSubcategory => SelectedSubcategory?.Fields?.FirstOrDefault(x => x.Id == Ad.L2CategoryId);
 
         protected List<ClassifiedsCategoryField> AvailableFields =>
                                         SelectedSubSubcategory?.Fields ??
@@ -66,7 +66,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.EditAd
             Ad.WhatsappNumber = phone;
             return Task.CompletedTask;
         }
-         protected async Task OnCategoryChanged(string categoryId)
+         protected async Task OnCategoryChanged(long? categoryId)
         {
             Ad.CategoryId = categoryId;
             Ad.L1CategoryId = null;
@@ -79,7 +79,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.EditAd
             StateHasChanged();
         }
 
-        protected async Task OnSubCategoryChanged(string subcategoryId)
+        protected async Task OnSubCategoryChanged(long? subcategoryId)
         {
             Ad.L1CategoryId = subcategoryId;
             Ad.L2CategoryId = null;
@@ -90,7 +90,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.EditAd
             StateHasChanged();
         }
 
-        protected async Task OnSubSubCategoryChanged(string subsubcategoryId)
+        protected async Task OnSubSubCategoryChanged(long? subsubcategoryId)
         {
             Ad.L2CategoryId = subsubcategoryId;
             Ad.DynamicFields.Clear();

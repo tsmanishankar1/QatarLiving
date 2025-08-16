@@ -151,7 +151,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services
         {
             var item = new ItemEditAdPost
             {
-                Id = source.Id.ToString(),
+                Id = source.Id,
                 UserId = source.UserId,
                 UserName = source.UserName,
                 Title = source.AdTitle,

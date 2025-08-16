@@ -39,7 +39,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.EditAd
         protected EditContext editContext;
         private ValidationMessageStore messageStore;
 
-        [Parameter] public string Id { get; set; }
+        [Parameter] public long Id { get; set; }
         protected string? DefaultSelectedPhoneCountry { get; set; }
         protected string? DefaultSelectedWhatsappCountry { get; set; }
         public void SetDefaultDynamicFieldsFromApi()
@@ -83,7 +83,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.EditAd
             try
             {
                 IsLoadingId = true;
-                var response = await ClassifiedService.GetAdByIdAsync("collectibles", Id);
+                var response = await ClassifiedService.GetCollectibleIdAsync(Id);
                 if (response is { IsSuccessStatusCode: true })
                 {
                     var json = await response.Content.ReadAsStringAsync();
@@ -158,9 +158,9 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.EditAd
 
 
         [Parameter] public List<ClassifiedsCategory> CategoryTrees { get; set; } = new();
-        protected ClassifiedsCategory SelectedCategory => CategoryTrees.FirstOrDefault(x => x.Id.ToString() == adPostModel.CategoryId);
-        protected ClassifiedsCategoryField SelectedSubcategory => SelectedCategory?.Fields?.FirstOrDefault(x => x.Id.ToString() == adPostModel.L1CategoryId);
-        protected ClassifiedsCategoryField SelectedSubSubcategory => SelectedSubcategory?.Fields?.FirstOrDefault(x => x.Id.ToString() == adPostModel.L2CategoryId);
+        protected ClassifiedsCategory SelectedCategory => CategoryTrees.FirstOrDefault(x => x.Id == adPostModel.CategoryId);
+        protected ClassifiedsCategoryField SelectedSubcategory => SelectedCategory?.Fields?.FirstOrDefault(x => x.Id == adPostModel.L1CategoryId);
+        protected ClassifiedsCategoryField SelectedSubSubcategory => SelectedSubcategory?.Fields?.FirstOrDefault(x => x.Id == adPostModel.L2CategoryId);
 
 
         protected List<ClassifiedsCategoryField> AvailableFields =>
@@ -212,13 +212,13 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.EditAd
                 }
             }
 
-            if (SelectedCategory?.Fields?.Any() == true && string.IsNullOrEmpty(adPostModel.L1CategoryId))
+            if (SelectedCategory?.Fields?.Any() == true && adPostModel.L1CategoryId == null)
             {
                 messageStore.Add(() => adPostModel.L1CategoryId, "Subcategory is required.");
                 isValid = false;
             }
 
-            if (SelectedSubcategory?.Fields?.Any() == true && string.IsNullOrEmpty(adPostModel.L2CategoryId))
+            if (SelectedSubcategory?.Fields?.Any() == true && adPostModel.L2CategoryId == null)
             {
                 messageStore.Add(() => adPostModel.L2CategoryId, "Section is required.");
                 isValid = false;
@@ -291,13 +291,13 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.EditAd
         }
        
 
-         private string GetCategoryNameById(string? id)
+         private string GetCategoryNameById(long? id)
         {
-            if (string.IsNullOrEmpty(id)) return string.Empty;
+            if (id == null) return string.Empty;
 
-            if (SelectedCategory?.Id.ToString() == id) return SelectedCategory?.CategoryName ?? string.Empty;
-            if (SelectedSubcategory?.Id.ToString() == id) return SelectedSubcategory?.CategoryName ?? string.Empty;
-            if (SelectedSubSubcategory?.Id.ToString() == id) return SelectedSubSubcategory?.CategoryName ?? string.Empty;
+            if (SelectedCategory?.Id == id) return SelectedCategory?.CategoryName ?? string.Empty;
+            if (SelectedSubcategory?.Id == id) return SelectedSubcategory?.CategoryName ?? string.Empty;
+            if (SelectedSubSubcategory?.Id == id) return SelectedSubSubcategory?.CategoryName ?? string.Empty;
 
             return string.Empty;
         }
