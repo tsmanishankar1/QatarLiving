@@ -31,6 +31,8 @@ namespace QLN.Common.Infrastructure.Model
         public DateOnly EndDate { get; set; }
         [MaxLength(100)]
         public string ImageUrl { get; set; } = null!;
+        [MaxLength(200)]
+        public string? Slug { get; set; }
         public int SlotOrder { get; set; }
         public bool IsActive { get; set; }
         [MaxLength(50)]
