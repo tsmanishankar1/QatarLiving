@@ -15,6 +15,7 @@ namespace QLN.Common.Infrastructure.DTO_s
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("queue_label")]
         public string QueueLabel { get; set; }
+        public Guid QueueLabelId { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("node_type")]

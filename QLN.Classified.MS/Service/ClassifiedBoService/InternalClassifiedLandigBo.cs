@@ -1215,6 +1215,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                             {
                                 ad.Status = AdStatus.Published;
                                 shouldUpdate = true;
+                                ad.CreatedAt = DateTime.UtcNow;
                             }
                             else failReason = $"Cannot approve ad with status '{ad.Status}'.";
                             break;
@@ -1224,6 +1225,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                             {
                                 ad.Status = AdStatus.NeedsModification;
                                 shouldUpdate = true;
+                                ad.CreatedAt = DateTime.UtcNow;
                             }
                             else failReason = $"Cannot need changes ad with status '{ad.Status}'.";
                             break;
@@ -1233,6 +1235,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                             {
                                 ad.Status = AdStatus.Published;
                                 shouldUpdate = true;
+                                ad.CreatedAt = DateTime.UtcNow;
                             }
                             else failReason = $"Cannot publish ad with status '{ad.Status}'.";
                             break;
@@ -1242,6 +1245,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                             {
                                 ad.Status = AdStatus.Unpublished;
                                 shouldUpdate = true;
+                                ad.CreatedAt = DateTime.UtcNow;
                             }
                             else failReason = $"Cannot unpublish ad with status '{ad.Status}'.";
                             break;
@@ -1251,6 +1255,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                             {
                                 ad.IsPromoted = false;
                                 shouldUpdate = true;
+                                ad.CreatedAt = DateTime.UtcNow;
                             }
                             else failReason = "Cannot unpromote an ad that is not promoted.";
                             break;
@@ -1260,6 +1265,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                             {
                                 ad.IsFeatured = false;
                                 shouldUpdate = true;
+                                ad.CreatedAt = DateTime.UtcNow;
                             }
                             else failReason = "Cannot unfeature an ad that is not featured.";
                             break;
@@ -1270,6 +1276,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                                 ad.IsPromoted = true;
                                 ad.PromotedExpiryDate = DateTime.UtcNow;
                                 shouldUpdate = true;
+                                ad.CreatedAt = DateTime.UtcNow;
                             }
                             else failReason = "Cannot promote an ad that is already promoted.";
                             break;
@@ -1280,6 +1287,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                                 ad.IsFeatured = true;
                                 ad.FeaturedExpiryDate = DateTime.UtcNow;
                                 shouldUpdate = true;
+                                ad.CreatedAt = DateTime.UtcNow;
                             }
                             else failReason = "Cannot feature an ad that is already featured.";
                             break;
@@ -1287,6 +1295,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                         case BulkActionEnum.Remove:
                             ad.Status = AdStatus.Rejected;
                             shouldUpdate = true;
+                            ad.CreatedAt = DateTime.UtcNow;
                             break;
 
                         case BulkActionEnum.Hold:
@@ -1294,6 +1303,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                                 failReason = "Cannot hold an ad that is in draft status.";
                             else if (ad.Status != AdStatus.Hold)
                                 shouldUpdate = true;
+                            
                             else failReason = "Ad is already on hold.";
                             break;
 
@@ -1302,6 +1312,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                             {
                                 ad.Status = AdStatus.Unpublished;
                                 shouldUpdate = true;
+                                ad.CreatedAt = DateTime.UtcNow;
                             }
                             else failReason = "Ad is not on hold.";
                             break;

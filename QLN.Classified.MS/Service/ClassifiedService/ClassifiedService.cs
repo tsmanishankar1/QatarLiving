@@ -1810,11 +1810,12 @@ namespace QLN.Classified.MS.Service
         }
 
         public async Task<BulkAdActionResponse> BulkUpdateAdPublishStatusAsync(
-    int subVertical,
-    string userId,
-    List<long> adIds,
-    bool isPublished,
-    CancellationToken cancellationToken = default)
+     int subVertical,
+     string userId,
+     List<long> adIds,
+     bool isPublished,
+     Guid subscriptionId,
+     CancellationToken cancellationToken = default)
         {
             try
             {
@@ -2247,397 +2248,100 @@ namespace QLN.Classified.MS.Service
             }
         }
         #endregion
-               
-        public async Task<string> FeatureClassifiedAd(ClassifiedsPromoteDto dto, string userId,Guid subscriptionId, CancellationToken cancellationToken)
+
+        public async Task<string> FeatureClassifiedAd(
+    ClassifiedsPromoteDto dto,
+    string userId,
+    Guid subscriptionId,
+    CancellationToken cancellationToken = default)
         {
-            try
-            {
-                 var subscriptionid = Guid.Parse("5a024f96-7414-4473-80b8-f5d70297e262");
-               // var subcription = await _subscriptionContext.Subscriptions.AsNoTracking().FirstOrDefaultAsync(s => s.SubscriptionId == subscriptionId, cancellationToken);
-                if (dto is null) throw new ArgumentNullException(nameof(dto));
-                if (dto.AdId <= 0) throw new ArgumentException("AdId must be a positive number.", nameof(dto.AdId));
-                if (string.IsNullOrWhiteSpace(userId)) throw new ArgumentException("UserId must not be empty.", nameof(userId));
+            if (dto == null)
+                throw new ArgumentNullException(nameof(dto));
 
-                _logger.LogInformation("FeatureClassifiedAd | SubVertical: {SubVertical}, AdId: {AdId}, UserId: {UserId}",
-                    dto.SubVertical, dto.AdId, userId);
+            if (!dto.IsFeatured.HasValue)
+                throw new ArgumentException("IsFeatured must be provided (true or false).", nameof(dto));
 
-                object? adItem = null;
-
-                switch (dto.SubVertical)
-                {
-                    case SubVertical.Items:
-                        {
-                            var ad = await _context.Item
-                                .FirstOrDefaultAsync(x => x.Id == dto.AdId && x.IsActive, cancellationToken);
-                            if (ad == null)
-                                throw new KeyNotFoundException($"Items ad {dto.AdId} not found or inactive.");
-
-                            if (ad.IsFeatured == true)
-                                throw new ConflictException("This ad is already featured.");
-
-                            ad.IsFeatured = true;
-                            ad.UpdatedAt = DateTime.UtcNow;
-                            ad.FeaturedExpiryDate = DateTime.UtcNow.AddDays(30);
-                            adItem = ad;
-                            await _context.SaveChangesAsync(cancellationToken);
-                            break;
-                        }
-
-                    case SubVertical.Preloved:
-                        {                            
-                            var ad = await _context.Preloved
-                                .FirstOrDefaultAsync(x => x.Id == dto.AdId && x.IsActive, cancellationToken);
-                            if (ad == null)
-                                throw new KeyNotFoundException($"Preloved ad {dto.AdId} not found or inactive.");
-                           
-                            if (ad.IsFeatured == true)
-                                throw new ConflictException("This ad is already featured.");
-
-                            ad.IsFeatured = true;
-                            ad.FeaturedExpiryDate = DateTime.UtcNow.AddDays(30);
-                            ad.UpdatedAt = DateTime.UtcNow;
-                            adItem = ad;
-                            await _context.SaveChangesAsync(cancellationToken);
-                            break;
-                        }
-
-                    case SubVertical.Collectibles:
-                        {
-                            var ad = await _context.Collectible
-                                .FirstOrDefaultAsync(x => x.Id == dto.AdId && x.IsActive, cancellationToken);
-                            if (ad == null)
-                                throw new KeyNotFoundException($"Collectibles ad {dto.AdId} not found or inactive.");
-                         
-                            if (ad.IsFeatured == true)
-                                throw new ConflictException("This ad is already featured.");
-
-                            ad.IsFeatured = true;
-                            ad.FeaturedExpiryDate = DateTime.UtcNow.AddDays(30);
-                            ad.UpdatedAt = DateTime.UtcNow;
-                            adItem = ad;
-                            await _context.SaveChangesAsync(cancellationToken);
-                            break;
-                        }
-
-                    case SubVertical.Deals:
-                        {
-                            var ad = await _context.Deal
-                                .FirstOrDefaultAsync(x => x.Id == dto.AdId && x.IsActive, cancellationToken);
-                            if (ad == null)
-                                throw new KeyNotFoundException($"Deals ad {dto.AdId} not found or inactive.");
-                           
-                            if (ad.IsFeatured == true)
-                                throw new ConflictException("This ad is already featured.");
-
-                            ad.IsFeatured = true;
-                            ad.FeaturedExpiryDate = DateTime.UtcNow.AddDays(30);
-                            ad.UpdatedAt = DateTime.UtcNow;
-                            adItem = ad;
-                            await _context.SaveChangesAsync(cancellationToken);
-                            break;
-                        }
-
-                    default:
-                        throw new InvalidOperationException($"Invalid SubVertical: {dto.SubVertical}");
-                }
-
-                if (adItem != null)
-                {
-                    _logger.LogDebug("Indexing featured ad {AdId} in Azure Search for {SubVertical}", dto.AdId, dto.SubVertical);
-                    switch (dto.SubVertical)
-                    {
-                        case SubVertical.Items:
-                            await IndexItemsToAzureSearch((Items)adItem, cancellationToken);
-                            break;
-
-                        case SubVertical.Preloved:
-                            await IndexPrelovedToAzureSearch((Preloveds)adItem, cancellationToken);
-                            break;
-
-                        case SubVertical.Collectibles:
-                            await IndexCollectiblesToAzureSearch((Collectibles)adItem, cancellationToken);
-                            break;
-
-                        case SubVertical.Deals:
-                            await IndexDealsToAzureSearch((Deals)adItem, cancellationToken);
-                            break;
-                    }
-                }
-
-                return "The ad has been successfully marked as featured.";
-
-            }
-            catch (ArgumentException ex)
-            {
-                _logger.LogWarning(ex, "Validation error occurred while refreshing ad.");
-                throw new ArgumentException(ex.Message);
-            }
-            catch (KeyNotFoundException ex)
-            {
-                throw new KeyNotFoundException(ex.Message);
-            }
-            catch (InvalidOperationException ex)
-            {
-                throw new InvalidOperationException(ex.Message);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogCritical(ex, "Unhandled error occurred while refreshing ad.");
-                throw new InvalidOperationException("Failed to refresh the ad due to an unexpected error.", ex);
-            }
-        }
-        public async Task<string> UnFeatureClassifiedAd(ClassifiedsPromoteDto dto, string userId, Guid subscriptionId, CancellationToken cancellationToken)
-        {
-            try
-            {
-                var subscriptionid = Guid.Parse("5a024f96-7414-4473-80b8-f5d70297e262");
-                // var subcription = await _subscriptionContext.Subscriptions.AsNoTracking().FirstOrDefaultAsync(s => s.SubscriptionId == subscriptionId, cancellationToken);
-                if (dto is null) throw new ArgumentNullException(nameof(dto));
-                if (dto.AdId <= 0) throw new ArgumentException("AdId must be a positive number.", nameof(dto.AdId));
-                if (string.IsNullOrWhiteSpace(userId)) throw new ArgumentException("UserId must not be empty.", nameof(userId));
-
-                _logger.LogInformation("UnFeatureClassifiedAd | SubVertical: {SubVertical}, AdId: {AdId}, UserId: {UserId}",
-                    dto.SubVertical, dto.AdId, userId);
-
-                object? adItem = null;
-
-                switch (dto.SubVertical)
-                {
-                    case SubVertical.Items:
-                        {
-                            var ad = await _context.Item
-                                .FirstOrDefaultAsync(x => x.Id == dto.AdId && x.IsActive, cancellationToken);
-                            if (ad == null)
-                                throw new KeyNotFoundException($"Items ad {dto.AdId} not found or inactive.");
-
-                            if (!ad.IsFeatured)
-                                throw new ConflictException("This ad is already unfeatured.");
-
-                            ad.IsFeatured = false;
-                            ad.FeaturedExpiryDate = null;
-                            ad.UpdatedAt = DateTime.UtcNow;
-                            adItem = ad;
-                            await _context.SaveChangesAsync(cancellationToken);
-                            break;
-                        }
-
-                    case SubVertical.Preloved:
-                        {
-                            var ad = await _context.Preloved
-                                .FirstOrDefaultAsync(x => x.Id == dto.AdId && x.IsActive, cancellationToken);
-                            if (ad == null)
-                                throw new KeyNotFoundException($"Preloved ad {dto.AdId} not found or inactive.");
-
-                            if (!ad.IsFeatured)
-                                throw new ConflictException("This ad is already unfeatured.");
-
-                            ad.IsFeatured = false;
-                            ad.FeaturedExpiryDate = null;
-                            ad.UpdatedAt = DateTime.UtcNow;
-                            adItem = ad;
-                            await _context.SaveChangesAsync(cancellationToken);
-                            break;
-                        }
-
-                    case SubVertical.Collectibles:
-                        {
-                            var ad = await _context.Collectible
-                                .FirstOrDefaultAsync(x => x.Id == dto.AdId && x.IsActive, cancellationToken);
-                            if (ad == null)
-                                throw new KeyNotFoundException($"Collectibles ad {dto.AdId} not found or inactive.");
-
-                            if (!ad.IsFeatured)
-                                throw new ConflictException("This ad is already unfeatured.");
-
-                            ad.IsFeatured = false;
-                            ad.FeaturedExpiryDate = null;
-                            ad.UpdatedAt = DateTime.UtcNow;
-                            adItem = ad;
-                            await _context.SaveChangesAsync(cancellationToken);
-                            break;
-                        }
-
-                    case SubVertical.Deals:
-                        {
-                            var ad = await _context.Deal
-                                .FirstOrDefaultAsync(x => x.Id == dto.AdId && x.IsActive, cancellationToken);
-                            if (ad == null)
-                                throw new KeyNotFoundException($"Deals ad {dto.AdId} not found or inactive.");
-
-                            if (!ad.IsFeatured)
-                                throw new ConflictException("This ad is already unfeatured.");
-
-                            ad.IsFeatured = false;
-                            ad.FeaturedExpiryDate = null;
-                            ad.UpdatedAt = DateTime.UtcNow;
-                            adItem = ad;
-                            await _context.SaveChangesAsync(cancellationToken);
-                            break;
-                        }
-
-                    default:
-                        throw new InvalidOperationException($"Invalid SubVertical: {dto.SubVertical}");
-                }
-
-                if (adItem != null)
-                {
-                    _logger.LogDebug("Indexing unfeatured ad {AdId} in Azure Search for {SubVertical}", dto.AdId, dto.SubVertical);
-                    switch (dto.SubVertical)
-                    {
-                        case SubVertical.Items:
-                            await IndexItemsToAzureSearch((Items)adItem, cancellationToken);
-                            break;
-
-                        case SubVertical.Preloved:
-                            await IndexPrelovedToAzureSearch((Preloveds)adItem, cancellationToken);
-                            break;
-
-                        case SubVertical.Collectibles:
-                            await IndexCollectiblesToAzureSearch((Collectibles)adItem, cancellationToken);
-                            break;
-
-                        case SubVertical.Deals:
-                            await IndexDealsToAzureSearch((Deals)adItem, cancellationToken);
-                            break;
-                    }
-                }
-
-                return "The ad has been successfully marked as unfeatured.";
-            }
-            catch (ArgumentException ex)
-            {
-                _logger.LogWarning(ex, "Validation error occurred while unfeaturing ad.");
-                throw new ArgumentException(ex.Message);
-            }
-            catch (KeyNotFoundException ex)
-            {
-                throw new KeyNotFoundException(ex.Message);
-            }
-            catch (InvalidOperationException ex)
-            {
-                throw new InvalidOperationException(ex.Message);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogCritical(ex, "Unhandled error occurred while unfeaturing ad.");
-                throw new InvalidOperationException("Failed to unfeature the ad due to an unexpected error.", ex);
-            }
-        }
-
-        public async Task<string> PromoteClassifiedAd(ClassifiedsPromoteDto dto, string userId, Guid subscriptionid, CancellationToken cancellationToken)
-        {
-            _logger.LogInformation("PromoteClassifiedAd called. SubVertical: {SubVertical}, AdId: {AdId}, UserId: {UserId}", dto.SubVertical, dto.AdId, userId);
+            _logger.LogInformation(
+                "FeatureClassifiedAd called. SubVertical: {SubVertical}, AdId: {AdId}, UserId: {UserId}, IsFeatured: {IsFeatured}",
+                dto.SubVertical, dto.AdId, userId, dto.IsFeatured);
 
             try
             {
-                subscriptionid = Guid.Parse("5a024f96-7414-4473-80b8-f5d70297e262");
-                //var subcription = await _subscriptionContext.Subscriptions.AsNoTracking().FirstOrDefaultAsync(s => s.SubscriptionId == subscriptionid,cancellationToken);
+                subscriptionId = Guid.Parse("5a024f96-7414-4473-80b8-f5d70297e262");
 
-                object? adItem = null;
+                var subscription = await _subscriptionContext.Subscriptions
+                    .FirstOrDefaultAsync(s => s.SubscriptionId == subscriptionId, cancellationToken);
 
-                _logger.LogDebug("Fetching ad from database for SubVertical: {SubVertical}", dto.SubVertical);
+                if (subscription == null)
+                    throw new KeyNotFoundException($"Subscription {subscriptionId} not found.");
 
-                adItem = dto.SubVertical switch
+                // fetch the ad based on subvertical
+                object? adItem = dto.SubVertical switch
                 {
-                    SubVertical.Items => await _context.Item
-                        .FirstOrDefaultAsync(i => i.Id == dto.AdId && i.IsActive, cancellationToken),
-                    SubVertical.Preloved => await _context.Preloved
-                        .FirstOrDefaultAsync(p => p.Id == dto.AdId && p.IsActive, cancellationToken),
-                    SubVertical.Collectibles => await _context.Collectible
-                        .FirstOrDefaultAsync(c => c.Id == dto.AdId && c.IsActive, cancellationToken),
-                    SubVertical.Deals => await _context.Deal
-                        .FirstOrDefaultAsync(d => d.Id == dto.AdId && d.IsActive, cancellationToken),
+                    SubVertical.Items => await _context.Item.FirstOrDefaultAsync(i => i.Id == dto.AdId && i.IsActive, cancellationToken),
+                    SubVertical.Preloved => await _context.Preloved.FirstOrDefaultAsync(p => p.Id == dto.AdId && p.IsActive, cancellationToken),
+                    SubVertical.Collectibles => await _context.Collectible.FirstOrDefaultAsync(c => c.Id == dto.AdId && c.IsActive, cancellationToken),
+                    SubVertical.Deals => await _context.Deal.FirstOrDefaultAsync(d => d.Id == dto.AdId && d.IsActive, cancellationToken),
                     _ => throw new InvalidOperationException($"Invalid SubVertical: {dto.SubVertical}")
                 };
 
-                _logger.LogDebug("Database fetch complete. Found ad: {Found}", adItem != null);
-
                 if (adItem == null)
-                {
-                    _logger.LogError("Ad with id {AdId} not found in {SubVertical}.", dto.AdId, dto.SubVertical);
-                    throw new KeyNotFoundException($"Ad with id {dto.AdId} not found.");
-                }
+                    throw new KeyNotFoundException($"Ad with id {dto.AdId} not found in {dto.SubVertical}.");
 
-                _logger.LogDebug("Updating promotion status for ad type: {Type}", adItem.GetType().Name);
+                void UpdateAd(dynamic ad)
+                {
+                    if (dto.IsFeatured!.Value)
+                    {
+                        if (ad.IsFeatured)
+                            throw new ConflictException($"Ad {dto.AdId} is already featured.");
+
+                        ad.IsFeatured = true;
+                        ad.FeaturedExpiryDate = DateTime.UtcNow.AddDays(30);
+
+                        _logger.LogInformation("Ad {AdId} featured.", dto.AdId);
+                    }
+                    else
+                    {
+                        if (!ad.IsFeatured)
+                            throw new ConflictException($"Ad {dto.AdId} is already not featured.");
+
+                        ad.IsFeatured = false;
+                        ad.FeaturedExpiryDate = null;
+
+                        _logger.LogInformation("Ad {AdId} unfeatured.", dto.AdId);
+                    }
+
+                    ad.UpdatedAt = DateTime.UtcNow;
+                    ad.UpdatedBy = userId;
+                }
 
                 switch (adItem)
                 {
-                    case Items itemAd:
-                        if (itemAd.IsPromoted)
-                        {
-                            _logger.LogWarning("Ad {AdId} in Items is already promoted.", itemAd.Id);
-                            throw new ConflictException("This ad is already promoted.");
-                        }
-                        itemAd.IsPromoted = true;
-                        itemAd.PromotedExpiryDate = DateTime.UtcNow.AddDays(30);
-                        itemAd.UpdatedAt = DateTime.UtcNow;
-                        itemAd.UpdatedBy = userId;
-                        break;
-
-                    case Preloveds prelovedAd:
-                        if (prelovedAd.IsPromoted)
-                        {
-                            _logger.LogWarning("Ad {AdId} in Preloved is already promoted.", prelovedAd.Id);
-                            throw new ConflictException("This ad is already promoted.");
-                        }
-                        prelovedAd.IsPromoted = true;
-                        prelovedAd.PromotedExpiryDate = DateTime.UtcNow.AddDays(30);
-                        prelovedAd.UpdatedAt = DateTime.UtcNow;
-                        prelovedAd.UpdatedBy = userId;
-                        break;
-
-                    case Collectibles collectiblesAd:
-                        if (collectiblesAd.IsPromoted)
-                        {
-                            _logger.LogWarning("Ad {AdId} in Collectibles is already promoted.", collectiblesAd.Id);
-                            throw new ConflictException("This ad is already promoted.");
-                        }
-                        collectiblesAd.IsPromoted = true;
-                        collectiblesAd.PromotedExpiryDate = DateTime.UtcNow.AddDays(30);
-                        collectiblesAd.UpdatedAt = DateTime.UtcNow;
-                        collectiblesAd.UpdatedBy = userId;
-                        break;
-
-                    case Deals dealsAd:
-                        if (dealsAd.IsPromoted)
-                        {
-                            _logger.LogWarning("Ad {AdId} in Deals is already promoted.", dealsAd.Id);
-                            throw new ConflictException("This ad is already promoted.");
-                        }
-                        dealsAd.IsPromoted = true;
-                        dealsAd.PromotedExpiryDate = DateTime.UtcNow.AddDays(30);
-                        dealsAd.UpdatedAt = DateTime.UtcNow;
-                        dealsAd.UpdatedBy = userId;
-                        break;
-
-                    default:
-                        _logger.LogError("Unsupported ad type: {Type}", adItem.GetType().Name);
-                        throw new InvalidOperationException($"Unsupported ad type: {adItem.GetType().Name}");
+                    case Items i: UpdateAd(i); break;
+                    case Preloveds p: UpdateAd(p); break;
+                    case Collectibles c: UpdateAd(c); break;
+                    case Deals d: UpdateAd(d); break;
+                    default: throw new InvalidOperationException($"Unsupported ad type: {adItem.GetType().Name}");
                 }
 
-                _logger.LogDebug("Saving changes to database for AdId: {AdId}", dto.AdId);
                 await _context.SaveChangesAsync(cancellationToken);
-                _logger.LogInformation("Ad {AdId} successfully marked as promoted.", dto.AdId);
+                await _subscriptionContext.SaveChangesAsync(cancellationToken);
 
-                _logger.LogDebug("Indexing promoted ad {AdId} in Azure Search for {SubVertical}", dto.AdId, dto.SubVertical);
-                switch (dto.SubVertical)
+                if (dto.IsFeatured!.Value)
                 {
-                    case SubVertical.Items:
-                        await IndexItemsToAzureSearch((Items)adItem, cancellationToken);
-                        break;
-                    case SubVertical.Preloved:
-                        await IndexPrelovedToAzureSearch((Preloveds)adItem, cancellationToken);
-                        break;
-                    case SubVertical.Collectibles:
-                        await IndexCollectiblesToAzureSearch((Collectibles)adItem, cancellationToken);
-                        break;
-                    case SubVertical.Deals:
-                        await IndexDealsToAzureSearch((Deals)adItem, cancellationToken);
-                        break;
+                    // reindex to search
+                    switch (dto.SubVertical)
+                    {
+                        case SubVertical.Items: await IndexItemsToAzureSearch((Items)adItem, cancellationToken); break;
+                        case SubVertical.Preloved: await IndexPrelovedToAzureSearch((Preloveds)adItem, cancellationToken); break;
+                        case SubVertical.Collectibles: await IndexCollectiblesToAzureSearch((Collectibles)adItem, cancellationToken); break;
+                        case SubVertical.Deals: await IndexDealsToAzureSearch((Deals)adItem, cancellationToken); break;
+                    }
                 }
 
-
-                return "The ad has been successfully marked as promoted.";
+                return dto.IsFeatured.Value
+                    ? "The ad has been successfully featured."
+                    : "The ad has been successfully unfeatured.";
             }
             catch (Exception ex) when (
                 ex is ArgumentException ||
@@ -2645,15 +2349,131 @@ namespace QLN.Classified.MS.Service
                 ex is InvalidOperationException ||
                 ex is ConflictException)
             {
-                _logger.LogError(ex, "Known error occurred while promoting ad with AdId: {AdId}", dto.AdId);
+                _logger.LogError(ex, "Known error while toggling feature for AdId: {AdId}", dto.AdId);
                 throw;
             }
             catch (Exception ex)
             {
-                _logger.LogCritical(ex, "Unhandled error occurred while promoting ad with AdId: {AdId}", dto.AdId);
-                throw new InvalidOperationException("Failed to promote the ad due to an unexpected error.", ex);
+                _logger.LogCritical(ex, "Unhandled error while toggling feature for AdId: {AdId}", dto.AdId);
+                throw new InvalidOperationException("Failed to update feature state due to an unexpected error.", ex);
             }
         }
+
+
+
+        public async Task<string> PromoteClassifiedAd(
+    ClassifiedsPromoteDto dto,
+    string userId,
+    Guid subscriptionId,
+    CancellationToken cancellationToken = default)
+        {
+            if (dto == null)
+                throw new ArgumentNullException(nameof(dto));
+
+            if (!dto.IsPromoted.HasValue)
+                throw new ArgumentException("IsPromoted must be provided (true or false).", nameof(dto));
+
+            _logger.LogInformation(
+                "PromoteClassifiedAd called. SubVertical: {SubVertical}, AdId: {AdId}, UserId: {UserId}, IsPromoted: {IsPromoted}",
+                dto.SubVertical, dto.AdId, userId, dto.IsPromoted);
+
+            try
+            {
+                subscriptionId = Guid.Parse("5a024f96-7414-4473-80b8-f5d70297e262");
+
+                var subscription = await _subscriptionContext.Subscriptions
+                    .FirstOrDefaultAsync(s => s.SubscriptionId == subscriptionId, cancellationToken);
+
+                if (subscription == null)
+                    throw new KeyNotFoundException($"Subscription {subscriptionId} not found.");
+
+                // fetch the ad based on subvertical
+                object? adItem = dto.SubVertical switch
+                {
+                    SubVertical.Items => await _context.Item.FirstOrDefaultAsync(i => i.Id == dto.AdId && i.IsActive, cancellationToken),
+                    SubVertical.Preloved => await _context.Preloved.FirstOrDefaultAsync(p => p.Id == dto.AdId && p.IsActive, cancellationToken),
+                    SubVertical.Collectibles => await _context.Collectible.FirstOrDefaultAsync(c => c.Id == dto.AdId && c.IsActive, cancellationToken),
+                    SubVertical.Deals => await _context.Deal.FirstOrDefaultAsync(d => d.Id == dto.AdId && d.IsActive, cancellationToken),
+                    _ => throw new InvalidOperationException($"Invalid SubVertical: {dto.SubVertical}")
+                };
+
+                if (adItem == null)
+                    throw new KeyNotFoundException($"Ad with id {dto.AdId} not found in {dto.SubVertical}.");
+
+                void UpdateAd(dynamic ad)
+                {
+                    if (dto.IsPromoted!.Value) 
+                    {
+                        if (ad.IsPromoted)
+                            throw new ConflictException($"Ad {dto.AdId} is already promoted.");
+
+                        ad.IsPromoted = true;
+                        ad.PromotedExpiryDate = DateTime.UtcNow.AddDays(30);
+
+                        _logger.LogInformation("Ad {AdId} unpromoted.", dto.AdId);
+                    }
+                    else
+                    {
+                        if (!ad.IsPromoted)
+                            throw new ConflictException($"Ad {dto.AdId} is already not promoted.");
+
+                        ad.IsPromoted = false;
+                        ad.PromotedExpiryDate = null;
+
+                        _logger.LogInformation("Ad {AdId} unpromoted.", dto.AdId);
+                    }
+
+                    ad.UpdatedAt = DateTime.UtcNow;
+                    ad.UpdatedBy = userId;
+                }
+
+                switch (adItem)
+                {
+                    case Items i: UpdateAd(i); break;
+                    case Preloveds p: UpdateAd(p); break;
+                    case Collectibles c: UpdateAd(c); break;
+                    case Deals d: UpdateAd(d); break;
+                    default: throw new InvalidOperationException($"Unsupported ad type: {adItem.GetType().Name}");
+                }
+
+                await _context.SaveChangesAsync(cancellationToken);
+                await _subscriptionContext.SaveChangesAsync(cancellationToken);
+
+                if (dto.IsPromoted!.Value)
+                {
+                    // reindex to search
+                    switch (dto.SubVertical)
+                    {
+                        case SubVertical.Items: await IndexItemsToAzureSearch((Items)adItem, cancellationToken); break;
+                        case SubVertical.Preloved: await IndexPrelovedToAzureSearch((Preloveds)adItem, cancellationToken); break;
+                        case SubVertical.Collectibles: await IndexCollectiblesToAzureSearch((Collectibles)adItem, cancellationToken); break;
+                        case SubVertical.Deals: await IndexDealsToAzureSearch((Deals)adItem, cancellationToken); break;
+                    }
+                }
+
+                return dto.IsPromoted.Value
+                    ? "The ad has been successfully promoted."
+                    : "The ad has been successfully unpromoted.";
+            }
+            catch (Exception ex) when (
+                ex is ArgumentException ||
+                ex is KeyNotFoundException ||
+                ex is InvalidOperationException ||
+                ex is ConflictException)
+            {
+                _logger.LogError(ex, "Known error while toggling promotion for AdId: {AdId}", dto.AdId);
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogCritical(ex, "Unhandled error while toggling promotion for AdId: {AdId}", dto.AdId);
+                throw new InvalidOperationException("Failed to update promotion state due to an unexpected error.", ex);
+            }
+        }
+
+
+
+
 
 
         #region WishList
