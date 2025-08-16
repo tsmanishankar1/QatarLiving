@@ -104,6 +104,7 @@ namespace QLN.Common.DTO_s
     public class FeatureServiceRequest
     {
         public long ServiceId { get; set; }
+        [JsonIgnore]
         public Guid? SubscriptionId { get; set; }
         public bool IsFeature { get; set; }
         [JsonIgnore]

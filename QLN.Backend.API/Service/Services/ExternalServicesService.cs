@@ -382,7 +382,7 @@ namespace QLN.Backend.API.Service.Services
         {
             try
             {
-                //request.SubscriptionId = Guid.Parse("752ea67e-5fc3-4dae-ab96-4aa3822afc38");
+                request.SubscriptionId = Guid.Parse("752ea67e-5fc3-4dae-ab96-4aa3822afc38");
                 var quotaAction = request.IsPromoted ? ActionTypes.Promote : ActionTypes.UnPromote;
 
                 if (quotaAction == ActionTypes.Promote && request.SubscriptionId != Guid.Empty)

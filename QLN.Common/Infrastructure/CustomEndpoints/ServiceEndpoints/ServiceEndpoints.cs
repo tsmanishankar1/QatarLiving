@@ -926,7 +926,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                     //        Status = StatusCodes.Status400BadRequest
                     //    });
                     //}
-                    //request.SubscriptionId = Guid.Parse("752ea67e-5fc3-4dae-ab96-4aa3822afc38");
+                    request.SubscriptionId = Guid.Parse("752ea67e-5fc3-4dae-ab96-4aa3822afc38");
                     var resultMessage = await service.PromoteService(request, uid, cancellationToken);
 
                     if (resultMessage == null)
@@ -1078,19 +1078,18 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
 
                     var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
                     uid = userData.GetProperty("uid").GetString();
-                    //var subscriptionId = new Guid("752ea67e-5fc3-4dae-ab96-4aa3822afc38");
-                    if (!userData.TryGetProperty("subscription", out var subscriptionElement) ||
-                        !subscriptionElement.TryGetProperty("subscription_id", out var subscriptionIdElement) ||
-                        !Guid.TryParse(subscriptionIdElement.GetString(), out var subscriptionId))
-                    {
-                        return Results.Problem(new ProblemDetails
-                        {
-                            Title = "Invalid Subscription",
-                            Detail = "Subscription ID is missing or invalid in the token.",
-                            Status = StatusCodes.Status403Forbidden
-                        });
-                    }
-
+                    //if (!userData.TryGetProperty("subscription", out var subscriptionElement) ||
+                    //    !subscriptionElement.TryGetProperty("subscription_id", out var subscriptionIdElement) ||
+                    //    !Guid.TryParse(subscriptionIdElement.GetString(), out var subscriptionId))
+                    //{
+                    //    return Results.Problem(new ProblemDetails
+                    //    {
+                    //        Title = "Invalid Subscription",
+                    //        Detail = "Subscription ID is missing or invalid in the token.",
+                    //        Status = StatusCodes.Status403Forbidden
+                    //    });
+                    //}
+                    var subscriptionId = new Guid("752ea67e-5fc3-4dae-ab96-4aa3822afc38");
                     var result = await service.FeatureService(request, uid, subscriptionId, cancellationToken);
 
                     await auditLogger.LogAuditAsync(
