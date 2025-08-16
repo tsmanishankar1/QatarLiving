@@ -19,23 +19,18 @@ namespace QLN.Backend.API.Service.V2ContentService
     {
 
         private readonly DaprClient _dapr;
-
         private readonly ILogger<V2ExternalDailyService> _logger;
         private readonly ISearchService _search;
-
         private const string AppId = V2Content.ContentServiceAppId;
-
         private const string BaseUrl = "/api/v2/dailyliving/topsection";
+        private readonly IV2NewsService _contentService;
 
-        public V2ExternalDailyService(DaprClient dapr, ILogger<V2ExternalDailyService> logger, ISearchService search)
-
+        public V2ExternalDailyService(DaprClient dapr, ILogger<V2ExternalDailyService> logger, ISearchService search, IV2NewsService contentService)
         {
-
             _dapr = dapr;
-
             _logger = logger;
             _search = search;
-
+            _contentService = contentService;
         }
         public async Task<string> UpsertSlotAsync(string userId, DailyTopSectionSlot dto, CancellationToken cancellationToken = default)
 
@@ -387,7 +382,12 @@ namespace QLN.Backend.API.Service.V2ContentService
             // S1 → Top Story
             var s1 = slots.FirstOrDefault(s => s.SlotNumber == 1 && s.ContentType == DailyContentType.Article);
             if (s1?.RelatedContentId != Guid.Empty && await LoadNewsAsync(s1.RelatedContentId, ct) is { } n1)
-                topStory.Add(MapNewsToPost(n1, "Top Story", s1.Id));
+                if (await LoadNewsAsync(s1.RelatedContentId, ct) is { } n)
+                {
+                    int categoryId = int.Parse(n.Categories?.FirstOrDefault()?.CategoryId.ToString() ?? string.Empty);
+                    var cat = _contentService.GetCategoryByIdAsync(categoryId, ct).Result;
+                    topStory.Add(MapNewsToPost(n1, "Top Story", s1.Id, cat?.CategoryName));
+                }
 
             // S2 → Highlighted Event
             var s2 = slots.FirstOrDefault(s => s.SlotNumber == 2 && s.ContentType == DailyContentType.Event);
@@ -397,12 +397,20 @@ namespace QLN.Backend.API.Service.V2ContentService
             // S3..5 → Top Stories
             foreach (var s in slots.Where(x => x.SlotNumber is >= 3 and <= 5 && x.ContentType == DailyContentType.Article).OrderBy(x => x.SlotNumber))
                 if (await LoadNewsAsync(s.RelatedContentId, ct) is { } n)
-                    topStories.Add(MapNewsToPost(n, "Top Stories", s.Id));
+                {
+                    int categoryId = int.Parse(n.Categories?.FirstOrDefault()?.CategoryId.ToString() ?? string.Empty);
+                    var cat = _contentService.GetCategoryByIdAsync(categoryId, ct).Result;
+                    topStories.Add(MapNewsToPost(n, "Top Stories", s.Id, cat?.CategoryName));
+                }
 
             // S6..9 → More Articles
             foreach (var s in slots.Where(x => x.SlotNumber is >= 6 and <= 9 && x.ContentType == DailyContentType.Article).OrderBy(x => x.SlotNumber))
                 if (await LoadNewsAsync(s.RelatedContentId, ct) is { } n)
-                    moreArticles.Add(MapNewsToEvent(n, "More Articles", s.Id));
+                {
+                    int categoryId = int.Parse(n.Categories?.FirstOrDefault()?.CategoryId.ToString() ?? string.Empty);
+                    var cat = _contentService.GetCategoryByIdAsync(categoryId, ct).Result;
+                    moreArticles.Add(MapNewsToEvent(n, "More Articles", s.Id, cat?.CategoryName));
+                }
             var featuredEvents = await LoadFeaturedEventsAsync(ct);
 
             // Dynamic topics
@@ -417,7 +425,11 @@ namespace QLN.Backend.API.Service.V2ContentService
                     if (s.ContentType == DailyContentType.Article && s.RelatedContentId != Guid.Empty)
                     {
                         if (await LoadNewsAsync(s.RelatedContentId, ct) is { } n)
-                            items.Add(MapNewsToEvent(n, t.TopicName, t.Id));
+                        {
+                            int categoryId = int.Parse(n.Categories?.FirstOrDefault()?.CategoryId.ToString() ?? string.Empty);
+                            var cat = _contentService.GetCategoryByIdAsync(categoryId, ct).Result;
+                            items.Add(MapNewsToEvent(n, t.TopicName, t.Id, cat?.CategoryName));
+                        }
                     }
                     else if (s.ContentType == DailyContentType.Event && s.RelatedContentId != Guid.Empty)
                     {
@@ -508,11 +520,12 @@ namespace QLN.Backend.API.Service.V2ContentService
             };
         }
 
-        private static ContentPost MapNewsToPost(ContentNewsIndex i, string label, Guid labelId) => new()
+        private static ContentPost MapNewsToPost(ContentNewsIndex i, string label, Guid labelId, string category) => new()
         {
             Id = Guid.TryParse(i.Id, out var gid) ? gid : Guid.Empty,
             Nid = i.Id,
             PageName = DrupalContentConstants.QlnContentsDaily,
+            Category = category,
             QueueLabel = label,
             QueueLabelId = labelId,
             NodeType = "post",
@@ -528,11 +541,13 @@ namespace QLN.Backend.API.Service.V2ContentService
             DateCreated = (i.CreatedAt == default ? DateTime.UtcNow : i.CreatedAt).ToString("o")
         };
 
-        private static ContentEvent MapNewsToEvent(ContentNewsIndex i, string label, Guid labelId) => new()
+        private static ContentEvent MapNewsToEvent(ContentNewsIndex i, string label, Guid labelId, string category) => new()
         {
             Id = Guid.TryParse(i.Id, out var gid) ? gid : Guid.Empty,
             Nid = i.Id,
             PageName = DrupalContentConstants.QlnContentsDaily,
+            CategroryId = i.Categories?.FirstOrDefault()?.CategoryId.ToString() ?? string.Empty,
+            Category = category,
             QueueLabel = label,
             QueueLabelId = labelId,
             NodeType = "post",
@@ -546,6 +561,7 @@ namespace QLN.Backend.API.Service.V2ContentService
             UpdatedAt = i.UpdatedAt,
             DateCreated = (i.CreatedAt == default ? DateTime.UtcNow : i.CreatedAt).ToString("o")
         };
+
 
         private static ContentEvent MapEventToEvent(ContentEventsIndex e, string label) => new()
         {

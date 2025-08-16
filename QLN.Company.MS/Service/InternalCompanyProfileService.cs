@@ -727,6 +727,7 @@ namespace QLN.Company.MS.Service
 
                 var joined = (from c in companies
                               join s in subscriptions on c.Id equals s.CompanyId
+                              where c.IsActive
                               select new CompanySubscriptionDto
                               {
                                   CompanyId = c.Id,

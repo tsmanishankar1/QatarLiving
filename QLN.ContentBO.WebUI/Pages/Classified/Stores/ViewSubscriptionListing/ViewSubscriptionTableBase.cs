@@ -15,9 +15,9 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.ViewSubscriptionListing
 
         protected void EditOrder(StoreSubscriptionItem storeSubscriptionItem)
         {
-            if (!string.IsNullOrEmpty(storeSubscriptionItem?.UserName))
+            if (storeSubscriptionItem?.CompanyId != null)
             {
-                NavigationManager.NavigateTo($"/manage/classified/stores/edit/company/{storeSubscriptionItem.UserName}");
+                NavigationManager.NavigateTo($"/manage/classified/stores/edit/company/{storeSubscriptionItem.CompanyId}");
             }
         }
 
