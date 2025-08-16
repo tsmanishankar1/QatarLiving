@@ -57,76 +57,77 @@ namespace QLN.Backend.API.Service.ClassifiedBoService
                 throw new InvalidOperationException("Error fetching stores subscriptions.", ex);
             }
         }
-        public async Task<string> CreateStoreSubscriptions(StoresSubscriptionDto dto, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var url = "api/v2/classifiedbo/stores-creates-subscriptions";
-                var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, SERVICE_APP_ID, url);
-                request.Content = new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
+
+        //public async Task<string> CreateStoreSubscriptions(StoresSubscriptionDto dto, CancellationToken cancellationToken = default)
+        //{
+        //    try
+        //    {
+        //        var url = "api/v2/classifiedbo/stores-creates-subscriptions";
+        //        var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, SERVICE_APP_ID, url);
+        //        request.Content = new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
 
 
 
-                var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
-                if (response.StatusCode == HttpStatusCode.BadRequest)
-                {
-                    var errorJson = await response.Content.ReadAsStringAsync(cancellationToken);
+        //        var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
+        //        if (response.StatusCode == HttpStatusCode.BadRequest)
+        //        {
+        //            var errorJson = await response.Content.ReadAsStringAsync(cancellationToken);
 
-                    string errorMessage;
-                    try
-                    {
-                        var problem = JsonSerializer.Deserialize<ProblemDetails>(errorJson);
-                        errorMessage = problem?.Detail ?? "Unknown error.";
-                    }
-                    catch
-                    {
-                        errorMessage = errorJson;
-                    }
+        //            string errorMessage;
+        //            try
+        //            {
+        //                var problem = JsonSerializer.Deserialize<ProblemDetails>(errorJson);
+        //                errorMessage = problem?.Detail ?? "Unknown error.";
+        //            }
+        //            catch
+        //            {
+        //                errorMessage = errorJson;
+        //            }
 
 
-                    throw new InvalidDataException(errorMessage);
-                }
-                if (response.StatusCode == HttpStatusCode.Conflict)
-                {
-                    var errorJson = await response.Content.ReadAsStringAsync(cancellationToken);
-                    var problem = JsonSerializer.Deserialize<ProblemDetails>(errorJson);
+        //            throw new InvalidDataException(errorMessage);
+        //        }
+        //        if (response.StatusCode == HttpStatusCode.Conflict)
+        //        {
+        //            var errorJson = await response.Content.ReadAsStringAsync(cancellationToken);
+        //            var problem = JsonSerializer.Deserialize<ProblemDetails>(errorJson);
 
-                    throw new ConflictException(problem?.Detail ?? "Conflict error.");
-                }
-                response.EnsureSuccessStatusCode();
+        //            throw new ConflictException(problem?.Detail ?? "Conflict error.");
+        //        }
+        //        response.EnsureSuccessStatusCode();
 
-                var rawJson = await response.Content.ReadAsStringAsync(cancellationToken);
-                return JsonSerializer.Deserialize<string>(rawJson) ?? "Unknown response";
-            }
-            catch (Exception ex)
-            {
+        //        var rawJson = await response.Content.ReadAsStringAsync(cancellationToken);
+        //        return JsonSerializer.Deserialize<string>(rawJson) ?? "Unknown response";
+        //    }
+        //    catch (Exception ex)
+        //    {
 
-                _logger.LogError(ex, "Error creating company profile");
-                throw;
-            }
-        }
-        public async Task<string> EditStoreSubscriptions(int OrderID, string Status, CancellationToken cancellationToken = default)
-        {
-            try
-            {
+        //        _logger.LogError(ex, "Error creating company profile");
+        //        throw;
+        //    }
+        //}
+        //public async Task<string> EditStoreSubscriptions(int OrderID, string Status, CancellationToken cancellationToken = default)
+        //{
+        //    try
+        //    {
 
-                var queryParams = $"?OrderID={OrderID}&Status={Status}";
-                var response = await _dapr.InvokeMethodAsync<string>(
-                    HttpMethod.Put,
-                    SERVICE_APP_ID,
-                    $"api/v2/classifiedbo/stores-edits-subscriptions{queryParams}",
-                    cancellationToken
-                );
+        //        var queryParams = $"?OrderID={OrderID}&Status={Status}";
+        //        var response = await _dapr.InvokeMethodAsync<string>(
+        //            HttpMethod.Put,
+        //            SERVICE_APP_ID,
+        //            $"api/v2/classifiedbo/stores-edits-subscriptions{queryParams}",
+        //            cancellationToken
+        //        );
 
-                return response;
-            }
-            catch (Exception ex)
-            {
+        //        return response;
+        //    }
+        //    catch (Exception ex)
+        //    {
 
-                _logger.LogError(ex, "Error editing stores subscriptions.");
-                throw;
-            }
-        }
+        //        _logger.LogError(ex, "Error editing stores subscriptions.");
+        //        throw;
+        //    }
+        //}
 
         public async Task<string> GetTestXMLValidation(CancellationToken cancellationToken = default)
         {

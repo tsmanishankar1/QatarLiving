@@ -155,6 +155,7 @@ namespace QLN.Backend.API.Service.ClassifiedBoService
                         {
                             BulkActionEnum.Promote => "promote", // match single method case
                             BulkActionEnum.Feature => "feature",
+               
                             BulkActionEnum.Publish => "publish",
                             BulkActionEnum.Unpublish => "unpublish",
                             _ => throw new InvalidOperationException("Invalid bulk action.")
@@ -235,8 +236,11 @@ namespace QLN.Backend.API.Service.ClassifiedBoService
                         {
                             BulkActionEnum.Promote => "Promote",
                             BulkActionEnum.Feature => "Feature",
+                            BulkActionEnum.UnPromote => "unpromote",
+                            BulkActionEnum.UnFeature => "unfeature",
                             BulkActionEnum.Publish => "Publish",
                             BulkActionEnum.Unpublish => "Unpublish",
+                            BulkActionEnum.Approve => "publish",
                             _ => throw new InvalidOperationException("Invalid bulk action.")
                         };
 

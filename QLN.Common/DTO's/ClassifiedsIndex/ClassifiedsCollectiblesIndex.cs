@@ -22,7 +22,7 @@ namespace QLN.Common.DTO_s
         public DateTime? PromotedExpiryDate { get; set; }
 
         [SimpleField(IsFilterable = true)]
-        public bool HasAuthenticityCertificate { get; set; }
+        public bool? HasAuthenticityCertificate { get; set; }
 
         [SimpleField(IsFilterable = true)]
         public string? AuthenticityCertificateName { get; set; }

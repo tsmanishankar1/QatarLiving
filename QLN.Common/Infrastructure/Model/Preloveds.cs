@@ -9,6 +9,7 @@ namespace QLN.Common.Infrastructure.Model
     public class Preloveds : ClassifiedBase
     {
         public bool? HasAuthenticityCertificate { get; set; }
+        public string? AuthenticityCertificateName { get; set; }
         public string? AuthenticityCertificateUrl { get; set; }
         public string? Inclusion { get; set; }
         public DateTime? FeaturedExpiryDate { get; set; } = null;

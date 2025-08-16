@@ -60,189 +60,189 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-            group.MapPost("/stores-create-subscriptions", async Task<Results<
-                Ok<string>,
-                ForbidHttpResult,
-                BadRequest<ProblemDetails>,
-                ProblemHttpResult>>
-                (
-                [FromBody]StoresSubscriptionDto dto,
-                [FromServices]IClassifiedStoresBOService service,
-                HttpContext httpContext,
-                CancellationToken cancellationToken
-                ) =>
-            {
-                try
-                {
-                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                    if (string.IsNullOrEmpty(userClaim))
-                    {
-                        return TypedResults.Forbid();
-                    }
+   //         group.MapPost("/stores-create-subscriptions", async Task<Results<
+   //             Ok<string>,
+   //             ForbidHttpResult,
+   //             BadRequest<ProblemDetails>,
+   //             ProblemHttpResult>>
+   //             (
+   //             [FromBody]StoresSubscriptionDto dto,
+   //             [FromServices]IClassifiedStoresBOService service,
+   //             HttpContext httpContext,
+   //             CancellationToken cancellationToken
+   //             ) =>
+   //         {
+   //             try
+   //             {
+   //                 var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+   //                 if (string.IsNullOrEmpty(userClaim))
+   //                 {
+   //                     return TypedResults.Forbid();
+   //                 }
 
-                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                    var userId = userData.GetProperty("uid").GetString();
-                    var userName = userData.GetProperty("name").GetString();
+   //                 var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+   //                 var userId = userData.GetProperty("uid").GetString();
+   //                 var userName = userData.GetProperty("name").GetString();
 
-                    if (string.IsNullOrWhiteSpace(userId))
-                    {
-                        return TypedResults.Forbid();
-                    }
+   //                 if (string.IsNullOrWhiteSpace(userId))
+   //                 {
+   //                     return TypedResults.Forbid();
+   //                 }
 
-                    var result = await service.CreateStoreSubscriptions(dto, cancellationToken);
-                    return TypedResults.Ok(result);
-                }
-                catch (InvalidDataException ex)
-                {
-                    return TypedResults.BadRequest(new ProblemDetails
-                    {
-                        Title = "Invalid Data",
-                        Detail = ex.Message,
-                        Status = StatusCodes.Status400BadRequest
-                    });
-                }
-                catch (Exception ex)
-                {
-                    return TypedResults.Problem("Internal Server Error", ex.Message);
-                }
-            })
-                .WithName("CreateStoresSubscription")
-                .WithTags("ClassifiedBo")
-                .WithSummary("Create Stores Subscriptions")
-                .WithDescription("Creates a stores subscriptions using authenticated user info and returns success message.")
-                .Produces<string>(StatusCodes.Status200OK)
-                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-                .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
-                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+   //                 var result = await service.CreateStoreSubscriptions(dto, cancellationToken);
+   //                 return TypedResults.Ok(result);
+   //             }
+   //             catch (InvalidDataException ex)
+   //             {
+   //                 return TypedResults.BadRequest(new ProblemDetails
+   //                 {
+   //                     Title = "Invalid Data",
+   //                     Detail = ex.Message,
+   //                     Status = StatusCodes.Status400BadRequest
+   //                 });
+   //             }
+   //             catch (Exception ex)
+   //             {
+   //                 return TypedResults.Problem("Internal Server Error", ex.Message);
+   //             }
+   //         })
+   //             .WithName("CreateStoresSubscription")
+   //             .WithTags("ClassifiedBo")
+   //             .WithSummary("Create Stores Subscriptions")
+   //             .WithDescription("Creates a stores subscriptions using authenticated user info and returns success message.")
+   //             .Produces<string>(StatusCodes.Status200OK)
+   //             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+   //             .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
+   //             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-            group.MapPost("/stores-creates-subscriptions", async Task<Results<
-                Ok<string>,
-                BadRequest<ProblemDetails>,
-                ProblemHttpResult>>
-                (
-                [FromBody]StoresSubscriptionDto dto,
-                IClassifiedStoresBOService service,
-                CancellationToken cancellationToken
-                ) =>
-            {
-                try
-                {
-                    Console.WriteLine("hits internal bo");
-                    var result = await service.CreateStoreSubscriptions(dto, cancellationToken);
-                    return TypedResults.Ok(result);
-                }
-                catch (InvalidDataException ex)
-                {
-                    return TypedResults.BadRequest(new ProblemDetails
-                    {
-                        Title = "Invalid Data",
-                        Detail = ex.Message,
-                        Status = StatusCodes.Status400BadRequest
-                    });
-                }
-                catch (Exception ex)
-                {
-                    return TypedResults.Problem("Internal Server Error", ex.Message);
-                }
-            })
-                .ExcludeFromDescription()
-                .WithName("CreateStoreSubscription")
-                .WithTags("ClassifiedBo")
-                .WithSummary("Create Stores Subscriptions")
-                .WithDescription("Creates a stores subscriptions using authenticated user info and returns success message.")
-                .Produces<string>(StatusCodes.Status200OK)
-                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+   //         group.MapPost("/stores-creates-subscriptions", async Task<Results<
+   //             Ok<string>,
+   //             BadRequest<ProblemDetails>,
+   //             ProblemHttpResult>>
+   //             (
+   //             [FromBody]StoresSubscriptionDto dto,
+   //             IClassifiedStoresBOService service,
+   //             CancellationToken cancellationToken
+   //             ) =>
+   //         {
+   //             try
+   //             {
+   //                 Console.WriteLine("hits internal bo");
+   //                 var result = await service.CreateStoreSubscriptions(dto, cancellationToken);
+   //                 return TypedResults.Ok(result);
+   //             }
+   //             catch (InvalidDataException ex)
+   //             {
+   //                 return TypedResults.BadRequest(new ProblemDetails
+   //                 {
+   //                     Title = "Invalid Data",
+   //                     Detail = ex.Message,
+   //                     Status = StatusCodes.Status400BadRequest
+   //                 });
+   //             }
+   //             catch (Exception ex)
+   //             {
+   //                 return TypedResults.Problem("Internal Server Error", ex.Message);
+   //             }
+   //         })
+   //             .ExcludeFromDescription()
+   //             .WithName("CreateStoreSubscription")
+   //             .WithTags("ClassifiedBo")
+   //             .WithSummary("Create Stores Subscriptions")
+   //             .WithDescription("Creates a stores subscriptions using authenticated user info and returns success message.")
+   //             .Produces<string>(StatusCodes.Status200OK)
+   //             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+   //             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-            group.MapPut("/stores-edit-subscriptions", async Task<Results<
-          Ok<string>,
-          ForbidHttpResult,
-          BadRequest<ProblemDetails>,
-          ProblemHttpResult>>
-          (
-          [FromServices] IClassifiedStoresBOService service,
-          HttpContext httpContext,
-          int OrderID,
-          string Status,
-          CancellationToken cancellationToken
-          ) =>
-            {
-                try
-                {
-                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                    if (string.IsNullOrEmpty(userClaim))
-                    {
-                        return TypedResults.Forbid();
-                    }
+   //         group.MapPut("/stores-edit-subscriptions", async Task<Results<
+   //       Ok<string>,
+   //       ForbidHttpResult,
+   //       BadRequest<ProblemDetails>,
+   //       ProblemHttpResult>>
+   //       (
+   //       [FromServices] IClassifiedStoresBOService service,
+   //       HttpContext httpContext,
+   //       int OrderID,
+   //       string Status,
+   //       CancellationToken cancellationToken
+   //       ) =>
+   //         {
+   //             try
+   //             {
+   //                 var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+   //                 if (string.IsNullOrEmpty(userClaim))
+   //                 {
+   //                     return TypedResults.Forbid();
+   //                 }
 
-                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                    var userId = userData.GetProperty("uid").GetString();
-                    var userName = userData.GetProperty("name").GetString();
+   //                 var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+   //                 var userId = userData.GetProperty("uid").GetString();
+   //                 var userName = userData.GetProperty("name").GetString();
 
-                    if (string.IsNullOrWhiteSpace(userId))
-                    {
-                        return TypedResults.Forbid();
-                    }
+   //                 if (string.IsNullOrWhiteSpace(userId))
+   //                 {
+   //                     return TypedResults.Forbid();
+   //                 }
 
 
-                    var result = await service.EditStoreSubscriptions(OrderID, Status, cancellationToken);
+   //                 var result = await service.EditStoreSubscriptions(OrderID, Status, cancellationToken);
 
-                    return TypedResults.Ok(result);
-                }
-                catch (Exception ex)
-                {
-                    return TypedResults.Problem(
-                        title: "Internal Server Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError,
-                        instance: httpContext.Request.Path
-                    );
-                }
-            })
-                .WithName("EditStoresSubscriptions")
-                .WithTags("ClassifiedBo")
-                .WithSummary("Edit subscriptions on stores.")
-                .WithDescription("Edit the status information of stores subscriptions.")
-                .Produces<List<StoresSubscriptionDto>>(StatusCodes.Status200OK)
-                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+   //                 return TypedResults.Ok(result);
+   //             }
+   //             catch (Exception ex)
+   //             {
+   //                 return TypedResults.Problem(
+   //                     title: "Internal Server Error",
+   //                     detail: ex.Message,
+   //                     statusCode: StatusCodes.Status500InternalServerError,
+   //                     instance: httpContext.Request.Path
+   //                 );
+   //             }
+   //         })
+   //             .WithName("EditStoresSubscriptions")
+   //             .WithTags("ClassifiedBo")
+   //             .WithSummary("Edit subscriptions on stores.")
+   //             .WithDescription("Edit the status information of stores subscriptions.")
+   //             .Produces<List<StoresSubscriptionDto>>(StatusCodes.Status200OK)
+   //             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+   //             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-            group.MapPut("/stores-edits-subscriptions", async Task<Results<
-   Ok<string>,
-   BadRequest<ProblemDetails>,
-   ProblemHttpResult>>
-   (
-   [FromServices] IClassifiedStoresBOService service,
-   HttpContext httpContext,
-   int OrderID,
-   string Status,
-   CancellationToken cancellationToken
-   ) =>
-            {
-                try
-                {
-                    var result = await service.EditStoreSubscriptions(OrderID, Status, cancellationToken);
+   //         group.MapPut("/stores-edits-subscriptions", async Task<Results<
+   //Ok<string>,
+   //BadRequest<ProblemDetails>,
+   //ProblemHttpResult>>
+   //(
+   //[FromServices] IClassifiedStoresBOService service,
+   //HttpContext httpContext,
+   //int OrderID,
+   //string Status,
+   //CancellationToken cancellationToken
+   //) =>
+   //         {
+   //             try
+   //             {
+   //                 var result = await service.EditStoreSubscriptions(OrderID, Status, cancellationToken);
 
-                    return TypedResults.Ok(result);
-                }
-                catch (Exception ex)
-                {
-                    return TypedResults.Problem(
-                        title: "Internal Server Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError,
-                        instance: httpContext.Request.Path
-                    );
-                }
-            })
-                .ExcludeFromDescription()
-                .WithName("EditStoreSubscriptions")
-                .WithTags("ClassifiedBo")
-                .WithSummary("Edit subscriptions on stores.")
-                .WithDescription("Edit the status information of stores subscriptions.")
-                .Produces<List<StoresSubscriptionDto>>(StatusCodes.Status200OK)
-                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+   //                 return TypedResults.Ok(result);
+   //             }
+   //             catch (Exception ex)
+   //             {
+   //                 return TypedResults.Problem(
+   //                     title: "Internal Server Error",
+   //                     detail: ex.Message,
+   //                     statusCode: StatusCodes.Status500InternalServerError,
+   //                     instance: httpContext.Request.Path
+   //                 );
+   //             }
+   //         })
+   //             .ExcludeFromDescription()
+   //             .WithName("EditStoreSubscriptions")
+   //             .WithTags("ClassifiedBo")
+   //             .WithSummary("Edit subscriptions on stores.")
+   //             .WithDescription("Edit the status information of stores subscriptions.")
+   //             .Produces<List<StoresSubscriptionDto>>(StatusCodes.Status200OK)
+   //             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+   //             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             group.MapGet("/stores-process-xml",
     async Task<Results<Ok<string>, BadRequest<ProblemDetails>, ForbidHttpResult, ProblemHttpResult>> (

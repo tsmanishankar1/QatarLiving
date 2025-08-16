@@ -384,20 +384,20 @@ namespace QLN.Backend.API.Service.SearchService
         /// <summary>  
         /// Calls SearchService's GET /api/indexes/{indexName}/{key}/details?similarPageSize={n}  
         /// </summary>  
-        public async Task<GetWithSimilarResponse<T>> GetByIdWithSimilarAsync<T>(
+        public async Task<GetWithSimilarResponse<T>> GetBySlugWithSimilarAsync<T>(
             string indexName,
-            string key,
+            string slug,
             int similarPageSize = 10
         ) where T : class
         {
             if (string.IsNullOrWhiteSpace(indexName))
                 throw new ArgumentException("IndexName is required.", nameof(indexName));
-            if (string.IsNullOrWhiteSpace(key))
-                throw new ArgumentException("Key is required.", nameof(key));
+            if (string.IsNullOrWhiteSpace(slug))
+                throw new ArgumentException("slug is required.", nameof(slug));
 
             try
             {
-                var methodName = $"/api/indexes/{indexName}/{key}/details?similarPageSize={similarPageSize}";
+                var methodName = $"/api/indexes/{indexName}/{slug}/details?similarPageSize={similarPageSize}";
                 return await _dapr.InvokeMethodAsync<GetWithSimilarResponse<T>>(
                     HttpMethod.Get,
                     appId: SERVICE_APP_ID,
@@ -414,8 +414,8 @@ namespace QLN.Backend.API.Service.SearchService
                     switch (statusCode)
                     {
                         case HttpStatusCode.NotFound:
-                            _logger.LogWarning("Remote returned 404 for {IndexName}/{Key}", indexName, key);
-                            throw new KeyNotFoundException($"Document '{key}' not found in '{indexName}'.");
+                            _logger.LogWarning("Remote returned 404 for {IndexName}/{Key}", indexName, slug);
+                            throw new KeyNotFoundException($"Document '{slug}' not found in '{indexName}'.");
 
                         case HttpStatusCode.BadRequest:
                             if (message.Contains("SimilarPageSize"))
@@ -437,7 +437,7 @@ namespace QLN.Backend.API.Service.SearchService
                     }
                 }
 
-                _logger.LogError(ex, "Dapr invocation failed in GetByIdWithSimilarAsync: indexName={IndexName}, key={Key}", indexName, key);
+                _logger.LogError(ex, "Dapr invocation failed in GetByIdWithSimilarAsync: indexName={IndexName}, key={slug}", indexName, slug);
                 throw new InvalidOperationException($"Dapr communication failed: {ex.Message}", ex);
             }
             catch (ArgumentNullException ex)
@@ -447,7 +447,7 @@ namespace QLN.Backend.API.Service.SearchService
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unexpected error in GetByIdWithSimilarAsync: indexName={IndexName}, key={Key}", indexName, key);
+                _logger.LogError(ex, "Unexpected error in GetByIdWithSimilarAsync: indexName={IndexName}, key={slug}", indexName, slug);
                 throw new InvalidOperationException($"Unexpected error in GetByIdWithSimilarAsync: {ex.Message}", ex);
             }
         }
