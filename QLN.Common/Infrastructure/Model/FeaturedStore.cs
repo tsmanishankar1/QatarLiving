@@ -47,6 +47,8 @@ namespace QLN.Common.Infrastructure.Model
         public string StoreName { get; set; } = null!;
         [MaxLength(100)]
         public string ImageUrl { get; set; } = null!;
+        [MaxLength(200)]
+        public string? Slug { get; set; }
         [JsonConverter(typeof(FlexibleDateOnlyConverter))]
         public DateOnly StartDate { get; set; }
         [JsonConverter(typeof(FlexibleDateOnlyConverter))]
