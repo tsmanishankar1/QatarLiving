@@ -18,6 +18,7 @@ namespace QLN.ContentBO.WebUI.Interfaces
         Task<HttpResponseMessage> UpdateCompanyActions(CompanyUpdateActions requestModel);
         Task<HttpResponseMessage?> UpdateCompanyProfile(CompanyProfileItem company);
         Task<HttpResponseMessage?> GetCompanyProfileById(Guid companyId);
+        Task<HttpResponseMessage?> PostCollectiblesAdAsync(object payload);
         Task<HttpResponseMessage?> GetFeaturedStores(Vertical vertical);
         Task<HttpResponseMessage?> GetAllSeasonalPicks(Vertical vertical);
         Task<HttpResponseMessage?> GetAllFeaturedStores(Vertical vertical);
