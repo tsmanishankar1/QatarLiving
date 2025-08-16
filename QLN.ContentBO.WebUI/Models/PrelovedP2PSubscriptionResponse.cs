@@ -23,7 +23,7 @@
 
     public class PrelovedP2PSubscriptionItem
     {
-        public int AdId { get; set; }
+        public long AdId { get; set; }
         public int OrderId { get; set; }
         public string? AdType { get; set; }
         public int UserId { get; set; }
