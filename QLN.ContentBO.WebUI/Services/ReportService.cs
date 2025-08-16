@@ -17,33 +17,47 @@ namespace QLN.ContentBO.WebUI.Services
             _httpClient = httpClient;
         }
 
-    public async Task<HttpResponseMessage> UpdateReport(string endpoint, string id, bool isKeep, bool isDelete)
-{
-    try
-    {
-        var payload = new
+        public async Task<HttpResponseMessage> UpdateReport(string endpoint, string id, bool isKeep, bool isDelete)
         {
-            reportId = id,
-            isKeep,
-            isDelete
-        };
+            try
+            {
+                var payload = new
+                {
+                    reportId = id,
+                    isKeep,
+                    isDelete
+                };
 
-        var json = JsonSerializer.Serialize(payload);
-        var content = new StringContent(json, Encoding.UTF8, "application/json");
+                var json = JsonSerializer.Serialize(payload);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-        var request = new HttpRequestMessage(HttpMethod.Put, endpoint)
+                var request = new HttpRequestMessage(HttpMethod.Put, endpoint)
+                {
+                    Content = content
+                };
+
+                return await _httpClient.SendAsync(request);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Error in UpdateReport");
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+        public async Task<HttpResponseMessage?> DeleteCommunitylPosts(string pickId)
         {
-            Content = content
-        };
-
-        return await _httpClient.SendAsync(request);
-    }
-    catch (Exception ex)
-    {
-        Logger.LogError(ex, "Error in UpdateReport");
-        return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
-    }
-}
+            try
+            {
+                var request = new HttpRequestMessage(HttpMethod.Delete,
+                    $"/api/v2/community/deletePost/{pickId}");
+                return await _httpClient.SendAsync(request);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError("DeleteCommunitylPosts " + ex.Message);
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
 
         public async Task<HttpResponseMessage> GetReportsWithPaginationAsync(
             string endpoint,

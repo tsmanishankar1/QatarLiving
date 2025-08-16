@@ -323,7 +323,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.CreateAd
                         .ToDictionary(kv => kv.Key, kv => (object)kv.Value)
                 };
                 // await JS.InvokeVoidAsync("console.log", payload);
-                var response = await ClassifiedService.PostAdAsync("collectibles", payload);
+                var response = await ClassifiedService.PostCollectiblesAdAsync(payload);
 
                 if (response?.IsSuccessStatusCode == true)
                 {
