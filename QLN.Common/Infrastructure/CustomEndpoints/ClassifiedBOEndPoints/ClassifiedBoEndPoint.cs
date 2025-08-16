@@ -884,6 +884,52 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 .Produces<List<SeasonalPicks>>(StatusCodes.Status200OK)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
+
+            group.MapGet("/getseasonalpicksbyslug", async Task<Results<
+                Ok<List<SeasonalPicks>>,
+                BadRequest<ProblemDetails>,
+                ProblemHttpResult>> (
+                IClassifiedBoLandingService service,
+                HttpContext context,
+                [FromQuery] string slug,
+                CancellationToken cancellationToken
+                ) =>
+            {
+                try
+                {                   
+                    var result = await service.GetSeasonalPickBySlug(slug, cancellationToken);
+
+                    return TypedResults.Ok(result);
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    return TypedResults.Problem(
+                        title: "No Seasonal Picks Found",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status404NotFound,
+                        instance: context.Request.Path
+                    );
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        instance: context.Request.Path
+                    );
+                }
+            })
+                .WithName("GetSeasonalPickBySlug")
+                .WithTags("ClassifiedBo")
+                .AllowAnonymous()
+                .WithSummary("Get seasonal picks by slug")
+                .WithDescription("Fetches all active seasonal picks that match the provided slug.")
+                .Produces<List<SeasonalPicks>>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+
             group.MapPut("/seasonal-picks/replace-slot", async Task<Results<
                             Ok<string>,
                             ForbidHttpResult,
