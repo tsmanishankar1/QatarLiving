@@ -1842,7 +1842,7 @@ namespace QLN.Classified.MS.Service
         {
             try
             {
-                var targetStatus = isPublished ? AdStatus.Published : AdStatus.Unpublished;
+                var targetStatus = isPublished ? AdStatus.PendingApproval : AdStatus.Draft;
 
                 IQueryable<ClassifiedBase> query = subVertical switch
                 {
@@ -1908,7 +1908,14 @@ namespace QLN.Classified.MS.Service
                 foreach (var ad in ads)
                 {
                     ad.Status = targetStatus;
-                    ad.CreatedAt = DateTime.UtcNow;
+                    if (isPublished)
+                    {
+                        ad.CreatedAt = DateTime.UtcNow;     
+                    }
+                    else
+                    {
+                        ad.UpdatedAt = DateTime.UtcNow;     
+                    }
                     _logger.LogInformation("Ad {AdId} status updated to {Status}.", ad.Id, targetStatus);
                 }
 
