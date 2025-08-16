@@ -26,6 +26,7 @@ using QLN.Common.Infrastructure.IService.IServiceBoService;
 using QLN.Common.Infrastructure.IService.V2IClassifiedBoService;
 using QLN.Common.Infrastructure.IService.V2IContent;
 using QLN.Common.Infrastructure.Service.FileStorage;
+using QLN.Subscriptions.Actor.Service;
 
 namespace QLN.Backend.API.ServiceConfiguration
 {
@@ -180,7 +181,7 @@ namespace QLN.Backend.API.ServiceConfiguration
 
         public static IServiceCollection ProductsConfiguration(this IServiceCollection services, IConfiguration config)
         {
-            services.AddTransient<IProductService, ExternalProductService>();
+            services.AddTransient<IProductService, InternalProductService>();
             services.AddTransient<IV2SubscriptionService, V2SubscriptionService>();
             return services;
         }
