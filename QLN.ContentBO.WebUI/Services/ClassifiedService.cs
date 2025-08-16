@@ -805,8 +805,6 @@ namespace QLN.ContentBO.WebUI.Services
 
                 // Serialize the payload exactly as it will be sent
                 var jsonPayload = JsonSerializer.Serialize(payload, serializeOptions);
-                Console.WriteLine("The exact JSON being sent is:\n" + jsonPayload);
-
                 using var request = new HttpRequestMessage(HttpMethod.Post, endpoint)
                 {
                     Content = new StringContent(jsonPayload, Encoding.UTF8, "application/json")
