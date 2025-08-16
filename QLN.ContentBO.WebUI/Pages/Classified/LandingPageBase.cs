@@ -305,6 +305,9 @@ public class LandingPageBase : QLComponentBase
 
     protected async Task NavigateToAddItem()
     {
+        await LoadAllSeasonalPicks();
+        await LoadAllFeaturedCategory();
+        await LoadAllFeaturedStores();
         var title = $"Add {GetCurrentTabAddButtonText()}";
 
         var parameters = new DialogParameters

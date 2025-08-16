@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.Identity.Client;
 using QLN.Common.DTO_s.ClassifiedsBo;
 using QLN.Common.DTO_s.ClassifiedsFo;
@@ -180,9 +181,54 @@ namespace QLN.Common.Infrastructure.QLDbContext
                 entity.Property(e => e.OrderId).HasColumnName("OrderId");
                 entity.Property(e => e.Amount).HasColumnName("Amount");
             });
+  //          modelBuilder.Entity<StoreCompanyDto>(entity =>
+  //          {
+  //              entity.HasNoKey();
+  //              entity.ToSqlQuery(@"
+  //      SELECT 
+  //          ""Id"",
+  //          ""CompanyName"",
+  //          ""CompanyLogo"",
+  //          ""CoverImage1"",
+  //          ""PhoneNumber"",
+  //          ""Email"",
+  //          ""WebsiteUrl"",
+  //          ""BranchLocations"",
+  //          ""Slug""
+  //      FROM public.""Companies""
+  //  ");
+
+  //              entity.Property(e => e.Id).HasColumnName("Id");
+  //              entity.Property(e => e.CompanyName).HasColumnName("CompanyName");
+  //              entity.Property(e => e.CompanyLogo).HasColumnName("CompanyLogo");
+  //              entity.Property(e => e.CoverImage1).HasColumnName("CoverImage1");
+  //              entity.Property(e => e.PhoneNumber).HasColumnName("PhoneNumber");
+  //              entity.Property(e => e.Email).HasColumnName("Email");
+  //              entity.Property(e => e.WebsiteUrl).HasColumnName("WebsiteUrl");
+  //              //entity.Property(e => e.BranchLocations).HasColumnName("BranchLocations");
+  //              entity.Property(e => e.Slug).HasColumnName("Slug");
+  //              entity.Property(e => e.BranchLocations)
+  //.HasColumnName("BranchLocations")
+  //.HasConversion(
+  //    v => JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
+  //    v => JsonSerializer.Deserialize<List<string>>(v, (JsonSerializerOptions?)null)
+  //);
+  //          });
+
             modelBuilder.Entity<StoreCompanyDto>(entity =>
             {
                 entity.HasNoKey();
+
+                entity.Property(e => e.BranchLocations)
+                    .HasConversion(
+                        v => JsonSerializer.Serialize(v, new JsonSerializerOptions()), 
+                        v => JsonSerializer.Deserialize<List<string>>(v, (JsonSerializerOptions?)null)               
+                    )
+                    .Metadata.SetValueComparer(new ValueComparer<List<string>>(
+                        (c1, c2) => c1.SequenceEqual(c2),
+                        c => c.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())),
+                        c => c.ToList()));
+
                 entity.ToSqlQuery(@"
         SELECT 
             ""Id"",
@@ -196,25 +242,8 @@ namespace QLN.Common.Infrastructure.QLDbContext
             ""Slug""
         FROM public.""Companies""
     ");
-
-                entity.Property(e => e.Id).HasColumnName("Id");
-                entity.Property(e => e.CompanyName).HasColumnName("CompanyName");
-                entity.Property(e => e.CompanyLogo).HasColumnName("CompanyLogo");
-                entity.Property(e => e.CoverImage1).HasColumnName("CoverImage1");
-                entity.Property(e => e.PhoneNumber).HasColumnName("PhoneNumber");
-                entity.Property(e => e.Email).HasColumnName("Email");
-                entity.Property(e => e.WebsiteUrl).HasColumnName("WebsiteUrl");
-               // entity.Property(e => e.BranchLocations).HasColumnName("BranchLocations");
-                entity.Property(e => e.Slug).HasColumnName("Slug");
-                entity.Property(e => e.BranchLocations)
-  .HasColumnName("BranchLocations")
-  .HasConversion(
-      v => JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
-      v => JsonSerializer.Deserialize<List<string>>(v, (JsonSerializerOptions?)null)
-  );
             });
 
-          
 
             base.OnModelCreating(modelBuilder);
         }

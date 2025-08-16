@@ -100,9 +100,12 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.CreateAd
 
             foreach (var field in AvailableFields.Where(f => !ExcludedFields.Contains(f.CategoryName)))
             {
-                if (string.IsNullOrWhiteSpace(adPostModel.DynamicFields.GetValueOrDefault(field.CategoryName)))
+                if (field.Type == "dropdown" || field.Type == "Dropdown" || field.Type == "string")
                 {
-                    messageStore.Add(new FieldIdentifier(adPostModel.DynamicFields, field.CategoryName), $"{field.CategoryName} is required.");
+                    if (string.IsNullOrWhiteSpace(adPostModel.DynamicFields.GetValueOrDefault(field.CategoryName)))
+                    {
+                        messageStore.Add(new FieldIdentifier(adPostModel.DynamicFields, field.CategoryName), $"{field.CategoryName} is required.");
+                    }
                 }
             }
         }
@@ -141,16 +144,20 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.CreateAd
             // Manual validation: Dynamic fields
             foreach (var field in AvailableFields.Where(f => !ExcludedFields.Contains(f.CategoryName)))
             {
-                var value = adPostModel.DynamicFields.ContainsKey(field.CategoryName) ? adPostModel.DynamicFields[field.CategoryName] : null;
-
-                if (string.IsNullOrWhiteSpace(value))
+                if (field.Type == "dropdown" || field.Type == "Dropdown" || field.Type == "string")
                 {
-                    messageStore.Add(new FieldIdentifier(adPostModel.DynamicFields, field.CategoryName), $"{field.CategoryName} is required.");
-                    if (!DynamicFieldErrors.ContainsKey(field.CategoryName))
-                        DynamicFieldErrors[field.CategoryName] = new List<string>();
-                    DynamicFieldErrors[field.CategoryName].Add($"{field.CategoryName} is required.");
-                    isValid = false;
+                    var value = adPostModel.DynamicFields.ContainsKey(field.CategoryName) ? adPostModel.DynamicFields[field.CategoryName] : null;
+
+                    if (string.IsNullOrWhiteSpace(value))
+                    {
+                        messageStore.Add(new FieldIdentifier(adPostModel.DynamicFields, field.CategoryName), $"{field.CategoryName} is required.");
+                        if (!DynamicFieldErrors.ContainsKey(field.CategoryName))
+                            DynamicFieldErrors[field.CategoryName] = new List<string>();
+                        DynamicFieldErrors[field.CategoryName].Add($"{field.CategoryName} is required.");
+                        isValid = false;
+                    }
                 }
+                
             }
 
             // Show the errors
@@ -275,11 +282,11 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.CreateAd
                     description = adPostModel.Description,
                     price = adPostModel.Price,
                     priceType = "QAR",
-                    categoryId = adPostModel.SelectedCategoryId,
+                    categoryId = long.TryParse(adPostModel.SelectedCategoryId, out var catId) ? catId : 0,
                     category = GetCategoryNameById(adPostModel.SelectedCategoryId),
-                    l1CategoryId = adPostModel.SelectedSubcategoryId,
+                    l1CategoryId = long.TryParse(adPostModel.SelectedSubcategoryId, out var subId) ? subId : 0,
                     l1Category = GetCategoryNameById(adPostModel.SelectedSubcategoryId),
-                    l2CategoryId = adPostModel.SelectedSubSubcategoryId,
+                    l2CategoryId = long.TryParse(adPostModel.SelectedSubSubcategoryId, out var subId1) ? subId1 : 0,
                     l2Category = GetCategoryNameById(adPostModel.SelectedSubSubcategoryId),
 
                     brand = adPostModel.DynamicFields.GetValueOrDefault("Brand"),

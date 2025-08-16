@@ -104,7 +104,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved
 
         protected void OnEdit(PrelovedP2PTransactionItem item)
         {
-            NavManager.NavigateTo($"/manage/classified/deals/createform/{item.UserName}");
+            NavManager.NavigateTo($"/manage/classified/preloved/createform/{item.AdId}");
         }
 
         protected void OnPreview(PrelovedP2PTransactionItem item)

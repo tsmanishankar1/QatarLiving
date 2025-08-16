@@ -1,0 +1,20 @@
+@page "/manage/classified/preloved/createform/{CompanyId:guid}"
+@using QLN.ContentBO.WebUI.Models
+@inherits EditCompanyBase
+
+ <button class="back-button" @onclick="GoBack">
+     <MudIcon Icon="@Icons.Material.Rounded.KeyboardArrowLeft" Class="back-icon" />
+        Back
+</button>
+<EditAdAction Company="@CompanyDetails" OnCompanyAction="UpdateStatus"/>
+<div class="create-form-container">
+    <MudGrid GutterSize="24px">
+        <MudItem xs="12" md="5">
+            <EditFormList Company="@CompanyDetails" OnSubmitForm="SubmitForm" />
+        </MudItem>
+
+        <MudItem xs="12" md="6">
+            <CompanyLogo Company="@CompanyDetails" OnImageProcessed="ProcessImageAsync" />
+        </MudItem>
+    </MudGrid>
+</div>

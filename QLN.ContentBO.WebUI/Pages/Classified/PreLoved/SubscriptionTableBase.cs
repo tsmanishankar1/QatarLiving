@@ -104,7 +104,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved
         protected void OnEdit(PrelovedSubscriptionItem item)
         {
             var name = item.UserName;
-            NavManager.NavigateTo($"/manage/classified/deals/createform/{name}");
+            NavManager.NavigateTo($"/manage/classified/preloved/createform/{name}");
         }
 
         protected void OnPreview(PrelovedSubscriptionItem item)
