@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using QLN.Common.Infrastructure.QLDbContext;
@@ -13,11 +12,9 @@ using QLN.Common.Infrastructure.QLDbContext;
 namespace QLN.Common.Migrations.QLApplication
 {
     [DbContext(typeof(QLApplicationContext))]
-    [Migration("20250807190755_FixLegacySubscriptionKey")]
-    partial class FixLegacySubscriptionKey
+    partial class QLApplicationContextModelSnapshot : ModelSnapshot
     {
-        /// <inheritdoc />
-        protected override void BuildTargetModel(ModelBuilder modelBuilder)
+        protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -197,9 +194,6 @@ namespace QLN.Common.Migrations.QLApplication
                     b.Property<string>("LastName")
                         .HasColumnType("text");
 
-                    b.Property<long?>("LegacyDataUid")
-                        .HasColumnType("bigint");
-
                     b.Property<long?>("LegacyUid")
                         .HasColumnType("bigint");
 
@@ -250,11 +244,6 @@ namespace QLN.Common.Migrations.QLApplication
 
                     b.HasKey("Id");
 
-                    b.HasIndex("LegacyDataUid");
-
-                    b.HasIndex("LegacyUid")
-                        .IsUnique();
-
                     b.HasIndex("NormalizedEmail")
                         .HasDatabaseName("EmailIndex");
 
@@ -263,53 +252,6 @@ namespace QLN.Common.Migrations.QLApplication
                         .HasDatabaseName("UserNameIndex");
 
                     b.ToTable("AspNetUsers", (string)null);
-                });
-
-            modelBuilder.Entity("QLN.Common.Infrastructure.Model.LegacySubscription", b =>
-                {
-                    b.Property<long>("Uid")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("AccessDashboard")
-                        .HasColumnType("text");
-
-                    b.Property<List<string>>("Categories")
-                        .HasColumnType("text[]");
-
-                    b.Property<string>("ExpireDate")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("ProductClass")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("ProductType")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("ReferenceId")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Snid")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("StartDate")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<List<string>>("SubscriptionCategories")
-                        .HasColumnType("text[]");
-
-                    b.HasKey("Uid");
-
-                    b.ToTable("LegacySubscription");
                 });
 
             modelBuilder.Entity("QLN.Common.Infrastructure.Model.UserCompany", b =>
@@ -335,73 +277,6 @@ namespace QLN.Common.Migrations.QLApplication
                     b.ToTable("UserCompany");
                 });
 
-            modelBuilder.Entity("QLN.Common.Infrastructure.Model.UserLegacyData", b =>
-                {
-                    b.Property<long>("Uid")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Uid"));
-
-                    b.Property<string>("Access")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Alias")
-                        .HasColumnType("text");
-
-                    b.Property<string>("Created")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Email")
-                        .HasColumnType("text");
-
-                    b.Property<string>("Image")
-                        .HasColumnType("text");
-
-                    b.Property<string>("Init")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<bool>("IsAdmin")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("Language")
-                        .HasColumnType("text");
-
-                    b.Property<string>("Name")
-                        .HasColumnType("text");
-
-                    b.Property<string>("Path")
-                        .HasColumnType("text");
-
-                    b.Property<List<string>>("Permissions")
-                        .HasColumnType("text[]");
-
-                    b.Property<string>("Phone")
-                        .HasColumnType("text");
-
-                    b.Property<string>("QlnextUserId")
-                        .HasColumnType("text");
-
-                    b.Property<List<string>>("Roles")
-                        .HasColumnType("text[]");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<long?>("SubscriptionUid")
-                        .HasColumnType("bigint");
-
-                    b.HasKey("Uid");
-
-                    b.HasIndex("SubscriptionUid");
-
-                    b.ToTable("UserLegacyData");
-                });
-
             modelBuilder.Entity("QLN.Common.Infrastructure.Model.UserSubscription", b =>
                 {
                     b.Property<Guid>("Id")
@@ -415,8 +290,28 @@ namespace QLN.Common.Migrations.QLApplication
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<DateTime>("EndDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ProductCode")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ProductName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("SubVertical")
+                        .HasColumnType("integer");
+
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid");
+
+                    b.Property<int>("Vertical")
+                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 
@@ -478,25 +373,137 @@ namespace QLN.Common.Migrations.QLApplication
 
             modelBuilder.Entity("QLN.Common.Infrastructure.Model.ApplicationUser", b =>
                 {
-                    b.HasOne("QLN.Common.Infrastructure.Model.UserLegacyData", "LegacyData")
-                        .WithMany()
-                        .HasForeignKey("LegacyDataUid");
+                    b.OwnsOne("QLN.Common.Infrastructure.Model.LegacySubscription", "LegacySubscription", b1 =>
+                        {
+                            b1.Property<Guid>("ApplicationUserId")
+                                .HasColumnType("uuid");
 
-                    b.HasOne("QLN.Common.Infrastructure.Model.UserLegacyData", null)
-                        .WithOne()
-                        .HasForeignKey("QLN.Common.Infrastructure.Model.ApplicationUser", "LegacyUid")
-                        .OnDelete(DeleteBehavior.Cascade);
+                            b1.Property<string>("AccessDashboard")
+                                .HasColumnType("text");
+
+                            b1.Property<List<string>>("Categories")
+                                .HasColumnType("text[]");
+
+                            b1.Property<string>("ExpireDate")
+                                .IsRequired()
+                                .HasColumnType("text");
+
+                            b1.Property<string>("ProductClass")
+                                .IsRequired()
+                                .HasColumnType("text");
+
+                            b1.Property<string>("ProductType")
+                                .IsRequired()
+                                .HasColumnType("text");
+
+                            b1.Property<string>("ReferenceId")
+                                .IsRequired()
+                                .HasColumnType("text");
+
+                            b1.Property<string>("Snid")
+                                .IsRequired()
+                                .HasColumnType("text");
+
+                            b1.Property<string>("StartDate")
+                                .IsRequired()
+                                .HasColumnType("text");
+
+                            b1.Property<string>("Status")
+                                .IsRequired()
+                                .HasColumnType("text");
+
+                            b1.Property<List<string>>("SubscriptionCategories")
+                                .HasColumnType("text[]");
+
+                            b1.Property<long>("Uid")
+                                .HasColumnType("bigint");
+
+                            b1.Property<Guid>("UserId")
+                                .HasColumnType("uuid");
+
+                            b1.HasKey("ApplicationUserId");
+
+                            b1.ToTable("AspNetUsers");
+
+                            b1.ToJson("LegacySubscription");
+
+                            b1.WithOwner()
+                                .HasForeignKey("ApplicationUserId");
+                        });
+
+                    b.OwnsOne("QLN.Common.Infrastructure.Model.UserLegacyData", "LegacyData", b1 =>
+                        {
+                            b1.Property<Guid>("ApplicationUserId")
+                                .HasColumnType("uuid");
+
+                            b1.Property<string>("Access")
+                                .IsRequired()
+                                .HasColumnType("text");
+
+                            b1.Property<string>("Alias")
+                                .HasColumnType("text");
+
+                            b1.Property<string>("Created")
+                                .IsRequired()
+                                .HasColumnType("text");
+
+                            b1.Property<string>("Email")
+                                .HasColumnType("text");
+
+                            b1.Property<string>("Image")
+                                .HasColumnType("text");
+
+                            b1.Property<string>("Init")
+                                .IsRequired()
+                                .HasColumnType("text");
+
+                            b1.Property<bool>("IsAdmin")
+                                .HasColumnType("boolean");
+
+                            b1.Property<string>("Language")
+                                .HasColumnType("text");
+
+                            b1.Property<string>("Name")
+                                .HasColumnType("text");
+
+                            b1.Property<string>("Path")
+                                .HasColumnType("text");
+
+                            b1.Property<List<string>>("Permissions")
+                                .HasColumnType("text[]");
+
+                            b1.Property<string>("Phone")
+                                .HasColumnType("text");
+
+                            b1.Property<string>("QlnextUserId")
+                                .HasColumnType("text");
+
+                            b1.Property<List<string>>("Roles")
+                                .HasColumnType("text[]");
+
+                            b1.Property<string>("Status")
+                                .IsRequired()
+                                .HasColumnType("text");
+
+                            b1.Property<long>("Uid")
+                                .HasColumnType("bigint");
+
+                            b1.Property<Guid>("UserId")
+                                .HasColumnType("uuid");
+
+                            b1.HasKey("ApplicationUserId");
+
+                            b1.ToTable("AspNetUsers");
+
+                            b1.ToJson("LegacyData");
+
+                            b1.WithOwner()
+                                .HasForeignKey("ApplicationUserId");
+                        });
 
                     b.Navigation("LegacyData");
-                });
 
-            modelBuilder.Entity("QLN.Common.Infrastructure.Model.LegacySubscription", b =>
-                {
-                    b.HasOne("QLN.Common.Infrastructure.Model.UserLegacyData", null)
-                        .WithOne()
-                        .HasForeignKey("QLN.Common.Infrastructure.Model.LegacySubscription", "Uid")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                    b.Navigation("LegacySubscription");
                 });
 
             modelBuilder.Entity("QLN.Common.Infrastructure.Model.UserCompany", b =>
@@ -504,15 +511,6 @@ namespace QLN.Common.Migrations.QLApplication
                     b.HasOne("QLN.Common.Infrastructure.Model.ApplicationUser", null)
                         .WithMany("Companies")
                         .HasForeignKey("ApplicationUserId");
-                });
-
-            modelBuilder.Entity("QLN.Common.Infrastructure.Model.UserLegacyData", b =>
-                {
-                    b.HasOne("QLN.Common.Infrastructure.Model.LegacySubscription", "Subscription")
-                        .WithMany()
-                        .HasForeignKey("SubscriptionUid");
-
-                    b.Navigation("Subscription");
                 });
 
             modelBuilder.Entity("QLN.Common.Infrastructure.Model.UserSubscription", b =>
