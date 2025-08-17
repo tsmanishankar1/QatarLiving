@@ -377,7 +377,7 @@ protected ClassifiedsCategoryField? SelectedSubSubcategory =>
                 await JS.InvokeVoidAsync("console.log", payload);
       
 
-                var response = await ClassifiedService.UpdateAdAsync("items", payload);
+                var response = await ClassifiedService.UpdateAdAsync("preloved", payload);
 
                 if (response?.IsSuccessStatusCode == true)
                 {
