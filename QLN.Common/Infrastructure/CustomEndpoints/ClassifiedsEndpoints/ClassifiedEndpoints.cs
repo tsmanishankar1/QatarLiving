@@ -6071,6 +6071,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
             group.MapGet("/stores-dashboard-header", async Task<Results<
           Ok<List<StoresDashboardHeaderDto>>,
+          ForbidHttpResult,
           BadRequest<ProblemDetails>,
           ProblemHttpResult>>
           (
@@ -6082,37 +6083,35 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             {
                 try
                 {
-                    // Extract userId from the claims
-                    var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-
-                    if (string.IsNullOrEmpty(userClaim))
+                    var user = context.User;
+                    var userId = user.FindFirst("sub")?.Value;
+                    var subscriptionsClaim = user.FindFirst("subscriptions")?.Value;
+                    if (string.IsNullOrEmpty(userId))
                     {
-                        return TypedResults.BadRequest(new ProblemDetails
-                        {
-                            Title = "Validation Error",
-                            Detail = "Valid User ID must be provided in the token.",
-                            Status = StatusCodes.Status400BadRequest,
-                            Instance = context.Request.Path
-                        });
+                        return TypedResults.Forbid();
                     }
 
-                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                    var userId = userData.GetProperty("uid").GetString();
-                    var name = userData.GetProperty("name").GetString();
-
-                    if (string.IsNullOrWhiteSpace(userId))
+                    if (!string.IsNullOrEmpty(subscriptionsClaim))
                     {
-                        return TypedResults.BadRequest(new ProblemDetails
+                        string fixedJson = $"[{subscriptionsClaim}]";
+                        var subscriptions = JsonSerializer.Deserialize<List<SubscriptionToken>>(fixedJson);
+                        var validSubscriptions = subscriptions?
+                            .Where(s => s.Vertical == 3 && s.SubVertical == 3 && s.EndDate >= DateTime.UtcNow)
+                            .ToList();
+                        if (validSubscriptions != null && validSubscriptions.Any())
                         {
-                            Title = "Validation Error",
-                            Detail = "Valid User ID must be provided.",
-                            Status = StatusCodes.Status400BadRequest,
-                            Instance = context.Request.Path
-                        });
+                            var result = await service.GetStoresDashboardHeader(userId, CompanyId,cancellationToken);
+                        return TypedResults.Ok(result);
+                        }
+                        else
+                        {
+                            return TypedResults.Forbid();
+                            }
                     }
-
-                    var result = await service.GetStoresDashboardHeader(userId, CompanyId,cancellationToken);
-                    return TypedResults.Ok(result);
+                    else
+                    {
+                        return TypedResults.Forbid();
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -6130,6 +6129,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .WithDescription("Fetches all stores dashboard header information.")
                 .Produces<List<StoresDashboardHeaderDto>>(StatusCodes.Status200OK)
                 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             group.MapGet("/stores-dashboard-headers", async Task<Results<
@@ -6169,6 +6169,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
             group.MapGet("/stores-dashboard-summary", async Task<Results<
           Ok<List<StoresDashboardSummaryDto>>,
+           ForbidHttpResult,
           BadRequest<ProblemDetails>,
           ProblemHttpResult>>
           (
@@ -6180,36 +6181,38 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             {
                 try
                 {
-                    var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-
-                    if (string.IsNullOrEmpty(userClaim))
+                    var user = context.User;
+                    var userId = user.FindFirst("sub")?.Value;
+                    var subscriptionsClaim = user.FindFirst("subscriptions")?.Value;
+                    if (string.IsNullOrEmpty(userId))
                     {
-                        return TypedResults.BadRequest(new ProblemDetails
-                        {
-                            Title = "Validation Error",
-                            Detail = "Valid User ID must be provided in the token.",
-                            Status = StatusCodes.Status400BadRequest,
-                            Instance = context.Request.Path
-                        });
+                        return TypedResults.Forbid();
                     }
 
-                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                    var userId = userData.GetProperty("uid").GetString();
-                    var name = userData.GetProperty("name").GetString();
-
-                    if (string.IsNullOrWhiteSpace(userId))
+                    if (!string.IsNullOrEmpty(subscriptionsClaim))
                     {
-                        return TypedResults.BadRequest(new ProblemDetails
+                        string fixedJson = $"[{subscriptionsClaim}]";
+                        var subscriptions = JsonSerializer.Deserialize<List<SubscriptionToken>>(fixedJson);
+                        var validSubscriptions = subscriptions?
+                            .Where(s => s.Vertical == 3 && s.SubVertical == 3 && s.EndDate >= DateTime.UtcNow)
+                            .ToList();
+                        if (validSubscriptions != null && validSubscriptions.Any())
                         {
-                            Title = "Validation Error",
-                            Detail = "Valid User ID must be provided.",
-                            Status = StatusCodes.Status400BadRequest,
-                            Instance = context.Request.Path
-                        });
+                            var result = await service.GetStoresDashboardSummary(CompanyId, SubscriptionId, cancellationToken);
+                            return TypedResults.Ok(result);
+                        }
+                        else
+                        {
+                            return TypedResults.Forbid();
+                        }
+
+                    }
+                    else
+                    {
+                        return TypedResults.Forbid();
                     }
 
-                    var result = await service.GetStoresDashboardSummary(CompanyId, SubscriptionId,  cancellationToken);
-                    return TypedResults.Ok(result);
+
                 }
                 catch (Exception ex)
                 {
@@ -6228,6 +6231,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .WithDescription("Fetches all stores dashboard summary information.")
                 .Produces<List<StoresDashboardSummaryDto>>(StatusCodes.Status200OK)
                 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             group.MapGet("/stores-dashboard-summarys", async Task<Results<

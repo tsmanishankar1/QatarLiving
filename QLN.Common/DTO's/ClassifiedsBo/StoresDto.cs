@@ -136,4 +136,29 @@ namespace QLN.Common.DTO_s.ClassifiedsBo
         public string? Slug { get; set; }
 
     }
+
+    public class StoreSubscriptionQuotaDto
+    {
+        public Guid SubscriptionId { get; set; }
+        public string QuotaJson { get; set; } 
+    }
+    public class JwtPayload
+    {
+        public List<SubscriptionToken> Subscriptions { get; set; }
+    }
+        public class SubscriptionToken
+    {
+        public Guid UserId { get; set; }
+        public Guid Id { get; set; }
+        public string DisplayName { get; set; }
+        public string ProductCode { get; set; }
+        public string ProductName { get; set; }
+        public int Vertical { get; set; }
+        public int SubVertical { get; set; }
+        public DateTime StartDate { get; set; }
+        public DateTime EndDate { get; set; }
+    }
+
+    
+
 }

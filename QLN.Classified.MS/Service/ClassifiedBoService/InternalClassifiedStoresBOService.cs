@@ -6,6 +6,7 @@ using Newtonsoft.Json;
 using QLN.Classified.MS.Utilities;
 using QLN.Common.DTO_s;
 using QLN.Common.DTO_s.ClassifiedsBo;
+using QLN.Common.DTOs;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.IService.IClassifiedBoService;
 using QLN.Common.Infrastructure.QLDbContext;
@@ -250,10 +251,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                 if (storeFlyer.CompanyId.HasValue && storeFlyer.CompanyId.Value!=Guid.Empty && !string.IsNullOrEmpty(storeFlyer.CompanyId.ToString()))
                 {
                     var company = _context.StoreCompanyDto.AsQueryable().Where(x=>x.Id== storeFlyer.CompanyId).FirstOrDefault();
-                    _logger.LogInformation("Store Phone Number: {Phone}", company.PhoneNumber);
-                    _logger.LogInformation("Store Email: {Email}", company.Email);
-                    _logger.LogInformation("Store Name: {Company}", company.CompanyName);
-                    //_logger.LogInformation("Store Name: {BranchLocations}", company.BranchLocations);
+                 
                     if (company != null)
                     {
                        
@@ -300,8 +298,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                             StoreProductId = storeProductId
                         }).ToList()
                     };
-                    _logger.LogInformation("Store Index Phone Number: {Phone}", storeIndexDto.ContactNumber);
-                    _logger.LogInformation("Store Index Email: {Email}", storeIndexDto.Email);
+                
                     ClassifiedStoresIndex classifiedStoresIndex = new ClassifiedStoresIndex()
                     {
 
@@ -336,6 +333,9 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
 
                 await DeleteStoreFlyer(storeFlyer.FlyerId);
                 _context.StoreFlyer.Add(storeFlyer);
+
+                           
+
                 await _context.SaveChangesAsync();
                 await IndexStoresToAzureSearch(storesIndexList, cancellationToken);
                 _logger.LogInformation("Products added successfully.");
@@ -417,6 +417,8 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                 }
             }
         }
+
+
         #endregion
 
         #region Testing End Points
