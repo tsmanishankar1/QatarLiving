@@ -693,11 +693,10 @@ namespace QLN.DataMigration.Services
             }
             _logger.LogInformation($"Completed Legacy Subscription Migration @ {DateTime.UtcNow}");
 
-            //await _dataOutputService.SaveLegacyServicesSubscriptionsAsync(subscriptions, cancellationToken);
+            await _dataOutputService.SaveLegacyServicesSubscriptionsAsync(subscriptions, cancellationToken);
             return Results.Ok(new
             {
-                Message = $"Migrated {subscriptions.Count} Services Subscriptions - Completed @ {DateTime.UtcNow}.",
-                Subscriptions = subscriptions
+                Message = $"Migrated {subscriptions.Count} Services Subscriptions - Completed @ {DateTime.UtcNow}."
             });
         }
 

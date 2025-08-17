@@ -1,3 +1,6 @@
+using CsvHelper;
+using FirebaseAdmin.Messaging;
+using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Http.Timeouts;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
@@ -12,12 +15,15 @@ using QLN.Common.Infrastructure.Service.FileStorage;
 using QLN.Common.Infrastructure.Utilities;
 using QLN.DataMigration.Models;
 using QLN.DataMigration.Services;
+using System.Globalization;
 using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Threading;
 using static System.Net.Mime.MediaTypeNames;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddAntiforgery();
 
 // Add services to the container.
 builder.Services.AddAuthorization();
@@ -83,9 +89,12 @@ if (app.Environment.IsDevelopment())
         options.RoutePrefix = "Swagger";
         options.DocumentTitle = "Qatar Migrations API";
     });
+
 }
 
 app.UseHttpsRedirection();
+
+app.UseAntiforgery();
 
 //app.UseAuthorization();
 
@@ -199,6 +208,39 @@ app.MapGet("/migrate_locations", async (
     return await migrationService.MigrateLocations(cancellationToken);
 })
     .WithSummary("Migrate Locations - Not yet required");
+
+app.MapPost("/import_csv_categories", async (IFormFile file) =>
+{
+    if (file == null || file.Length == 0)
+        return Results.BadRequest("No file uploaded.");
+
+    var totalCount = 0;
+    var records = new List<CsvCategoryImportRow>();
+
+    using (var stream = file.OpenReadStream())
+    using (var reader = new StreamReader(stream))
+    using (var csv = new CsvReader(reader, CultureInfo.InvariantCulture))
+    {
+        csv.Read();
+        csv.ReadHeader();
+        while (csv.Read())
+        {
+            var record = csv.GetRecord<CsvCategoryImportRow>();
+            if (record.L2Category == "NULL") record.L2Category = null;
+            Console.WriteLine($"ad_id: {record.AdId}, category: {record.Category}, l1_category: {record.L1Category}, l2_category: {record.L2Category}");
+            totalCount++;
+            // Do something with the record.
+        }
+    }
+    return Results.Ok(new
+    {
+        Message = "CSV file imported successfully.",
+        TotalCount = totalCount
+    });
+})
+.WithSummary("Import CSV file with ad_id, category, l1_category, l2_category")
+.DisableAntiforgery();
+
 
 
 
