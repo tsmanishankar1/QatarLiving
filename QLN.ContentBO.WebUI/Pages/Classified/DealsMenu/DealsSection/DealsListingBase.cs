@@ -19,8 +19,11 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.DealsSection
         [Inject] protected IDialogService DialogService { get; set; } = default!;
          [Inject] protected IJSRuntime JS { get; set; } = default!;
 
+
         protected List<DealsItem> Listings { get; set; } = new();
         protected string SearchText { get; set; } = string.Empty;
+        protected string? SelectedStatus { get; set; } = string.Empty;
+
         protected string SubscriptionType { get; set; } = string.Empty;
         protected string SortIcon { get; set; } = Icons.Material.Filled.Sort;
         protected string SortDirection { get; set; } = "asc";
@@ -39,7 +42,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.DealsSection
         protected int TotalCount { get; set; }
         protected int currentPage { get; set; } = 1;
         protected int pageSize { get; set; } = 12;
-        protected string SelectedTab { get; set; } = ((int)AdStatusEnum.Published).ToString();
+        protected string SelectedTab { get; set; } = "published";
 
         protected override async Task OnInitializedAsync()
         {
@@ -57,29 +60,34 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.DealsSection
                 bool? isPromoted = null;
                 bool? isFeatured = null;
 
-                if (int.TryParse(SelectedTab, out var tabValue))
+                // if (int.TryParse(SelectedTab, out var tabValue))
+                // {
+                //     status = tabValue;
+                // }
+                // else
+                // {
+                if (SelectedTab == "promoted")
                 {
-                    status = tabValue;
+                    isPromoted = true;
+                    SelectedStatus = null;
                 }
-                else
+                else if (SelectedTab == "featured")
                 {
-                    if (SelectedTab == "promoted")
-                        isPromoted = true;
-                    else if (SelectedTab == "featured")
-                        isFeatured = true;
-                }
-
+                    isFeatured = true;
+                    SelectedStatus = null;
+                }  
+                SelectedStatus = SelectedTab;
                 var request = new DealsItemQuery
                 {
                     PageNumber = currentPage,
                     PageSize = pageSize,
-                    StartDate = "",
-                    EndDate = "",
+                    StartDate = dateCreated?.ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'"),
+                    EndDate =  datePublished?.ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'"),
                     Search = SearchText,
                     SortBy = SortDirection,
-                    Status = SelectedTab,
-                    IsPromoted = null,
-                    IsFeatured = null
+                    Status = SelectedStatus,
+                    IsPromoted = isPromoted,
+                    IsFeatured = isFeatured
                 };
 
                 var response = await DealsService.GetAllDealsListing(request);
@@ -217,10 +225,11 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.DealsSection
             showCreatedPopover = false;
         }
 
-        protected void ConfirmCreatedPopover()
+        protected async Task ConfirmCreatedPopover()
         {
             dateCreated = tempCreatedDate;
             showCreatedPopover = false;
+            await LoadData();
         }
 
         protected void TogglePublishedPopover()
@@ -234,10 +243,11 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.DealsSection
             showPublishedPopover = false;
         }
 
-        protected void ConfirmPublishedPopover()
+        protected async Task ConfirmPublishedPopover()
         {
             datePublished = tempPublishedDate;
             showPublishedPopover = false;
+            await LoadData();
         }
 
         protected void ClearFilters()

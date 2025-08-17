@@ -115,11 +115,6 @@
     <MudTextField Class="white-bg" Immediate="true" Variant="Variant.Outlined" MaxLength="50" T="string" Label="Title"
                   @bind-Value="Ad.Title" For="@(() => Ad.Title)" FullWidth="true" />
 
-    <MudExRichTextEdit @bind-Value="Ad.Description" @ref="Editor"
-                       Height="350" Placeholder="Start Typing"
-                       For="@(() => Ad.Description)">
-    </MudExRichTextEdit>
-
     <!-- START Custom Markdown Editor -->
     <MarkdownEditor @bind-Value="@Ad.Description" Placeholder="Start Typing" CustomButtonClicked="@OnCustomButtonClicked" HideIcons="@HiddenIcons" @ref="MarkdownEditorRef">
         <Toolbar>
