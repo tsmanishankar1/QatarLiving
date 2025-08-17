@@ -18,7 +18,11 @@ namespace QLN.ContentBO.WebUI.Services
             _logger = Logger;
         }
 
-        public async Task<HttpResponseMessage?> BulkActionAsync(List<long?> adIds, int action, string? reason = null, string? comments = null)
+        public async Task<HttpResponseMessage?> BulkActionAsync(
+    List<long?> adIds,
+    int action,
+    string? reason = null,
+    string? comments = null)
         {
             try
             {
@@ -26,11 +30,21 @@ namespace QLN.ContentBO.WebUI.Services
                 {
                     AdIds = adIds,
                     Action = action,
-                    Reason = reason,
-                    Comments = comments
+                    Reason = "reason", 
+                    Comments = "comments"
                 };
 
-                var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
+                // Serialize separately so we can log
+                var jsonPayload = JsonSerializer.Serialize(payload, new JsonSerializerOptions
+                {
+                    WriteIndented = true 
+                });
+
+                // Print/log JSON
+                Console.WriteLine("Payload JSON:");
+                Console.WriteLine(jsonPayload);
+
+                var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
                 var requestUrl = "/api/v2/classifiedbo/bulk-collectibles-action";
                 return await _httpClient.PostAsync(requestUrl, content);
             }
@@ -40,6 +54,7 @@ namespace QLN.ContentBO.WebUI.Services
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
+
 
         public async Task<HttpResponseMessage?> GetAllListing(ItemsRequest itemsRequest)
         {

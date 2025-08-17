@@ -29,7 +29,7 @@ namespace QLN.ContentBO.WebUI.Services
                     Reason = reason,
                     Comments = comments
                 };
-
+                Console.Write("the deals bulk action is" + payload );
                 var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
                 var requestUrl = "/api/v2/classifiedbo/bulk-deals-action";
                 return await _httpClient.PostAsync(requestUrl, content);
@@ -42,37 +42,47 @@ namespace QLN.ContentBO.WebUI.Services
         }
 
         public async Task<HttpResponseMessage> GetAllDealsListing(DealsItemQuery query)
+{
+    try
+    {
+        // Print the query params object (serialize for readability)
+        var queryJson = JsonSerializer.Serialize(query, new JsonSerializerOptions { WriteIndented = true });
+        Console.WriteLine("Query object received:");
+        Console.WriteLine(queryJson);
+
+        var queryParams = new Dictionary<string, string?>
         {
-            try
-            {
-                var queryParams = new Dictionary<string, string>
-                {
-                    { "pageNumber", query.PageNumber.ToString() },
-                    { "pageSize", query.PageSize.ToString() },
-                    { "startDate", query.StartDate },
-                    { "endDate", query.EndDate },
-                    { "search", query.Search },
-                    { "sortBy", query.SortBy },
-                    { "status", query.Status },
-                    { "isPromoted", query.IsPromoted.ToString() ?? "false"},
-                    { "isFeatured", query.IsFeatured.ToString() ?? "false"}
-                };
-                var queryString = string.Join("&", queryParams
-                    .Where(kv => !string.IsNullOrEmpty(kv.Value))
-                    .Select(kv => $"{kv.Key}={Uri.EscapeDataString(kv.Value)}"));
+            { "pageNumber", query.PageNumber.ToString() },
+            { "pageSize", query.PageSize.ToString() },
+            { "startDate", query.StartDate },
+            { "endDate", query.EndDate },
+            { "search", query.Search },
+            { "sortBy", query.SortBy },
+            { "status", query.Status },
+            { "isPromoted", query.IsPromoted?.ToString() },
+            { "isFeatured", query.IsFeatured?.ToString() }
+        };
 
-                var requestUrl = $"/api/v2/classifiedbo/DealsViewSummary?{queryString}";
+        // Build query string by skipping null or empty values
+        var queryString = string.Join("&", queryParams
+            .Where(kv => !string.IsNullOrWhiteSpace(kv.Value))
+            .Select(kv => $"{kv.Key}={Uri.EscapeDataString(kv.Value!)}"));
 
-                var request = new HttpRequestMessage(HttpMethod.Get, requestUrl);
+        var requestUrl = $"/api/v2/classifiedbo/DealsViewSummary{(string.IsNullOrEmpty(queryString) ? "" : "?" + queryString)}";
 
-                return await _httpClient.SendAsync(request);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "GetAllDealsListing");
-                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
-            }
-        }
+        // Print final request URL
+        Console.WriteLine("Request URL:");
+        Console.WriteLine(requestUrl);
+
+        var request = new HttpRequestMessage(HttpMethod.Get, requestUrl);
+        return await _httpClient.SendAsync(request);
+    }
+    catch (Exception ex)
+    {
+        _logger.LogError(ex, "GetAllDealsListing");
+        return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+    }
+}
 
         public async Task<HttpResponseMessage> GetAllDealsSubscription(DealsSubscriptionQuery query)
         {
