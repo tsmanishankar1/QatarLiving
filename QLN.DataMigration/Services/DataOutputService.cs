@@ -5,6 +5,7 @@
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.Extensions.Logging;
     using QLN.Common.DTO_s;
+    using QLN.Common.DTOs;
     using QLN.Common.Infrastructure.Constants;
     using QLN.Common.Infrastructure.DTO_s;
     using QLN.Common.Infrastructure.IService;
@@ -18,7 +19,7 @@
     using System.Text.RegularExpressions;
     using System.Threading;
     using System.Threading.Tasks;
-    using static QLN.Common.Infrastructure.Constants.ConstantValues;
+    using QLN.Common.Infrastructure.Subscriptions;
 
     public class DataOutputService : IDataOutputService
     {
@@ -27,6 +28,7 @@
         private readonly IV2NewsService _newsService;
         private readonly IV2CommunityPostService _communityPostService;
         private readonly IClassifiedService _classifiedsService;
+        private readonly IExternalSubscriptionService _subscriptionService;
         private readonly DaprClient _daprClient;
 
         public DataOutputService(
@@ -34,6 +36,8 @@
             IV2EventService eventService,
             IV2NewsService newsService,
             IV2CommunityPostService communityPostService,
+            IClassifiedService classifiedService,
+            IExternalSubscriptionService subscriptionService,
             DaprClient daprClient
             )
         {
@@ -41,6 +45,8 @@
             _eventService = eventService;
             _newsService = newsService;
             _communityPostService = communityPostService;
+            _classifiedsService = classifiedService;
+            _subscriptionService = subscriptionService;
             _daprClient = daprClient;
         }
 
@@ -542,6 +548,98 @@
                 {
                     _logger.LogError($"Failed to create category {location.Id} - {ex.Message}");
                     throw new Exception("Unexpected error during article creation", ex);
+                }
+            }
+        }
+
+        public async Task SaveLegacyServicesSubscriptionsAsync(List<SubscriptionItem> subscriptions, CancellationToken cancellationToken)
+        {
+            // this one needs some review in terms of business logic
+
+            foreach (var subscription in subscriptions)
+            {
+                try
+                {
+                    if (subscription != null && subscription.Status == "success")
+                    {
+                        DateTime.TryParse(subscription.StartDate, out var startDate);
+                        DateTime.TryParse(subscription.EndDate, out var endDate);
+                        TimeSpan duration = endDate - startDate;
+                        if (duration.TotalDays < 0)
+                        {
+                            duration = TimeSpan.FromDays(30); // Default to 30 days if the duration is negative
+                        }
+
+                        var migratedSubscription = new SubscriptionRequestDto
+                        {
+                            adsbudget = subscription.AdsLimitDaily,
+                            CategoryId = SubscriptionCategory.Services,
+                            Currency = "QAR",
+                            Description = subscription.Product,
+                            Duration = duration,
+                            featurebudget = int.TryParse(subscription.FeatureLimit, out var featureLimit) ? featureLimit : 0,
+                            Price = 0,
+                            promotebudget = 0, // not found in source
+                            refreshbudget = int.TryParse(subscription.RefreshLimitDaily, out var refreshLimitDaily) ? refreshLimitDaily : 0,
+                            StatusId = Status.Active,
+                            SubscriptionName = subscription.Product,
+                            VerticalTypeId = Vertical.Services
+                        };
+
+                        // this will work but wont have any idea what the subscription ID is
+                        await _subscriptionService.CreateSubscriptionAsync(migratedSubscription);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError($"Failed to save legacy services subscription - {ex.Message}");
+                    throw new Exception("Unexpected error during legacy subscription saving", ex);
+                }
+            }
+        }
+
+        public async Task SaveLegacyItemsSubscriptionsAsync(List<SubscriptionItem> subscriptions, CancellationToken cancellationToken)
+        {
+            // this one needs some review in terms of business logic
+
+            foreach (var subscription in subscriptions)
+            {
+                try
+                {
+                    if (subscription != null && subscription.Status == "success")
+                    {
+                        DateTime.TryParse(subscription.StartDate, out var startDate);
+                        DateTime.TryParse(subscription.EndDate, out var endDate);
+                        TimeSpan duration = endDate - startDate;
+                        if (duration.TotalDays < 0)
+                        {
+                            duration = TimeSpan.FromDays(30); // Default to 30 days if the duration is negative
+                        }
+
+                        var migratedSubscription = new SubscriptionRequestDto
+                        {
+                            adsbudget = subscription.AdsLimitDaily,
+                            CategoryId = SubscriptionCategory.Items,
+                            Currency = "QAR",
+                            Description = subscription.Product,
+                            Duration = duration,
+                            featurebudget = int.TryParse(subscription.FeatureLimit, out var featureLimit) ? featureLimit : 0,
+                            Price = 0,
+                            promotebudget = 0,
+                            refreshbudget = int.TryParse(subscription.RefreshLimitDaily, out var refreshLimitDaily) ? refreshLimitDaily : 0,
+                            StatusId = Status.Active,
+                            SubscriptionName = subscription.Product,
+                            VerticalTypeId = Vertical.Classifieds,
+                        };
+
+                        // this will work but wont have any idea what the subscription ID is
+                        await _subscriptionService.CreateSubscriptionAsync(migratedSubscription);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError($"Failed to save legacy item subscription - {ex.Message}");
+                    throw new Exception("Unexpected error during legacy subscription saving", ex);
                 }
             }
         }

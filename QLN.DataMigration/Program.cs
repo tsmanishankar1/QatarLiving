@@ -3,8 +3,10 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.OpenApi.Models;
 using QLN.Common.Infrastructure.Constants;
+using QLN.Common.Infrastructure.IService;
 using QLN.Common.Infrastructure.IService.IContentService;
 using QLN.Common.Infrastructure.IService.IFileStorage;
+using QLN.Common.Infrastructure.IService.IService;
 using QLN.Common.Infrastructure.IService.V2IContent;
 using QLN.Common.Infrastructure.Service.FileStorage;
 using QLN.Common.Infrastructure.Utilities;
@@ -33,6 +35,9 @@ builder.Services.AddSingleton<IDataOutputService, DataOutputService>();
 builder.Services.AddSingleton<IV2CommunityPostService, CommunityPostService>();
 builder.Services.AddSingleton<IV2NewsService, NewsService>();
 builder.Services.AddSingleton<IV2EventService, EventsService>();
+builder.Services.AddSingleton<IClassifiedService, ClassifiedsService>();
+builder.Services.AddSingleton<IServices, ServicesService>();
+builder.Services.AddSingleton<IExternalSubscriptionService, SubscriptionService>();
 
 var drupalUrl = builder.Configuration.GetSection("BaseUrl")["LegacyDrupal"] ?? throw new ArgumentNullException("LegacyDrupal");
 if (Uri.TryCreate(drupalUrl, UriKind.Absolute, out var drupalBaseUrl))
@@ -107,6 +112,24 @@ app.MapGet("/migrate_items", async (
     })
     .WithSummary("Migrate Items - not ready yet");
 
+app.MapGet("/migrate_item_subscriptions", async (
+    [FromServices] IMigrationService migrationService,
+    CancellationToken cancellationToken = default
+    ) =>
+{
+    return await migrationService.MigrateLegacyItemsSubscriptions(cancellationToken);
+})
+    .WithSummary("Migrate Item Subscriptions");
+
+app.MapGet("/migrate_services_subscriptions", async (
+    [FromServices] IMigrationService migrationService,
+    CancellationToken cancellationToken = default
+    ) =>
+{
+    return await migrationService.MigrateLegacyServicesSubscriptions(cancellationToken);
+})
+    .WithSummary("Migrate Services Subscriptions");
+
 
 app.MapGet("/migrate_event_categories", async (
     [FromServices] IMigrationService migrationService,
@@ -176,5 +199,7 @@ app.MapGet("/migrate_locations", async (
     return await migrationService.MigrateLocations(cancellationToken);
 })
     .WithSummary("Migrate Locations - Not yet required");
+
+
 
 app.Run();

@@ -16,5 +16,7 @@ namespace QLN.DataMigration.Services
         Task SaveNewsCategoriesAsync(List<NewsCategory> items, CancellationToken cancellationToken);
         Task SaveLocationsAsync(List<Location> items, CancellationToken cancellationToken);
         Task SaveContentCommunityCommentsAsync(Dictionary<string, List<ContentComment>> items, CancellationToken cancellationToken);
+        Task SaveLegacyServicesSubscriptionsAsync(List<SubscriptionItem> subscriptions, CancellationToken cancellationToken);
+        Task SaveLegacyItemsSubscriptionsAsync(List<SubscriptionItem> subscriptions, CancellationToken cancellationToken);
     }
 }

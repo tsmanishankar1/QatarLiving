@@ -12,5 +12,7 @@ namespace QLN.DataMigration.Services
         Task<IResult> MigrateEventCategories(CancellationToken cancellationToken);
         Task<IResult> MigrateNewsCategories(CancellationToken cancellationToken);
         Task<IResult> MigrateLocations(CancellationToken cancellationToken);
+        Task<IResult> MigrateLegacyItemsSubscriptions(CancellationToken cancellationToken = default);
+        Task<IResult> MigrateLegacyServicesSubscriptions(CancellationToken cancellationToken = default);
     }
 }
