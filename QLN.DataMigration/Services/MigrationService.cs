@@ -99,6 +99,8 @@ namespace QLN.DataMigration.Services
             // and upload it into Azure Blob
             foreach (var drupalItem in drupalItems.Items)
             {
+                var categoryMapper = csvImport.FirstOrDefault(x => x.AdId == drupalItem.AdId);
+
                 await ProcessMigrationItem(drupalItem, importImages: importImages);
                 
                 migrationItems.Add(drupalItem);

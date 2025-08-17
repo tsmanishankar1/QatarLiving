@@ -110,7 +110,7 @@ app.MapGet("/migrate_mobile_devices", async (
 })
 .WithSummary("Migrate Mobile Devices - Not to be used");
 
-app.MapGet("/migrate_items", async (
+app.MapPost("/migrate_items", async (
     [FromServices] IMigrationService migrationService,
     [FromQuery] string environment,
     [FromQuery(Name = "import_images")] bool importImages,
