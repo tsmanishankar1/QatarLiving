@@ -73,20 +73,24 @@ namespace QLN.Common.DTO_s
         Unpublished = 4,
         Rejected = 5,
         Expired = 6,
-        Promote=7,
-        UnPromote=8,
-        Feature=9,
+        Promote = 7,
+        UnPromote = 8,
+        Feature = 9,
         UnFeature = 10,
+        NeedChanges = 11
     }
     public enum BulkModerationAction
     {
         Approve = 1,
         Publish = 2,
         Unpublish = 3,
-        UnPromote =4,
-        feature =5,
+        UnPromote = 4,
+        Feature = 5,
         Remove = 6,
-        UnFeature = 7
+        UnFeature = 7,
+        Promote = 8,
+        IsRefreshed = 9,
+        NeedChanges = 10
     }
     public enum ServiceAdType
     {
@@ -96,7 +100,6 @@ namespace QLN.Common.DTO_s
     public class PromoteServiceRequest
     {
         public long ServiceId { get; set; }
-        public Guid? SubscriptionId { get; set; }
         public bool IsPromoted { get; set; }
         [JsonIgnore]
         public string? UpdatedBy { get; set; } = null!;
@@ -104,8 +107,6 @@ namespace QLN.Common.DTO_s
     public class FeatureServiceRequest
     {
         public long ServiceId { get; set; }
-        [JsonIgnore]
-        public Guid? SubscriptionId { get; set; }
         public bool IsFeature { get; set; }
         [JsonIgnore]
         public string? UpdatedBy { get; set; } = null!;
@@ -113,7 +114,6 @@ namespace QLN.Common.DTO_s
     public class RefreshServiceRequest
     {
         public long ServiceId { get; set; }
-        public Guid? SubscriptionId { get; set; }
         public bool IsRefreshed { get; set; }
         [JsonIgnore]
         public string? UpdatedBy { get; set; } = null!;
@@ -122,7 +122,6 @@ namespace QLN.Common.DTO_s
     {
         public long ServiceId { get; set; }
         public ServiceStatus? Status { get; set; }
-        public Guid? SubscriptionId { get; set; }
         [JsonIgnore]
         public string? UpdatedBy { get; set; } = null!;
     }

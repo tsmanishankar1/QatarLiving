@@ -251,7 +251,7 @@ namespace QLN.Classified.MS.Service.Services
 
             return category;
         }
-        public async Task<string> CreateServiceAd(string uid, string userName, ServiceDto dto, CancellationToken cancellationToken = default)
+        public async Task<string> CreateServiceAd(string uid, string userName, string subscriptionId, ServiceDto dto, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -330,7 +330,7 @@ namespace QLN.Classified.MS.Service.Services
                     Availability = dto.Availability,
                     Duration = dto.Duration,
                     Reservation = dto.Reservation,
-                    SubscriptionId = dto.SubscriptionId,
+                    SubscriptionId = Guid.Parse(subscriptionId),
                     ZoneId = dto.ZoneId,
                     Longitude = dto.Longitude,
                     Lattitude = dto.Lattitude,
@@ -819,7 +819,7 @@ namespace QLN.Classified.MS.Service.Services
                 throw new Exception("An error occurred while fetching all services.", ex);
             }
         }
-        public async Task<Common.Infrastructure.Model.Services> PromoteService(PromoteServiceRequest request, string? uid, CancellationToken ct)
+        public async Task<Common.Infrastructure.Model.Services> PromoteService(PromoteServiceRequest request, string? uid, string? subscriptionId, CancellationToken ct)
         {
             var serviceAd = await _dbContext.Services
                 .FirstOrDefaultAsync(s => s.Id == request.ServiceId && s.IsActive, ct);
@@ -831,7 +831,7 @@ namespace QLN.Classified.MS.Service.Services
             if (request.IsPromoted)
             {
                 var subscription = await _qLSubscriptionContext.Subscriptions
-                    .FirstOrDefaultAsync(sub => sub.SubscriptionId == serviceAd.SubscriptionId && (int)sub.Status == (int)V2Status.Active, ct);
+                    .FirstOrDefaultAsync(sub => sub.SubscriptionId == serviceAd.SubscriptionId && (int)sub.Status == (int)SubscriptionStatus.Active, ct);
 
                 if (subscription == null)
                     throw new InvalidOperationException("Active subscription not found for this service.");
@@ -842,8 +842,6 @@ namespace QLN.Classified.MS.Service.Services
             {
                 serviceAd.PromotedExpiryDate = null;
             }
-            request.SubscriptionId = Guid.Parse("752ea67e-5fc3-4dae-ab96-4aa3822afc38");
-            request.SubscriptionId = serviceAd.SubscriptionId;
             serviceAd.UpdatedBy = uid;
             serviceAd.UpdatedAt = DateTime.UtcNow;
 
@@ -869,10 +867,8 @@ namespace QLN.Classified.MS.Service.Services
 
             return serviceAd;
         }
-        public async Task<Common.Infrastructure.Model.Services> FeatureService(FeatureServiceRequest request, string? uid, Guid subscriptionId, CancellationToken ct)
+        public async Task<Common.Infrastructure.Model.Services> FeatureService(FeatureServiceRequest request, string? uid, string? subscriptionId, CancellationToken ct)
         {
-            var subscriptionid = Guid.Parse("752ea67e-5fc3-4dae-ab96-4aa3822afc38");
-            var subscription = await _qLSubscriptionContext.Subscriptions.AsNoTracking().FirstOrDefaultAsync(s => s.SubscriptionId == subscriptionId, ct);
             var serviceAd = await _dbContext.Services
                 .FirstOrDefaultAsync(s => s.Id == request.ServiceId && s.IsActive, ct);
 
@@ -880,7 +876,20 @@ namespace QLN.Classified.MS.Service.Services
                 throw new KeyNotFoundException("Service Ad not found.");
 
             serviceAd.IsFeatured = request.IsFeature;
-            serviceAd.FeaturedExpiryDate = request.IsFeature ? DateTime.UtcNow.AddDays(7) : null;
+            if (request.IsFeature)
+            {
+                var subscription = await _qLSubscriptionContext.Subscriptions
+                    .FirstOrDefaultAsync(sub => sub.SubscriptionId == serviceAd.SubscriptionId && (int)sub.Status == (int)SubscriptionStatus.Active, ct);
+
+                if (subscription == null)
+                    throw new InvalidOperationException("Active subscription not found for this service.");
+
+                serviceAd.FeaturedExpiryDate = subscription.EndDate;
+            }
+            else
+            {
+                serviceAd.FeaturedExpiryDate = null;
+            }
             serviceAd.UpdatedBy = uid;
             serviceAd.UpdatedAt = DateTime.UtcNow;
 
@@ -908,7 +917,7 @@ namespace QLN.Classified.MS.Service.Services
 
             return serviceAd;
         }        
-        public async Task<Common.Infrastructure.Model.Services> RefreshService(RefreshServiceRequest request, string? uid, CancellationToken ct)
+        public async Task<Common.Infrastructure.Model.Services> RefreshService(RefreshServiceRequest request, string? uid, string? subscriptionId, CancellationToken ct)
         {
             var serviceAd = await _dbContext.Services
                 .FirstOrDefaultAsync(s => s.Id == request.ServiceId && s.IsActive, ct);
@@ -919,7 +928,7 @@ namespace QLN.Classified.MS.Service.Services
             if (request.IsRefreshed)
             {
                 var subscription = await _qLSubscriptionContext.Subscriptions
-                    .Where(s => s.UserId == uid && (int)s.Status == (int)V2Status.Active && s.EndDate > DateTime.UtcNow)
+                    .Where(s => s.UserId == uid && (int)s.Status == (int)SubscriptionStatus.Active && s.EndDate > DateTime.UtcNow)
                     .OrderByDescending(s => s.EndDate)
                     .FirstOrDefaultAsync(ct);
 
@@ -961,7 +970,7 @@ namespace QLN.Classified.MS.Service.Services
 
             return serviceAd;
         }
-        public async Task<Common.Infrastructure.Model.Services> PublishService(PublishServiceRequest request, string? uid, CancellationToken ct)
+        public async Task<Common.Infrastructure.Model.Services> PublishService(PublishServiceRequest request, string? uid, string? subscriptionId, CancellationToken ct)
         {
             var serviceAd = await _dbContext.Services
                 .FirstOrDefaultAsync(s => s.Id == request.ServiceId && s.IsActive, ct);
@@ -989,7 +998,7 @@ namespace QLN.Classified.MS.Service.Services
                     throw new InvalidDataException("Service is already published.");
 
                 var subscription = await _qLSubscriptionContext.Subscriptions
-                    .FirstOrDefaultAsync(sub => sub.SubscriptionId == serviceAd.SubscriptionId && (int)sub.Status == (int)V2Status.Active, ct);
+                    .FirstOrDefaultAsync(sub => sub.SubscriptionId == serviceAd.SubscriptionId && (int)sub.Status == (int)SubscriptionStatus.Active, ct);
 
                 if (subscription == null)
                     throw new InvalidDataException("Active subscription not found for this service.");
@@ -1036,118 +1045,161 @@ namespace QLN.Classified.MS.Service.Services
 
             return serviceAd;
         }
-        public async Task<List<Common.Infrastructure.Model.Services>> ModerateBulkService(BulkModerationRequest request, CancellationToken ct)
+        public async Task<BulkAdActionResponseitems> ModerateBulkService(BulkModerationRequest request, string userId, string subscriptionId, DateTime? expiryDate, CancellationToken ct)
         {
             var ads = await _dbContext.Services
                 .Where(s => request.AdIds.Contains(s.Id))
                 .ToListAsync(ct);
+            var succeeded = new ResultGroup
+            {
+                Count = 0,
+                Ids = new List<long>(),
+                Reason = string.Empty
+            };
 
-            var updatedAds = new List<Common.Infrastructure.Model.Services>();
+            var failed = new ResultGroup
+            {
+                Count = 0,
+                Ids = new List<long>(),
+                Reason = string.Empty
+            };
+
+            var updatedAds = new List<QLN.Common.Infrastructure.Model.Services>();
 
             foreach (var ad in ads)
             {
                 bool shouldUpdate = false;
+                string failReason = string.Empty;
 
-                switch (request.Action)
+                try
                 {
-                    case BulkModerationAction.Approve:
-                        if (ad.Status == ServiceStatus.PendingApproval)
-                        {
-                            await EnsureNoActiveAdConflict(ad, ct);
-                            ad.Status = ServiceStatus.Published;
-                            ad.PublishedDate = DateTime.UtcNow;
-                            shouldUpdate = true;
-                        }
-                        break;
-
-                    case BulkModerationAction.Publish:
-                        if (ad.Status == ServiceStatus.Unpublished)
-                        {
-                            await EnsureNoActiveAdConflict(ad, ct);
-                            ad.Status = ServiceStatus.Published;
-                            ad.PublishedDate = DateTime.UtcNow;
-                            shouldUpdate = true;
-                        }
-                        break;
-
-                    case BulkModerationAction.Unpublish:
-                        if (ad.Status == ServiceStatus.Published)
-                        {
-                            ad.Status = ServiceStatus.Unpublished;
-                            shouldUpdate = true;
-                        }
-                        break;
-
-                    case BulkModerationAction.UnPromote:
-                        if (ad.Status == ServiceStatus.Promote)
-                        {
-                            ad.Status = ServiceStatus.UnPromote;
-                            shouldUpdate = true;
-                        }
-                        break;
-
-                    case BulkModerationAction.UnFeature:
-                        if (ad.Status == ServiceStatus.Feature)
-                        {
-                            ad.Status = ServiceStatus.UnFeature;
-                            shouldUpdate = true;
-                        }
-                        break;
-
-                    case BulkModerationAction.Remove:
-                        ad.Status = ServiceStatus.Rejected;
-                        ad.IsActive = false;
-                        ad.UpdatedBy = request.UpdatedBy;
-                        shouldUpdate = true;
-                        break;
-
-                    default:
-                        throw new InvalidOperationException("Invalid action");
-                }
-
-                if (shouldUpdate)
-                {
-                    ad.UpdatedAt = DateTime.UtcNow;
-                    ad.UpdatedBy = request.UpdatedBy;
-
-                    var upsertRequest = await IndexServiceToAzureSearch(ad, ct);
-
-                    if (upsertRequest != null)
+                    switch (request.Action)
                     {
-                        var message = new IndexMessage
-                        {
-                            Action = "Upsert",
-                            Vertical = ConstantValues.IndexNames.ServicesIndex,
-                            UpsertRequest = upsertRequest
-                        };
+                        case BulkModerationAction.Approve:
+                            if (ad.Status == ServiceStatus.PendingApproval)
+                            {
+                                ad.Status = ServiceStatus.Published;
+                                ad.PublishedDate = expiryDate;
+                                shouldUpdate = true;
+                            }
+                            else failReason = $"Cannot approve ad with status '{ad.Status}'.";
+                            break;
 
-                        await _dapr.PublishEventAsync(
-                            pubsubName: ConstantValues.PubSubName,
-                            topicName: ConstantValues.PubSubTopics.IndexUpdates,
-                            data: message,
-                            cancellationToken: ct
-                        );
+                        case BulkModerationAction.Publish:
+                            if (ad.Status == ServiceStatus.Unpublished)
+                            {
+                                ad.Status = ServiceStatus.Published;
+                                ad.PublishedDate = DateTime.UtcNow;
+                                shouldUpdate = true;
+                            }
+                            else failReason = $"Cannot publish ad with status '{ad.Status}'.";
+                            break;
+
+                        case BulkModerationAction.Unpublish:
+                            if (ad.Status == ServiceStatus.Published)
+                            {
+                                ad.Status = ServiceStatus.Unpublished;
+                                ad.PublishedDate = null;
+                                shouldUpdate = true;
+                            }
+                            else failReason = $"Cannot unpublish ad with status '{ad.Status}'.";
+                            break;
+
+                        case BulkModerationAction.UnPromote:
+                            if (ad.IsPromoted)
+                            {
+                                ad.IsPromoted = false;
+                                ad.PromotedExpiryDate = null;
+                                shouldUpdate = true;
+                            }
+                            else failReason = "Cannot unpromote an ad that is not promoted.";
+                            break;
+
+                        case BulkModerationAction.UnFeature:
+                            if (ad.IsFeatured)
+                            {
+                                ad.IsFeatured = false;
+                                ad.FeaturedExpiryDate = null;
+                                shouldUpdate = true;
+                            }
+                            else failReason = "Cannot unfeature an ad that is not featured.";
+                            break;
+
+                        case BulkModerationAction.Promote:
+                            if (!ad.IsPromoted)
+                            {
+                                ad.IsPromoted = true;
+                                ad.PromotedExpiryDate = expiryDate;
+                                shouldUpdate = true;
+                            }
+                            else failReason = "Cannot promote an ad that is already promoted.";
+                            break;
+
+                        case BulkModerationAction.Feature:
+                            if (!ad.IsFeatured)
+                            {
+                                ad.IsFeatured = true;
+                                ad.FeaturedExpiryDate = expiryDate;
+                                shouldUpdate = true;
+                            }
+                            else failReason = "Cannot feature an ad that is already featured.";
+                            break;
+
+                        case BulkModerationAction.Remove:
+                            ad.Status = ServiceStatus.Rejected;
+                            ad.IsActive = false;
+                            shouldUpdate = true;
+                            break;
+
+                        case BulkModerationAction.NeedChanges:
+                            ad.Status = ServiceStatus.NeedChanges;
+                            shouldUpdate = true;
+                            break;
+
+                        default:
+                            failReason = "Invalid action.";
+                            break;
                     }
 
-                    updatedAds.Add(ad);
+                    if (shouldUpdate)
+                    {
+                        ad.UpdatedAt = DateTime.UtcNow;
+                        ad.UpdatedBy = userId;
+                        updatedAds.Add(ad);
+                        _dbContext.Services.Update(ad);
+                        succeeded.Count++;
+                        succeeded.Ids.Add(ad.Id);
+                    }
+                    else
+                    {
+                        failed.Count++;
+                        failed.Ids.Add(ad.Id);
+                        failed.Reason += $"Ad {ad.Id}: {failReason} ";
+                    }
+                }
+                catch (Exception ex)
+                {
+                    failed.Count++;
+                    failed.Ids.Add(ad.Id);
+                    failed.Reason += $"Ad {ad.Id}: {ex.Message} ";
                 }
             }
-            await _dbContext.SaveChangesAsync(ct);
-            return updatedAds;
-        }
-        private async Task EnsureNoActiveAdConflict(Common.Infrastructure.Model.Services currentAd, CancellationToken ct)
-        {
-            var conflict = await _dbContext.Services.AnyAsync(s =>
-                s.Id != currentAd.Id &&
-                s.CreatedBy == currentAd.CreatedBy &&
-                s.L2CategoryId == currentAd.L2CategoryId &&
-                s.IsActive &&
-                s.Status == ServiceStatus.Published, ct);
 
-            if (conflict)
+            if (updatedAds.Any())
             {
-                throw new ConflictException($"Ad '{currentAd.Title}' cannot be published. An active ad already exists in the same category by this user.");
+                await _dbContext.SaveChangesAsync(ct);
+
+                foreach (var ad in updatedAds)
+                {
+                    await IndexServiceToAzureSearch(ad, ct);
+                }
             }
+
+            return new BulkAdActionResponseitems
+            {
+                Succeeded = succeeded,
+                Failed = failed
+            };
         }
         public async Task<SubscriptionBudgetDto> GetSubscriptionBudgetsAsync(
      Guid subscriptionId,
