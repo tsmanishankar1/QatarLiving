@@ -148,8 +148,11 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.ViewListing
 
         protected void OnEdit(CollectibleItem item)
         {
-            var targetUrl = $"/manage/classified/collectibles/edit/ad/{item.Id}";
-            NavManager.NavigateTo(targetUrl, true);
+            if (item?.Id is long id) 
+            {
+                var targetUrl = $"/manage/classified/collectibles/edit/ad/{id}";
+                NavManager.NavigateTo(targetUrl, true);
+            }
         }
 
         protected void OnPreview(CollectibleItem item)

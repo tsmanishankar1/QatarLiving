@@ -54,15 +54,16 @@ namespace QLN.Common.Infrastructure.IService
         Task<AdUpdatedResponseDto> UpdateClassifiedCollectiblesAd(Collectibles dto, CancellationToken cancellationToken = default);
         Task<AdUpdatedResponseDto> UpdateClassifiedDealsAd(Deals dto, CancellationToken cancellationToken = default);
         Task<PaginatedAdResponseDto> GetFilteredAds(SubVertical subVertical, bool? isPublished, int page, int pageSize, string? search, string userId, CancellationToken cancellationToken);
-             
+
         Task<BulkAdActionResponse> BulkUpdateAdPublishStatusAsync(
-     int subVertical,
-     string userId,
-     List<long> adIds,
-     bool isPublished,
-     CancellationToken cancellationToken = default);
+    int subVertical,
+    string userId,
+    List<long> adIds,
+    bool isPublished,
+    Guid subscriptionId,
+    CancellationToken cancellationToken = default);
         Task<string> FeatureClassifiedAd(ClassifiedsPromoteDto dto, string userId,Guid subscriptionid, CancellationToken cancellationToken);
-        Task<string> UnFeatureClassifiedAd(ClassifiedsPromoteDto dto, string userId, Guid subscriptionid, CancellationToken cancellationToken);
+       
         Task<string> PromoteClassifiedAd(ClassifiedsPromoteDto dto, string userId, Guid subscriptionid, CancellationToken cancellationToken = default);
         Task<string> Favourite(WishlistCreateDto dto, string userId, CancellationToken cancellationToken);
         Task<List<Wishlist>> GetAllByUserFavouriteList(string userId, Vertical vertical, SubVertical subVertical, CancellationToken cancellationToken);

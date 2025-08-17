@@ -2,7 +2,7 @@
 {
     public class PrelovedP2PTransactionItem
     {
-        public int AdId { get; set; }
+        public long AdId { get; set; }
         public int OrderId { get; set; }
         public string? SubscriptionType { get; set; }
         public string? UserName { get; set; }

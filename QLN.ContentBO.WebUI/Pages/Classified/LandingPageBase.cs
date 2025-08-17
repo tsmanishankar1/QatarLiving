@@ -2,6 +2,7 @@
 using MudBlazor;
 using QLN.ContentBO.WebUI.Components;
 using QLN.ContentBO.WebUI.Components.ConfirmationDialog;
+using QLN.ContentBO.WebUI.Enums;
 using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Models;
 using QLN.ContentBO.WebUI.Pages.Classified.Modal;
@@ -10,23 +11,22 @@ using static QLN.ContentBO.WebUI.Models.ClassifiedLanding;
 
 public class LandingPageBase : QLComponentBase
 {
+    [Inject] public IClassifiedService ClassifiedService { get; set; }
+    [Inject] public IDialogService DialogService { get; set; } = default!;
+
     protected int activeIndex = 0;
     protected bool IsLoading = true;
     protected string searchTerm = string.Empty;
     protected bool showItemModal = false;
     protected string modalTitle = string.Empty;
 
-    protected List<LandingPageItem> currentItems = new();
+    protected List<LandingPageItem> currentItems = [];
     protected LandingPageItem currentItem = new();
     protected LandingPageItemType currentItemType;
-    [Inject]
-    public IDialogService DialogService { get; set; } = default!;
-    [Inject]
-    public IClassifiedService ClassifiedService { get; set; }
 
-    private List<SeasonalPickDto> _seasonalPicks = new();
-    private List<SeasonalPickDto> _featuredCategory = new();
-    private List<SeasonalPickDto> _featuredStores = new();
+    private List<SeasonalPickDto> _seasonalPicks = [];
+    private List<SeasonalPickDto> _featuredCategory = [];
+    private List<SeasonalPickDto> _featuredStores = [];
 
     protected override async Task OnInitializedAsync()
     {
@@ -43,7 +43,6 @@ public class LandingPageBase : QLComponentBase
             await LoadAllSeasonalPicks();
             await LoadAllFeaturedCategory();
             await LoadAllFeaturedStores();
-
         }
         catch (Exception ex)
         {
@@ -53,7 +52,6 @@ public class LandingPageBase : QLComponentBase
         finally
         {
             IsLoading = false;
-            StateHasChanged();
         }
     }
 
@@ -75,11 +73,9 @@ public class LandingPageBase : QLComponentBase
         };
     }
 
-
     protected async Task LoadDataForCurrentTab()
     {
         IsLoading = true;
-        StateHasChanged();
 
         try
         {
@@ -104,7 +100,6 @@ public class LandingPageBase : QLComponentBase
         finally
         {
             IsLoading = false;
-            StateHasChanged();
         }
     }
 
@@ -134,9 +129,9 @@ public class LandingPageBase : QLComponentBase
 
             for (int slot = 1; slot <= 6; slot++)
             {
-                if (realItemsBySlot.ContainsKey(slot))
+                if (realItemsBySlot.TryGetValue(slot, out LandingPageItem? value))
                 {
-                    picks.Add(realItemsBySlot[slot]);
+                    picks.Add(value);
                 }
                 else
                 {
@@ -177,13 +172,13 @@ public class LandingPageBase : QLComponentBase
                     EndDate = x.EndDate,
                     SlotOrder = x.SlotOrder,
                     IsPlaceholder = false
-                }) ?? new Dictionary<int, LandingPageItem>();
+                }) ?? [];
 
             for (int slot = 1; slot <= 6; slot++)
             {
-                if (realItemsBySlot.ContainsKey(slot))
+                if (realItemsBySlot.TryGetValue(slot, out LandingPageItem? value))
                 {
-                    picks.Add(realItemsBySlot[slot]);
+                    picks.Add(value);
                 }
                 else
                 {
@@ -202,7 +197,6 @@ public class LandingPageBase : QLComponentBase
         return picks;
     }
 
-
     private async Task<List<LandingPageItem>> LoadFeaturedStores()
     {
         var picks = new List<LandingPageItem>();
@@ -220,18 +214,18 @@ public class LandingPageBase : QLComponentBase
                 .Where(x => x.SlotOrder >= 1 && x.SlotOrder <= 6)
                 .ToDictionary(x => x.SlotOrder, x => new LandingPageItem
                 {
-                     Id = Guid.Parse(x.Id),
-                    Category = x.StoreName,
+                    Id = Guid.Parse(x.Id),
+                    Category = x.StoreName ?? "-",
                     EndDate = x.EndDate,
                     SlotOrder = x.SlotOrder,
                     IsPlaceholder = false
-                }) ?? new Dictionary<int, LandingPageItem>();
+                }) ?? [];
 
             for (int slot = 1; slot <= 6; slot++)
             {
-                if (realItemsBySlot.ContainsKey(slot))
+                if (realItemsBySlot.TryGetValue(slot, out LandingPageItem? value))
                 {
-                    picks.Add(realItemsBySlot[slot]);
+                    picks.Add(value);
                 }
                 else
                 {
@@ -267,6 +261,7 @@ public class LandingPageBase : QLComponentBase
             Snackbar.Add("Failed to load the seasonal pick items", Severity.Error);
         }
     }
+
     private async Task LoadAllFeaturedStores()
     {
         var response = await ClassifiedService.GetAllFeaturedStores(Vertical.Classifieds);
@@ -277,18 +272,18 @@ public class LandingPageBase : QLComponentBase
             _featuredStores = JsonSerializer.Deserialize<List<SeasonalPickDto>>(content, new JsonSerializerOptions
             {
                 PropertyNameCaseInsensitive = true
-            }) ?? new List<SeasonalPickDto>();
+            }) ?? [];
+
             foreach (var store in _featuredStores)
-        {
-            store.CategoryName = store.StoreName; 
-        }
+            {
+                store.CategoryName = store.StoreName ?? "-";
+            }
         }
         else
         {
-            Snackbar.Add("Failed to load the seasonal pick items", Severity.Error);
+            Snackbar.Add("Failed to load the featured stores", Severity.Error);
         }
     }
-    
 
     private async Task LoadAllFeaturedCategory()
     {
@@ -300,66 +295,31 @@ public class LandingPageBase : QLComponentBase
             _featuredCategory = JsonSerializer.Deserialize<List<SeasonalPickDto>>(content, new JsonSerializerOptions
             {
                 PropertyNameCaseInsensitive = true
-            }) ?? new List<SeasonalPickDto>();
+            }) ?? [];
         }
         else
         {
             Snackbar.Add("Failed to load the seasonal pick items", Severity.Error);
         }
     }
-    protected async Task SearchItems()
-    {
-        try
-        {
-            IsLoading = true;
-            StateHasChanged();
-
-            var allItems = currentItemType switch
-            {
-                LandingPageItemType.FeaturedCategory => await LoadFeaturedCategories(),
-                LandingPageItemType.SeasonalPick => await LoadSeasonalPicks(),
-                LandingPageItemType.FeaturedStore => await LoadFeaturedStores(),
-                _ => new List<LandingPageItem>()
-            };
-
-            if (!string.IsNullOrWhiteSpace(searchTerm))
-            {
-                currentItems = allItems.Where(item =>
-                    item.Title.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
-                    item.Description.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
-                    item.Category.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
-                    .ToList();
-            }
-            else
-            {
-                currentItems = allItems;
-            }
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Error searching items");
-            Snackbar.Add("Search failed", Severity.Error);
-        }
-        finally
-        {
-            IsLoading = false;
-            StateHasChanged();
-        }
-    }
-
 
     protected async Task NavigateToAddItem()
     {
+        await LoadAllSeasonalPicks();
+        await LoadAllFeaturedCategory();
+        await LoadAllFeaturedStores();
         var title = $"Add {GetCurrentTabAddButtonText()}";
 
         var parameters = new DialogParameters
-            {
-                { nameof(MessageBoxBase.Title), title },
-            };
+        {
+            { nameof(MessageBoxBase.Title), title },
+        };
+
         var options = new DialogOptions
         {
             CloseOnEscapeKey = true
         };
+
         IDialogReference dialog;
         if (currentItemType == LandingPageItemType.FeaturedCategory)
         {
@@ -369,7 +329,7 @@ public class LandingPageBase : QLComponentBase
         {
             dialog = await DialogService.ShowAsync<AddSeasonalPickModal>("", parameters, options);
         }
-        else 
+        else
         {
             dialog = await DialogService.ShowAsync<AddStoreModal>("", parameters, options);
         }
@@ -380,7 +340,6 @@ public class LandingPageBase : QLComponentBase
             await LoadAllFeaturedCategory();
             await LoadAllSeasonalPicks();
             await LoadAllFeaturedStores();
-            StateHasChanged();
         }
     }
 
@@ -393,22 +352,24 @@ public class LandingPageBase : QLComponentBase
             2 => "Replace Featured Store",
             _ => "Replace Item"
         };
-        var data  = activeIndex switch
+
+        var data = activeIndex switch
         {
             0 => _featuredCategory,
             1 => _seasonalPicks,
             2 => _featuredStores,
             _ => _seasonalPicks
         };
-        var parameters = new DialogParameters
-    {
-        { nameof(MessageBoxBase.Title), title },
-        { nameof(MessageBoxBase.Placeholder), "Please type search item*" },
-        { nameof(ReplaceDialogModal.events), data },
-        { nameof(ReplaceDialogModal.SlotNumber), item.SlotOrder },
-        { nameof(ReplaceDialogModal.ActiveIndex), activeIndex }
 
-    };
+        var parameters = new DialogParameters
+        {
+            { nameof(MessageBoxBase.Title), title },
+            { nameof(MessageBoxBase.Placeholder), "Please type search item*" },
+            { nameof(ReplaceDialogModal.events), data },
+            { nameof(ReplaceDialogModal.SlotNumber), item.SlotOrder },
+            { nameof(ReplaceDialogModal.ActiveIndex), activeIndex }
+
+        };
 
         var options = new DialogOptions
         {
@@ -417,7 +378,6 @@ public class LandingPageBase : QLComponentBase
             CloseOnEscapeKey = true
         };
 
-        //await DialogService.ShowAsync<ReplaceDialogModal>("", parameters, options);
         var dialog = await DialogService.ShowAsync<ReplaceDialogModal>("", parameters, options);
         var result = await dialog.Result;
 
@@ -427,30 +387,10 @@ public class LandingPageBase : QLComponentBase
         }
     }
 
-    protected Task OpenDialogAsync()
-    {
-        var parameters = new DialogParameters
-            {
-                { nameof(MessageBoxBase.Title), "Replace Seasonal  Pick" },
-                { nameof(MessageBoxBase.Placeholder), "Plese type search item*" }
-            };
-        var options = new DialogOptions
-        {
-            MaxWidth = MaxWidth.Small,
-            FullWidth = true,
-            CloseOnEscapeKey = true
-        };
-        return DialogService.ShowAsync<ReplaceDialogModal>("", parameters, options);
-    }
-
     protected async Task DeleteItem(string id)
     {
-        var title = $"{GetCurrentTabAddButtonText()}";
-
-
         await ShowConfirmationDialog(id);
     }
-   
 
     protected async Task ConfirmDeleteItem(string id)
     {
@@ -502,38 +442,6 @@ public class LandingPageBase : QLComponentBase
         }
     }
 
-
-    protected void CloseModal()
-    {
-        showItemModal = false;
-        StateHasChanged();
-    }
-
-    protected async Task SaveItem()
-    {
-        try
-        {
-            IsLoading = true;
-            StateHasChanged();
-
-            await Task.Delay(500);
-
-            Snackbar.Add($"{GetCurrentTabAddButtonText()} saved successfully", Severity.Success);
-            showItemModal = false;
-            await LoadDataForCurrentTab();
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Error saving item");
-            Snackbar.Add("Failed to save item", Severity.Error);
-        }
-        finally
-        {
-            IsLoading = false;
-            StateHasChanged();
-        }
-    }
-
     private async Task ShowConfirmationDialog(string id)
     {
         var title = $"{GetCurrentTabAddButtonText()}";
@@ -546,31 +454,8 @@ public class LandingPageBase : QLComponentBase
             { "OnConfirmed",  EventCallback.Factory.Create(this, async () => await ConfirmDeleteItem(id))}
         };
         var options = new DialogOptions { CloseButton = false, MaxWidth = MaxWidth.Small, FullWidth = true };
-        var dialog = DialogService.Show<ConfirmationDialog>("", parameters, options);
+        var dialog = await DialogService.ShowAsync<ConfirmationDialog>("", parameters, options);
         var result = await dialog.Result;
     }
-    protected async Task DeleteFeatureEvent(string eventId)
-    {
-        try
-        {
-            if (string.IsNullOrWhiteSpace(eventId))
-            {
-                Snackbar.Add("Invalid event ID.", Severity.Warning);
-                return;
-            }
-          
-        }
-        catch (Exception ex)
-        {
-            Snackbar.Add("Something went wrong while deleting the featured event.", Severity.Error);
-        }
-    }
-}
-
-public enum LandingPageItemType
-{
-    FeaturedCategory = 0,
-    SeasonalPick = 1,
-    FeaturedStore = 2
 }
 

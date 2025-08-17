@@ -18,30 +18,38 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.CreateAd
         [Inject] public IClassifiedService ClassifiedService { get; set; }
         [Inject] public IFileUploadService FileUploadService { get; set; }
         [Inject] protected IDialogService DialogService { get; set; }
-
-        protected List<LocationZoneDto> Zones { get; set; } = new();
         [Inject] ILogger<CreateAdBase> Logger { get; set; }
+        [Inject] ISnackbar Snackbar { get; set; }
+        [Inject] private IJSRuntime JS { get; set; }
+
+        protected List<LocationZoneDto> Zones { get; set; } = [];
         protected bool IsLoadingZones { get; set; } = true;
         protected bool IsLoadingCategories { get; set; } = true;
         protected bool IsSaving { get; set; } = false;
         protected bool IsLoadingMap { get; set; } = false;
-
         protected string? ErrorMessage { get; set; }
-        [Inject] ISnackbar Snackbar { get; set; }
-        [Inject] private IJSRuntime JS { get; set; }
 
-        protected void GoBack()
-        {
-            Navigation.NavigateTo("/manage/classified/items/view/listing");
-        }
         protected AdPost adPostModel { get; set; } = new();
         protected EditContext editContext;
         private ValidationMessageStore messageStore;
-
-
         protected string? UserEmail { get; set; }
-
         protected string? UserId { get; set; }
+
+        protected List<ClassifiedsCategory> CategoryTrees { get; set; } = new();
+        protected ClassifiedsCategory SelectedCategory => CategoryTrees.FirstOrDefault(x => x.Id.ToString() == adPostModel.SelectedCategoryId);
+        protected ClassifiedsCategoryField SelectedSubcategory => SelectedCategory?.Fields?.FirstOrDefault(x => x.Id.ToString() == adPostModel.SelectedSubcategoryId);
+        protected ClassifiedsCategoryField SelectedSubSubcategory => SelectedSubcategory?.Fields?.FirstOrDefault(x => x.Id.ToString() == adPostModel.SelectedSubSubcategoryId);
+        protected List<ClassifiedsCategoryField> AvailableFields =>
+                                        SelectedSubSubcategory?.Fields ??
+                                        SelectedSubcategory?.Fields ??
+                                        SelectedCategory?.Fields ??
+                                        [];
+        protected string[] ExcludedFields =>
+        [
+            ""// Add any other fields you want to hide here
+        ];
+
+        protected Dictionary<string, List<string>> DynamicFieldErrors { get; set; } = [];
 
         protected override async Task OnInitializedAsync()
         {
@@ -76,29 +84,13 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.CreateAd
             await LoadCategoryTreesAsync();
         }
 
-         protected List<ClassifiedsCategory> CategoryTrees { get; set; } = new();
-        protected ClassifiedsCategory SelectedCategory => CategoryTrees.FirstOrDefault(x => x.Id.ToString() == adPostModel.SelectedCategoryId);
-        protected ClassifiedsCategoryField SelectedSubcategory => SelectedCategory?.Fields?.FirstOrDefault(x => x.Id.ToString() == adPostModel.SelectedSubcategoryId);
-        protected ClassifiedsCategoryField SelectedSubSubcategory => SelectedSubcategory?.Fields?.FirstOrDefault(x => x.Id.ToString() == adPostModel.SelectedSubSubcategoryId);
-        protected List<ClassifiedsCategoryField> AvailableFields =>
-                                        SelectedSubSubcategory?.Fields ??
-                                        SelectedSubcategory?.Fields ??
-                                        SelectedCategory?.Fields ??
-                                        new List<ClassifiedsCategoryField>();
-         protected string[] ExcludedFields => new[]
-       {
-            ""// Add any other fields you want to hide here
-        };
-
-        protected Dictionary<string, List<string>> DynamicFieldErrors { get; set; } = new();
-
         protected List<string> GetDynamicFieldErrors(string fieldName)
         {
             if (DynamicFieldErrors.TryGetValue(fieldName, out var errors))
             {
                 return errors;
             }
-            return new List<string>();
+            return [];
         }
 
         private void ValidateDynamicFields()
@@ -108,12 +100,16 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.CreateAd
 
             foreach (var field in AvailableFields.Where(f => !ExcludedFields.Contains(f.CategoryName)))
             {
-                if (string.IsNullOrWhiteSpace(adPostModel.DynamicFields.GetValueOrDefault(field.CategoryName)))
+                if (field.Type == "dropdown" || field.Type == "Dropdown" || field.Type == "string")
                 {
-                    messageStore.Add(new FieldIdentifier(adPostModel.DynamicFields, field.CategoryName), $"{field.CategoryName} is required.");
+                    if (string.IsNullOrWhiteSpace(adPostModel.DynamicFields.GetValueOrDefault(field.CategoryName)))
+                    {
+                        messageStore.Add(new FieldIdentifier(adPostModel.DynamicFields, field.CategoryName), $"{field.CategoryName} is required.");
+                    }
                 }
             }
         }
+
         protected async Task SubmitForm()
         {
             messageStore.Clear();
@@ -148,16 +144,20 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.CreateAd
             // Manual validation: Dynamic fields
             foreach (var field in AvailableFields.Where(f => !ExcludedFields.Contains(f.CategoryName)))
             {
-                var value = adPostModel.DynamicFields.ContainsKey(field.CategoryName) ? adPostModel.DynamicFields[field.CategoryName] : null;
-
-                if (string.IsNullOrWhiteSpace(value))
+                if (field.Type == "dropdown" || field.Type == "Dropdown" || field.Type == "string")
                 {
-                    messageStore.Add(new FieldIdentifier(adPostModel.DynamicFields, field.CategoryName), $"{field.CategoryName} is required.");
-                    if (!DynamicFieldErrors.ContainsKey(field.CategoryName))
-                        DynamicFieldErrors[field.CategoryName] = new List<string>();
-                    DynamicFieldErrors[field.CategoryName].Add($"{field.CategoryName} is required.");
-                    isValid = false;
+                    var value = adPostModel.DynamicFields.ContainsKey(field.CategoryName) ? adPostModel.DynamicFields[field.CategoryName] : null;
+
+                    if (string.IsNullOrWhiteSpace(value))
+                    {
+                        messageStore.Add(new FieldIdentifier(adPostModel.DynamicFields, field.CategoryName), $"{field.CategoryName} is required.");
+                        if (!DynamicFieldErrors.ContainsKey(field.CategoryName))
+                            DynamicFieldErrors[field.CategoryName] = new List<string>();
+                        DynamicFieldErrors[field.CategoryName].Add($"{field.CategoryName} is required.");
+                        isValid = false;
+                    }
                 }
+                
             }
 
             // Show the errors
@@ -168,12 +168,11 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.CreateAd
                 Snackbar.Add("Please check highlighted fields before creating ad.", Severity.Error);
                 return;
             }
-            // All good!
-            // Snackbar.Add("Form is valid and ready to submit!", Severity.Success);
-            // Proceed with form submission
+
             await OpenConfirmationDialog();
 
         }
+
         private async Task OpenConfirmationDialog()
         {
             var parameters = new DialogParameters
@@ -191,14 +190,16 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.CreateAd
                 FullWidth = true
             };
 
-            var dialog = DialogService.Show<ConfirmationDialog>("", parameters, options);
+            var dialog = await DialogService.ShowAsync<ConfirmationDialog>("", parameters, options);
             var result = await dialog.Result;
         }
-         private async Task HandleAdConfirmedAsync()
+
+        private async Task HandleAdConfirmedAsync()
         {
             await PostAdToApiAsync();
         }
-          protected async Task OpenDiscardDialog()
+
+        protected async Task OpenDiscardDialog()
         {
             var parameters = new DialogParameters
             {
@@ -207,14 +208,14 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.CreateAd
                 { "OnDiscard", EventCallback.Factory.Create(this, HandleDiscardAsync) }
             };
 
-                 var options = new DialogOptions
+            var options = new DialogOptions
             {
                 CloseButton = false,
                 MaxWidth = MaxWidth.Small,
                 FullWidth = true
             };
 
-            var dialog = DialogService.Show<DiscardDialog>("", parameters, options);
+            var dialog = await DialogService.ShowAsync<DiscardDialog>("", parameters, options);
             var result = await dialog.Result;
 
         }
@@ -240,14 +241,14 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.CreateAd
             // Notify UI to re-render
             StateHasChanged();
         }
+
         private async Task HandleDiscardAsync()
         {
             ResetFormState();
             Snackbar.Add("Ad creation form discarded successfully.", Severity.Info);
         }
 
-
-         private string GetCategoryNameById(string? id)
+        private string GetCategoryNameById(string? id)
         {
             if (string.IsNullOrEmpty(id)) return string.Empty;
 
@@ -276,16 +277,16 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.CreateAd
                 var uploadedImages = await UploadImagesAsync(adPostModel.Images);
                 var payload = new
                 {
-                    adType = 1,
+                    adType = 0, // Setting it to zero as Backend will handle it
                     title = adPostModel.Title,
                     description = adPostModel.Description,
                     price = adPostModel.Price,
                     priceType = "QAR",
-                    categoryId = adPostModel.SelectedCategoryId,
+                    categoryId = long.TryParse(adPostModel.SelectedCategoryId, out var catId) ? catId : 0,
                     category = GetCategoryNameById(adPostModel.SelectedCategoryId),
-                    l1CategoryId = adPostModel.SelectedSubcategoryId,
+                    l1CategoryId = long.TryParse(adPostModel.SelectedSubcategoryId, out var subId) ? subId : 0,
                     l1Category = GetCategoryNameById(adPostModel.SelectedSubcategoryId),
-                    l2CategoryId = adPostModel.SelectedSubSubcategoryId,
+                    l2CategoryId = long.TryParse(adPostModel.SelectedSubSubcategoryId, out var subId1) ? subId1 : 0,
                     l2Category = GetCategoryNameById(adPostModel.SelectedSubSubcategoryId),
 
                     brand = adPostModel.DynamicFields.GetValueOrDefault("Brand"),
@@ -305,6 +306,8 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.CreateAd
                     buildingNumber = adPostModel.BuildingNumber?.ToString(),
                     zone = adPostModel.Zone,
                     images = uploadedImages,
+                    userId = UserId,
+                    userName = string.IsNullOrWhiteSpace(UserEmail) ? null : UserEmail,
                     attributes = adPostModel.DynamicFields
                         .Where(kv => !IsBasicField(kv.Key))
                         .ToDictionary(kv => kv.Key, kv => (object)kv.Value)
@@ -334,7 +337,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.CreateAd
             }
         }
 
-         private async Task<List<object>> UploadImagesAsync(List<AdImage> images)
+        private async Task<List<object>> UploadImagesAsync(List<AdImage> images)
         {
             var uploadedImages = new List<object>();
 
@@ -442,14 +445,14 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.CreateAd
                 IsLoadingZones = false;
             }
         }
-             protected async Task TrySetCoordinatesFromAddressAsync()
+
+        protected async Task TrySetCoordinatesFromAddressAsync()
         {
             // Ensure all required fields are available
             if (string.IsNullOrWhiteSpace(adPostModel.Zone) ||
                 !adPostModel.StreetNumber.HasValue ||
                 !adPostModel.BuildingNumber.HasValue)
             {
-                // Logger?.LogWarning("Address fields are incomplete, skipping coordinates lookup.");
                 return;
             }
             IsLoadingMap = true;
@@ -476,11 +479,8 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.CreateAd
                         adPostModel.Latitude = latitude;
                         adPostModel.Longitude = longitude;
 
-                        // Logger?.LogInformation($"Coordinates set: {latitude}, {longitude}");
-                        // Trigger JS to update the map without manual interaction
                         await JS.InvokeVoidAsync("updateMapCoordinates", latitude, longitude);
                     }
-
                 }
                 else
                 {
@@ -497,5 +497,9 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.CreateAd
             }
         }
 
+        protected void GoBack()
+        {
+            Navigation.NavigateTo("/manage/classified/items/view/listing", true);
+        }
     }
 }

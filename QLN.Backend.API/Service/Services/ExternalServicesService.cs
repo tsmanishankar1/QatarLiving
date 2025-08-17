@@ -783,48 +783,15 @@ namespace QLN.Backend.API.Service.Services
                 _logger.LogError(ex, "Error moderating bulk services");
                 throw;
             }
-        }
-    //    public async Task<SubscriptionBudgetDto> GetSubscriptionBudgetsAsync(
-    //Guid subscriptionId,
-    //CancellationToken cancellationToken = default)
-    //    {
-    //        try
-    //        {
-    //            // Hardcode the subscriptionId for testing
-    //            subscriptionId = Guid.Parse("48887e22-782a-4825-a0b6-bd27259ef554");
+        } 
 
-    //            var request = new SubscriptionIdRequest
-    //            {
-    //                SubscriptionId = subscriptionId
-    //            };
-
-    //            // Call POST endpoint to get budgets by subscriptionId
-    //            var response = await _dapr.InvokeMethodAsync<SubscriptionIdRequest, SubscriptionBudgetDto>(
-    //                HttpMethod.Post,
-    //                ConstantValues.Services.ServiceAppId,
-    //                "/api/service/getbudgets",
-    //                request,
-    //                cancellationToken
-    //            );
-
-    //            return response ?? new SubscriptionBudgetDto();
-    //        }
-    //        catch (Exception ex)
-    //        {
-    //            _logger.LogError(ex, "Error fetching subscription budgets for {SubscriptionId}", subscriptionId);
-    //            throw;
-    //        }
-    //    }
-
-        public async Task<SubscriptionBudgetDto> GetSubscriptionBudgetsAsync(
-     Guid subscriptionId,
-     CancellationToken cancellationToken = default)
+        public async Task<SubscriptionBudgetDto> GetSubscriptionBudgetsAsync(Guid subscriptionId,CancellationToken cancellationToken = default)
         {
             try
             {
                 var request = new SubscriptionIdRequest { SubscriptionId = subscriptionId };
 
-                // Call POST endpoint to get budgets by subscriptionId
+               
                 var response = await _dapr.InvokeMethodAsync<SubscriptionIdRequest, SubscriptionBudgetDto>(
                     HttpMethod.Post,
                     ConstantValues.Services.ServiceAppId,
@@ -842,19 +809,20 @@ namespace QLN.Backend.API.Service.Services
             }
         }
         public async Task<SubscriptionBudgetDto> GetSubscriptionBudgetsAsyncBySubVertical(
-      Guid subscriptionIdFromToken,
-      int subverticalId,
-      CancellationToken cancellationToken = default)
+     Guid subscriptionIdFromToken,
+     int verticalId,
+     int? subverticalId,  // <-- nullable now
+     CancellationToken cancellationToken = default)
         {
             try
             {
                 var request = new
                 {
                     SubscriptionId = subscriptionIdFromToken,
-                    SubVerticalId = subverticalId
+                    VerticalId = verticalId,
+                    SubVerticalId = subverticalId // can be null
                 };
 
-                // Call POST endpoint to get budgets by subscriptionId and verticalId
                 var response = await _dapr.InvokeMethodAsync<object, SubscriptionBudgetDto>(
                     HttpMethod.Post,
                     ConstantValues.Services.ServiceAppId,
@@ -871,6 +839,8 @@ namespace QLN.Backend.API.Service.Services
                 throw;
             }
         }
+
+
 
 
 

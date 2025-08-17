@@ -116,8 +116,8 @@ namespace QLN.Common.Migrations.QLPayments
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("PaymentId"));
 
-                    b.Property<string>("AdId")
-                        .HasColumnType("text");
+                    b.Property<long?>("AdId")
+                        .HasColumnType("bigint");
 
                     b.Property<int?>("AttachedPaymentId")
                         .HasColumnType("integer");

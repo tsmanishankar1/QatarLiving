@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Components;
 using QLN.ContentBO.WebUI.Models;
 using Microsoft.JSInterop;
+using PSC.Blazor.Components.MarkdownEditor;
+using PSC.Blazor.Components.MarkdownEditor.EventsArgs;
 using Microsoft.AspNetCore.Components.Forms;
 using MudBlazor;
 using MudExRichTextEditor;
@@ -15,6 +17,10 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.CreateAd
         [Parameter]
         public string? UserEmail { get; set; }
         [Parameter] public List<LocationZoneDto> Zones { get; set; }
+        protected string[] HiddenIcons = ["fullscreen"];
+        protected string UploadImageButtonName { get; set; } = "uploadImage";
+        protected MarkdownEditor MarkdownEditorRef;
+        protected MudFileUpload<IBrowserFile> _markdownfileUploadRef;
         [Parameter] public List<ClassifiedsCategory> CategoryTrees { get; set; } = new();
         protected ClassifiedsCategory SelectedCategory => CategoryTrees.FirstOrDefault(x => x.Id.ToString() == Ad.SelectedCategoryId);
         protected ClassifiedsCategoryField SelectedSubcategory => SelectedCategory?.Fields?.FirstOrDefault(x => x.Id.ToString() == Ad.SelectedSubcategoryId);
@@ -49,6 +55,33 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.CreateAd
             SelectedPhoneCountry = model;
             Ad.PhoneCode = model.Code;
             return Task.CompletedTask;
+        }
+        protected void TriggerCustomImageUpload()
+        {
+            _markdownfileUploadRef.OpenFilePickerAsync();
+        }
+        protected Task OnCustomButtonClicked(MarkdownButtonEventArgs eventArgs)
+        {
+            if (eventArgs.Name is not null)
+            {
+                if (eventArgs.Name == UploadImageButtonName)
+                {
+                    TriggerCustomImageUpload();
+                }
+
+                if (eventArgs.Name == "CustomPreview")
+                {
+                    ToggleMarkdownPreview();
+                }
+            }
+            return Task.CompletedTask;
+        }
+        protected async void ToggleMarkdownPreview()
+        {
+            if (MarkdownEditorRef != null)
+            {
+                await MarkdownEditorRef.TogglePreviewAsync();
+            }
         }
 
         protected Task OnWhatsappCountryChanged(CountryModel model)

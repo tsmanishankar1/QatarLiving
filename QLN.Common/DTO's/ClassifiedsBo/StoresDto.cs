@@ -126,14 +126,39 @@ namespace QLN.Common.DTO_s.ClassifiedsBo
     public class StoreCompanyDto
     {
         public Guid Id { get; set; }
-        public string CompanyName { get; set; } = string.Empty;
-        public string CompanyLogo { get; set; } = string.Empty;
+        public string CompanyName { get; set; } 
+        public string CompanyLogo { get; set; }
         public string? CoverImage1 { get; set; }
-        public string PhoneNumber { get; set; } = string.Empty;
-        public string Email { get; set; } = string.Empty;
+        public string PhoneNumber { get; set; } 
+        public string Email { get; set; } 
         public string? WebsiteUrl { get; set; }
         public List<string>? BranchLocations { get; set; }
         public string? Slug { get; set; }
 
     }
+
+    public class StoreSubscriptionQuotaDto
+    {
+        public Guid SubscriptionId { get; set; }
+        public string QuotaJson { get; set; } 
+    }
+    public class JwtPayload
+    {
+        public List<SubscriptionToken> Subscriptions { get; set; }
+    }
+        public class SubscriptionToken
+    {
+        public Guid UserId { get; set; }
+        public Guid Id { get; set; }
+        public string DisplayName { get; set; }
+        public string ProductCode { get; set; }
+        public string ProductName { get; set; }
+        public int Vertical { get; set; }
+        public int SubVertical { get; set; }
+        public DateTime StartDate { get; set; }
+        public DateTime EndDate { get; set; }
+    }
+
+    
+
 }

@@ -55,9 +55,10 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.UserVerificationProfile.Ver
                 {
                     var companyUpdateAction = new CompanyUpdateActions
                     {
-                        CompanyId = CompanyDetails.Id, 
+                        CompanyId = CompanyDetails.Id,
                         Status = (VerifiedStatus)CompanyDetails.CompanyVerificationStatus,
-                        CompanyVerificationStatus = VerifiedStatus.NeedChanges 
+                        CompanyVerificationStatus = VerifiedStatus.NeedChanges,
+                        Reason = reason
                     };
                    await OnCompanyAction.InvokeAsync(companyUpdateAction);
                 });
@@ -72,10 +73,11 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.UserVerificationProfile.Ver
                 async (reason) =>
                 {
                      var companyUpdateAction = new CompanyUpdateActions
-                    {
-                        CompanyId = CompanyDetails.Id, 
-                        Status = (VerifiedStatus)CompanyDetails.CompanyVerificationStatus,
-                        CompanyVerificationStatus = VerifiedStatus.Rejected
+                     {
+                         CompanyId = CompanyDetails.Id,
+                         Status = (VerifiedStatus)CompanyDetails.CompanyVerificationStatus,
+                         CompanyVerificationStatus = VerifiedStatus.Rejected,
+                        Reason = reason
                     };
                    await OnCompanyAction.InvokeAsync(companyUpdateAction);
                 });

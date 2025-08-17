@@ -52,28 +52,13 @@ namespace QLN.Common.DTO_s.Subscription
         public SubscriptionQuota Quota { get; set; } = new();
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
-        public V2Status StatusId { get; set; }
+        public SubscriptionStatus StatusId { get; set; }
         public DateTime lastUpdated { get; set; }
         public string Version { get; set; } = "V2";
     }
 
     #endregion
 
-    #region Status Enum
-
-    /// <summary>
-    /// V2 Status enum - Maps to SubscriptionStatus
-    /// </summary>
-    public enum V2Status
-    {
-        PaymentPending = 1,
-        Active = 2,
-        Expired = 3,
-        Cancelled = 4,
-        Suspended = 5
-    }
-
-    #endregion
 
     #region Request DTOs (API Input)
 
@@ -219,7 +204,7 @@ namespace QLN.Common.DTO_s.Subscription
         public SubscriptionQuota Quota { get; set; } = new();
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
-        public V2Status StatusId { get; set; }
+        public SubscriptionStatus StatusId { get; set; }
         public string StatusName { get; set; } = string.Empty;
         public bool IsActive { get; set; }
         public int DaysRemaining { get; set; }
@@ -334,7 +319,7 @@ namespace QLN.Common.DTO_s.Subscription
         public Guid? CompanyId { get; set; }
         public Vertical Vertical { get; set; }
         public SubVertical? SubVertical { get; set; }
-        public V2Status? StatusId { get; set; }
+        public SubscriptionStatus? StatusId { get; set; }
         public DateTime? StartDateFrom { get; set; }
         public DateTime? StartDateTo { get; set; }
         public DateTime? EndDateFrom { get; set; }
@@ -405,4 +390,24 @@ namespace QLN.Common.DTO_s.Subscription
     }
 
     #endregion
+    public record V2UpdateStatusRequest
+    {
+        public SubscriptionStatus Status { get; init; }
+    }
+
+    public record V2UpdateEndDateRequest
+    {
+        public DateTime EndDate { get; init; }
+    }
+
+    public record V2ExtendRequest
+    {
+        public int AdditionalDays { get; init; }
+    }
+
+    public record V2RefillQuotaRequest
+    {
+        public string QuotaType { get; init; } = string.Empty;
+        public decimal Amount { get; init; }
+    }
 }

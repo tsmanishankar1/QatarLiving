@@ -22,8 +22,7 @@
     }
     else
     {
-
-        <MudDataGrid T="SubscriptionListingModal"
+        <MudDataGrid T="DealsSubscriptionItem"
                      Items="@Listings"
                      Hover="true"
                      Dense="true"
@@ -41,7 +40,7 @@
 
                 <TemplateColumn Title="Order Id">
                     <CellTemplate>
-                        @(string.IsNullOrWhiteSpace(context.Item.OrderId) ? "-" : context.Item.OrderId)
+                        @(context.Item.OrderId == 0 ? "-" : context.Item.OrderId)
                     </CellTemplate>
                 </TemplateColumn>
 
@@ -66,19 +65,19 @@
 
                 <TemplateColumn Title="Mobile">
                     <CellTemplate>
-                        @(string.IsNullOrWhiteSpace(context.Item.Mobile) ? "-" : context.Item.Mobile)
+                        @(string.IsNullOrWhiteSpace(context.Item.ContactNumber) ? "-" : context.Item.ContactNumber)
                     </CellTemplate>
                 </TemplateColumn>
 
                 <TemplateColumn Title="Whatsapp">
                     <CellTemplate>
-                        @(string.IsNullOrWhiteSpace(context.Item.Whatsapp) ? "-" : context.Item.Whatsapp)
+                        @(string.IsNullOrWhiteSpace(context.Item.WhatsappNumber) ? "-" : context.Item.WhatsappNumber)
                     </CellTemplate>
                 </TemplateColumn>
 
                 <TemplateColumn Title="Amount">
                     <CellTemplate>
-                        @(context.Item.Amount != 0 ? context.Item.Amount.ToString("0.00") : "-")
+                        @(string.IsNullOrWhiteSpace(context.Item.Price) ? "-" : context.Item.Price)
                     </CellTemplate>
                 </TemplateColumn>
 
@@ -90,22 +89,22 @@
 
                 <TemplateColumn Title="Start Date">
                     <CellTemplate>
-                        @(context.Item.CreationDate != default ? context.Item.CreationDate.ToQatarTime("dd-MM-yyyy hh:mmtt") : "-")
+                        @(context.Item.StartDate is not null ? context.Item.StartDate : "-")
                     </CellTemplate>
                 </TemplateColumn>
                 <TemplateColumn Title="End Date">
                     <CellTemplate>
-                        @(context.Item.CreationDate != default ? context.Item.CreationDate.ToString("dd-MM-yyyy hh:mmtt") : "-")
+                        @(context.Item.EndDate is not null ? context.Item.EndDate : "-")
                     </CellTemplate>
                 </TemplateColumn>
                 <TemplateColumn Title="Whatsapp Leads">
                     <CellTemplate>
-                        @context.Item.WhatsAppCount
+                        @context.Item.WhatsAppLeads
                     </CellTemplate>
                 </TemplateColumn>
                 <TemplateColumn Title="Phone Leads">
                     <CellTemplate>
-                        @context.Item.PhoneCount
+                        @context.Item.PhoneLeads
                     </CellTemplate>
                 </TemplateColumn>
                 <TemplateColumn Title="Actions">
@@ -135,5 +134,5 @@
                           OnPageChange="@HandlePageChange" OnPageSizeChange="@HandlePageSizeChange" />
     }
 
- 
+
 </MudPaper>

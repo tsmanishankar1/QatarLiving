@@ -13,6 +13,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.EditAd
     {
         [Inject] public IDialogService DialogService { get; set; }
         [Inject] public NavigationManager NavigationManager { get; set; }
+        [Inject] public ICollectiblesService CollectiblesService { get; set; }
         [Inject] public IClassifiedService ClassifiedService { get; set; }
         [Inject] public ISnackbar Snackbar { get; set; }
         [Inject] public ILogger<EditAdActionBase> Logger { get; set; }
@@ -23,7 +24,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.EditAd
         protected bool CanPublish => AdModel?.Status == (int)AdStatus.Unpublished;
         protected bool CanUnpublish => AdModel?.Status == (int)AdStatus.Published;
 
-        private void OpenRemoveReasonDialog()
+        private async Task OpenRemoveReasonDialog()
         {
             var parameters = new DialogParameters
             {
@@ -42,9 +43,8 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.EditAd
                 FullWidth = true
             };
 
-            DialogService.Show<RejectVerificationDialog>("", parameters, options);
+            await DialogService.ShowAsync<RejectVerificationDialog>("", parameters, options);
         }
-
 
         protected async Task OpenPreviewDialog()
         {
@@ -57,7 +57,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.EditAd
                 MaxWidth = MaxWidth.ExtraLarge,
             };
 
-            var dialog = DialogService.Show<PreviewAd>("Ad Preview", parameters, options);
+            var dialog = await DialogService.ShowAsync<PreviewAd>("Ad Preview", parameters, options);
             await dialog.Result;
         }
 
@@ -80,16 +80,17 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.EditAd
                 FullWidth = true
             };
 
-            var dialog = DialogService.Show<ConfirmationDialog>("", parameters, options);
+            var dialog = await DialogService.ShowAsync<ConfirmationDialog>("", parameters, options);
             await dialog.Result;
         }
+
         private async Task HandleConfirmedAction(string buttonTitle)
         {
             var actionType = MapTitleToAction(buttonTitle);
 
             if (actionType == AdBulkActionType.Remove)
             {
-                OpenRemoveReasonDialog(); // will call PerformSingleActionAsync later with reason
+                await OpenRemoveReasonDialog(); // will call PerformSingleActionAsync later with reason
                 return;
             }
 
@@ -119,6 +120,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.EditAd
                 _ => throw new ArgumentException($"Unknown action title: {title}")
             };
         }
+
         private void UpdateAdModelState(AdBulkActionType actionType)
         {
             switch (actionType)
@@ -147,10 +149,9 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.EditAd
             }
         }
 
-
         private async Task PerformSingleActionAsync(AdBulkActionType actionType, string? reason = null)
         {
-            if (string.IsNullOrWhiteSpace(AdModel?.Id))
+            if (AdModel?.Id == null)
             {
                 Snackbar.Add("Ad ID is missing.", Severity.Warning);
                 return;
@@ -158,7 +159,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.EditAd
 
             var payload = new Dictionary<string, object>
             {
-                ["adIds"] = new List<string> { AdModel.Id },
+                ["adIds"] = new List<long> { AdModel.Id ?? 0 },
                 ["action"] = (int)actionType,
                 ["reason"] = reason ?? string.Empty
             };
@@ -168,7 +169,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.EditAd
                 var payloadJson = JsonSerializer.Serialize(payload);
                 Logger.LogInformation("Performing single action: {Payload}", payloadJson);
 
-                var response = await ClassifiedService.PerformBulkActionAsync("bulk-collectibles-action", payload);
+                var response = await CollectiblesService.BulkActionAsync([AdModel.Id ?? 0], (int)actionType, reason);
 
                 if (response?.IsSuccessStatusCode == true)
                 {
@@ -193,9 +194,10 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.EditAd
                 Snackbar.Add("Unexpected error occurred.", Severity.Error);
             }
         }
-      private async Task PerformRefreshActionAsync()
+
+        private async Task PerformRefreshActionAsync()
         {
-            if (string.IsNullOrWhiteSpace(AdModel?.Id))
+            if (AdModel?.Id == null)
             {
                 Snackbar.Add("Ad ID is missing.", Severity.Warning);
                 return;
@@ -203,7 +205,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.EditAd
 
             try
             {
-                var response = await ClassifiedService.RefreshAdAsync(AdModel.Id, 1);
+                var response = await ClassifiedService.RefreshAdAsync(AdModel.Id ?? 0, 1);
 
                 if (response?.IsSuccessStatusCode == true)
                 {

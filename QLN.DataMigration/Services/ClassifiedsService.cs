@@ -272,5 +272,10 @@ namespace QLN.DataMigration.Services
         {
             throw new NotImplementedException();
         }
+
+        public Task<BulkAdActionResponse> BulkUpdateAdPublishStatusAsync(int subVertical, string userId, List<long> adIds, bool isPublished, Guid subscriptionId, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

@@ -657,20 +657,20 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
         }
         public static RouteGroupBuilder MapDetailedGetByIdEndpoint(this RouteGroupBuilder group)
         {
-            group.MapGet("/getbyserviceid/{id:long}", async Task<Results<
+            group.MapGet("/getbyserviceid/{slug}", async Task<Results<
                 Ok<GetWithSimilarResponse<ServicesIndex>>,
                 NotFound<ProblemDetails>,
                 ProblemHttpResult>> (
 
-                long id,
+                string slug,
                 [FromServices] ISearchService service,
                 CancellationToken cancellationToken) =>
             {
                 try
                 {
-                    var result = await service.GetByIdWithSimilarAsync<ServicesIndex>(
+                    var result = await service.GetBySlugWithSimilarAsync<ServicesIndex>(
                         ConstantValues.IndexNames.ServicesIndex,
-                        id.ToString(),
+                        slug,
                         10
                     );
 
@@ -679,7 +679,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                         return TypedResults.NotFound(new ProblemDetails
                         {
                             Title = "Service Ad Not Found",
-                            Detail = $"No service ad found with ID: {id}",
+                            Detail = $"No service ad found with ID: {slug}",
                             Status = 404
                         });
                     }
@@ -1065,6 +1065,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                             Status = StatusCodes.Status400BadRequest
                         });
                     }
+
                     var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
                     if (string.IsNullOrEmpty(userClaim))
                     {
@@ -1078,6 +1079,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
 
                     var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
                     uid = userData.GetProperty("uid").GetString();
+                    var subscriptionId = new Guid("752ea67e-5fc3-4dae-ab96-4aa3822afc38");
                     //if (!userData.TryGetProperty("subscription", out var subscriptionElement) ||
                     //    !subscriptionElement.TryGetProperty("subscription_id", out var subscriptionIdElement) ||
                     //    !Guid.TryParse(subscriptionIdElement.GetString(), out var subscriptionId))
@@ -1089,7 +1091,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                     //        Status = StatusCodes.Status403Forbidden
                     //    });
                     //}
-                    var subscriptionId = new Guid("752ea67e-5fc3-4dae-ab96-4aa3822afc38");
+
                     var result = await service.FeatureService(request, uid, subscriptionId, cancellationToken);
 
                     await auditLogger.LogAuditAsync(
@@ -1717,32 +1719,45 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
             {
                 try
                 {
-                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                    if (string.IsNullOrEmpty(userClaim))
+                    // Get "subscriptions" claim directly from token
+                    var subscriptionsClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "subscriptions")?.Value;
+                    if (string.IsNullOrEmpty(subscriptionsClaim))
                     {
                         return TypedResults.Problem(new ProblemDetails
                         {
                             Title = "Unauthorized Access",
-                            Detail = "User information is missing or invalid in the token.",
+                            Detail = "Subscriptions information is missing or invalid in the token.",
                             Status = StatusCodes.Status403Forbidden
                         });
                     }
 
-                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-
-
-                    if (!userData.TryGetProperty("subscription", out var subscriptionElement) ||
-                        !subscriptionElement.TryGetProperty("subscription_id", out var subscriptionIdElement))
+                    // Deserialize array of subscriptions
+                    var subscriptions = JsonSerializer.Deserialize<JsonElement>(subscriptionsClaim);
+                    if (subscriptions.ValueKind != JsonValueKind.Array || subscriptions.GetArrayLength() == 0)
                     {
                         return TypedResults.Problem(new ProblemDetails
                         {
-                            Title = "Unauthorized Access",
-                            Detail = "Subscription ID is missing in token.",
+                            Title = "Invalid Token",
+                            Detail = "No valid subscription found in token.",
                             Status = StatusCodes.Status403Forbidden
                         });
                     }
 
-                    if (!Guid.TryParse(subscriptionIdElement.GetString(), out var subscriptionId))
+                    // Take first subscription (or select specific one as needed)
+                    var subscription = subscriptions[0];
+
+                    if (!subscription.TryGetProperty("Id", out var subscriptionIdElement))
+                    {
+                        return TypedResults.Problem(new ProblemDetails
+                        {
+                            Title = "Invalid Subscription",
+                            Detail = "Subscription Id is missing in token.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    var subscriptionIdString = subscriptionIdElement.GetString();
+                    if (!Guid.TryParse(subscriptionIdString, out var subscriptionId))
                     {
                         return TypedResults.Problem(new ProblemDetails
                         {
@@ -1752,6 +1767,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                         });
                     }
 
+                    // Call your service using subscriptionId
                     var counts = await service.GetSubscriptionBudgetsAsync(subscriptionId, cancellationToken);
                     return TypedResults.Ok(counts);
                 }
@@ -1767,7 +1783,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
             .Produces<SubscriptionBudgetDto>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-
 
             group.MapPost("/getbudgets", async Task<Results<Ok<SubscriptionBudgetDto>, ProblemHttpResult>> (
                  [FromBody] SubscriptionIdRequest dto,
@@ -1791,6 +1806,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
 
             return group;
         }
+
 
         //public static RouteGroupBuilder MapServiceCountEndpoints(this RouteGroupBuilder group)
         //{
@@ -1844,36 +1860,66 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
 
         public static RouteGroupBuilder MapServiceCountbySubverticalEndpoints(this RouteGroupBuilder group)
         {
-           
             group.MapGet("/getcountsbyvertical", async Task<Results<Ok<SubscriptionBudgetDto>, ProblemHttpResult>> (
                 HttpContext httpContext,
                 [FromServices] IServices service,
-                [FromQuery] int subverticalId,
+                [FromQuery] int verticalId,
+                [FromQuery] int? subverticalId,    // <-- now nullable
                 CancellationToken cancellationToken)
             =>
             {
                 try
                 {
-                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                    if (string.IsNullOrEmpty(userClaim))
+                    // Get "subscriptions" claim directly from token
+                    var subscriptionsClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "subscriptions")?.Value;
+                    if (string.IsNullOrEmpty(subscriptionsClaim))
                     {
                         return TypedResults.Problem(new ProblemDetails
                         {
                             Title = "Unauthorized Access",
-                            Detail = "User information is missing or invalid in the token.",
+                            Detail = "Subscriptions information is missing or invalid in the token.",
                             Status = StatusCodes.Status403Forbidden
                         });
                     }
 
-                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                    // Deserialize subscriptions (can be object or array)
+                    var subscriptionElement = JsonSerializer.Deserialize<JsonElement>(subscriptionsClaim);
+                    JsonElement subscription;
 
-                    if (!userData.TryGetProperty("subscription", out var subscriptionElement) ||
-                        !subscriptionElement.TryGetProperty("subscription_id", out var subscriptionIdElement))
+                    if (subscriptionElement.ValueKind == JsonValueKind.Array)
+                    {
+                        if (subscriptionElement.GetArrayLength() == 0)
+                        {
+                            return TypedResults.Problem(new ProblemDetails
+                            {
+                                Title = "Invalid Token",
+                                Detail = "No valid subscription found in token.",
+                                Status = StatusCodes.Status403Forbidden
+                            });
+                        }
+                        subscription = subscriptionElement[0];
+                    }
+                    else if (subscriptionElement.ValueKind == JsonValueKind.Object)
+                    {
+                        subscription = subscriptionElement;
+                    }
+                    else
+                    {
+                        return TypedResults.Problem(new ProblemDetails
+                        {
+                            Title = "Invalid Token",
+                            Detail = "Invalid subscriptions format in token.",
+                            Status = StatusCodes.Status403Forbidden
+                        });
+                    }
+
+                    // Extract Id property
+                    if (!subscription.TryGetProperty("Id", out var subscriptionIdElement))
                     {
                         return TypedResults.Problem(new ProblemDetails
                         {
                             Title = "Unauthorized Access",
-                            Detail = "Subscription ID is missing in token.",
+                            Detail = "Subscription Id is missing in token.",
                             Status = StatusCodes.Status403Forbidden
                         });
                     }
@@ -1888,7 +1934,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                         });
                     }
 
-                    var counts = await service.GetSubscriptionBudgetsAsyncBySubVertical(subscriptionId, subverticalId, cancellationToken);
+                    // Pass subscriptionId, verticalId, and subverticalId to your service
+                    var counts = await service.GetSubscriptionBudgetsAsyncBySubVertical(subscriptionId, verticalId, subverticalId, cancellationToken);
                     return TypedResults.Ok(counts);
                 }
                 catch (Exception ex)
@@ -1898,13 +1945,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
             })
             .WithName("GetServiceStatusCountsbySubvertical")
             .WithTags("Service")
-            .WithSummary("Get subscription budget details with vertical filter")
-            .WithDescription("Returns budget details for the logged-in subscription ID and specified verticalId.")
+            .WithSummary("Get subscription budget details with vertical/subvertical filter")
+            .WithDescription("Returns budget details for the logged-in subscription ID. If subverticalId is provided, filters by both verticalId and subverticalId; otherwise, filters by verticalId only.")
             .Produces<SubscriptionBudgetDto>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-
+            // Post endpoint for internal service calls
             group.MapPost("/getbudgetsbysubvertical", async Task<Results<Ok<SubscriptionBudgetDto>, ProblemHttpResult>> (
                 [FromBody] SubscriptionRequest dto,
                 [FromServices] IServices service,
@@ -1913,7 +1960,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
             {
                 try
                 {
-                    var counts = await service.GetSubscriptionBudgetsAsyncBySubVertical(dto.SubscriptionId, dto.SubVerticalId, cancellationToken);
+                    var counts = await service.GetSubscriptionBudgetsAsyncBySubVertical(dto.SubscriptionId, dto.VerticalId, dto.SubVerticalId, cancellationToken);
                     return TypedResults.Ok(counts);
                 }
                 catch (Exception ex)
@@ -1927,6 +1974,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
 
             return group;
         }
+
+
 
 
 

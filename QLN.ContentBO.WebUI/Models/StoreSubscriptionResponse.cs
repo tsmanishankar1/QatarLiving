@@ -10,6 +10,7 @@
 
     public class StoreSubscriptionItem
     {
+        public Guid? CompanyId { get; set; }
         public int OrderId { get; set; }
         public string SubscriptionType { get; set; } = string.Empty;
         public string UserName { get; set; } = string.Empty;

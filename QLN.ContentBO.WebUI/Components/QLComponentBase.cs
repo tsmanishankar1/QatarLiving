@@ -11,7 +11,7 @@ namespace QLN.ContentBO.WebUI.Components
     public class QLComponentBase : ComponentBase
     {
         [Inject] public CookieAuthStateProvider CookieAuthenticationStateProvider { get; set; } = default!;
-        [Inject] public NavigationManager NavManager { get; set; } = default!;
+        [Inject] public NavigationManager NavManager { get; set; }
         [Inject] public ISnackbar Snackbar { get; set; } = default!;
         [Inject] public IOptions<NavigationPath> NavigationPath { get; set; } = default!;
         [Inject] public ILogger<QLComponentBase> Logger { get; set; } = default!;

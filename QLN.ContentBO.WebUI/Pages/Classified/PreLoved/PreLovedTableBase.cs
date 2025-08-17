@@ -12,7 +12,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved
 {
     public partial class PreLovedTableBase : QLComponentBase
     {
-        [Inject] public IClassifiedService ClassifiedService { get; set; }
+        [Inject] public IPrelovedService PrelovedService { get; set; }
         [Inject] public ISnackbar Snackbar { get; set; }
         [Inject] public ILogger<PreLovedTableBase> Logger { get; set; }
         [Inject] public IDialogService DialogService { get; set; }
@@ -28,9 +28,9 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved
         [Parameter] public EventCallback<string> OnTabChanged { get; set; }
 
         protected bool isBulkActionLoading = false;
-        protected int? singleItemLoadingId = null;
-        protected int rejectionTargetItemId = 0;
-        protected int removeTargetItemId = 0;
+        protected long? singleItemLoadingId = null;
+        protected long rejectionTargetItemId = 0;
+        protected long removeTargetItemId = 0;
         protected bool isBulkRemove = false;
 
         protected HashSet<PrelovedP2PSubscriptionItem> SelectedListings { get; set; } = [];
@@ -45,7 +45,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved
             new() { Label = "Published", Value = "Published" },
             new() { Label = "Unpublished", Value = "Unpublished" },
             new() { Label = "Promoted", Value = "Promoted" },
-            new() { Label = "Promoted", Value = "Promoted"  }
+            new() { Label = "Featured", Value = "Featured"  }
         ];
 
         protected async Task HandleTabChanged(string newTab)
@@ -54,7 +54,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved
             {
                 _activeTab = newTab;
                 await OnTabChanged.InvokeAsync(newTab);
-                await SelectedTabChanged.InvokeAsync(newTab); // Notify parent of change
+                await SelectedTabChanged.InvokeAsync(newTab);
             }
         }
 
@@ -66,7 +66,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved
             }
             else
             {
-                _activeTab = "Pending Approval"; // Defaults to Pending Approval
+                _activeTab = "Pending Approval"; 
             }
             return base.OnParametersSetAsync();
         }
@@ -126,8 +126,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved
 
         protected void OnEdit(PrelovedP2PSubscriptionItem item)
         {
-            var name = "Rashid";
-            NavManager.NavigateTo($"/manage/classified/deals/createform/{item.UserName}");
+            NavManager.NavigateTo($"/manage/classified/preloved/edit/ad/{item.AdId}");
         }
 
         protected void OnPreview(P2pListingModal item)
@@ -164,7 +163,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved
             await OpenRemoveReasonDialog();
         }
 
-        private async Task RunSingleAction(int itemId, BulkActionEnum action)
+        private async Task RunSingleAction(long itemId, BulkActionEnum action)
         {
             singleItemLoadingId = itemId;
             await PerformBulkAction(action, "", [itemId]);
@@ -228,7 +227,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved
             await OpenRejectDialog(item.AdId);
         }
 
-        private async Task OpenRejectDialog(int itemId)
+        private async Task OpenRejectDialog(long itemId)
         {
             rejectionTargetItemId = itemId;
             var parameters = new DialogParameters
@@ -264,7 +263,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved
             };
         }
 
-        private async Task PerformBulkAction(BulkActionEnum action, string reason = "", List<int>? adIds = null)
+        private async Task PerformBulkAction(BulkActionEnum action, string reason = "", List<long?> adIds = null)
         {
             isBulkActionLoading = adIds == null; // only bulk shows spinner
 
@@ -284,19 +283,17 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved
             {
                 var payloadJson = JsonSerializer.Serialize(payload);
                 Logger.LogInformation("Performing bulk action: {Payload}", payloadJson);
-                var response = await ClassifiedService.PerformPrelovedBulkActionAsync(payload);
+                var response = await PrelovedService.BulkActionAsync(adIds, (int)action);
 
                 if (response?.IsSuccessStatusCode == true)
                 {
                     SelectedListings.Clear();
-                    Listings = Listings.Where(i => !adIds.Contains(i.AdId)).ToList();
+                    Listings = [.. Listings.Where(i => !adIds.Contains(i.AdId))];
                     Snackbar.Add(GetSuccessMessage(action), Severity.Success);
 
                 }
                 else
                 {
-                    // Logger.LogWarning("Bulk action failed. StatusCode: {StatusCode}, Payload: {@Payload}",
-                    //     response?.StatusCode, payload);
                     Snackbar.Add("Something went wrong while performing the action.", Severity.Error);
                 }
             }

@@ -308,6 +308,11 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.EditCompnay
                 Snackbar.Add("Country is required.", Severity.Error);
                 return;
             }
+            if (string.IsNullOrWhiteSpace(Company.City))
+            {
+                Snackbar.Add("City is required.", Severity.Error);
+                return;
+            }
             if (string.IsNullOrWhiteSpace(Company.Email))
             {
                 Snackbar.Add("Email is required.", Severity.Error);
@@ -318,17 +323,46 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.EditCompnay
                 Snackbar.Add("Phone number is required.", Severity.Error);
                 return;
             }
+             if (string.IsNullOrWhiteSpace(Company.PhoneNumberCountryCode))
+            {
+                Snackbar.Add("Country Code is required for Phone Number", Severity.Error);
+                return;
+            }
+            if (string.IsNullOrWhiteSpace(Company.WhatsAppNumber))
+            {
+                Snackbar.Add("Whatsapp number is required.", Severity.Error);
+                return;
+            }
+            if (string.IsNullOrWhiteSpace(Company.WhatsAppCountryCode))
+            {
+                Snackbar.Add("Country Code is required for Whatsapp Number", Severity.Error);
+                return;
+            }
+             if (string.IsNullOrWhiteSpace(Company.CompanyLogo))
+            {
+                Snackbar.Add("Company Logo is required", Severity.Error);
+                return;
+            }
+             if (string.IsNullOrWhiteSpace(Company.BusinessDescription))
+            {
+                Snackbar.Add("Business Description is required", Severity.Error);
+                return;
+            }
+            if (Company.CrNumber == null)
+            {
+                Snackbar.Add("CR Number is required", Severity.Error);
+                return;
+            }
              if (!string.IsNullOrEmpty(tempCoverBase64Image) && IsBase64String(tempCoverBase64Image))
             {
-                Snackbar.Add("It is base 64", Severity.Error);
-                    Company.CoverImage1 = await UploadImageAsync(tempCoverBase64Image);
+                Company.CoverImage1 = await UploadImageAsync(tempCoverBase64Image);
             }
             if (IsBase64String(tempLicense))
             {
                     Company.CrDocument = await UploadCertificateAsync();
             }
-
-
+            Company.CompanySize = SelectedProfileValues["Company Size"];
+            Company.CompanyType = SelectedProfileValues["Company Type"];
 
             if (OnSubmitForm.HasDelegate)
             {

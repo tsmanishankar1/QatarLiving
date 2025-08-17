@@ -85,7 +85,6 @@ namespace QLN.ContentBO.WebUI.Pages.Services
         }
         protected async Task TriggerUpdate(BulkModerationAction status)
         {
-
             var request = new BulkModerationRequest
             {
                 Action = status,
@@ -95,7 +94,6 @@ namespace QLN.ContentBO.WebUI.Pages.Services
             {
                 request.Reason = rejectReason;
             }
-
             await UpdateStatus(request);
         }
         protected async void HandlePageChange(int newPage)
@@ -151,7 +149,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services
         {
             var item = new ItemEditAdPost
             {
-                Id = source.Id.ToString(),
+                Id = source.Id,
                 UserId = source.UserId,
                 UserName = source.UserName,
                 Title = source.AdTitle,

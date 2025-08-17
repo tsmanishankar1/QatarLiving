@@ -30,6 +30,8 @@ namespace QLN.Common.Infrastructure.Model
         public int SlotOrder { get; set; }
         [MaxLength(100)]
         public string ImageUrl { get; set; } = null!;
+        [MaxLength(200)]
+        public string? Slug { get; set; }
         [MaxLength(50)]
         public string CreatedBy { get; set; } = null!;
         public DateTime CreatedAt { get; set; }

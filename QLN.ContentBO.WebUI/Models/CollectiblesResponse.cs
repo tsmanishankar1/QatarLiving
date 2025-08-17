@@ -52,7 +52,7 @@
         public string? BuildingNumber { get; set; }
         public string? Zone { get; set; }
         public List<CollectibleImage> Images { get; set; } = [];
-        public object? Attributes { get; set; } // Could be a more specific type if known
+        public object? Attributes { get; set; }
         public bool IsActive { get; set; }
         public string? CreatedBy { get; set; }
         public DateTime? CreatedAt { get; set; }

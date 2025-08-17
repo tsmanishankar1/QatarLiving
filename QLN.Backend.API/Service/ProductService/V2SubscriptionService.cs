@@ -15,7 +15,7 @@ namespace QLN.Backend.API.Service.ProductService
     {
         private readonly ILogger<V2SubscriptionService> _logger;
         private readonly IActorProxyFactory _actorProxyFactory;
-        private readonly QLSubscriptionContext _context;
+        private readonly QLSubscriptionContext _context; // Only for read operations and bulk queries
 
         public V2SubscriptionService(
             ILogger<V2SubscriptionService> logger,
@@ -23,7 +23,7 @@ namespace QLN.Backend.API.Service.ProductService
             QLSubscriptionContext context)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _actorProxyFactory = actorProxyFactory;
+            _actorProxyFactory = actorProxyFactory ?? throw new ArgumentNullException(nameof(actorProxyFactory));
             _context = context ?? throw new ArgumentNullException(nameof(context));
         }
 
@@ -54,41 +54,40 @@ namespace QLN.Backend.API.Service.ProductService
         #region Subscription Operations
 
         public async Task<V2SubscriptionGroupResponseDto> GetSubscriptionsByVerticalAsync(
-            int verticalTypeId, string userid,
+            int verticalTypeId,
+            string userid,
             CancellationToken cancellationToken = default)
         {
+            _logger.LogInformation("Getting V2 subscriptions by vertical {VerticalTypeId} for user {UserId}", verticalTypeId, userid);
+
             var resultList = new List<V2SubscriptionResponseDto>();
             var vertical = (Vertical)verticalTypeId;
 
-            var dbSubscriptions = await _context.Subscriptions
+            // Read from DB to get subscription IDs for the user and vertical
+            var subscriptionIds = await _context.Subscriptions
                 .Where(s => (int)s.Vertical == verticalTypeId &&
+                            s.UserId == userid &&
                             s.Status == SubscriptionStatus.Active &&
                             s.EndDate > DateTime.UtcNow)
+                .Select(s => s.SubscriptionId)
                 .ToListAsync(cancellationToken);
 
-            foreach (var dbSub in dbSubscriptions)
+            // Get data from actors for each subscription
+            foreach (var subscriptionId in subscriptionIds)
             {
                 try
                 {
-                    var actor = GetV2SubscriptionActorProxy(dbSub.SubscriptionId);
+                    var actor = GetV2SubscriptionActorProxy(subscriptionId);
                     var actorData = await actor.GetDataAsync(cancellationToken);
 
                     if (actorData != null)
                     {
                         resultList.Add(MapToResponseDto(actorData));
                     }
-                    else
-                    {
-                        var v2Data = MapDbToV2Dto(dbSub);
-                        await actor.FastSetDataAsync(v2Data, cancellationToken);
-                        resultList.Add(MapToResponseDto(v2Data));
-                    }
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Error getting subscription data for ID: {Id}", dbSub.SubscriptionId);
-                    var v2Data = MapDbToV2Dto(dbSub);
-                    resultList.Add(MapToResponseDto(v2Data));
+                    _logger.LogError(ex, "Error getting subscription data for ID: {Id}", subscriptionId);
                 }
             }
 
@@ -106,74 +105,20 @@ namespace QLN.Backend.API.Service.ProductService
         {
             ArgumentNullException.ThrowIfNull(request);
 
-            using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
-            try
+            _logger.LogInformation("Purchasing V2 subscription for user {UserId} with product {ProductCode}", request.UserId, request.ProductCode);
+
+            var subscriptionId = Guid.NewGuid();
+            var actor = GetV2SubscriptionActorProxy(subscriptionId);
+
+            // Actor handles all DB operations, transactions, and event publishing
+            var success = await actor.CreateSubscriptionAsync(request, cancellationToken);
+            if (!success)
             {
-                var product = await _context.Products
-                    .FirstOrDefaultAsync(p => p.ProductCode == request.ProductCode && p.IsActive, cancellationToken);
-
-                if (product == null)
-                    throw new InvalidOperationException($"Product with code {request.ProductCode} not found or inactive");
-
-                if (product.ProductType != ProductType.SUBSCRIPTION && product.ProductType != ProductType.PUBLISH)
-                    throw new InvalidOperationException($"Product {request.ProductCode} is not a subscription or P2P product");
-
-                var subscriptionId = Guid.NewGuid();
-
-                var dbSubscription = new Subscription
-                {
-                    SubscriptionId = subscriptionId,
-                    ProductCode = product.ProductCode,
-                    ProductName = product.ProductName,
-                    UserId = request.UserId,
-                    AdId = request.AdId ?? null,
-                    CompanyId = request.CompanyId,
-                    PaymentId = request.PaymentId,
-                    Vertical = product.Vertical,
-                    SubVertical = product.SubVertical,
-                    Quota = BuildSubscriptionQuotaFromProduct(product),
-                    StartDate = DateTime.UtcNow,
-                    EndDate = DateTime.UtcNow.Add(GetDurationFromProduct(product)),
-                    Status = SubscriptionStatus.PaymentPending,
-                    CreatedAt = DateTime.UtcNow
-                };
-
-                _context.Subscriptions.Add(dbSubscription);
-                await _context.SaveChangesAsync(cancellationToken);
-
-                var v2Dto = new V2SubscriptionDto
-                {
-                    Id = subscriptionId,
-                    ProductCode = product.ProductCode,
-                    ProductName = product.ProductName,
-                    UserId = request.UserId,
-                    CompanyId = request.CompanyId,
-                    PaymentId = request.PaymentId,
-                    Vertical = product.Vertical,
-                    SubVertical = product.SubVertical,
-                    Price = product.Price,
-                    Currency = product.Currency,
-                    Quota = dbSubscription.Quota,
-                    StartDate = dbSubscription.StartDate,
-                    EndDate = dbSubscription.EndDate,
-                    StatusId = SubscriptionStatus.Active,
-                    lastUpdated = DateTime.UtcNow,
-                    Version = "V2"
-                };
-
-                var actor = GetV2SubscriptionActorProxy(subscriptionId);
-                var actorResult = await actor.FastSetDataAsync(v2Dto, cancellationToken);
-                if (!actorResult) throw new Exception("Failed to save subscription to actor");
-
-                await transaction.CommitAsync(cancellationToken);
-                return subscriptionId;
+                throw new InvalidOperationException("Failed to create subscription via actor");
             }
-            catch (Exception ex)
-            {
-                await transaction.RollbackAsync(cancellationToken);
-                _logger.LogError(ex, "Failed to purchase V2 subscription");
-                throw;
-            }
+
+            _logger.LogInformation("V2 Subscription created successfully: {SubscriptionId}", subscriptionId);
+            return subscriptionId;
         }
 
         public async Task<List<V2SubscriptionResponseDto>> GetUserSubscriptionsAsync(
@@ -197,33 +142,25 @@ namespace QLN.Backend.API.Service.ProductService
                 query = query.Where(s => s.SubVertical == subVertical.Value);
             }
 
-            var dbSubscriptions = await query.ToListAsync(cancellationToken);
+            var subscriptionIds = await query.Select(s => s.SubscriptionId).ToListAsync(cancellationToken);
 
             var subscriptions = new List<V2SubscriptionResponseDto>();
 
-            foreach (var dbSub in dbSubscriptions)
+            foreach (var subscriptionId in subscriptionIds)
             {
                 try
                 {
-                    var actor = GetV2SubscriptionActorProxy(dbSub.SubscriptionId);
+                    var actor = GetV2SubscriptionActorProxy(subscriptionId);
                     var actorData = await actor.GetDataAsync(cancellationToken);
 
                     if (actorData != null)
                     {
                         subscriptions.Add(MapToResponseDto(actorData));
                     }
-                    else
-                    {
-                        var v2Data = MapDbToV2Dto(dbSub);
-                        await actor.FastSetDataAsync(v2Data, cancellationToken);
-                        subscriptions.Add(MapToResponseDto(v2Data));
-                    }
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Error getting subscription {Id}, using DB data", dbSub.SubscriptionId);
-                    var v2Data = MapDbToV2Dto(dbSub);
-                    subscriptions.Add(MapToResponseDto(v2Data));
+                    _logger.LogError(ex, "Error getting subscription {Id}", subscriptionId);
                 }
             }
 
@@ -232,19 +169,22 @@ namespace QLN.Backend.API.Service.ProductService
 
         public async Task<List<V2SubscriptionResponseDto>> GetAllActiveSubscriptionsAsync(string userid, CancellationToken cancellationToken = default)
         {
-            _logger.LogInformation("Getting all active V2 subscriptions");
+            _logger.LogInformation("Getting all active V2 subscriptions for user: {UserId}", userid);
 
-            var dbSubscriptions = await _context.Subscriptions
-                .Where(s => s.Status == SubscriptionStatus.Active && s.EndDate > DateTime.UtcNow)
+            var subscriptionIds = await _context.Subscriptions
+                .Where(s => s.UserId == userid &&
+                           s.Status == SubscriptionStatus.Active &&
+                           s.EndDate > DateTime.UtcNow)
+                .Select(s => s.SubscriptionId)
                 .ToListAsync(cancellationToken);
 
             var subscriptions = new List<V2SubscriptionResponseDto>();
 
-            foreach (var dbSub in dbSubscriptions)
+            foreach (var subscriptionId in subscriptionIds)
             {
                 try
                 {
-                    var actor = GetV2SubscriptionActorProxy(dbSub.SubscriptionId);
+                    var actor = GetV2SubscriptionActorProxy(subscriptionId);
                     var isActive = await actor.IsActiveAsync(cancellationToken);
 
                     if (isActive)
@@ -254,19 +194,11 @@ namespace QLN.Backend.API.Service.ProductService
                         {
                             subscriptions.Add(MapToResponseDto(actorData));
                         }
-                        else
-                        {
-                            var v2Data = MapDbToV2Dto(dbSub);
-                            await actor.FastSetDataAsync(v2Data, cancellationToken);
-                            subscriptions.Add(MapToResponseDto(v2Data));
-                        }
                     }
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Error getting subscription {Id}, using DB data", dbSub.SubscriptionId);
-                    var v2Data = MapDbToV2Dto(dbSub);
-                    subscriptions.Add(MapToResponseDto(v2Data));
+                    _logger.LogError(ex, "Error getting subscription {Id}", subscriptionId);
                 }
             }
 
@@ -278,35 +210,27 @@ namespace QLN.Backend.API.Service.ProductService
             if (subscriptionId == Guid.Empty)
                 throw new ArgumentException("V2 Subscription ID cannot be empty", nameof(subscriptionId));
 
-            using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+            _logger.LogInformation("Cancelling V2 subscription {SubscriptionId} for user {UserId}", subscriptionId, userid);
+
             try
             {
-                var dbSubscription = await _context.Subscriptions
-                    .FirstOrDefaultAsync(s => s.SubscriptionId == subscriptionId, cancellationToken);
-
-                if (dbSubscription == null) return false;
-
-                dbSubscription.Status = SubscriptionStatus.Cancelled;
-                dbSubscription.UpdatedAt = DateTime.UtcNow;
-                await _context.SaveChangesAsync(cancellationToken);
-
                 var actor = GetV2SubscriptionActorProxy(subscriptionId);
-                var existingData = await actor.GetDataAsync(cancellationToken);
+                // Actor handles DB update, state change, and event publishing
+                var result = await actor.CancelSubscriptionAsync(userid, cancellationToken);
 
-                if (existingData != null)
+                if (result)
                 {
-                    existingData.StatusId = SubscriptionStatus.Cancelled;
-                    existingData.lastUpdated = DateTime.UtcNow;
-                    await actor.FastSetDataAsync(existingData, cancellationToken);
+                    _logger.LogInformation("V2 Subscription with ID {Id} cancelled for user {UserId}.", subscriptionId, userid);
+                }
+                else
+                {
+                    _logger.LogWarning("Failed to cancel V2 subscription {SubscriptionId} for user {UserId}", subscriptionId, userid);
                 }
 
-                await transaction.CommitAsync(cancellationToken);
-                _logger.LogInformation("V2 Subscription with ID {Id} cancelled.", subscriptionId);
-                return true;
+                return result;
             }
             catch (Exception ex)
             {
-                await transaction.RollbackAsync(cancellationToken);
                 _logger.LogError(ex, "Error cancelling V2 subscription with ID: {Id}", subscriptionId);
                 throw;
             }
@@ -316,7 +240,6 @@ namespace QLN.Backend.API.Service.ProductService
         {
             try
             {
-                
                 var actor = GetV2SubscriptionActorProxy(subscriptionId);
                 return await actor.ValidateUsageAsync(quotaType, requestedAmount, cancellationToken);
             }
@@ -329,40 +252,14 @@ namespace QLN.Backend.API.Service.ProductService
 
         public async Task<bool> RecordSubscriptionUsageAsync(Guid subscriptionId, string quotaType, int amount, CancellationToken cancellationToken = default)
         {
-            using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
             try
             {
-                
                 var actor = GetV2SubscriptionActorProxy(subscriptionId);
-                var actorResult = await actor.RecordUsageAsync(quotaType, amount, cancellationToken);
-                if (!actorResult)
-                {
-                    _logger.LogWarning("Actor failed to record usage for subscription {SubscriptionId}", subscriptionId);
-                    return false;
-                }
-
-                var dbSubscription = await _context.Subscriptions
-                    .FirstOrDefaultAsync(s => s.SubscriptionId == subscriptionId, cancellationToken);
-
-                if (dbSubscription != null)
-                {
-                    var ok = dbSubscription.Quota.RecordUsage(
-     MapQuotaTypeToAction(quotaType),
-     amount
- );
-                    if (ok)
-                    {
-                        dbSubscription.UpdatedAt = DateTime.UtcNow;
-                        await _context.SaveChangesAsync(cancellationToken);
-                    }
-                }
-
-                await transaction.CommitAsync(cancellationToken);
-                return true;
+                // Actor handles both actor state update and DB persistence
+                return await actor.RecordUsageAsync(quotaType, amount, cancellationToken);
             }
             catch (Exception ex)
             {
-                await transaction.RollbackAsync(cancellationToken);
                 _logger.LogError(ex, "Error recording V2 subscription usage for {SubscriptionId}", subscriptionId);
                 return false;
             }
@@ -376,77 +273,20 @@ namespace QLN.Backend.API.Service.ProductService
         {
             ArgumentNullException.ThrowIfNull(request);
 
-            using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
-            try
+            _logger.LogInformation("Purchasing V2 addon for user {UserId} with product {ProductCode}", request.UserId, request.ProductCode);
+
+            var addonId = Guid.NewGuid();
+            var actor = GetV2AddonActorProxy(addonId);
+
+            // Actor handles all DB operations, transactions, and event publishing
+            var success = await actor.CreateAddonAsync(request, cancellationToken);
+            if (!success)
             {
-                var product = await _context.Products
-                    .FirstOrDefaultAsync(p => p.ProductCode == request.ProductCode && p.IsActive, cancellationToken);
-
-                if (product == null)
-                    throw new InvalidOperationException($"Addon product with code {request.ProductCode} not found or inactive");
-
-                var addonTypes = new[] { ProductType.ADDON_COMBO, ProductType.ADDON_FEATURE, ProductType.ADDON_REFRESH };
-                if (!addonTypes.Contains(product.ProductType))
-                    throw new InvalidOperationException($"Product {request.ProductCode} is not an addon product");
-
-                var addonId = Guid.NewGuid();
-
-                var dbAddon = new UserAddOn
-                {
-                    UserAddOnId = addonId,
-                    ProductCode = product.ProductCode,
-                    ProductName = product.ProductName,
-                    UserId = request.UserId,
-                    CompanyId = request.CompanyId,
-                    SubscriptionId = request.SubscriptionId,
-                    PaymentId = request.PaymentId,
-                    Vertical = product.Vertical,
-                    SubVertical = product.SubVertical,
-                    Quota = BuildAddonQuotaFromProduct(product),
-                    StartDate = DateTime.UtcNow,
-                    EndDate = DateTime.UtcNow.Add(GetDurationFromProduct(product)),
-                    Status = SubscriptionStatus.Active,
-                    CreatedAt = DateTime.UtcNow
-                };
-
-                _context.UserAddOns.Add(dbAddon);
-                await _context.SaveChangesAsync(cancellationToken);
-
-                var v2AddonDto = new V2UserAddonDto
-                {
-                    Id = addonId,
-                    ProductCode = product.ProductCode,
-                    ProductName = product.ProductName,
-                    UserId = request.UserId,
-                    CompanyId = request.CompanyId,
-                    SubscriptionId = request.SubscriptionId,
-                    PaymentId = request.PaymentId,
-                    Vertical = product.Vertical,
-                    SubVertical = product.SubVertical,
-                    Price = product.Price,
-                    Currency = product.Currency,
-                    Quota = dbAddon.Quota,
-                    StartDate = dbAddon.StartDate,
-                    EndDate = dbAddon.EndDate,
-                    StatusId = V2Status.Active,
-                    lastUpdated = DateTime.UtcNow,
-                    Version = "V2"
-                };
-
-                var actor = GetV2AddonActorProxy(addonId);
-                var actorResult = await actor.FastSetDataAsync(v2AddonDto, cancellationToken);
-                if (!actorResult) throw new Exception("Failed to save addon to actor");
-
-                await transaction.CommitAsync(cancellationToken);
-                _logger.LogInformation("V2 Addon purchased successfully: {Id} for user: {UserId}", addonId, request.UserId);
-                return addonId;
+                throw new InvalidOperationException("Failed to create addon via actor");
             }
-            catch (Exception ex)
-            {
-                await transaction.RollbackAsync(cancellationToken);
-                _logger.LogError(ex, "Failed to purchase V2 addon");
-                throw;
-            }
+
+            _logger.LogInformation("V2 Addon purchased successfully: {Id} for user: {UserId}", addonId, request.UserId);
+            return addonId;
         }
 
         public async Task<bool> ValidateAddonUsageAsync(Guid addonId, string quotaType, int requestedAmount, CancellationToken cancellationToken = default)
@@ -468,6 +308,7 @@ namespace QLN.Backend.API.Service.ProductService
             try
             {
                 var actor = GetV2AddonActorProxy(addonId);
+                // Actor handles both actor state update and DB persistence
                 return await actor.RecordUsageAsync(quotaType, amount, cancellationToken);
             }
             catch (Exception ex)
@@ -479,33 +320,30 @@ namespace QLN.Backend.API.Service.ProductService
 
         public async Task<List<V2UserAddonResponseDto>> GetUserAddonsAsync(string userId, CancellationToken cancellationToken = default)
         {
-            var dbAddons = await _context.UserAddOns
+            _logger.LogInformation("Getting V2 addons for user: {UserId}", userId);
+
+            var addonIds = await _context.UserAddOns
                 .Where(a => a.UserId == userId && a.Status != SubscriptionStatus.Expired)
+                .Select(a => a.UserAddOnId)
                 .ToListAsync(cancellationToken);
 
             var userAddons = new List<V2UserAddonResponseDto>();
 
-            foreach (var dbAddon in dbAddons)
+            foreach (var addonId in addonIds)
             {
                 try
                 {
-                    var actor = GetV2AddonActorProxy(dbAddon.UserAddOnId);
+                    var actor = GetV2AddonActorProxy(addonId);
                     var actorData = await actor.GetDataAsync(cancellationToken);
 
                     if (actorData != null)
                     {
                         userAddons.Add(MapAddonToResponseDto(actorData));
                     }
-                    else
-                    {
-                        var v2AddonData = MapDbAddonToV2Dto(dbAddon);
-                        await actor.FastSetDataAsync(v2AddonData, cancellationToken);
-                        userAddons.Add(MapAddonToResponseDto(v2AddonData));
-                    }
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Error getting V2 addon data for ID: {Id}", dbAddon.UserAddOnId);
+                    _logger.LogError(ex, "Error getting V2 addon data for ID: {Id}", addonId);
                 }
             }
 
@@ -529,35 +367,21 @@ namespace QLN.Backend.API.Service.ProductService
 
         public async Task<bool> MarkSubscriptionAsExpiredAsync(Guid subscriptionId, CancellationToken cancellationToken = default)
         {
-            using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
             try
             {
-                var dbSubscription = await _context.Subscriptions
-                    .FirstOrDefaultAsync(s => s.SubscriptionId == subscriptionId, cancellationToken);
-
-                if (dbSubscription == null) return false;
-
-                dbSubscription.Status = SubscriptionStatus.Expired;
-                dbSubscription.UpdatedAt = DateTime.UtcNow;
-                await _context.SaveChangesAsync(cancellationToken);
-
                 var actor = GetV2SubscriptionActorProxy(subscriptionId);
-                var existingData = await actor.GetDataAsync(cancellationToken);
+                // Actor handles DB update, state change, and event publishing
+                var result = await actor.MarkAsExpiredAsync(cancellationToken);
 
-                if (existingData != null)
+                if (result)
                 {
-                    existingData.StatusId = SubscriptionStatus.Expired;
-                    existingData.lastUpdated = DateTime.UtcNow;
-                    await actor.FastSetDataAsync(existingData, cancellationToken);
+                    _logger.LogInformation("Subscription {Id} marked as expired", subscriptionId);
                 }
 
-                await transaction.CommitAsync(cancellationToken);
-                _logger.LogInformation("Subscription {Id} marked as expired", subscriptionId);
-                return true;
+                return result;
             }
             catch (Exception ex)
             {
-                await transaction.RollbackAsync(cancellationToken);
                 _logger.LogError(ex, "Error marking subscription {Id} as expired", subscriptionId);
                 return false;
             }
@@ -576,35 +400,21 @@ namespace QLN.Backend.API.Service.ProductService
 
         public async Task<bool> MarkAddonAsExpiredAsync(Guid addonId, CancellationToken cancellationToken = default)
         {
-            using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
             try
             {
-                var dbAddon = await _context.UserAddOns
-                    .FirstOrDefaultAsync(a => a.UserAddOnId == addonId, cancellationToken);
-
-                if (dbAddon == null) return false;
-
-                dbAddon.Status = SubscriptionStatus.Expired;
-                dbAddon.UpdatedAt = DateTime.UtcNow;
-                await _context.SaveChangesAsync(cancellationToken);
-
                 var actor = GetV2AddonActorProxy(addonId);
-                var existingData = await actor.GetDataAsync(cancellationToken);
+                // Actor handles DB update, state change, and event publishing
+                var result = await actor.MarkAsExpiredAsync(cancellationToken);
 
-                if (existingData != null)
+                if (result)
                 {
-                    existingData.StatusId = V2Status.Expired;
-                    existingData.lastUpdated = DateTime.UtcNow;
-                    await actor.FastSetDataAsync(existingData, cancellationToken);
+                    _logger.LogInformation("Addon {Id} marked as expired", addonId);
                 }
 
-                await transaction.CommitAsync(cancellationToken);
-                _logger.LogInformation("Addon {Id} marked as expired", addonId);
-                return true;
+                return result;
             }
             catch (Exception ex)
             {
-                await transaction.RollbackAsync(cancellationToken);
                 _logger.LogError(ex, "Error marking addon {Id} as expired", addonId);
                 return false;
             }
@@ -620,20 +430,20 @@ namespace QLN.Backend.API.Service.ProductService
         {
             var query = _context.Subscriptions.AsQueryable();
 
+            // Apply filters
             if (!string.IsNullOrEmpty(filter.UserId))
                 query = query.Where(s => s.UserId == filter.UserId);
 
             if (filter.CompanyId.HasValue)
                 query = query.Where(s => s.CompanyId == filter.CompanyId);
 
-            
             query = query.Where(s => s.Vertical == filter.Vertical);
 
             if (filter.SubVertical.HasValue)
                 query = query.Where(s => s.SubVertical == filter.SubVertical);
 
             if (filter.StatusId.HasValue)
-                query = query.Where(s => (int)s.Status == (int)MapToDbStatus(filter.StatusId.Value));
+                query = query.Where(s => s.Status == filter.StatusId.Value);
 
             if (filter.StartDateFrom.HasValue)
                 query = query.Where(s => s.StartDate >= filter.StartDateFrom);
@@ -656,16 +466,28 @@ namespace QLN.Backend.API.Service.ProductService
             var totalCount = await query.CountAsync(cancellationToken);
             var totalPages = (int)Math.Ceiling((double)totalCount / filter.PageSize);
 
-            var subscriptions = await query
+            var subscriptionIds = await query
                 .Skip((filter.Page - 1) * filter.PageSize)
                 .Take(filter.PageSize)
+                .Select(s => s.SubscriptionId)
                 .ToListAsync(cancellationToken);
 
             var responseData = new List<V2SubscriptionResponseDto>();
-            foreach (var dbSub in subscriptions)
+            foreach (var subscriptionId in subscriptionIds)
             {
-                var v2Data = MapDbToV2Dto(dbSub);
-                responseData.Add(MapToResponseDto(v2Data));
+                try
+                {
+                    var actor = GetV2SubscriptionActorProxy(subscriptionId);
+                    var actorData = await actor.GetDataAsync(cancellationToken);
+                    if (actorData != null)
+                    {
+                        responseData.Add(MapToResponseDto(actorData));
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error getting subscription {Id} for pagination", subscriptionId);
+                }
             }
 
             return new V2PaginatedResponseDto<V2SubscriptionResponseDto>
@@ -688,20 +510,7 @@ namespace QLN.Backend.API.Service.ProductService
                 var actor = GetV2SubscriptionActorProxy(subscriptionId);
                 var actorData = await actor.GetDataAsync(cancellationToken);
 
-                if (actorData != null)
-                    return MapToResponseDto(actorData);
-
-                var dbSubscription = await _context.Subscriptions
-                    .FirstOrDefaultAsync(s => s.SubscriptionId == subscriptionId, cancellationToken);
-
-                if (dbSubscription != null)
-                {
-                    var v2Data = MapDbToV2Dto(dbSubscription);
-                    await actor.FastSetDataAsync(v2Data, cancellationToken);
-                    return MapToResponseDto(v2Data);
-                }
-
-                return null;
+                return actorData != null ? MapToResponseDto(actorData) : null;
             }
             catch (Exception ex)
             {
@@ -717,20 +526,7 @@ namespace QLN.Backend.API.Service.ProductService
                 var actor = GetV2AddonActorProxy(addonId);
                 var actorData = await actor.GetDataAsync(cancellationToken);
 
-                if (actorData != null)
-                    return MapAddonToResponseDto(actorData);
-
-                var dbAddon = await _context.UserAddOns
-                    .FirstOrDefaultAsync(a => a.UserAddOnId == addonId, cancellationToken);
-
-                if (dbAddon != null)
-                {
-                    var v2Data = MapDbAddonToV2Dto(dbAddon);
-                    await actor.FastSetDataAsync(v2Data, cancellationToken);
-                    return MapAddonToResponseDto(v2Data);
-                }
-
-                return null;
+                return actorData != null ? MapAddonToResponseDto(actorData) : null;
             }
             catch (Exception ex)
             {
@@ -741,35 +537,21 @@ namespace QLN.Backend.API.Service.ProductService
 
         public async Task<bool> ExtendSubscriptionAsync(Guid subscriptionId, TimeSpan additionalDuration, CancellationToken cancellationToken = default)
         {
-            using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
             try
             {
-                var dbSubscription = await _context.Subscriptions
-                    .FirstOrDefaultAsync(s => s.SubscriptionId == subscriptionId, cancellationToken);
-
-                if (dbSubscription == null) return false;
-
-                dbSubscription.EndDate = dbSubscription.EndDate.Add(additionalDuration);
-                dbSubscription.UpdatedAt = DateTime.UtcNow;
-                await _context.SaveChangesAsync(cancellationToken);
-
                 var actor = GetV2SubscriptionActorProxy(subscriptionId);
-                var actorData = await actor.GetDataAsync(cancellationToken);
+                // Actor handles DB update and state sync
+                var result = await actor.ExtendSubscriptionAsync(additionalDuration, cancellationToken);
 
-                if (actorData != null)
+                if (result)
                 {
-                    actorData.EndDate = dbSubscription.EndDate;
-                    actorData.lastUpdated = DateTime.UtcNow;
-                    await actor.FastSetDataAsync(actorData, cancellationToken);
+                    _logger.LogInformation("Subscription {Id} extended by {Duration}", subscriptionId, additionalDuration);
                 }
 
-                await transaction.CommitAsync(cancellationToken);
-                _logger.LogInformation("Subscription {Id} extended by {Duration}", subscriptionId, additionalDuration);
-                return true;
+                return result;
             }
             catch (Exception ex)
             {
-                await transaction.RollbackAsync(cancellationToken);
                 _logger.LogError(ex, "Error extending subscription {Id}", subscriptionId);
                 return false;
             }
@@ -777,46 +559,21 @@ namespace QLN.Backend.API.Service.ProductService
 
         public async Task<bool> RefillSubscriptionQuotaAsync(Guid subscriptionId, string quotaType, decimal amount, CancellationToken cancellationToken = default)
         {
-            using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
             try
             {
-                var dbSubscription = await _context.Subscriptions
-                    .FirstOrDefaultAsync(s => s.SubscriptionId == subscriptionId, cancellationToken);
-
-                if (dbSubscription == null) return false;
-
-                var qty = (int)Math.Ceiling(amount);
-                switch ((quotaType ?? string.Empty).ToLower())
-                {
-                    case V2QuotaTypes.AdsBudget: dbSubscription.Quota.TotalAdsAllowed += qty; break;
-                    case V2QuotaTypes.PromoteBudget: dbSubscription.Quota.TotalPromotionsAllowed += qty; break;
-                    case V2QuotaTypes.FeatureBudget: dbSubscription.Quota.TotalFeaturesAllowed += qty; break;
-                    case V2QuotaTypes.RefreshBudget: dbSubscription.Quota.DailyRefreshesAllowed += qty; break;
-                    case V2QuotaTypes.SocialMediaPosts: dbSubscription.Quota.SocialMediaPostsAllowed += qty; break;
-                    default:
-                        _logger.LogWarning("Unknown quotaType '{QuotaType}' in refill; no-op", quotaType);
-                        break;
-                }
-
-                dbSubscription.UpdatedAt = DateTime.UtcNow;
-                await _context.SaveChangesAsync(cancellationToken);
-
                 var actor = GetV2SubscriptionActorProxy(subscriptionId);
-                var actorData = await actor.GetDataAsync(cancellationToken);
-                if (actorData != null)
+                // Actor handles DB update and state sync
+                var result = await actor.RefillQuotaAsync(quotaType, amount, cancellationToken);
+
+                if (result)
                 {
-                    actorData.Quota = dbSubscription.Quota;
-                    actorData.lastUpdated = DateTime.UtcNow;
-                    await actor.FastSetDataAsync(actorData, cancellationToken);
+                    _logger.LogInformation("Subscription {Id} quota {QuotaType} refilled by {Amount}", subscriptionId, quotaType, amount);
                 }
 
-                await transaction.CommitAsync(cancellationToken);
-                _logger.LogInformation("Subscription {Id} quota {QuotaType} refilled by {Amount}", subscriptionId, quotaType, amount);
-                return true;
+                return result;
             }
             catch (Exception ex)
             {
-                await transaction.RollbackAsync(cancellationToken);
                 _logger.LogError(ex, "Error refilling subscription {Id} quota", subscriptionId);
                 return false;
             }
@@ -825,53 +582,6 @@ namespace QLN.Backend.API.Service.ProductService
         #endregion
 
         #region Helper Methods
-
-        private V2SubscriptionDto MapDbToV2Dto(Subscription dbSub)
-        {
-            return new V2SubscriptionDto
-            {
-                Id = dbSub.SubscriptionId,
-                ProductCode = dbSub.ProductCode,
-                ProductName = "Subscription",
-                UserId = dbSub.UserId,
-                CompanyId = dbSub.CompanyId,
-                PaymentId = dbSub.PaymentId,
-                Vertical = dbSub.Vertical,              // 
-                SubVertical = dbSub.SubVertical,        // 
-                Price = 0,
-                Currency = "QAR",
-                Quota = dbSub.Quota,
-                StartDate = dbSub.StartDate,
-                EndDate = dbSub.EndDate,
-                StatusId = (SubscriptionStatus)MapFromDbStatus(dbSub.Status),
-                lastUpdated = dbSub.UpdatedAt ?? dbSub.CreatedAt,
-                Version = "V2"
-            };
-        }
-
-        private V2UserAddonDto MapDbAddonToV2Dto(UserAddOn dbAddon)
-        {
-            return new V2UserAddonDto
-            {
-                Id = dbAddon.UserAddOnId,
-                ProductCode = dbAddon.ProductCode,
-                ProductName = "Addon",
-                UserId = dbAddon.UserId ?? string.Empty,
-                CompanyId = dbAddon.CompanyId,
-                SubscriptionId = dbAddon.SubscriptionId,
-                PaymentId = dbAddon.PaymentId,
-                Vertical = dbAddon.Vertical,            
-                SubVertical = dbAddon.SubVertical,       
-                Price = 0,
-                Currency = "QAR",
-                Quota = dbAddon.Quota,
-                StartDate = dbAddon.StartDate,
-                EndDate = dbAddon.EndDate,
-                StatusId = MapFromDbStatus(dbAddon.Status),
-                lastUpdated = dbAddon.UpdatedAt ?? dbAddon.CreatedAt,
-                Version = "V2"
-            };
-        }
 
         private V2SubscriptionResponseDto MapToResponseDto(V2SubscriptionDto v2Data)
         {
@@ -885,8 +595,8 @@ namespace QLN.Backend.API.Service.ProductService
                 ProductName = v2Data.ProductName,
                 UserId = v2Data.UserId,
                 VerticalName = v2Data.Vertical.ToString(),
-                Vertical = v2Data.Vertical,                 
-                SubVertical = v2Data.SubVertical,           
+                Vertical = v2Data.Vertical,
+                SubVertical = v2Data.SubVertical,
                 Price = v2Data.Price,
                 Currency = v2Data.Currency,
                 Quota = v2Data.Quota,
@@ -902,7 +612,7 @@ namespace QLN.Backend.API.Service.ProductService
 
         private V2UserAddonResponseDto MapAddonToResponseDto(V2UserAddonDto v2Data)
         {
-            var isActive = v2Data.StatusId == V2Status.Active && v2Data.EndDate > DateTime.UtcNow;
+            var isActive = v2Data.StatusId == SubscriptionStatus.Active && v2Data.EndDate > DateTime.UtcNow;
             var daysRemaining = isActive ? (int)(v2Data.EndDate - DateTime.UtcNow).TotalDays : 0;
 
             return new V2UserAddonResponseDto
@@ -913,8 +623,8 @@ namespace QLN.Backend.API.Service.ProductService
                 UserId = v2Data.UserId,
                 SubscriptionId = v2Data.SubscriptionId,
                 VerticalName = v2Data.Vertical.ToString(),
-                Vertical = v2Data.Vertical,                 
-                SubVertical = v2Data.SubVertical,           
+                Vertical = v2Data.Vertical,
+                SubVertical = v2Data.SubVertical,
                 Price = v2Data.Price,
                 Currency = v2Data.Currency,
                 Quota = v2Data.Quota,
@@ -927,136 +637,219 @@ namespace QLN.Backend.API.Service.ProductService
                 Version = "V2"
             };
         }
+        #endregion
+        #region Admin Subscription Operations
 
-        private SubscriptionQuota BuildSubscriptionQuotaFromProduct(Product product)
+        public async Task<bool> UpdateSubscriptionStatusAsync(Guid subscriptionId, SubscriptionStatus newStatus, CancellationToken cancellationToken = default)
         {
-            var c = product.Constraints ?? new ProductConstraints();
-
-            var q = new SubscriptionQuota
+            try
             {
-                Vertical = product.Vertical.ToString(),
-                Scope = c.Scope ?? "All",
+                var actor = GetV2SubscriptionActorProxy(subscriptionId);
+                // Actor handles DB update and state sync
+                var result = await actor.UpdateStatusAsync(newStatus, cancellationToken);
 
-                TotalAdsAllowed = c.AdsBudget ?? 0,
-                TotalPromotionsAllowed = c.PromotedBudget ?? 0,
-                TotalFeaturesAllowed = c.FeaturedBudget ?? 0,
-                DailyRefreshesAllowed = c.RefreshBudgetPerDay ?? 0,
-                RefreshesPerAdAllowed = c.RefreshBudgetPerAd ?? 1,
-                SocialMediaPostsAllowed = 0,
+                if (result)
+                {
+                    _logger.LogInformation("Subscription {Id} status updated to {Status} by admin", subscriptionId, newStatus);
+                }
 
-                CanPublishAds = !(c.PayToPublish ?? false) || (c.AdsBudget ?? 0) > 0,
-                CanPromoteAds = (c.PayToPromote ?? false) || (c.PromotedBudget ?? 0) > 0,
-                CanFeatureAds = (c.PayToFeature ?? false) || (c.FeaturedBudget ?? 0) > 0,
-                CanRefreshAds = (c.RefreshBudgetPerDay ?? 0) > 0,
-                CanPostSocialMedia = false,
-
-                RefreshInterval = product.ProductType== ProductType.FREE ?"Every 72 Hours": "Every Hour",
-                RefreshIntervalHours = product.ProductType == ProductType.FREE ? 72: 1
-            };
-
-            return q;
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating subscription {Id} status", subscriptionId);
+                return false;
+            }
         }
 
-        private SubscriptionQuota BuildAddonQuotaFromProduct(Product product)
+        public async Task<bool> UpdateSubscriptionEndDateAsync(Guid subscriptionId, DateTime newEndDate, CancellationToken cancellationToken = default)
         {
-            var c = product.Constraints ?? new ProductConstraints();
+            try
+            {
+                var actor = GetV2SubscriptionActorProxy(subscriptionId);
+                // Actor handles DB update and state sync
+                var result = await actor.UpdateEndDateAsync(newEndDate, cancellationToken);
 
-            var q = new SubscriptionQuota
-            {
-                Vertical = product.Vertical.ToString(),
-                Scope = c.Scope ?? "All",
-                CanPublishAds = false,
-                CanPromoteAds = false,
-                CanFeatureAds = false,
-                CanRefreshAds = false,
-                CanPostSocialMedia = false,
-                RefreshInterval = "Every 72 Hours",
-                RefreshIntervalHours = 72
-            };
+                if (result)
+                {
+                    _logger.LogInformation("Subscription {Id} end date updated to {EndDate} by admin", subscriptionId, newEndDate);
+                }
 
-            if (c.PayToPublish == true) { q.CanPublishAds = true; q.TotalAdsAllowed += 1; }
-            if (c.PayToPromote == true) { q.CanPromoteAds = true; q.TotalPromotionsAllowed += 1; }
-            if (c.PayToFeature == true) { q.CanFeatureAds = true; q.TotalFeaturesAllowed += 1; }
-
-            if ((c.RefreshBudgetPerDay ?? 0) > 0)
-            {
-                q.CanRefreshAds = true;
+                return result;
             }
-
-            if (c.PromotedBudget.HasValue)
+            catch (Exception ex)
             {
-                q.CanPromoteAds = true;
-                q.TotalPromotionsAllowed += c.PromotedBudget.Value;
+                _logger.LogError(ex, "Error updating subscription {Id} end date", subscriptionId);
+                return false;
             }
-            if (c.FeaturedBudget.HasValue)
-            {
-                q.CanFeatureAds = true;
-                q.TotalFeaturesAllowed += c.FeaturedBudget.Value;
-            }
-            if (c.AdsBudget.HasValue)
-            {
-                q.CanPublishAds = true;
-                q.TotalAdsAllowed += c.AdsBudget.Value;
-            }
-            if (c.RefreshBudgetPerAd.HasValue)
-            {
-                q.CanRefreshAds = true;
-                q.RefreshesPerAdAllowed = Math.Max(q.RefreshesPerAdAllowed, c.RefreshBudgetPerAd.Value);
-            }
-
-            return q;
         }
 
-        private static string MapQuotaTypeToAction(string quotaType) =>
-            (quotaType ?? string.Empty).ToLower() switch
-            {
-                V2QuotaTypes.AdsBudget => ActionTypes.Publish,
-                V2QuotaTypes.PromoteBudget => ActionTypes.Promote,
-                V2QuotaTypes.FeatureBudget => ActionTypes.Feature,
-                V2QuotaTypes.RefreshBudget => ActionTypes.Refresh,
-                V2QuotaTypes.SocialMediaPosts => ActionTypes.SocialMediaPost,
-                _ => quotaType?.ToLower() ?? string.Empty
-            };
-
-        private TimeSpan GetDurationFromProduct(Product product)
+        public async Task<bool> AdminCancelSubscriptionAsync(Guid subscriptionId, CancellationToken cancellationToken = default)
         {
-            
-            if (product.Constraints?.Duration.HasValue == true)
+            try
             {
-                return product.Constraints.Duration.Value;
-            }
+                var actor = GetV2SubscriptionActorProxy(subscriptionId);
+                // Admin cancel doesn't require user ID validation
+                var result = await actor.AdminCancelSubscriptionAsync(cancellationToken);
 
-            return product.ProductType switch
+                if (result)
+                {
+                    _logger.LogInformation("Subscription {Id} cancelled by admin", subscriptionId);
+                }
+
+                return result;
+            }
+            catch (Exception ex)
             {
-                ProductType.SUBSCRIPTION => TimeSpan.FromDays(30),
-                ProductType.ADDON_COMBO => TimeSpan.FromDays(30),
-                ProductType.ADDON_FEATURE => TimeSpan.FromDays(7),
-                ProductType.ADDON_REFRESH => TimeSpan.FromDays(30),
-                _ => TimeSpan.FromDays(30)
-            };
+                _logger.LogError(ex, "Error admin cancelling subscription {Id}", subscriptionId);
+                return false;
+            }
         }
 
-        private SubscriptionStatus MapToDbStatus(V2Status v2Status) =>
-            v2Status switch
-            {
-                V2Status.Active => SubscriptionStatus.Active,
-                V2Status.Expired => SubscriptionStatus.Expired,
-                V2Status.Cancelled => SubscriptionStatus.Cancelled,
-                V2Status.Suspended => SubscriptionStatus.Suspended,
-                V2Status.PaymentPending => SubscriptionStatus.PaymentPending,
-                _ => SubscriptionStatus.PaymentPending
-            };
+        #endregion
 
-        private V2Status MapFromDbStatus(SubscriptionStatus dbStatus) =>
-            dbStatus switch
+        #region Admin Addon Operations
+
+        public async Task<bool> UpdateAddonStatusAsync(Guid addonId, SubscriptionStatus newStatus, CancellationToken cancellationToken = default)
+        {
+            try
             {
-                SubscriptionStatus.Active => V2Status.Active,
-                SubscriptionStatus.Expired => V2Status.Expired,
-                SubscriptionStatus.Cancelled => V2Status.Cancelled,
-                SubscriptionStatus.Suspended => V2Status.Suspended,
-                SubscriptionStatus.PaymentPending => V2Status.PaymentPending,
-                _ => V2Status.PaymentPending
-            };
+                var actor = GetV2AddonActorProxy(addonId);
+                // Actor handles DB update and state sync
+                var result = await actor.UpdateStatusAsync(newStatus, cancellationToken);
+
+                if (result)
+                {
+                    _logger.LogInformation("Addon {Id} status updated to {Status} by admin", addonId, newStatus);
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating addon {Id} status", addonId);
+                return false;
+            }
+        }
+
+        public async Task<bool> UpdateAddonEndDateAsync(Guid addonId, DateTime newEndDate, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var actor = GetV2AddonActorProxy(addonId);
+                // Actor handles DB update and state sync
+                var result = await actor.UpdateEndDateAsync(newEndDate, cancellationToken);
+
+                if (result)
+                {
+                    _logger.LogInformation("Addon {Id} end date updated to {EndDate} by admin", addonId, newEndDate);
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating addon {Id} end date", addonId);
+                return false;
+            }
+        }
+
+        public async Task<bool> ExtendAddonAsync(Guid addonId, TimeSpan additionalDuration, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var actor = GetV2AddonActorProxy(addonId);
+                // Actor handles DB update and state sync
+                var result = await actor.ExtendAddonAsync(additionalDuration, cancellationToken);
+
+                if (result)
+                {
+                    _logger.LogInformation("Addon {Id} extended by {Duration}", addonId, additionalDuration);
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error extending addon {Id}", addonId);
+                return false;
+            }
+        }
+
+        public async Task<bool> RefillAddonQuotaAsync(Guid addonId, string quotaType, decimal amount, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var actor = GetV2AddonActorProxy(addonId);
+                // Actor handles DB update and state sync
+                var result = await actor.RefillQuotaAsync(quotaType, amount, cancellationToken);
+
+                if (result)
+                {
+                    _logger.LogInformation("Addon {Id} quota {QuotaType} refilled by {Amount}", addonId, quotaType, amount);
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error refilling addon {Id} quota", addonId);
+                return false;
+            }
+        }
+
+        public async Task<bool> AdminCancelAddonAsync(Guid addonId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var actor = GetV2AddonActorProxy(addonId);
+                // Admin cancel doesn't require user ID validation
+                var result = await actor.AdminCancelAddonAsync(cancellationToken);
+
+                if (result)
+                {
+                    _logger.LogInformation("Addon {Id} cancelled by admin", addonId);
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error admin cancelling addon {Id}", addonId);
+                return false;
+            }
+        }
+
+        public async Task<bool> CancelAddonAsync(Guid addonId, string userId, CancellationToken cancellationToken = default)
+        {
+            if (addonId == Guid.Empty)
+                throw new ArgumentException("V2 Addon ID cannot be empty", nameof(addonId));
+
+            _logger.LogInformation("Cancelling V2 addon {AddonId} for user {UserId}", addonId, userId);
+
+            try
+            {
+                var actor = GetV2AddonActorProxy(addonId);
+                // Actor handles DB update, state change, and event publishing
+                var result = await actor.CancelAddonAsync(userId, cancellationToken);
+
+                if (result)
+                {
+                    _logger.LogInformation("V2 Addon with ID {Id} cancelled for user {UserId}.", addonId, userId);
+                }
+                else
+                {
+                    _logger.LogWarning("Failed to cancel V2 addon {AddonId} for user {UserId}", addonId, userId);
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error cancelling V2 addon with ID: {Id}", addonId);
+                throw;
+            }
+        }
 
         #endregion
     }

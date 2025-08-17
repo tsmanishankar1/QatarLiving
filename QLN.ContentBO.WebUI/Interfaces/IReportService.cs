@@ -6,6 +6,7 @@ namespace QLN.ContentBO.WebUI.Interfaces
     public interface IReportService
     {
         Task<HttpResponseMessage> UpdateReport(string endpoint, string id, bool isKeep, bool isDelete);
+        Task<HttpResponseMessage?> DeleteCommunitylPosts(string pickId);
 
        
   Task<HttpResponseMessage> GetReportsWithPaginationAsync(
