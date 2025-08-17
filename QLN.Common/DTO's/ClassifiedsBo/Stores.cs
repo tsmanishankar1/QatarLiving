@@ -45,6 +45,7 @@ namespace QLN.Common.DTO_s.ClassifiedsBo
         public string ProductDescription { get; set; }
         public int PageNumber { get; set; }
         public string?  PageCoordinates { get; set; }
+        public string? Slug { get; set; }
         public Guid FlyerId { get; set; }
         public virtual StoreFlyers StoreFlyer { get; set; }
        

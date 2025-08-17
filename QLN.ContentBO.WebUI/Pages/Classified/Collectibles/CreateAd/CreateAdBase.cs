@@ -289,11 +289,11 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.CreateAd
                     description = adPostModel.Description,
                     price = adPostModel.Price,
                     priceType = "QAR",
-                    categoryId = adPostModel.SelectedCategoryId,
+                    categoryId = long.TryParse(adPostModel.SelectedCategoryId, out var catId) ? catId : 0,
                     category = GetCategoryNameById(adPostModel.SelectedCategoryId),
-                    l1CategoryId = adPostModel.SelectedSubcategoryId,
-                    l1Category = GetCategoryNameById(adPostModel.SelectedSubcategoryId),
-                    l2CategoryId = adPostModel.SelectedSubSubcategoryId,
+                    l1CategoryId = long.TryParse(adPostModel.SelectedSubcategoryId, out var subId) ? subId : 0,
+                    l1Category = GetCategoryNameById(adPostModel.SelectedSubSubcategoryId),
+                    l2CategoryId = long.TryParse(adPostModel.SelectedSubcategoryId, out var subId1) ? subId1 : 0,
                     l2Category = GetCategoryNameById(adPostModel.SelectedSubSubcategoryId),
 
                     brand = adPostModel.DynamicFields.GetValueOrDefault("Brand"),
@@ -323,7 +323,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.CreateAd
                         .ToDictionary(kv => kv.Key, kv => (object)kv.Value)
                 };
                 // await JS.InvokeVoidAsync("console.log", payload);
-                var response = await ClassifiedService.PostAdAsync("collectibles", payload);
+                var response = await ClassifiedService.PostCollectiblesAdAsync(payload);
 
                 if (response?.IsSuccessStatusCode == true)
                 {

@@ -1,4 +1,4 @@
-@page "/manage/classified/collectibles/edit/ad/{*Id}"
+@page "/manage/classified/collectibles/edit/ad/{Id:long}"
 @using QLN.ContentBO.WebUI.Models
 @inherits EditAdBase
 
@@ -17,50 +17,47 @@
 </button>
 
 <!-- Edit Action -->
-<EditAdAction AdModel="@adPostModel"/>
+<EditAdAction AdModel="@adPostModel" />
 
 @if (editContext != null)
 {
-<!-- Main Form -->
-<EditForm EditContext="@editContext" OnSubmit="@SubmitForm">
-    <DataAnnotationsValidator />
-    <div class="create-form-container">
-        <MudGrid GutterSize="24px">
-            <!-- Left Column: Form Fields -->
-            <MudItem xs="12" md="5">
-                <CreateFormList 
-                    Zones="@Zones"
-                    IsLoadingZones="@IsLoadingZones"
-                    IsLoadingCategories="@IsLoadingCategories"
-                    CategoryTrees="@CategoryTrees"
-                    Ad="@adPostModel"
-                    editContext="@editContext"
-                    DynamicFieldErrors="@DynamicFieldErrors"
-                    ExcludedFields="@ExcludedFields" 
-                    DefaultSelectedPhoneCountry="@DefaultSelectedPhoneCountry"
-                    DefaultSelectedWhatsappCountry="@DefaultSelectedWhatsappCountry"
-                    OnAddressFieldsChanged="TrySetCoordinatesFromAddressAsync"
-                />
-            </MudItem>
+    <!-- Main Form -->
+    <EditForm EditContext="@editContext" OnSubmit="@SubmitForm">
+        <DataAnnotationsValidator />
+        <div class="create-form-container">
+            <MudGrid GutterSize="24px">
+                <!-- Left Column: Form Fields -->
+                <MudItem xs="12" md="5">
+                    <CreateFormList Zones="@Zones"
+                                    IsLoadingZones="@IsLoadingZones"
+                                    IsLoadingCategories="@IsLoadingCategories"
+                                    CategoryTrees="@CategoryTrees"
+                                    Ad="@adPostModel"
+                                    editContext="@editContext"
+                                    DynamicFieldErrors="@DynamicFieldErrors"
+                                    ExcludedFields="@ExcludedFields"
+                                    DefaultSelectedPhoneCountry="@DefaultSelectedPhoneCountry"
+                                    DefaultSelectedWhatsappCountry="@DefaultSelectedWhatsappCountry"
+                                    OnAddressFieldsChanged="TrySetCoordinatesFromAddressAsync" />
+                </MudItem>
 
-            <!-- Right Column: Photo Upload -->
-            <MudItem xs="12" md="7">
-                <UploadPhotos AdModel="@adPostModel" />
-                    
-                <!-- Button Save Change -->
-                <div class="custom-button-group" style="max-width: 120px ;">
+                <!-- Right Column: Photo Upload -->
+                <MudItem xs="12" md="7">
+                    <UploadPhotos AdModel="@adPostModel" />
 
-                    <MudButton 
-                        Class="custom-button"
-                        Variant="Variant.Filled"
-                        Color="Color.Primary"
-                        Disabled="@IsSaving"
-                        ButtonType="ButtonType.Submit">
+                    <!-- Button Save Change -->
+                    <div class="custom-button-group" style="max-width: 120px ;">
+
+                        <MudButton Class="custom-button"
+                                   Variant="Variant.Filled"
+                                   Color="Color.Primary"
+                                   Disabled="@IsSaving"
+                                   ButtonType="ButtonType.Submit">
                             <span>Save Change</span>
-                    </MudButton>
-                </div>
-            </MudItem>
-        </MudGrid>
-    </div>
-</EditForm>
+                        </MudButton>
+                    </div>
+                </MudItem>
+            </MudGrid>
+        </div>
+    </EditForm>
 }

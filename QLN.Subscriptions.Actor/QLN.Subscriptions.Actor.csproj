@@ -18,4 +18,8 @@
     <ProjectReference Include="..\QLN.Common\QLN.Common.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Service\" />
+  </ItemGroup>
+
 </Project>

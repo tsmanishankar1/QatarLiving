@@ -1,7 +1,10 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
+using Microsoft.Identity.Client;
 using QLN.Common.DTO_s.ClassifiedsBo;
 using QLN.Common.DTO_s.ClassifiedsFo;
 using QLN.Common.Infrastructure.Model;
+using System.Text.Json;
 
 
 
@@ -13,6 +16,8 @@ namespace QLN.Common.Infrastructure.QLDbContext
             : base(options)
         {
         }
+
+        public DbSet<SaveSearch> saveSearches { get; set; }
         public DbSet<StoresSubscriptionDto> StoresSubscriptions { get; set; }
         public DbSet<ViewStoresSubscription> ViewStoresSubscriptions { get; set; }
         public DbSet<StoreStatus> StoreStatuses { get; set; }
@@ -35,10 +40,13 @@ namespace QLN.Common.Infrastructure.QLDbContext
         public DbSet<FeaturedCategory> FeaturedCategories { get; set; }
         public DbSet<StoresDashboardHeader> StoresDashboardHeaderItems { get; set; }
         public DbSet<StoresDashboardSummary> StoresDashboardSummaryItems { get; set; }
-
         public DbSet<Wishlist> Wishlists { get; set; }
+        public DbSet<StoreCompanyDto> StoreCompanyDto { get; set; }
+        public DbSet<StoreSubscriptionQuotaDto> StoreSubscriptionQuotaDtos { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+
+
             modelBuilder.Entity<StoreFlyers>()
                 .HasMany(s => s.Products)
                 .WithOne(s => s.StoreFlyer)
@@ -120,8 +128,7 @@ namespace QLN.Common.Infrastructure.QLDbContext
             AND subs.""CompanyId"" = fly.""CompanyId""
         LEFT JOIN public.""StoreProduct"" AS prod
             ON fly.""StoreFlyersId"" = prod.""FlyerId""
-        WHERE subs.""Status"" = 1 
-          AND subs.""Vertical"" = 3
+        WHERE subs.""Vertical"" = 3
           AND subs.""SubVertical"" = 3
         GROUP BY subs.""SubscriptionId"",
                  subs.""CompanyId"",
@@ -178,6 +185,51 @@ namespace QLN.Common.Infrastructure.QLDbContext
                 entity.Property(e => e.EndDate).HasColumnName("EndDate");
                 entity.Property(e => e.OrderId).HasColumnName("OrderId");
                 entity.Property(e => e.Amount).HasColumnName("Amount");
+            });
+ 
+            modelBuilder.Entity<StoreCompanyDto>(entity =>
+            {
+                entity.HasNoKey();
+
+                entity.Property(e => e.BranchLocations)
+                    .HasConversion(
+                        v => JsonSerializer.Serialize(v, new JsonSerializerOptions()), 
+                        v => JsonSerializer.Deserialize<List<string>>(v, (JsonSerializerOptions?)null)               
+                    )
+                    .Metadata.SetValueComparer(new ValueComparer<List<string>>(
+                        (c1, c2) => c1.SequenceEqual(c2),
+                        c => c.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())),
+                        c => c.ToList()));
+
+                entity.ToSqlQuery(@"
+        SELECT 
+            ""Id"",
+            ""CompanyName"",
+            ""CompanyLogo"",
+            ""CoverImage1"",
+            ""PhoneNumber"",
+            ""Email"",
+            ""WebsiteUrl"",
+            ""BranchLocations"",
+            ""Slug""
+        FROM public.""Companies""
+    ");
+            });
+
+            modelBuilder.Entity<StoreSubscriptionQuotaDto>(entity =>
+            {
+                entity.HasNoKey();
+
+                entity.ToSqlQuery(@"
+        SELECT 
+            ""SubscriptionId"", 
+            ""Quota""
+        FROM public.""Subscriptions""
+        WHERE ""Vertical"" = 3 AND ""SubVertical"" = 3
+    ");
+
+                entity.Property(e => e.SubscriptionId).HasColumnName("SubscriptionId");
+                entity.Property(e => e.QuotaJson).HasColumnName("Quota");
             });
 
             base.OnModelCreating(modelBuilder);

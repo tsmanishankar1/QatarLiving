@@ -16,6 +16,7 @@ namespace QLN.Common.Infrastructure.IService.V2IClassifiedBoService
     public interface IClassifiedBoLandingService
     {
         Task<string> CreateSeasonalPick(string userId, string userName, SeasonalPicksDto dto, CancellationToken cancellationToken = default);
+        Task<List<SeasonalPicks>> GetSeasonalPickBySlug(string slug, CancellationToken cancellationToken = default);
 
         Task<List<SeasonalPicks>> GetSeasonalPicks(Vertical vertical, CancellationToken cancellationToken = default);
 
@@ -34,7 +35,7 @@ namespace QLN.Common.Infrastructure.IService.V2IClassifiedBoService
         Task<List<FeaturedStore>> GetFeaturedStores(Vertical vertical, CancellationToken cancellationToken = default);
 
         Task<List<FeaturedStoreItem>> GetSlottedFeaturedStores(Vertical vertical, CancellationToken cancellationToken = default);
-
+        Task<List<FeaturedStore>> GetFeatureStoreBySlug(string slug, CancellationToken cancellationToken = default);
         Task<string> ReplaceSlotWithFeaturedStore(string userId, string userName, ReplaceFeaturedStoresSlotRequest dto, CancellationToken cancellationToken = default);
 
         Task<string> ReorderFeaturedStoreSlots(string userId, string userName, FeaturedStoreSlotReorderRequest request, CancellationToken cancellationToken = default);
@@ -53,6 +54,8 @@ namespace QLN.Common.Infrastructure.IService.V2IClassifiedBoService
 
         Task<FeaturedCategory> GetFeaturedCategoryById(string id, CancellationToken cancellationToken = default);
 
+        Task<List<FeaturedCategory>> GetFeatureCategoryBySlug(string slug, CancellationToken cancellationToken = default);
+
         Task<string> EditFeaturedCategory(string userId, string userName, EditFeaturedCategoryDto dto, CancellationToken cancellationToken = default);
 
         Task<List<FeaturedCategory>> GetFeaturedCategoriesByVertical(Vertical vertical, CancellationToken cancellationToken = default);
@@ -61,8 +64,14 @@ namespace QLN.Common.Infrastructure.IService.V2IClassifiedBoService
 
         Task<string> ReplaceFeaturedCategorySlots(string userId, string userName, LandingBoSlotReplaceRequest dto, CancellationToken cancellationToken = default);
 
-        Task<string> BulkItemsAction(BulkActionRequest request, string userId,  CancellationToken ct);
-        Task<string> BulkCollectiblesAction(BulkActionRequest request, string userId, CancellationToken ct);
+        Task<BulkAdActionResponseitems> BulkItemsAction(
+     BulkActionRequest request,
+     string userId,
+     CancellationToken cancellationToken = default);
+        Task<BulkAdActionResponseitems> BulkCollectiblesAction(
+    BulkActionRequest request,
+    string userId,
+    CancellationToken cancellationToken = default);
         Task<PaginatedResult<PrelovedAdPaymentSummaryDto>> GetAllPrelovedAdPaymentSummaries(int? pageNumber = 1, int? pageSize = 12, string? search = null,
             string? sortBy = null, CancellationToken cancellationToken = default);
 

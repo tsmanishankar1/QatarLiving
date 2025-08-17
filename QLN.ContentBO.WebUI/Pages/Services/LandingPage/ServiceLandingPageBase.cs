@@ -74,6 +74,11 @@ public class ServiceLandingPageBase : QLComponentBase
     }
     protected async Task ReplaceItem(LandingPageItem item)
     {
+        try
+    {
+      
+        await LoadAllSeasonalPicks();
+        await LoadAllFeaturedCategory();
         var title = activeIndex switch
         {
             0 => "Replace Featured Category",
@@ -104,13 +109,20 @@ public class ServiceLandingPageBase : QLComponentBase
             CloseOnEscapeKey = true
         };
 
-       var dialog = await DialogService.ShowAsync<ServicesReplaceDialogModal>("", parameters, options);
+        var dialog = await DialogService.ShowAsync<ServicesReplaceDialogModal>("", parameters, options);
         var result = await dialog.Result;
 
         if (!result.Canceled)
         {
             await LoadDataForCurrentTab();
         }
+    }
+    catch (Exception ex)
+    {
+        Logger.LogError(ex, "Error occurred while replacing item at slot {SlotOrder} for index {ActiveIndex}", item?.SlotOrder, activeIndex);
+        Snackbar.Add("An error occurred while replacing the item. Please try again.", Severity.Error);
+    }
+    
     }
 
 

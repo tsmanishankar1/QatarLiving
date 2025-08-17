@@ -3,6 +3,8 @@ using QLN.ContentBO.WebUI.Models;
 using Microsoft.JSInterop;
 using Microsoft.AspNetCore.Components.Forms;
 using MudBlazor;
+using PSC.Blazor.Components.MarkdownEditor;
+using PSC.Blazor.Components.MarkdownEditor.EventsArgs;
 using MudExRichTextEditor;
 using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Components.SuccessModal;
@@ -23,9 +25,14 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
         [Inject] public IDialogService DialogService { get; set; }
         [Inject] public NavigationManager Navigation { get; set; }
         [Parameter] public EventCallback OnCommentDialogClose { get; set; }
+        protected MudFileUpload<IBrowserFile> _markdownfileUploadRef;
         [Inject] public IClassifiedService ClassifiedService { get; set; }
         protected bool _priceOnRequest = false;
         protected bool IsLoadingCategories { get; set; } = true;
+        protected string[] HiddenIcons = ["fullscreen"];
+        protected string UploadImageButtonName { get; set; } = "uploadImage";
+        protected MarkdownEditor MarkdownEditorRef;
+        protected bool _isMapInitialized = false;
         protected List<LocationZoneDto> Zones { get; set; } = new();
         public bool IsAgreed { get; set; } = true;
         protected string? ErrorMessage { get; set; }
@@ -80,18 +87,45 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
                     latitude = (double)selectedService.Lattitude;
                     Longitude = (double)selectedService.Longitude;
                     _shouldUpdateMap = true;
-                     await JS.InvokeVoidAsync("updateMapCoordinates", latitude, Longitude);
+                    //  await JS.InvokeVoidAsync("updateMapCoordinates", latitude, Longitude);
                 }
                 selectedFileName = GetFileNameFromUrl(selectedService.LicenseCertificate);
-                // var selectedCategory = CategoryTrees.FirstOrDefault(c => c.Id == selectedService?.CategoryId);
-                // _selectedL1Categories = selectedCategory?.Fields ?? new();
-                // var selectedL1 = _selectedL1Categories.FirstOrDefault(l1 => l1.Id == selectedService?.L1CategoryId);
-                // _selectedL2Categories = selectedL1?.Fields ?? new();
+                var selectedCategory = CategoryTrees.FirstOrDefault(c => c.Id == selectedService?.CategoryId);
+                _selectedL1Categories = selectedCategory?.Fields ?? new();
+                var selectedL1 = _selectedL1Categories.FirstOrDefault(l1 => l1.Id == selectedService?.L1CategoryId);
+                _selectedL2Categories = selectedL1?.Fields ?? new();
             }
             catch (Exception ex)
             {
                 Logger.LogError(ex, "OnParametersSetAsync");
             }
+        }
+        protected void TriggerCustomImageUpload()
+        {
+            _markdownfileUploadRef.OpenFilePickerAsync();
+        }
+        protected async void ToggleMarkdownPreview()
+        {
+            if (MarkdownEditorRef != null)
+            {
+                await MarkdownEditorRef.TogglePreviewAsync();
+            }
+        }
+        protected Task OnCustomButtonClicked(MarkdownButtonEventArgs eventArgs)
+        {
+            if (eventArgs.Name is not null)
+            {
+                if (eventArgs.Name == UploadImageButtonName)
+                {
+                    TriggerCustomImageUpload();
+                }
+
+                if (eventArgs.Name == "CustomPreview")
+                {
+                    ToggleMarkdownPreview();
+                }
+            }
+            return Task.CompletedTask;
         }
 
         protected void OnCategoryChanged(long categoryId)
@@ -102,7 +136,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
             _selectedL2Categories.Clear();
 
             var selectedCategory = CategoryTrees.FirstOrDefault(c => c.Id == categoryId);
-            // _selectedL1Categories = selectedCategory?.Fields ?? new();
+            _selectedL1Categories = selectedCategory?.Fields ?? new();
         }
 
 
@@ -112,7 +146,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
             _selectedL2CategoryId = null;
 
             var selectedL1 = _selectedL1Categories.FirstOrDefault(l1 => l1.Id == subcategoryId);
-            // _selectedL2Categories = selectedL1?.Fields ?? new();
+            _selectedL2Categories = selectedL1?.Fields ?? new();
         }
 
 
@@ -206,6 +240,11 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
         {
             try
             {
+                if (firstRender)
+                {
+                    return;
+                }
+
                 if (_shouldUpdateMap)
                 {
                     _shouldUpdateMap = false;
@@ -214,7 +253,6 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
                     await JS.InvokeVoidAsync("initializeMap", _dotNetRef);
                     await Task.Delay(300);
                     await JS.InvokeVoidAsync("updateMapCoordinates", latitude, Longitude);
-
                 }
             }
             catch (Exception ex)
@@ -222,6 +260,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
                 Logger.LogError(ex, "OnAfterRenderAsync");
             }
         }
+
 
 
         private void ValidateDynamicField(string fieldName)

@@ -71,6 +71,7 @@ namespace QLN.Content.MS.Service.ReportInternalService
                 throw new Exception("Error creating report", ex);
             }
         }
+
         public async Task<string> CreateReport(string userName, V2ContentReportArticleDto dto, CancellationToken cancellationToken = default)
         {
             try

@@ -1,22 +1,24 @@
-﻿using DocumentFormat.OpenXml.Wordprocessing;
-using Google.Api;
-using Markdig.Parsers;
-using Microsoft.AspNetCore.Components;
+﻿using Microsoft.AspNetCore.Components;
 using MudBlazor;
+using Microsoft.JSInterop;
+using Nextended.Core.Extensions;
 using QLN.ContentBO.WebUI.Components;
+using QLN.ContentBO.WebUI.Interfaces;
+using QLN.ContentBO.WebUI.Components.ConfirmationDialog;
 using QLN.ContentBO.WebUI.Models;
 using System.Text.Json;
-using QLN.ContentBO.WebUI.Interfaces;
+using static QLN.ContentBO.WebUI.Components.ToggleTabs.ToggleTabs;
 
 namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.P2p
 {
     public class P2pListingBase : QLComponentBase
     {
 
-        [Inject]
-        protected IClassifiedService ClassifiedService { get; set; } = default!;
-
-        protected List<P2pListingModal> Listings { get; set; } = new();
+        [Inject] protected IPrelovedService PrelovedService { get; set; } = default!;
+        [Inject] protected ILogger<P2pListingBase> Logger { get; set; } = default!;
+         [Inject] protected IJSRuntime JS { get; set; } = default!;
+        protected List<PrelovedP2PSubscriptionItem> Listings { get; set; } = new();
+         [Inject] protected IDialogService DialogService { get; set; } = default!;
         protected string SearchText { get; set; } = string.Empty;
         protected string SortIcon { get; set; } = Icons.Material.Filled.Sort;
         protected string SortDirection { get; set; } = "asc";
@@ -33,9 +35,18 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.P2p
         protected bool IsLoading { get; set; } = true;
         protected bool IsEmpty => !IsLoading && Listings.Count == 0;
         protected int TotalCount { get; set; }
-        protected int currentPage { get; set; } = 1;
-        protected int pageSize { get; set; } = 12;
-        protected string SelectedTab { get; set; } = ((int)AdStatusEnum.PendingApproval).ToString();
+        protected int CurrentPage { get; set; } = 1;
+        protected int PageSize { get; set; } = 12;
+        protected string SelectedTab { get; set; } = "Pending Approval";
+        
+        protected List<TabOption> tabOptions =
+        [
+            new() { Label = "Pending Approval", Value = "PendingApproval" },
+            new() { Label = "Published", Value = "Published" },
+            new() { Label = "Unpublished", Value = "Unpublished" },
+            new() { Label = "Promoted", Value = "Promoted" },
+            new() { Label = "Promoted", Value = "Promoted"  }
+        ];
 
         protected override async Task OnInitializedAsync()
         {
@@ -45,61 +56,41 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.P2p
         protected async Task LoadData()
         {
             IsLoading = true;
-            StateHasChanged();
 
             try
             {
-                int? status = null;
-                bool? isPromoted = null;
-                bool? isFeatured = null;
-
-                if (int.TryParse(SelectedTab, out var tabValue))
+                var request = new PrelovedP2PSubscriptionQuery
                 {
-                    status = tabValue;
-                }
-                else
-                {
-                    if (SelectedTab == "promoted")
-                        isPromoted = true;
-                    else if (SelectedTab == "featured")
-                        isFeatured = true;
-                }
-                var request = new FilterRequest
-                {
-                    PageNumber = currentPage,
-                    PageSize = pageSize,
-                    Status = status, 
-                    SearchText = SearchText,
-                    CreationDate = dateCreated,
-                    PublishedDate = datePublished,
-                    SortField = SortField,
-                    SortDirection = SortDirection,
-                    IsPromoted = isPromoted,
-                    IsFeatured = isFeatured
+                    Status = SelectedTab.Capitalize(),
+                    CreatedDate = dateCreated.ToString(),
+                    PublishedDate = datePublished.ToString(),
+                    Page = CurrentPage,
+                    PageSize = PageSize,
+                    Search = SearchText,
+                    SortBy = SortField,
+                    SortOrder = SortDirection
                 };
 
-                
-                var response = await ClassifiedService.GetPrelovedP2pListing(request);
+                var response = await PrelovedService.GetPrelovedP2pListing(request);
 
                 if (response?.IsSuccessStatusCode ?? false)
                 {
                     var content = await response.Content.ReadAsStringAsync();
-                    var result = JsonSerializer.Deserialize<PagedResult<P2pListingModal>>(content, new JsonSerializerOptions
+                    var result = JsonSerializer.Deserialize<PrelovedP2PSubscriptionResponse>(content, new JsonSerializerOptions
                     {
                         PropertyNamingPolicy = JsonNamingPolicy.CamelCase
                     });
-                    Listings = result?.Items ?? new List<P2pListingModal>();
+                    Listings = result?.Items ?? [];
                     TotalCount = result?.TotalCount ?? 0;
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error loading data: {ex.Message}");
+                Logger.LogError(ex, "LoadData");
             }
             finally
             {
                 IsLoading = false;
-                StateHasChanged();
             }
         }
 
@@ -108,16 +99,15 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.P2p
             if (SelectedTab != newTab)
             {
                 SelectedTab = newTab;
-                currentPage = 1;
+                CurrentPage = 1;
                 await LoadData();
-                StateHasChanged();
             }
         }
 
         protected async void OnSearchChanged(ChangeEventArgs e)
         {
             SearchText = e.Value?.ToString();
-            currentPage = 1;
+            CurrentPage = 1;
             await LoadData();
         }
 
@@ -129,19 +119,75 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.P2p
                 : Icons.Material.Filled.ArrowDownward;
             await LoadData();
         }
-      
+        protected async Task ShowConfirmationExport()
+        {
+            var parameters = new DialogParameters
+            {
+                { "Title", "Export Classified Items" },
+                { "Descrption", "Do you want to export the current classified item data to Excel?" },
+                { "ButtonTitle", "Export" },
+                { "OnConfirmed", EventCallback.Factory.Create(this, ExportToExcel) }
+            };
+
+            var options = new DialogOptions
+            {
+                CloseButton = false,
+                MaxWidth = MaxWidth.Small,
+                FullWidth = true
+            };
+
+            var dialog = DialogService.Show<ConfirmationDialog>("", parameters, options);
+            var result = await dialog.Result;
+        }
+        private async Task ExportToExcel()
+        {
+            try
+            {
+                if (Listings == null || !Listings.Any())
+                {
+                    Snackbar.Add("No data available to export.", Severity.Warning);
+                    return;
+                }
+
+                var exportData = Listings.Select((x, index) => new Dictionary<string, object?>
+                {
+                    ["S.No."] = index + 1,
+                    ["Item Image"] = string.IsNullOrWhiteSpace(x.ImageUrl) ? "-" : x.ImageUrl, 
+                    ["Ad ID"] = x?.AdId == null ? "-" : x.AdId,
+                    ["Ad Title"] = string.IsNullOrWhiteSpace(x.AdTitle) ? "-" : x.AdTitle,
+                    ["User Id"] = x?.UserId == null ? x?.UserId : "-",
+                    ["User Name"] = string.IsNullOrWhiteSpace(x.UserName) ? "-" : x.UserName,
+                    ["Category"] = string.IsNullOrWhiteSpace(x.Category) ? "-" : x.Category,
+                    ["Sub Category"] = string.IsNullOrWhiteSpace(x.SubCategory) ? "-" : x.SubCategory,
+                    ["Creation Date"] = x.CreatedDate.ToString("dd-MM-yyyy") ?? "-",
+                    ["Date Published"] = x.PublishedDate.ToString("dd-MM-yyyy") ?? "-",
+                    ["Date Expiry"] = x.ExpiryDate.ToString("dd-MM-yyyy") ?? "-"
+                }).ToList();
+
+                await JS.InvokeVoidAsync("exportToExcel", exportData, "P2P_Listings.xlsx", "P2P Listings");
+
+                Snackbar.Add("Export successful!", Severity.Success);
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Export failed: {ex.Message}", Severity.Error);
+            }
+        }
 
         protected async Task HandlePageChanged(int newPage)
         {
+            PageSize = 12;
+            CurrentPage = newPage;
             await LoadData();
         }
 
         protected async Task HandlePageSizeChanged(int newSize)
         {
-            pageSize = newSize;
-            currentPage = 1;
+            PageSize = newSize;
+            CurrentPage = 1;
             await LoadData();
         }
+
         protected void ToggleCreatedPopover()
         {
             showCreatedPopover = !showCreatedPopover;
@@ -182,6 +228,5 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.P2p
             datePublished = null;
             SearchText = string.Empty;
         }
-
     }
 }

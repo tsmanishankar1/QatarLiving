@@ -1,9 +1,12 @@
 ﻿using Dapr.Client;
+using Google.Api;
+using Google.Api.Gax.ResourceNames;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using QLN.Classified.MS.Utilities;
 using QLN.Common.DTO_s;
 using QLN.Common.DTO_s.ClassifiedsBo;
+using QLN.Common.DTOs;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.IService.IClassifiedBoService;
 using QLN.Common.Infrastructure.QLDbContext;
@@ -102,7 +105,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                         viewStoresSubscriptionDto.UserId = item.UserId;
                         viewStoresSubscriptionDto.UserName = item.UserName;
                         viewStoresSubscriptionDto.Mobile=item.Mobile;
-                        viewStoresSubscriptionDto.Status = Enum.GetName(typeof(Status), item.Status).ToString();
+                        viewStoresSubscriptionDto.Status = Enum.GetName(typeof(SubscriptionStatus), item.Status).ToString();
                         viewStoresSubscriptionDtos.Add(viewStoresSubscriptionDto);
                     }
                 }
@@ -123,52 +126,53 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                 throw;
             }
         }
-        public async Task<string> CreateStoreSubscriptions(StoresSubscriptionDto dto, CancellationToken cancellationToken = default)
-        {
-            _logger.LogInformation("create store subscriptions");
-            try
-            {
 
-                _context.StoresSubscriptions.Add(dto);
-                await _context.SaveChangesAsync();
+        //public async Task<string> CreateStoreSubscriptions(StoresSubscriptionDto dto, CancellationToken cancellationToken = default)
+        //{
+        //    _logger.LogInformation("create store subscriptions");
+        //    try
+        //    {
 
-                return "Store Subscription Created successfully";
-            }
-            catch (ArgumentException ex)
-            {
-                throw new InvalidDataException(ex.Message, ex);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error while creating stores subscriptions.");
-                throw;
-            }
-        }
-        public async Task<string> EditStoreSubscriptions(int OrderID, string Status, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                _logger.LogInformation("stores edit functionality initiated.");
-                var subscription = await _context.StoresSubscriptions
-             .FirstOrDefaultAsync(x => x.OrderId == OrderID, cancellationToken);
+        //        _context.StoresSubscriptions.Add(dto);
+        //        await _context.SaveChangesAsync();
 
-                if (subscription == null)
-                {
-                    return "Subscription not found.";
-                }
+        //        return "Store Subscription Created successfully";
+        //    }
+        //    catch (ArgumentException ex)
+        //    {
+        //        throw new InvalidDataException(ex.Message, ex);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _logger.LogError(ex, "Error while creating stores subscriptions.");
+        //        throw;
+        //    }
+        //}
+        //public async Task<string> EditStoreSubscriptions(int OrderID, string Status, CancellationToken cancellationToken = default)
+        //{
+        //    try
+        //    {
+        //        _logger.LogInformation("stores edit functionality initiated.");
+        //        var subscription = await _context.StoresSubscriptions
+        //     .FirstOrDefaultAsync(x => x.OrderId == OrderID, cancellationToken);
 
-                subscription.Status = Status;
-                _context.StoresSubscriptions.Update(subscription);
-                await _context.SaveChangesAsync(cancellationToken);
-                _logger.LogInformation("stores edit functionality completed.");
-                return "Subscription status updated successfully.";
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to edit stores subscriptions.");
-                throw;
-            }
-        }
+        //        if (subscription == null)
+        //        {
+        //            return "Subscription not found.";
+        //        }
+
+        //        subscription.Status = Status;
+        //        _context.StoresSubscriptions.Update(subscription);
+        //        await _context.SaveChangesAsync(cancellationToken);
+        //        _logger.LogInformation("stores edit functionality completed.");
+        //        return "Subscription status updated successfully.";
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _logger.LogError(ex, "Failed to edit stores subscriptions.");
+        //        throw;
+        //    }
+        //}
 
         public async Task<string> GetProcessStoresXML(string Url, string? CompanyId, string? SubscriptionId, string UserName, CancellationToken cancellationToken = default)
         {
@@ -197,10 +201,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                     return "No products found in the XML.";
                 }
 
-                _logger.LogInformation("Flyer: {FlyerId}", xmlProducts.FlyerId);
-                _logger.LogInformation("Subscription: {SubscriptionId}", xmlProducts.SubscriptionId);
-                _logger.LogInformation("Company: {CompanyId}", xmlProducts.CompanyId);
-
+               
                 var storeFlyer = new StoreFlyers
                 {
                     Products = new List<StoreProducts>()
@@ -214,46 +215,56 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                     throw new Exception("No valid flyer ID found in the XML.");
                 }
 
-                if (Guid.TryParse(xmlProducts.SubscriptionId, out var parsedSubscriptionId))
-                {
-                    storeFlyer.SubscriptionId = parsedSubscriptionId;
-                }
-                else if (Guid.TryParse(SubscriptionId, out var fallbackSubscriptionId))
+                
+                if (Guid.TryParse(SubscriptionId, out var fallbackSubscriptionId))
                 {
                     storeFlyer.SubscriptionId = fallbackSubscriptionId;
+                }
+                else if(Guid.TryParse(xmlProducts.SubscriptionId, out var parsedSubscriptionId))
+                {
+                    storeFlyer.SubscriptionId = parsedSubscriptionId;
                 }
                 else
                 {
                     throw new Exception("No valid subscription ID found in the XML or parameter.");
                 }
-                
-                if (Guid.TryParse(xmlProducts.CompanyId, out var parsedCompanyId))
+
+
+                if (Guid.TryParse(CompanyId, out var fallbackCompanyId))
+                {
+                    storeFlyer.CompanyId = fallbackCompanyId;                    
+                }
+                else if(Guid.TryParse(xmlProducts.CompanyId, out var parsedCompanyId))
                 {
                     storeFlyer.CompanyId = parsedCompanyId;
-                }
-                else if (Guid.TryParse(CompanyId, out var fallbackCompanyId))
-                {
-                    storeFlyer.CompanyId = fallbackCompanyId;
-                }
+                }               
                 else
                 {
                     throw new Exception("No valid company ID found in the XML or parameter.");
                 }
 
-                if(storeFlyer.CompanyId.HasValue && storeFlyer.CompanyId.Value!=Guid.Empty && !string.IsNullOrEmpty(storeFlyer.CompanyId.ToString()))
+                _logger.LogInformation("Flyer: {FlyerId}", xmlProducts.FlyerId);
+                _logger.LogInformation("Subscription: {SubscriptionId}", storeFlyer.SubscriptionId);
+                _logger.LogInformation("Company: {CompanyId}", storeFlyer.CompanyId);
+
+
+                if (storeFlyer.CompanyId.HasValue && storeFlyer.CompanyId.Value!=Guid.Empty && !string.IsNullOrEmpty(storeFlyer.CompanyId.ToString()))
                 {
-                    var company=await _companyContext.Companies.Where(x=>x.Id== storeFlyer.CompanyId).FirstOrDefaultAsync();
+                    var company = _context.StoreCompanyDto.AsQueryable().Where(x=>x.Id== storeFlyer.CompanyId).FirstOrDefault();
+                 
                     if (company != null)
                     {
+                       
                         storeIndexDto.CompanyId= company.Id.ToString();
                         storeIndexDto.CompanyName = company.CompanyName;
                         storeIndexDto.ImageUrl=company.CompanyLogo;
                         storeIndexDto.BannerUrl = company.CoverImage1;
-                        storeIndexDto.ContactNumber = company.PhoneNumber;
-                        storeIndexDto.Email = company.Email;
+                        storeIndexDto.ContactNumber = company.PhoneNumber.ToString();
+                        storeIndexDto.Email = company.Email.ToString();
                         storeIndexDto.WebsiteUrl = company.WebsiteUrl;
                         storeIndexDto.SubscriptionId=storeFlyer.SubscriptionId.ToString();
                         storeIndexDto.Locations = company.BranchLocations;
+                        storeIndexDto.StoreSlug = company.Slug;
                     }
                 }
 
@@ -261,7 +272,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                 foreach (var xmlProduct in xmlProducts.Products)
                 {
                     var storeProductId = Guid.NewGuid();
-
+                    string SlugId = storeProductId.ToString().Substring(0, 8);
                     var storeProduct = new StoreProducts
                     {
                         StoreProductId = storeProductId,
@@ -273,6 +284,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                         ProductDescription = xmlProduct.ProductDescription,
                         PageNumber = xmlProduct.PageNumber,
                         PageCoordinates = xmlProduct.PageCoordinates,
+                        Slug = "Stores-" + xmlProduct.ProductName + "-" + SlugId,
                         Features = xmlProduct.Features?.Select(f => new ProductFeatures
                         {
                             ProductFeaturesId = Guid.NewGuid(),
@@ -280,13 +292,13 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                             StoreProductId = storeProductId
                         }).ToList(),
                         Images = xmlProduct.Images?.Select(img => new ProductImages
-                        {
+                        { 
                             ProductImagesId = Guid.NewGuid(),
                             Images = img,
                             StoreProductId = storeProductId
                         }).ToList()
                     };
-
+                
                     ClassifiedStoresIndex classifiedStoresIndex = new ClassifiedStoresIndex()
                     {
 
@@ -297,8 +309,8 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                         ImageUrl = storeIndexDto.ImageUrl,
                         WebsiteUrl = storeIndexDto.WebsiteUrl,
                         Locations = storeIndexDto.Locations,
-                        ContactNumber = storeIndexDto.ContactNumber,
-                        Email = storeIndexDto.Email,
+                        ContactNumber = storeIndexDto.ContactNumber.ToString(),
+                        Email = storeIndexDto.Email.ToString(),
                         IsActive =true,
                         ProductId = storeProduct.StoreProductId.ToString(),
                         ProductName = storeProduct.ProductName,
@@ -306,10 +318,11 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                         ProductLogo = storeProduct.ProductLogo,
                         ProductDescription = storeProduct.ProductDescription,
                         ProductPrice = Convert.ToDouble(storeProduct.ProductPrice),
-                        Images = xmlProduct.Features,
+                        Images = xmlProduct.Images,
                         Currency = storeProduct.Currency.ToString(),
                         Features = xmlProduct.Features,
-
+                        StoreSlug= storeIndexDto.StoreSlug,
+                        ProductSlug= storeProduct.Slug
                     };
 
                     storesIndexList.Add(classifiedStoresIndex);
@@ -320,8 +333,11 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
 
                 await DeleteStoreFlyer(storeFlyer.FlyerId);
                 _context.StoreFlyer.Add(storeFlyer);
+
+                           
+
                 await _context.SaveChangesAsync();
-                await IndexDealsToAzureSearch(storesIndexList, cancellationToken);
+                await IndexStoresToAzureSearch(storesIndexList, cancellationToken);
                 _logger.LogInformation("Products added successfully.");
                 return "created";
             }
@@ -350,12 +366,14 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
 
         }
 
-        private async Task IndexDealsToAzureSearch(List<ClassifiedStoresIndex> storesList, CancellationToken cancellationToken)
+        private async Task IndexStoresToAzureSearch(List<ClassifiedStoresIndex> storesList, CancellationToken cancellationToken)
         {
             foreach (ClassifiedStoresIndex dto in storesList)
             {
                 var indexDoc = new ClassifiedStoresIndex
                 {
+                     ContactNumber=dto.ContactNumber,
+                     Email=dto.Email,
                     ProductId = dto.ProductId,
                     CompanyId = dto.CompanyId,
                     SubscriptionId = dto.SubscriptionId,
@@ -372,7 +390,9 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                     ProductDescription = dto.ProductDescription,
                     Features = dto.Features,
                     Images = dto.Images,
-                    IsActive = dto.IsActive
+                    IsActive = dto.IsActive,
+                    StoreSlug=dto.StoreSlug,
+                    ProductSlug=dto.ProductSlug
                 };
                 var indexRequest = new CommonIndexRequest
                 {
@@ -397,6 +417,8 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                 }
             }
         }
+
+
         #endregion
 
         #region Testing End Points

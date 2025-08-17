@@ -8,6 +8,6 @@ namespace QLN.ContentBO.WebUI.Interfaces
         Task<HttpResponseMessage?> GetPrelovedP2PTransaction(PrelovedP2PTransactionQuery p2pTransactionQuery);
         Task<HttpResponseMessage?> GetPrelovedUserListing(FilterRequest request);
         Task<HttpResponseMessage?> GetPrelovedP2pListing(PrelovedP2PSubscriptionQuery p2pSubscriptionQuery);
-        Task<HttpResponseMessage?> PerformPrelovedBulkActionAsync(object payload);
+        Task<HttpResponseMessage?> BulkActionAsync(List<long?> adIds, int adStatus);
     }
 }

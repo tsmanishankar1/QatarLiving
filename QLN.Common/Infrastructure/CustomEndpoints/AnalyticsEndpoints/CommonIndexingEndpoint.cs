@@ -812,11 +812,11 @@ public static class CommonIndexingEndpoints
        .WithSummary("Delete a document by index and ID")
        .WithDescription("Examples: DELETE /api/indexes/classifiedsitems/test_001");
 
-        group.MapGet("/{index}/{id}/details", async (
+        group.MapGet("/{index}/{slug}/details", async (
             [FromServices] ISearchService svc,
             [FromServices] ILoggerFactory logFac,
             [FromRoute] string index,
-            [FromRoute] string id,
+            [FromRoute] string slug,
             [FromQuery] int similarPageSize = 10
         ) =>
         {
@@ -832,11 +832,11 @@ public static class CommonIndexingEndpoints
                     Instance = "/api/indexes/{index}/{id}/details"
                 });
 
-            if (string.IsNullOrWhiteSpace(id))
+            if (string.IsNullOrWhiteSpace(slug))
                 return Results.BadRequest(new ProblemDetails
                 {
                     Title = "Bad Request",
-                    Detail = "ID parameter is required",
+                    Detail = "Slug parameter is required",
                     Status = 400,
                     Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
                     Instance = "/api/indexes/{index}/{id}/details"
@@ -849,7 +849,7 @@ public static class CommonIndexingEndpoints
                     Detail = "SimilarPageSize must be between 1 and 100",
                     Status = 400,
                     Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
-                    Instance = $"/api/indexes/{index}/{id}/details"
+                    Instance = $"/api/indexes/{index}/{slug}/details"
                 });
 
             try
@@ -857,41 +857,41 @@ public static class CommonIndexingEndpoints
                 object result = index.ToLowerInvariant() switch
                 {
                     ConstantValues.IndexNames.ClassifiedsItemsIndex =>
-                        await svc.GetByIdWithSimilarAsync<ClassifiedsItemsIndex>(index, id, similarPageSize),
+                        await svc.GetBySlugWithSimilarAsync<ClassifiedsItemsIndex>(index, slug, similarPageSize),
                     ConstantValues.IndexNames.ClassifiedsPrelovedIndex =>
-                        await svc.GetByIdWithSimilarAsync<ClassifiedsPrelovedIndex>(index, id, similarPageSize),
+                        await svc.GetBySlugWithSimilarAsync<ClassifiedsPrelovedIndex>(index, slug, similarPageSize),
                     ConstantValues.IndexNames.ClassifiedsCollectiblesIndex =>
-                        await svc.GetByIdWithSimilarAsync<ClassifiedsCollectiblesIndex>(index, id, similarPageSize),
+                        await svc.GetBySlugWithSimilarAsync<ClassifiedsCollectiblesIndex>(index, slug, similarPageSize),
                     ConstantValues.IndexNames.ClassifiedsDealsIndex =>
-                        await svc.GetByIdWithSimilarAsync<ClassifiedsDealsIndex>(index, id, similarPageSize),
+                        await svc.GetBySlugWithSimilarAsync<ClassifiedsDealsIndex>(index, slug, similarPageSize),
                     ConstantValues.IndexNames.ServicesIndex =>
-                        await svc.GetByIdWithSimilarAsync<ServicesIndex>(index, id, similarPageSize),
+                        await svc.GetBySlugWithSimilarAsync<ServicesIndex>(index, slug, similarPageSize),
                     _ => throw new NotSupportedException($"Details not supported for index '{index}'")
                 };
                 return Results.Ok(result);
             }
             catch (KeyNotFoundException ex)
             {
-                logger.LogWarning(ex, "Document not found for details on index '{Index}', id '{Id}'", index, id);
+                logger.LogWarning(ex, "Document not found for details on index '{Index}', id '{Id}'", index, slug);
                 return Results.NotFound(new ProblemDetails
                 {
                     Title = "Not Found",
                     Detail = ex.Message,
                     Status = StatusCodes.Status404NotFound,
                     Type = "https://tools.ietf.org/html/rfc7231#section-6.5.4",
-                    Instance = $"/api/indexes/{index}/{id}/details"
+                    Instance = $"/api/indexes/{index}/{slug}/details"
                 });
             }
             catch (ArgumentException ex)
             {
-                logger.LogWarning(ex, "Invalid argument for details on index '{Index}', id '{Id}'", index, id);
+                logger.LogWarning(ex, "Invalid argument for details on index '{Index}', id '{Id}'", index, slug);
                 return Results.BadRequest(new ProblemDetails
                 {
                     Title = "Invalid Argument",
                     Detail = ex.Message,
                     Status = StatusCodes.Status400BadRequest,
                     Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
-                    Instance = $"/api/indexes/{index}/{id}/details"
+                    Instance = $"/api/indexes/{index}/{slug}/details"
                 });
             }
             catch (NotSupportedException ex)
@@ -903,41 +903,41 @@ public static class CommonIndexingEndpoints
                     Detail = ex.Message,
                     Status = StatusCodes.Status400BadRequest,
                     Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
-                    Instance = $"/api/indexes/{index}/{id}/details"
+                    Instance = $"/api/indexes/{index}/{slug}/details"
                 });
             }
             catch (RequestFailedException ex)
             {
-                logger.LogError(ex, "Azure Search details error for index '{Index}', id '{Id}'", index, id);
+                logger.LogError(ex, "Azure Search details error for index '{Index}', id '{Id}'", index, slug);
                 var status = ex.Status >= 400 && ex.Status < 600 ? ex.Status : StatusCodes.Status502BadGateway;
                 return Results.Problem(
                     title: "Details Service Error",
                     detail: $"Azure Search service encountered an error: {ex.Message}",
                     statusCode: status,
                     type: "https://tools.ietf.org/html/rfc7231#section-6.6.3",
-                    instance: $"/api/indexes/{index}/{id}/details"
+                    instance: $"/api/indexes/{index}/{slug}/details"
                 );
             }
             catch (InvalidOperationException ex)
             {
-                logger.LogError(ex, "Details operation failed for index '{Index}', id '{Id}'", index, id);
+                logger.LogError(ex, "Details operation failed for index '{Index}', id '{Id}'", index, slug);
                 return Results.Problem(
                     title: "Details Operation Failed",
                     detail: ex.Message,
                     statusCode: StatusCodes.Status500InternalServerError,
                     type: "https://tools.ietf.org/html/rfc7231#section-6.6.1",
-                    instance: $"/api/indexes/{index}/{id}/details"
+                    instance: $"/api/indexes/{index}/{slug}/details"
                 );
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Unexpected details error for index '{Index}', id '{Id}'", index, id);
+                logger.LogError(ex, "Unexpected details error for index '{Index}', id '{Id}'", index, slug);
                 return Results.Problem(
                     title: "Internal Server Error",
                     detail: "An unexpected error occurred while retrieving document details.",
                     statusCode: StatusCodes.Status500InternalServerError,
                     type: "https://tools.ietf.org/html/rfc7231#section-6.6.1",
-                    instance: $"/api/indexes/{index}/{id}/details"
+                    instance: $"/api/indexes/{index}/{slug}/details"
                 );
             }
         })

@@ -1,34 +1,26 @@
 using Microsoft.AspNetCore.Components;
-using System;
 using QLN.ContentBO.WebUI.Components.ToggleTabs;
 using QLN.ContentBO.WebUI.Models;
 using MudBlazor;
 using QLN.ContentBO.WebUI.Components.ConfirmationDialog;
 using QLN.ContentBO.WebUI.Components.RejectVerificationDialog;
+using QLN.ContentBO.WebUI.Components;
 
 namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu
 {
-    public partial class DealsSubscriptionTableBase : ComponentBase
+    public partial class DealsSubscriptionTableBase : QLComponentBase
     {
         [Inject] public IDialogService DialogService { get; set; }
+        [Parameter] public List<DealsSubscriptionItem> Listings { get; set; } = [];
+        [Parameter] public bool IsLoading { get; set; }
+        [Parameter] public bool IsEmpty { get; set; }
+        [Parameter] public int TotalCount { get; set; }
+        [Parameter] public EventCallback<int> OnPageChanged { get; set; }
+        [Parameter] public EventCallback<int> OnPageSizeChanged { get; set; }
 
-        [Parameter]
-        public List<SubscriptionListingModal> Listings { get; set; } = new();
-
-        [Parameter]
-        public bool IsLoading { get; set; }
-        [Parameter]
-        public bool IsEmpty { get; set; }
-        protected HashSet<SubscriptionListingModal> SelectedListings { get; set; } = new();
+        protected HashSet<DealsSubscriptionItem> SelectedListings { get; set; } = [];
         protected int currentPage = 1;
         protected int pageSize = 12;
-        [Parameter]
-        public int TotalCount { get; set; }
-        [Parameter]
-        public EventCallback<int> OnPageChanged { get; set; }
-
-        [Parameter]
-        public EventCallback<int> OnPageSizeChanged { get; set; }
 
         protected async Task HandlePageChange(int newPage)
         {
@@ -43,19 +35,18 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu
             await OnPageSizeChanged.InvokeAsync(newSize);
         }
 
-
-
         protected string selectedTab = "pendingApproval";
 
-        protected List<ToggleTabs.TabOption> tabOptions = new()
-        {
+        protected List<ToggleTabs.TabOption> tabOptions =
+        [
             new() { Label = "Pending Approval", Value = "pendingApproval" },
             new() { Label = "Published", Value = "published" },
             new() { Label = "Unpublished", Value = "unpublished" },
             new() { Label = "P2P", Value = "p2p" },
             new() { Label = "Promoted", Value = "promoted" },
             new() { Label = "Featured", Value = "featured" }
-        };
+        ];
+
         protected async Task OnTabChanged(string newTab)
         {
             selectedTab = newTab;
@@ -69,15 +60,16 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu
             };
 
         }
+
         protected async Task ShowConfirmation(string title, string description, string buttonTitle, Func<Task> onConfirmedAction)
         {
             var parameters = new DialogParameters
-        {
-            { "Title", title },
-            { "Descrption", description },
-            { "ButtonTitle", buttonTitle },
-            { "OnConfirmed", EventCallback.Factory.Create(this, onConfirmedAction) }
-        };
+            {
+                { "Title", title },
+                { "Descrption", description },
+                { "ButtonTitle", buttonTitle },
+                { "OnConfirmed", EventCallback.Factory.Create(this, onConfirmedAction) }
+            };
 
             var options = new DialogOptions
             {
@@ -86,11 +78,11 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu
                 FullWidth = true
             };
 
-            var dialog = DialogService.Show<ConfirmationDialog>("", parameters, options);
+            var dialog = await DialogService.ShowAsync<ConfirmationDialog>("", parameters, options);
             var result = await dialog.Result;
-
         }
-        private void OpenRejectDialog()
+
+        private async void OpenRejectDialog()
         {
             var parameters = new DialogParameters
             {
@@ -105,21 +97,18 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu
                 MaxWidth = MaxWidth.Small,
                 FullWidth = true
             };
-            var dialog = DialogService.Show<RejectVerificationDialog>("", parameters, options);
+            var dialog = await DialogService.ShowAsync<RejectVerificationDialog>("", parameters, options);
         }
 
-        [Inject]
-        public NavigationManager NavigationManager { get; set; } = default!;
-
-        protected void OnEdit(SubscriptionListingModal item)
+        protected void OnEdit(DealsSubscriptionItem item)
         {
-            var name = "Rashid";
-            NavigationManager.NavigateTo($"/manage/classified/deals/createform/{name}");
+            // /manage/classified/deals/createform/
+            // NavManager.NavigateTo($"/manage/classified/deals/createform/{item.AdId}", true);
         }
 
-        protected void OnPreview(SubscriptionListingModal item)
+        protected void OnPreview(DealsSubscriptionItem item)
         {
-            Console.WriteLine($"Preview clicked: {item.Id}");
+            Console.WriteLine($"Preview clicked: {item.AdId}");
         }
 
         protected Task ApproveSelected() => Task.Run(() => Console.WriteLine("Approved Selected"));
@@ -129,17 +118,19 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu
         protected Task UnpromoteSelected() => Task.Run(() => Console.WriteLine("Unpromoted Selected"));
         protected Task UnfeatureSelected() => Task.Run(() => Console.WriteLine("Unfeatured Selected"));
 
-        protected Task Approve(SubscriptionListingModal item) => Task.Run(() => Console.WriteLine($"Approved: {item.Id}"));
-        protected Task Publish(SubscriptionListingModal item) => Task.Run(() => Console.WriteLine($"Published: {item.Id}"));
-        protected Task Unpublish(SubscriptionListingModal item) => Task.Run(() => Console.WriteLine($"Unpublished: {item.Id}"));
-        protected Task OnRemove(SubscriptionListingModal item) => Task.Run(() => Console.WriteLine($"Removed: {item.Id}"));
+        protected Task Approve(DealsSubscriptionItem item) => Task.Run(() => Console.WriteLine($"Approved: {item.AdId}"));
+        protected Task Publish(DealsSubscriptionItem item) => Task.Run(() => Console.WriteLine($"Published: {item.AdId}"));
+        protected Task Unpublish(DealsSubscriptionItem item) => Task.Run(() => Console.WriteLine($"Unpublished: {item.AdId}"));
+        protected Task OnRemove(DealsSubscriptionItem item) => Task.Run(() => Console.WriteLine($"Removed: {item.AdId}"));
+
         private void HandleRejection(string reason)
         {
             Console.WriteLine("Rejection Reason: " + reason);
         }
-        protected Task RequestChanges(SubscriptionListingModal item)
+
+        protected Task RequestChanges(DealsSubscriptionItem item)
         {
-            Console.WriteLine($"Requested changes for: {item.Id}");
+            Console.WriteLine($"Requested changes for: {item.AdId}");
             OpenRejectDialog();
             return Task.CompletedTask;
         }

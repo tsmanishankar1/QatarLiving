@@ -64,6 +64,44 @@ namespace QLN.Common.Migrations
                     b.ToTable("ProductImage");
                 });
 
+            modelBuilder.Entity("QLN.Common.DTO_s.ClassifiedsBo.StoreCompanyDto", b =>
+                {
+                    b.Property<string>("BranchLocations")
+                        .HasColumnType("text");
+
+                    b.Property<string>("CompanyLogo")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("CompanyName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("CoverImage1")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("PhoneNumber")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Slug")
+                        .HasColumnType("text");
+
+                    b.Property<string>("WebsiteUrl")
+                        .HasColumnType("text");
+
+                    b.ToTable("StoreCompanyDto");
+
+                    b.ToSqlQuery("\r\n        SELECT \r\n            \"Id\",\r\n            \"CompanyName\",\r\n            \"CompanyLogo\",\r\n            \"CoverImage1\",\r\n            \"PhoneNumber\",\r\n            \"Email\",\r\n            \"WebsiteUrl\",\r\n            \"BranchLocations\",\r\n            \"Slug\"\r\n        FROM public.\"Companies\"\r\n    ");
+                });
+
             modelBuilder.Entity("QLN.Common.DTO_s.ClassifiedsBo.StoreFlyers", b =>
                 {
                     b.Property<Guid>("StoreFlyersId")
@@ -120,6 +158,9 @@ namespace QLN.Common.Migrations
 
                     b.Property<string>("ProductSummary")
                         .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Slug")
                         .HasColumnType("text");
 
                     b.HasKey("StoreProductId");
@@ -458,7 +499,7 @@ namespace QLN.Common.Migrations
                     b.Property<DateTime?>("FeaturedExpiryDate")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<bool>("HasAuthenticityCertificate")
+                    b.Property<bool?>("HasAuthenticityCertificate")
                         .HasColumnType("boolean");
 
                     b.Property<bool>("HasWarranty")
@@ -596,17 +637,26 @@ namespace QLN.Common.Migrations
                         .HasColumnType("character varying(1000)");
 
                     b.Property<string>("BusinessName")
-                        .HasMaxLength(1500)
-                        .HasColumnType("character varying(1500)");
+                        .HasMaxLength(1600)
+                        .HasColumnType("character varying(1600)");
 
                     b.Property<string>("BusinessType")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
+                    b.Property<string>("CompanyLogo")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
                     b.Property<string>("ContactNumber")
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
+
+                    b.Property<string>("CoverImage")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .HasColumnType("character varying(250)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -637,10 +687,6 @@ namespace QLN.Common.Migrations
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
-
-                    b.Property<List<ImageInfo>>("Images")
-                        .IsRequired()
-                        .HasColumnType("jsonb");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
@@ -754,6 +800,10 @@ namespace QLN.Common.Migrations
 
                     b.Property<int>("SlotOrder")
                         .HasColumnType("integer");
+
+                    b.Property<string>("Slug")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
 
                     b.Property<DateOnly>("StartDate")
                         .HasColumnType("date");
@@ -1042,6 +1092,9 @@ namespace QLN.Common.Migrations
                     b.Property<Dictionary<string, string>>("Attributes")
                         .HasColumnType("jsonb");
 
+                    b.Property<string>("AuthenticityCertificateName")
+                        .HasColumnType("text");
+
                     b.Property<string>("AuthenticityCertificateUrl")
                         .HasColumnType("text");
 
@@ -1226,6 +1279,40 @@ namespace QLN.Common.Migrations
                     b.ToTable("Preloved");
                 });
 
+            modelBuilder.Entity("QLN.Common.Infrastructure.Model.SaveSearch", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<CommonSearchRequest>("SearchQuery")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("jsonb");
+
+                    b.Property<int?>("SubVertical")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("Vertical")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("saveSearches");
+                });
+
             modelBuilder.Entity("QLN.Common.Infrastructure.Model.SeasonalPicks", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1277,6 +1364,10 @@ namespace QLN.Common.Migrations
 
                     b.Property<int>("SlotOrder")
                         .HasColumnType("integer");
+
+                    b.Property<string>("Slug")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
 
                     b.Property<DateOnly>("StartDate")
                         .HasColumnType("date");

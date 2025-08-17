@@ -35,7 +35,7 @@ namespace QLN.Common.Infrastructure.IService.IProductService
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>New subscription ID</returns>
         Task<Guid> PurchaseSubscriptionAsync(
-            V2SubscriptionPurchaseRequestDto request,string userId,
+            V2SubscriptionPurchaseRequestDto request,
             CancellationToken cancellationToken = default);
 
         /// <summary>
@@ -110,7 +110,7 @@ namespace QLN.Common.Infrastructure.IService.IProductService
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>New addon ID</returns>
         Task<Guid> PurchaseAddonAsync(
-            V2UserAddonPurchaseRequestDto request,string userid,
+            V2UserAddonPurchaseRequestDto request,
             CancellationToken cancellationToken = default);
 
         /// <summary>

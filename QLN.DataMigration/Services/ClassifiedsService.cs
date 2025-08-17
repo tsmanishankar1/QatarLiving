@@ -148,16 +148,11 @@ namespace QLN.DataMigration.Services
             throw new NotImplementedException();
         }
 
-        public Task<List<SavedSearchResponseDto>> GetSearches(string userId, CancellationToken cancellationToken = default)
+        public Task<List<SavedSearchResponseDto>> GetSearches(string userId, Vertical vertical, SubVertical? subVertical = null, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }
-
-        public Task<string> PromoteClassifiedAd(ClassifiedsPromoteDto dto, string userId, CancellationToken cancellationToken)
-        {
-            throw new NotImplementedException();
-        }
-       
+               
         public Task<bool> SaveSearch(SaveSearchRequestDto dto, string userId, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
@@ -259,6 +254,26 @@ namespace QLN.DataMigration.Services
         }
 
         public Task<Deals> GetDealsAdBySlug(string slug, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+
+        public async Task<bool> SaveSearchByVertical(SaveSearchRequestDto dto, string userId, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<string> UnPromoteClassifiedAd(ClassifiedsPromoteDto dto, string userId, Guid subscriptionid, CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<string> UnFeatureClassifiedAd(ClassifiedsPromoteDto dto, string userId, Guid subscriptionid, CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<BulkAdActionResponse> BulkUpdateAdPublishStatusAsync(int subVertical, string userId, List<long> adIds, bool isPublished, Guid subscriptionId, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }

@@ -42,7 +42,7 @@ namespace QLN.Common.Infrastructure.DTO_s
         [JsonPropertyName("image_url")]
         public string ImageUrl { get; set; }
 
-        // ✅ NEW: Map `slug`
+        
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("slug")]
         public string Slug { get; set; }

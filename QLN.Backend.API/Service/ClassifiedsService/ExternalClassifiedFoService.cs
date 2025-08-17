@@ -34,7 +34,7 @@ namespace QLN.Backend.API.Service.ClassifiedsService
                 var result = await _dapr.InvokeMethodAsync<List<StoresDashboardHeaderDto>>(
                    HttpMethod.Get,
                    SERVICE_APP_ID,
-                   $"api/{Vertical}/stores-dashboard-header?UserId={UserId}&CompanyId={CompanyId}",
+                   $"api/{Vertical}/stores-dashboard-headers?UserId={UserId}&CompanyId={CompanyId}",
                    cancellationToken
                );
 
@@ -54,7 +54,7 @@ namespace QLN.Backend.API.Service.ClassifiedsService
                 var result = await _dapr.InvokeMethodAsync<List<StoresDashboardSummaryDto>>(
                    HttpMethod.Get,
                    SERVICE_APP_ID,
-                   $"api/{Vertical}/stores-dashboard-summary?CompanyId={CompanyId}&SubscriptionId={SubscriptionId}",
+                   $"api/{Vertical}/stores-dashboard-summarys?CompanyId={CompanyId}&SubscriptionId={SubscriptionId}",
                    cancellationToken
                );
 

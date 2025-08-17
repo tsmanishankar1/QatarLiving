@@ -1,20 +1,25 @@
 using Microsoft.AspNetCore.Components;
-using QLN.ContentBO.WebUI.Models;
-using Microsoft.JSInterop;
 using Microsoft.AspNetCore.Components.Forms;
+using Microsoft.JSInterop;
 using MudBlazor;
 using MudExRichTextEditor;
+using PSC.Blazor.Components.MarkdownEditor;
+using PSC.Blazor.Components.MarkdownEditor.EventsArgs;
+using QLN.ContentBO.WebUI.Components;
+using QLN.ContentBO.WebUI.Models;
+using QLN.ContentBO.WebUI.Services;
+using System.Net;
 using System.Text.Json;
 
 namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.EditAd
 {
-    public class CreateFormListBase : ComponentBase
+    public class CreateFormListBase : QLComponentBase
     {
         [Parameter] public List<ClassifiedsCategory> CategoryTrees { get; set; } = new();
         [Parameter] public List<LocationZoneDto> Zones { get; set; } = new();
-        protected ClassifiedsCategory? SelectedCategory => CategoryTrees.FirstOrDefault(x => x.Id.ToString() == Ad.CategoryId);
-        protected ClassifiedsCategoryField? SelectedSubcategory => SelectedCategory?.Fields?.FirstOrDefault(x => x.Id.ToString() == Ad.L1CategoryId);
-        protected ClassifiedsCategoryField? SelectedSubSubcategory => SelectedSubcategory?.Fields?.FirstOrDefault(x => x.Id.ToString() == Ad.L2CategoryId);
+        protected ClassifiedsCategory? SelectedCategory => CategoryTrees.FirstOrDefault(x => x.Id == Ad.CategoryId);
+        protected ClassifiedsCategoryField? SelectedSubcategory => SelectedCategory?.Fields?.FirstOrDefault(x => x.Id == Ad.L1CategoryId);
+        protected ClassifiedsCategoryField? SelectedSubSubcategory => SelectedSubcategory?.Fields?.FirstOrDefault(x => x.Id == Ad.L2CategoryId);
 
         protected List<ClassifiedsCategoryField> AvailableFields =>
                                         SelectedSubSubcategory?.Fields ??
@@ -41,7 +46,14 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.EditAd
         [Inject] ILogger<CreateFormListBase> Logger { get; set; }
         protected CountryModel SelectedPhoneCountry;
         protected CountryModel SelectedWhatsappCountry;
-  
+
+        // Custom Markdown Editor Properties
+        protected MarkdownEditor MarkdownEditorRef;
+        protected MudFileUpload<IBrowserFile> _markdownfileUploadRef;
+        protected string UploadImageButtonName { get; set; } = "uploadImage";
+
+        protected string[] HiddenIcons = ["fullscreen"];
+
         protected Task OnPhoneCountryChanged(CountryModel model)
         {
             SelectedPhoneCountry = model;
@@ -66,7 +78,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.EditAd
             Ad.WhatsappNumber = phone;
             return Task.CompletedTask;
         }
-         protected async Task OnCategoryChanged(string categoryId)
+         protected async Task OnCategoryChanged(long? categoryId)
         {
             Ad.CategoryId = categoryId;
             Ad.L1CategoryId = null;
@@ -79,7 +91,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.EditAd
             StateHasChanged();
         }
 
-        protected async Task OnSubCategoryChanged(string subcategoryId)
+        protected async Task OnSubCategoryChanged(long? subcategoryId)
         {
             Ad.L1CategoryId = subcategoryId;
             Ad.L2CategoryId = null;
@@ -90,7 +102,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.EditAd
             StateHasChanged();
         }
 
-        protected async Task OnSubSubCategoryChanged(string subsubcategoryId)
+        protected async Task OnSubSubCategoryChanged(long? subsubcategoryId)
         {
             Ad.L2CategoryId = subsubcategoryId;
             Ad.DynamicFields.Clear();
@@ -196,5 +208,123 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.EditAd
             Ad.AuthenticityCertificateUrl = null;
         }
 
+        #region Custom Markdown Editor
+
+        protected async Task<FileUploadResponse> FileUploadAsync(FileUploadModel fileUploadData)
+        {
+            try
+            {
+                var response = await FileUploadService.UploadFileAsync(fileUploadData);
+                var jsonString = await response.Content.ReadAsStringAsync();
+                if (response != null && response.IsSuccessStatusCode)
+                {
+                    FileUploadResponse? result = JsonSerializer.Deserialize<FileUploadResponse>(jsonString, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+                    return result ?? new();
+                }
+                else if (response?.StatusCode == HttpStatusCode.BadRequest)
+                {
+                    Snackbar.Add($"Bad Request: {jsonString}", Severity.Error);
+                }
+                else if (response?.StatusCode == HttpStatusCode.Unauthorized)
+                {
+                    Snackbar.Add("You are unauthorized to perform this action", Severity.Error);
+                }
+                else if (response?.StatusCode == HttpStatusCode.InternalServerError)
+                {
+                    Snackbar.Add("Internal API Error", Severity.Error);
+                }
+
+                return new();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "FileUploadAsync");
+                return new();
+            }
+        }
+
+        protected void TriggerCustomImageUpload()
+        {
+            _markdownfileUploadRef.OpenFilePickerAsync();
+        }
+
+        protected Task OnCustomButtonClicked(MarkdownButtonEventArgs eventArgs)
+        {
+            if (eventArgs.Name is not null)
+            {
+                if (eventArgs.Name == UploadImageButtonName)
+                {
+                    TriggerCustomImageUpload();
+                }
+
+                if (eventArgs.Name == "CustomPreview")
+                {
+                    ToggleMarkdownPreview();
+                }
+            }
+            return Task.CompletedTask;
+        }
+
+        protected async Task UploadFile(string base64)
+        {
+            try
+            {
+                var fileUploadData = new FileUploadModel
+                {
+                    Container = ClassifiedsBlobContainerName,
+                    File = base64
+                };
+
+                var fileUploadResponse = await FileUploadAsync(fileUploadData);
+                if (fileUploadResponse?.IsSuccess == true)
+                {
+                    var imageMarkdown = $"\n![image-{fileUploadResponse.FileName}]({fileUploadResponse.FileUrl})";
+                    Ad.Description += imageMarkdown;
+                    await MarkdownEditorRef!.SetValueAsync(Ad.Description);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "UploadFile");
+            }
+        }
+
+        protected async Task HandleMarkdownFilesChanged(InputFileChangeEventArgs e)
+        {
+            try
+            {
+                var file = e.File;
+                if (file != null)
+                {
+                    using var stream = file.OpenReadStream(2 * 1024 * 1024); // 2MB limit
+                    using var memoryStream = new MemoryStream();
+                    await stream.CopyToAsync(memoryStream);
+                    var base64 = Convert.ToBase64String(memoryStream.ToArray());
+                    var uploadedImageBase64 = $"data:{file.ContentType};base64,{base64}";
+                    if (!string.IsNullOrWhiteSpace(uploadedImageBase64))
+                    {
+                        await UploadFile(uploadedImageBase64);
+                    }
+                    _markdownfileUploadRef?.ResetValidation();
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "HandleMarkdownFilesChanged");
+            }
+        }
+
+        protected async void ToggleMarkdownPreview()
+        {
+            if (MarkdownEditorRef != null)
+            {
+                await MarkdownEditorRef.TogglePreviewAsync();
+            }
+        }
+
+        #endregion
     }
 }

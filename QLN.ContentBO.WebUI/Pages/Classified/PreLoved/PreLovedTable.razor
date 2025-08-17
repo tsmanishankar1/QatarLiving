@@ -88,7 +88,7 @@
             }
         </div>
 
-        <MudDataGrid T="P2pListingModal"
+        <MudDataGrid T="PrelovedP2PSubscriptionItem"
                      Items="@Listings"
                      Hover="true"
                      Bordered="true"
@@ -96,7 +96,6 @@
                      Dense="true"
                      Filterable="true"
                      MultiSelection="true"
-                     RowCheckBoxVisible="true"
                      @bind-SelectedItems="SelectedListings"
                      Class="mud-table event-custom-table">
 
@@ -109,14 +108,14 @@
 
                 <TemplateColumn Title="Item Image">
                     <CellTemplate>
-                        <img src="@context.Item.ImageUpload?.FirstOrDefault()?.Url"
+                        <img src="@(context.Item.ImageUrl)"
                              style="width: 64px; height: 64px; object-fit: cover; border-radius: 4px;" />
                     </CellTemplate>
                 </TemplateColumn>
 
                 <TemplateColumn Title="Ad ID">
                     <CellTemplate>
-                        <MudLink Href="#"> @(string.IsNullOrWhiteSpace(context.Item.Id) ? "-" : context.Item.Id)</MudLink>
+                        <MudLink Href="#"> @(context.Item.AdId)</MudLink>
                     </CellTemplate>
                 </TemplateColumn>
 
@@ -127,7 +126,7 @@
                 </TemplateColumn>
                 <TemplateColumn Title="User Id">
                     <CellTemplate>
-                        @(string.IsNullOrWhiteSpace(context.Item.UserId) ? "-" : context.Item.UserId)
+                        @(context.Item.UserId)
                     </CellTemplate>
                 </TemplateColumn>
 
@@ -148,51 +147,36 @@
                         @(string.IsNullOrWhiteSpace(context.Item.SubCategory) ? "-" : context.Item.SubCategory)
                     </CellTemplate>
                 </PropertyColumn>
-
-                <PropertyColumn Property="x => x.Section" Title="Section">
-                    <CellTemplate>
-                        @(string.IsNullOrWhiteSpace(context.Item.Section) ? "-" : context.Item.Section)
-                    </CellTemplate>
-                </PropertyColumn>
                 <TemplateColumn Title="Creation Date">
                     <CellTemplate>
-                        @context.Item.CreationDate.ToQatarTime("dd-MM-yyyy")
+                        @context.Item.CreatedDateForApi.ToQatarTime("dd-MM-yyyy")
                     </CellTemplate>
                 </TemplateColumn>
 
                 <TemplateColumn Title="Date Published">
                     <CellTemplate>
-                        @(context.Item.DatePublished?.ToQatarTime("dd-MM-yyyy") ?? "-")
+                        @(context.Item.PublishedDateForApi.ToQatarTime("dd-MM-yyyy") ?? "-")
                     </CellTemplate>
                 </TemplateColumn>
 
                 <TemplateColumn Title="Date Expiry">
                     <CellTemplate>
-                        @(context.Item.DateExpiry?.ToQatarTime("dd-MM-yyyy") ?? "-")
+                        @(context.Item.ExpiryDateForApi.ToQatarTime("dd-MM-yyyy"))
                     </CellTemplate>
                 </TemplateColumn>
 
-              
                 <TemplateColumn Title="Actions">
                     <CellTemplate>
                         <MudMenu Class="mud-table-menu" Icon="@Icons.Material.Filled.MoreVert" Dense="true" AnchorOrigin="Origin.BottomLeft"
                                  TransformOrigin="Origin.BottomLeft">
-@*                             @if (SelectedTab != ((int)AdStatusEnum.Published).ToString())
+
+                            @if (SelectedTab == "Pending Approval")
                             {
                                 <MudMenuItem OnClick="() => OnEdit(context.Item)">
-                                    <img src="/qln-images/edit_dark_icon.svg" class="menu-icon-style" alt="Ignore" />
-                                    <span class="menu-text">Edit</span>
-                                </MudMenuItem>
-                                <MudMenuItem OnClick="() => OnPreview(context.Item)">
-                                    <img src="/qln-images/preview_icon.svg" class="menu-icon-style" alt="Ignore" />
-                                    <span class="menu-text">Preview</span>
-                                </MudMenuItem>
-                            } *@
-                         
-
-                            @if (SelectedTab == ((int)AdStatusEnum.PendingApproval).ToString())
-                            {
-                                <MudMenuItem OnClick='() => ShowConfirmation("Approve Item", "Are you sure you want to approve this item?", "Approve",ApproveSelected)'>
+                                <img src="/qln-images/edit_dark_icon.svg" class="menu-icon-style" alt="Edit" />
+                                <span class="menu-text">Edit</span>
+                            </MudMenuItem>
+                                <MudMenuItem OnClick='() => ShowConfirmation("Approve Item", "Are you sure you want to approve this item?", "Approve", ApproveSelected)'>
                                     <img src="/qln-images/approve_icon.svg" class="menu-icon-style" />
                                     <span class="menu-text">Approve</span>
                                 </MudMenuItem>
@@ -202,8 +186,12 @@
                                 </MudMenuItem>
                             }
 
-                            @if (SelectedTab == ((int)AdStatusEnum.Published).ToString())
+                            @if (SelectedTab == "Published")
                             {
+                                <MudMenuItem OnClick="() => OnEdit(context.Item)">
+                                <img src="/qln-images/edit_dark_icon.svg" class="menu-icon-style" alt="Edit" />
+                                <span class="menu-text">Edit</span>
+                            </MudMenuItem>
                                 <MudMenuItem OnClick='() => ShowConfirmation("Unpublish Item", "Are you sure you want to unpublish this item?", "Unpublish", UnpublishSelected)'>
                                     <img src="/qln-images/eye_close_icon.svg" class="menu-icon-style" />
                                     <span class="menu-text">Unpublish</span>
@@ -214,8 +202,12 @@
                                     <span class="menu-text">Remove</span>
                                 </MudMenuItem>
                             }
-                            @if (SelectedTab == ((int)AdStatusEnum.Unpublished).ToString())
+                            @if (SelectedTab == "Unpublished")
                             {
+                                <MudMenuItem OnClick="() => OnEdit(context.Item)">
+                                <img src="/qln-images/edit_dark_icon.svg" class="menu-icon-style" alt="Edit" />
+                                <span class="menu-text">Edit</span>
+                            </MudMenuItem>
                                 <MudMenuItem OnClick='() => ShowConfirmation("Publish Item", "Are you sure you want to publish this item?", "Publish", PublishSelected)'>
                                     <img src="/qln-images/eye_icon.svg" class="menu-icon-style" alt="Ignore" />
                                     <span class="menu-text">Publish</span>
@@ -226,8 +218,12 @@
                                     <span class="menu-text">Remove</span>
                                 </MudMenuItem>
                             }
-                            @if (SelectedTab == "promoted" || SelectedTab == "featured")
+                            @if (SelectedTab == "Promoted" || SelectedTab == "Featured")
                             {
+                                <MudMenuItem OnClick="() => OnEdit(context.Item)">
+                                <img src="/qln-images/edit_dark_icon.svg" class="menu-icon-style" alt="Edit" />
+                                <span class="menu-text">Edit</span>
+                            </MudMenuItem>
                                 <MudMenuItem OnClick='() => ShowConfirmation("Remove Item", "Are you sure you want to remove this item?", "Remove", RemoveSelected)'
                                              Class="mud-text-error">
                                     <img src="/qln-images/remove_icon.svg" class="menu-icon-style" alt="Ignore" />

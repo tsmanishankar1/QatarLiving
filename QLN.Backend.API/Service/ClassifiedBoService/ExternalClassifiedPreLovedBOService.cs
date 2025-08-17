@@ -10,6 +10,7 @@ using QLN.Common.Infrastructure.IService.IClassifiedBoService;
 using QLN.Common.Infrastructure.IService.IFileStorage;
 using QLN.Common.Infrastructure.IService.IProductService;
 using QLN.Common.Infrastructure.IService.ISearchService;
+using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.QLDbContext;
 using System.Net;
 using System.Text;
@@ -117,8 +118,8 @@ namespace QLN.Backend.API.Service.ClassifiedBoService
             try
             {
                 int TotalCount = 0;
-                int failedCount= 0;
-               
+                int failedCount = 0;
+
                 if (dto.AdIds == null || !dto.AdIds.Any())
                     throw new ArgumentException("AdIds cannot be null or empty.");
 
@@ -127,52 +128,68 @@ namespace QLN.Backend.API.Service.ClassifiedBoService
 
                 if (string.IsNullOrWhiteSpace(userId))
                     throw new ArgumentException("UserId cannot be null or empty.");
+                List<long> processedadIds = new List<long>();
+                processedadIds = dto.AdIds;
 
-                var ads = await Task.WhenAll(
-                   dto.AdIds.Select(id => _classifiedService.GetPrelovedAdById(id, cancellationToken))
-               );
-
-
-                var groupedActions = ads
-                    .Where(a => a != null && a.SubscriptionId.HasValue && a.SubscriptionId.Value != Guid.Empty)
-                    .GroupBy(a => new
-                    {
-                        a.SubscriptionId,
-                        ActionType = dto.AdStatus
-                    })
-                    .ToList();
-
-                if (groupedActions.Any())
-                    TotalCount = groupedActions.Count();
-
-                foreach (var group in groupedActions)
+                if (dto.AdIds.Count > 0)
                 {
-                    var subscriptionId = group.Key.SubscriptionId!.Value;
-                    var actionName = group.Key.ActionType switch
+                    TotalCount = dto.AdIds.Count();
+
+                    var ads = await Task.WhenAll(
+               dto.AdIds.Select(id => _classifiedService.GetPrelovedAdById(id, cancellationToken))
+           );
+                    var groupedActions = ads
+               .Where(a => a != null && a.SubscriptionId.HasValue && a.SubscriptionId.Value != Guid.Empty)
+               .GroupBy(a => new
+               {
+                   a.SubscriptionId,
+                   ActionType = dto.AdStatus
+               })
+               .ToList();
+
+
+                    foreach (var group in groupedActions)
                     {
-                        BulkActionEnum.Promote => "promote", // match single method case
-                        BulkActionEnum.Feature => "feature",
-                        BulkActionEnum.Publish=>"publish",
-                        BulkActionEnum.Unpublish=>"unpublish",
-                        _ => throw new InvalidOperationException("Invalid bulk action.")
-                    };
+                        var subscriptionId = group.Key.SubscriptionId!.Value;
+                        var actionName = group.Key.ActionType switch
+                        {
+                            BulkActionEnum.Promote => "promote", // match single method case
+                            BulkActionEnum.Feature => "feature",
+               
+                            BulkActionEnum.Publish => "publish",
+                            BulkActionEnum.Unpublish => "unpublish",
+                            _ => throw new InvalidOperationException("Invalid bulk action.")
+                        };
 
-                    var usageCount = group.Count();
+                        var usageCount = ads.Count(x => x.SubscriptionId == subscriptionId);
 
-                    var canUse = await _subscriptionContext.ValidateSubscriptionUsageAsync(
-                        subscriptionId,
-                        actionName,
-                        usageCount,
-                        cancellationToken
-                    );
+                        var canUse = await _subscriptionContext.ValidateSubscriptionUsageAsync(
+                                subscriptionId,
+                                actionName,
+                                usageCount,
+                                cancellationToken
+                            );
 
-                    if (!canUse)
-                    {
-                        failedCount++;
+                        if (!canUse)
+                        {
+                            failedCount = failedCount + usageCount;
+                            List<long> RemovedAds = new List<long>();
+                            RemovedAds = ads.Where(x => x.SubscriptionId == subscriptionId).Select(x => x.Id).ToList();
+                            if (RemovedAds != null)
+                            {
+                                if (RemovedAds.Count > 0)
+                                {
+                                    foreach (var item in RemovedAds)
+                                    {
+                                        processedadIds.Remove(item);
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
 
-
+                dto.AdIds = processedadIds;
                 var url = $"/api/v2/classifiedbo/preloved-bulk-edits-subscriptions/{userId}";
                 var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Put, SERVICE_APP_ID, url);
                 request.Content = new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
@@ -197,32 +214,53 @@ namespace QLN.Backend.API.Service.ClassifiedBoService
                     throw new InvalidDataException(errorMessage);
                 }
 
-                foreach (var group in groupedActions)
+                if (dto.AdIds.Count > 0)
                 {
-                    var subscriptionId = group.Key.SubscriptionId!.Value;
-                    var actionName = group.Key.ActionType switch
+                    var successAds = await Task.WhenAll(
+                    dto.AdIds.Select(id => _classifiedService.GetPrelovedAdById(id, cancellationToken)));
+
+                    var successgroupedActions = successAds
+               .Where(a => a != null && a.SubscriptionId.HasValue && a.SubscriptionId.Value != Guid.Empty)
+               .GroupBy(a => new
+               {
+                   a.SubscriptionId,
+                   ActionType = dto.AdStatus
+               })
+               .ToList();
+
+
+                    foreach (var group in successgroupedActions)
                     {
-                        BulkActionEnum.Promote => "Promote",
-                        BulkActionEnum.Feature => "Feature",
-                        BulkActionEnum.Publish => "Publish",
-                        BulkActionEnum.Unpublish => "Unpublish",
-                        _ => throw new InvalidOperationException("Invalid bulk action.")
-                    };
+                        var subscriptionId = group.Key.SubscriptionId!.Value;
+                        var actionName = group.Key.ActionType switch
+                        {
+                            BulkActionEnum.Promote => "Promote",
+                            BulkActionEnum.Feature => "Feature",
+                            BulkActionEnum.UnPromote => "unpromote",
+                            BulkActionEnum.UnFeature => "unfeature",
+                            BulkActionEnum.Publish => "Publish",
+                            BulkActionEnum.Unpublish => "Unpublish",
+                            BulkActionEnum.Approve => "publish",
+                            _ => throw new InvalidOperationException("Invalid bulk action.")
+                        };
 
-                    var usageCount = group.Count();
+                        var usageCount = successAds.Count(x => x.SubscriptionId == subscriptionId);
 
-                    var success = await _subscriptionContext.RecordSubscriptionUsageAsync(
-                        subscriptionId,
-                        actionName,
-                        usageCount,
-                        cancellationToken
-                    );
+                        var success = await _subscriptionContext.RecordSubscriptionUsageAsync(
+                            subscriptionId,
+                            actionName,
+                            usageCount,
+                            cancellationToken
+                        );
 
-                    if (!success)
-                    {
-                        failedCount++;
+                        if (!success)
+                        {
+                            failedCount++;
+                        }
                     }
                 }
+            
+                
                 int Success = TotalCount - failedCount;
                 return "Preloved status updated "+Success.ToString()+" out of "+ TotalCount.ToString()+" successfully.";
             }

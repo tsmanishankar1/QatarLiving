@@ -32,8 +32,8 @@
             @if (SelectedListings.Count > 0)
             {
                 <div class="action-buttons">
-                  
-                     
+
+
                     <MudButton Class="capitalize-button" Color="Color.Error" Variant="Variant.Filled" StartIcon="@Icons.Material.Rounded.Close"
                                OnClick='() => ShowConfirmation("Remove Items", "Are you sure you want to remove selected Items?", "Remove", RemoveSelected)'>
                         Remove
@@ -48,7 +48,7 @@
             }
         </div>
 
-        <MudDataGrid T="DealsListingModal"
+        <MudDataGrid T="DealsItem"
                      Items="@Listings"
                      Hover="true"
                      Bordered="true"
@@ -70,50 +70,37 @@
 
                 <TemplateColumn Title="Ad ID">
                     <CellTemplate>
-                        <MudLink Href="#"> @(context.Item.AdId == null ? "-" : context.Item.AdId)</MudLink>
+                        <MudLink Href="#"> @(context.Item.AdId == 0 ? "-" : context.Item.AdId)</MudLink>
                     </CellTemplate>
                 </TemplateColumn>
 
                 <TemplateColumn Title="Deals Title">
                     <CellTemplate>
-                        <MudLink Href="#"> @(string.IsNullOrWhiteSpace(context.Item.DealTitle) ? "-" : context.Item.DealTitle)</MudLink>
+                        <MudLink Href="#"> @(string.IsNullOrWhiteSpace(context.Item.Dealtitle) ? "-" : context.Item.Dealtitle)</MudLink>
                     </CellTemplate>
                 </TemplateColumn>
                 <TemplateColumn Title="Subscription Type">
                     <CellTemplate>
-                        @(string.IsNullOrWhiteSpace(context.Item.SubscriptionType) ? "-" : context.Item.SubscriptionType)
+                        @(string.IsNullOrWhiteSpace(context.Item.subscriptiontype) ? "-" : context.Item.subscriptiontype)
                     </CellTemplate>
                 </TemplateColumn>
 
-                <PropertyColumn Property="x => x.Location" Title="Location">
-                    <CellTemplate>
-                        @if (context.Item.Location?.Any() == true)
-                        {
-                            @string.Join(", ", context.Item.Location)
-                        }
-                        else
-                        {
-                            @("-")
-                        }
-                    </CellTemplate>
-                </PropertyColumn>
 
-              
                 <TemplateColumn Title="Date Created">
                     <CellTemplate>
-                        @(context.Item.DateCreated?.ToQatarTime("dd-MM-yyyy") ?? "-")
+                        @(context.Item.DateCreated.ToQatarTime("dd-MM-yyyy") ?? "-")
                     </CellTemplate>
                 </TemplateColumn>
 
-               @*  <TemplateColumn Title="Start Date">
+                <TemplateColumn Title="Start Date">
                     <CellTemplate>
-                        @(context.Item.StartDate?.ToQatarTime("dd-MM-yyyy") ?? "-")
+                        @(context.Item.StartDate.ToQatarTime("dd-MM-yyyy") ?? "-")
                     </CellTemplate>
                 </TemplateColumn>
- *@
+
                 <TemplateColumn Title="Expiry Date">
                     <CellTemplate>
-                        @(context.Item.ExpiryDate?.ToQatarTime("dd-MM-yyyy") ?? "-")
+                        @(context.Item.EndDate.ToQatarTime("dd-MM-yyyy") ?? "-")
                     </CellTemplate>
                 </TemplateColumn>
                 <PropertyColumn Property="x => x.ContactNumber" Title="Mobile">
@@ -128,7 +115,7 @@
                 </TemplateColumn>
                 <TemplateColumn Title="Web URL">
                     <CellTemplate>
-                        @(string.IsNullOrWhiteSpace(context.Item.WebUrl) ? "-" : context.Item.WebUrl)
+                        @(string.IsNullOrWhiteSpace(context.Item.Weburl) ? "-" : context.Item.Weburl)
                     </CellTemplate>
                 </TemplateColumn>
                 <TemplateColumn Title="Web Clicks">
@@ -148,7 +135,7 @@
                 </TemplateColumn>
                 <TemplateColumn Title="Phone Leads">
                     <CellTemplate>
-                        @context.Item.PhoneLead
+                        @context.Item.Phonelead
                     </CellTemplate>
                 </TemplateColumn>
                 <TemplateColumn Title="Actions">
@@ -157,10 +144,10 @@
                                  TransformOrigin="Origin.BottomLeft">
 
                             <MudMenuItem @onclick="() => OnEdit(context.Item.AdId)">
-                                    <img src="/qln-images/edit_dark_icon.svg" class="menu-icon-style" alt="Ignore" />
-                                    <span class="menu-text">Edit</span>
-                                </MudMenuItem>
-                            
+                                <img src="/qln-images/edit_dark_icon.svg" class="menu-icon-style" alt="Ignore" />
+                                <span class="menu-text">Edit</span>
+                            </MudMenuItem>
+
                         </MudMenu>
                     </CellTemplate>
                 </TemplateColumn>

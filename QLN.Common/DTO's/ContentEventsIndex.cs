@@ -82,7 +82,7 @@ namespace QLN.Common.DTO_s
 
     public class SlotIndex
     {
-        [SimpleField(IsFilterable = true)]
+        [SimpleField(IsFilterable = true, IsSortable = true)]
         public int Id { get; set; }
 
         [SimpleField(IsFilterable = true)]

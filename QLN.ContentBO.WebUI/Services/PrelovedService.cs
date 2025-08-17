@@ -2,6 +2,8 @@
 using QLN.ContentBO.WebUI.Models;
 using QLN.ContentBO.WebUI.Services.Base;
 using System.Net;
+using System.Text;
+using System.Text.Json;
 
 namespace QLN.ContentBO.WebUI.Services
 {
@@ -23,6 +25,7 @@ namespace QLN.ContentBO.WebUI.Services
             {
                 var queryParams = new Dictionary<string, string?>
                 {
+                    { "status", query.Status },
                     { "createdDate", query.CreatedDate },
                     { "publishedDate", query.PublishedDate },
                     { "Page", query.Page.ToString() },
@@ -120,9 +123,25 @@ namespace QLN.ContentBO.WebUI.Services
             throw new NotImplementedException();
         }
 
-        public Task<HttpResponseMessage?> PerformPrelovedBulkActionAsync(object payload)
+        public async Task<HttpResponseMessage?> BulkActionAsync(List<long?> adIds, int adStatus)
         {
-            throw new NotImplementedException();
+            try
+            {
+                var payload = new
+                {
+                    AdIds = adIds,
+                    AdStatus = adStatus
+                };
+
+                var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
+                var requestUrl = "/api/v2/classifiedbo/bulk-preloved-action";
+                return await _httpClient.PostAsync(requestUrl, content);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "BulkActionAsync");
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
         }
     }
 }

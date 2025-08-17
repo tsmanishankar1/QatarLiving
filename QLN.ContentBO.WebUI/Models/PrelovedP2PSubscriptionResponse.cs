@@ -11,6 +11,7 @@
 
     public class PrelovedP2PSubscriptionQuery
     {
+        public string? Status { get; set; }
         public string? CreatedDate { get; set; }
         public string? PublishedDate { get; set; }
         public int Page { get; set; } = 1;
@@ -22,7 +23,7 @@
 
     public class PrelovedP2PSubscriptionItem
     {
-        public int AdId { get; set; }
+        public long AdId { get; set; }
         public int OrderId { get; set; }
         public string? AdType { get; set; }
         public int UserId { get; set; }
