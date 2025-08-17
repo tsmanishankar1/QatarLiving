@@ -269,7 +269,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
 
                 if (subscription != null)
                 {
-                    subscription.Status = SubscriptionStatus.Failed; 
+                    subscription.Status = SubscriptionStatus.PaymentFailed; 
                     subscription.StartDate = DateTime.MinValue; 
                     subscription.EndDate = DateTime.MinValue;  
 

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using QLN.Common.Infrastructure.Subscriptions;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -17,6 +18,6 @@ namespace QLN.Common.DTO_s.Subscription
         public decimal Price { get; set; }
         public string Currency { get; set; } = "QAR";
         public TimeSpan Duration { get; set; }
-        public V2Status StatusId { get; set; } = V2Status.Active;
+        public SubscriptionStatus StatusId { get; set; } = SubscriptionStatus.Active;
     }
 }
