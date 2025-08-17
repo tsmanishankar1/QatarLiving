@@ -3,18 +3,21 @@ using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using QLN.Common.Infrastructure.QLDbContext;
 
 #nullable disable
 
-namespace QLN.Common.Migrations
+namespace QLN.Common.Migrations.QLApplication
 {
     [DbContext(typeof(QLApplicationContext))]
-    partial class QLApplicationContextModelSnapshot : ModelSnapshot
+    [Migration("20250816225717_UserSubscriptionUpdate")]
+    partial class UserSubscriptionUpdate
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -274,7 +277,7 @@ namespace QLN.Common.Migrations
 
                     b.HasIndex("ApplicationUserId");
 
-                    b.ToTable("UserCompany", (string)null);
+                    b.ToTable("UserCompany");
                 });
 
             modelBuilder.Entity("QLN.Common.Infrastructure.Model.UserSubscription", b =>
@@ -290,14 +293,34 @@ namespace QLN.Common.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<DateTime>("EndDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ProductCode")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ProductName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("SubVertical")
+                        .HasColumnType("integer");
+
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid");
+
+                    b.Property<int>("Vertical")
+                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 
                     b.HasIndex("ApplicationUserId");
 
-                    b.ToTable("UserSubscription", (string)null);
+                    b.ToTable("UserSubscription");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>
@@ -353,11 +376,68 @@ namespace QLN.Common.Migrations
 
             modelBuilder.Entity("QLN.Common.Infrastructure.Model.ApplicationUser", b =>
                 {
-                    b.OwnsOne("QLN.Common.Infrastructure.Model.ApplicationUser.LegacyData#QLN.Common.Infrastructure.Model.UserLegacyData", "LegacyData", b1 =>
+                    b.OwnsOne("QLN.Common.Infrastructure.Model.LegacySubscription", "LegacySubscription", b1 =>
                         {
+                            b1.Property<Guid>("ApplicationUserId")
+                                .HasColumnType("uuid");
+
+                            b1.Property<string>("AccessDashboard")
+                                .HasColumnType("text");
+
+                            b1.Property<List<string>>("Categories")
+                                .HasColumnType("text[]");
+
+                            b1.Property<string>("ExpireDate")
+                                .IsRequired()
+                                .HasColumnType("text");
+
+                            b1.Property<string>("ProductClass")
+                                .IsRequired()
+                                .HasColumnType("text");
+
+                            b1.Property<string>("ProductType")
+                                .IsRequired()
+                                .HasColumnType("text");
+
+                            b1.Property<string>("ReferenceId")
+                                .IsRequired()
+                                .HasColumnType("text");
+
+                            b1.Property<string>("Snid")
+                                .IsRequired()
+                                .HasColumnType("text");
+
+                            b1.Property<string>("StartDate")
+                                .IsRequired()
+                                .HasColumnType("text");
+
+                            b1.Property<string>("Status")
+                                .IsRequired()
+                                .HasColumnType("text");
+
+                            b1.Property<List<string>>("SubscriptionCategories")
+                                .HasColumnType("text[]");
+
                             b1.Property<long>("Uid")
-                                .ValueGeneratedOnAdd()
                                 .HasColumnType("bigint");
+
+                            b1.Property<Guid>("UserId")
+                                .HasColumnType("uuid");
+
+                            b1.HasKey("ApplicationUserId");
+
+                            b1.ToTable("AspNetUsers");
+
+                            b1.ToJson("LegacySubscription");
+
+                            b1.WithOwner()
+                                .HasForeignKey("ApplicationUserId");
+                        });
+
+                    b.OwnsOne("QLN.Common.Infrastructure.Model.UserLegacyData", "LegacyData", b1 =>
+                        {
+                            b1.Property<Guid>("ApplicationUserId")
+                                .HasColumnType("uuid");
 
                             b1.Property<string>("Access")
                                 .IsRequired()
@@ -365,9 +445,6 @@ namespace QLN.Common.Migrations
 
                             b1.Property<string>("Alias")
                                 .HasColumnType("text");
-
-                            b1.Property<Guid>("ApplicationUserId")
-                                .HasColumnType("uuid");
 
                             b1.Property<string>("Created")
                                 .IsRequired()
@@ -411,73 +488,17 @@ namespace QLN.Common.Migrations
                                 .IsRequired()
                                 .HasColumnType("text");
 
-                            b1.HasKey("Uid");
-
-                            b1.HasIndex("ApplicationUserId")
-                                .IsUnique();
-
-                            b1.ToTable("AspNetUsers", (string)null);
-
-                            b1.ToJson("LegacyData");
-
-                            b1.WithOwner()
-                                .HasForeignKey("ApplicationUserId");
-                        });
-
-                    b.OwnsOne("QLN.Common.Infrastructure.Model.ApplicationUser.LegacySubscription#QLN.Common.Infrastructure.Model.LegacySubscription", "LegacySubscription", b1 =>
-                        {
                             b1.Property<long>("Uid")
-                                .ValueGeneratedOnAdd()
                                 .HasColumnType("bigint");
 
-                            b1.Property<string>("AccessDashboard")
-                                .HasColumnType("text");
-
-                            b1.Property<Guid>("ApplicationUserId")
+                            b1.Property<Guid>("UserId")
                                 .HasColumnType("uuid");
 
-                            b1.Property<List<string>>("Categories")
-                                .HasColumnType("text[]");
+                            b1.HasKey("ApplicationUserId");
 
-                            b1.Property<string>("ExpireDate")
-                                .IsRequired()
-                                .HasColumnType("text");
+                            b1.ToTable("AspNetUsers");
 
-                            b1.Property<string>("ProductClass")
-                                .IsRequired()
-                                .HasColumnType("text");
-
-                            b1.Property<string>("ProductType")
-                                .IsRequired()
-                                .HasColumnType("text");
-
-                            b1.Property<string>("ReferenceId")
-                                .IsRequired()
-                                .HasColumnType("text");
-
-                            b1.Property<string>("Snid")
-                                .IsRequired()
-                                .HasColumnType("text");
-
-                            b1.Property<string>("StartDate")
-                                .IsRequired()
-                                .HasColumnType("text");
-
-                            b1.Property<string>("Status")
-                                .IsRequired()
-                                .HasColumnType("text");
-
-                            b1.Property<List<string>>("SubscriptionCategories")
-                                .HasColumnType("text[]");
-
-                            b1.HasKey("Uid");
-
-                            b1.HasIndex("ApplicationUserId")
-                                .IsUnique();
-
-                            b1.ToTable("AspNetUsers", (string)null);
-
-                            b1.ToJson("LegacySubscription");
+                            b1.ToJson("LegacyData");
 
                             b1.WithOwner()
                                 .HasForeignKey("ApplicationUserId");

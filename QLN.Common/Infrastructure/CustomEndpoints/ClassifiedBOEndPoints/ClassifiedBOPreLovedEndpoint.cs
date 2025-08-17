@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Builder;
+﻿using Google.Api;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
@@ -159,38 +160,49 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedBOEndPoints
             {
                 try
                 {
-                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                    if (string.IsNullOrEmpty(userClaim))
+                    var user = httpContext.User;
+                    var userId = user.FindFirst("sub")?.Value;
+                    var subscriptionsClaim = user.FindFirst("subscriptions")?.Value;
+                    if (string.IsNullOrEmpty(userId))
                     {
                         return TypedResults.Forbid();
                     }
 
-                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                    var userId = userData.GetProperty("uid").GetString();
-                    var userName = userData.GetProperty("name").GetString();
-
-                    if (string.IsNullOrWhiteSpace(userId))
+                    if (string.IsNullOrEmpty(subscriptionsClaim))
                     {
                         return TypedResults.Forbid();
                     }
 
-                    if(dto==null)
+                        string fixedJson = $"[{subscriptionsClaim}]";
+                    var subscriptions = JsonSerializer.Deserialize<List<SubscriptionToken>>(fixedJson);
+                    var validSubscriptions = subscriptions?
+                        .Where(s => s.Vertical == 3 && s.SubVertical == 3 && s.EndDate >= DateTime.UtcNow)
+                        .ToList();
+
+                    if (dto==null)
                         return TypedResults.BadRequest(new ProblemDetails() { Detail="Bulk PreLoved edit object cannot be null."});
                     else if(dto.AdIds == null || dto.AdStatus==0)
                         return TypedResults.BadRequest(new ProblemDetails() { Detail = "AdIs cannot be null or Status not be '0'." });
 
-                    var result = await service.BulkEditP2PSubscriptions(dto, userId, cancellationToken);
-                    await auditLogger.LogAuditAsync(
-                        module: ModuleName,
-                        httpMethod: "POST",
-                        apiEndpoint: "/api/v2/classifiedbo/preloved-bulk-edit-subscriptions",
-                        message: "P2P status update successfully",
-                        createdBy: userId,
-                        payload: dto,
-                        cancellationToken: cancellationToken
-                    );
+                    if (validSubscriptions != null && validSubscriptions.Any())
+                    {
+                        var result = await service.BulkEditP2PSubscriptions(dto, userId, cancellationToken);
+                        await auditLogger.LogAuditAsync(
+                            module: ModuleName,
+                            httpMethod: "POST",
+                            apiEndpoint: "/api/v2/classifiedbo/preloved-bulk-edit-subscriptions",
+                            message: "P2P status update successfully",
+                            createdBy: userId,
+                            payload: dto,
+                            cancellationToken: cancellationToken
+                        );
 
-                    return TypedResults.Ok(result);
+                        return TypedResults.Ok(result);
+                    }
+                    else
+                    {
+                        return TypedResults.Forbid();
+                    }
                 }
                 catch (Exception ex)
                 {
