@@ -19,17 +19,20 @@ namespace QLN.Common.Infrastructure.IService.IProductService
         #region Subscription Operations
 
         /// <summary>
-        /// Gets active subscriptions by vertical type
+        /// Gets active subscriptions by vertical type for a specific user
         /// </summary>
         /// <param name="verticalTypeId">Vertical type ID</param>
+        /// <param name="userid">User ID</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Grouped subscription response</returns>
         Task<V2SubscriptionGroupResponseDto> GetSubscriptionsByVerticalAsync(
-            int verticalTypeId,string userid,
+            int verticalTypeId,
+            string userid,
             CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Purchases a subscription based on product code (user buys a product)
+        /// Creates the subscription through actor which handles DB persistence and events
         /// </summary>
         /// <param name="request">Purchase request</param>
         /// <param name="cancellationToken">Cancellation token</param>
@@ -39,29 +42,34 @@ namespace QLN.Common.Infrastructure.IService.IProductService
             CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Gets all subscriptions for a specific user
+        /// Gets all subscriptions for a specific user with optional filtering
         /// </summary>
+        /// <param name="vertical">Optional vertical filter</param>
+        /// <param name="subVertical">Optional sub-vertical filter</param>
         /// <param name="userId">User ID</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>List of user subscriptions</returns>
         Task<List<V2SubscriptionResponseDto>> GetUserSubscriptionsAsync(
             Vertical? vertical,
-            SubVertical? subvertical,
+            SubVertical? subVertical,
             string userId,
             CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Gets all active subscriptions across all users
+        /// Gets all active subscriptions for a specific user
         /// </summary>
+        /// <param name="userid">User ID</param>
         /// <param name="cancellationToken">Cancellation token</param>
-        /// <returns>List of all active subscriptions</returns>
-        Task<List<V2SubscriptionResponseDto>> GetAllActiveSubscriptionsAsync(string userid,
+        /// <returns>List of all active subscriptions for the user</returns>
+        Task<List<V2SubscriptionResponseDto>> GetAllActiveSubscriptionsAsync(
+            string userid,
             CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Cancels a subscription (marks as cancelled)
+        /// Cancels a subscription through actor (marks as cancelled and publishes events)
         /// </summary>
         /// <param name="subscriptionId">Subscription ID</param>
+        /// <param name="userid">User ID</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>True if successful</returns>
         Task<bool> CancelSubscriptionAsync(
@@ -70,7 +78,7 @@ namespace QLN.Common.Infrastructure.IService.IProductService
             CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Validates if a subscription has enough quota for the requested usage
+        /// Validates if a subscription has enough quota for the requested usage through actor
         /// </summary>
         /// <param name="subscriptionId">Subscription ID</param>
         /// <param name="quotaType">Type of quota (e.g., "ads_budget")</param>
@@ -79,13 +87,12 @@ namespace QLN.Common.Infrastructure.IService.IProductService
         /// <returns>True if quota is available</returns>
         Task<bool> ValidateSubscriptionUsageAsync(
             Guid subscriptionId,
-            
             string quotaType,
             int requestedAmount,
             CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Records usage against a subscription quota in both database and actor
+        /// Records usage against a subscription quota through actor (updates both actor and DB)
         /// </summary>
         /// <param name="subscriptionId">Subscription ID</param>
         /// <param name="quotaType">Type of quota (e.g., "ads_budget")</param>
@@ -94,7 +101,6 @@ namespace QLN.Common.Infrastructure.IService.IProductService
         /// <returns>True if successful</returns>
         Task<bool> RecordSubscriptionUsageAsync(
             Guid subscriptionId,
-            
             string quotaType,
             int amount,
             CancellationToken cancellationToken = default);
@@ -104,7 +110,8 @@ namespace QLN.Common.Infrastructure.IService.IProductService
         #region Addon Operations
 
         /// <summary>
-        /// Purchases an addon based on product code (user buys an addon product)
+        /// Purchases an addon based on product code through actor
+        /// Creates the addon through actor which handles DB persistence and events
         /// </summary>
         /// <param name="request">Addon purchase request</param>
         /// <param name="cancellationToken">Cancellation token</param>
@@ -114,7 +121,7 @@ namespace QLN.Common.Infrastructure.IService.IProductService
             CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Validates if an addon has enough quota for the requested usage
+        /// Validates if an addon has enough quota for the requested usage through actor
         /// </summary>
         /// <param name="addonId">Addon ID</param>
         /// <param name="quotaType">Type of quota</param>
@@ -128,7 +135,7 @@ namespace QLN.Common.Infrastructure.IService.IProductService
             CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Records usage against an addon quota
+        /// Records usage against an addon quota through actor
         /// </summary>
         /// <param name="addonId">Addon ID</param>
         /// <param name="quotaType">Type of quota</param>
@@ -157,6 +164,7 @@ namespace QLN.Common.Infrastructure.IService.IProductService
 
         /// <summary>
         /// Gets list of subscription IDs that have expired (for scheduler)
+        /// Reads from DB to find expired subscriptions
         /// </summary>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>List of expired subscription IDs</returns>
@@ -164,7 +172,8 @@ namespace QLN.Common.Infrastructure.IService.IProductService
             CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Marks a subscription as expired (called by scheduler)
+        /// Marks a subscription as expired through actor (called by scheduler)
+        /// Actor handles DB update and event publishing
         /// </summary>
         /// <param name="subscriptionId">Subscription ID</param>
         /// <param name="cancellationToken">Cancellation token</param>
@@ -175,6 +184,7 @@ namespace QLN.Common.Infrastructure.IService.IProductService
 
         /// <summary>
         /// Gets list of addon IDs that have expired (for scheduler)
+        /// Reads from DB to find expired addons
         /// </summary>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>List of expired addon IDs</returns>
@@ -182,7 +192,8 @@ namespace QLN.Common.Infrastructure.IService.IProductService
             CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Marks an addon as expired (called by scheduler)
+        /// Marks an addon as expired through actor (called by scheduler)
+        /// Actor handles DB update and event publishing
         /// </summary>
         /// <param name="addonId">Addon ID</param>
         /// <param name="cancellationToken">Cancellation token</param>
@@ -197,6 +208,7 @@ namespace QLN.Common.Infrastructure.IService.IProductService
 
         /// <summary>
         /// Gets subscriptions with filtering and pagination
+        /// Uses DB for filtering, then gets actor data for each result
         /// </summary>
         /// <param name="filter">Filter criteria</param>
         /// <param name="cancellationToken">Cancellation token</param>
@@ -206,7 +218,7 @@ namespace QLN.Common.Infrastructure.IService.IProductService
             CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Gets subscription by ID
+        /// Gets subscription by ID through actor
         /// </summary>
         /// <param name="subscriptionId">Subscription ID</param>
         /// <param name="cancellationToken">Cancellation token</param>
@@ -216,7 +228,7 @@ namespace QLN.Common.Infrastructure.IService.IProductService
             CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Gets addon by ID
+        /// Gets addon by ID through actor
         /// </summary>
         /// <param name="addonId">Addon ID</param>
         /// <param name="cancellationToken">Cancellation token</param>
@@ -226,7 +238,8 @@ namespace QLN.Common.Infrastructure.IService.IProductService
             CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Extends subscription end date
+        /// Extends subscription end date through actor
+        /// Actor handles DB update and state sync
         /// </summary>
         /// <param name="subscriptionId">Subscription ID</param>
         /// <param name="additionalDuration">Duration to add</param>
@@ -238,7 +251,8 @@ namespace QLN.Common.Infrastructure.IService.IProductService
             CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Refills subscription quota
+        /// Refills subscription quota through actor
+        /// Actor handles DB update and state sync
         /// </summary>
         /// <param name="subscriptionId">Subscription ID</param>
         /// <param name="quotaType">Type of quota</param>
@@ -252,6 +266,18 @@ namespace QLN.Common.Infrastructure.IService.IProductService
             CancellationToken cancellationToken = default);
 
         #endregion
+        // Admin subscription operations
+        Task<bool> UpdateSubscriptionStatusAsync(Guid subscriptionId, SubscriptionStatus newStatus, CancellationToken cancellationToken = default);
+        Task<bool> UpdateSubscriptionEndDateAsync(Guid subscriptionId, DateTime newEndDate, CancellationToken cancellationToken = default);
+        Task<bool> AdminCancelSubscriptionAsync(Guid subscriptionId, CancellationToken cancellationToken = default);
+
+        // Admin addon operations
+        Task<bool> UpdateAddonStatusAsync(Guid addonId, SubscriptionStatus newStatus, CancellationToken cancellationToken = default);
+        Task<bool> UpdateAddonEndDateAsync(Guid addonId, DateTime newEndDate, CancellationToken cancellationToken = default);
+        Task<bool> ExtendAddonAsync(Guid addonId, TimeSpan additionalDuration, CancellationToken cancellationToken = default);
+        Task<bool> RefillAddonQuotaAsync(Guid addonId, string quotaType, decimal amount, CancellationToken cancellationToken = default);
+        Task<bool> CancelAddonAsync(Guid addonId, string userId, CancellationToken cancellationToken = default);
+        Task<bool> AdminCancelAddonAsync(Guid addonId, CancellationToken cancellationToken = default);
     }
     #endregion
 }

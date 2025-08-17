@@ -5,6 +5,7 @@ using static QLN.Common.DTO_s.AddonDto;
 
 namespace QLN.Backend.Actor.ActorClass
 {
+    [Obsolete("This actor is deprecated and will be removed in future versions. Use the new IV2AddonActor instead.", false)]
     public class AddonActor : Dapr.Actors.Runtime.Actor, IAddonActor
     {
         private const string StateKey = "addon-data";

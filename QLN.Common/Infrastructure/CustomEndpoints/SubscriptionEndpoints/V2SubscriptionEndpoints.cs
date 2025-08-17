@@ -40,16 +40,15 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints
 
         public static RouteGroupBuilder MapV2PurchaseSubscription(this RouteGroupBuilder group)
         {
-
             group.MapPost("/v2/purchase", async Task<Results<
-        Ok<V2PurchaseResponseDto>,
-        UnauthorizedHttpResult,
-        ProblemHttpResult>>
-    (
-        HttpContext httpContext,
-        V2SubscriptionPurchaseRequestDto request,
-        IV2SubscriptionService service,
-        CancellationToken cancellationToken = default) =>
+                Ok<V2PurchaseResponseDto>,
+                UnauthorizedHttpResult,
+                ProblemHttpResult>>
+            (
+                HttpContext httpContext,
+                V2SubscriptionPurchaseRequestDto request,
+                IV2SubscriptionService service,
+                CancellationToken cancellationToken = default) =>
             {
                 try
                 {
@@ -72,20 +71,10 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints
                         );
                     }
 
-                    // Alternatively you could implement a new method for just subscription payments and use
-                    // it here as a _paymentService.PayForSubscription(request, uid, cancellationToken)
-                   
-                    var subscriptionId = await service.PurchaseSubscriptionAsync(request, cancellationToken); // if this is creating a PendingPayment subscription then
-                                                                                                                   // you would create an order next, however I notice this expects a
-                                                                                                                   // paymentId so the ordering may need to be swopped.
-                                                                                                                   // it is faster (from here) to create an order, then a subscription
-                                                                                                                   // and then update the order after with the subscription ID
-                                                                                                                   // this may be preferred as an order is to pay for something (anything)
-                                                                                                                   // while it may not necessarily be a subscription - the order would be
-                                                                                                                   // updated with referential data after "whatever" is bought and then
-                                                                                                                   // associated with the order
+                    // Set the userId from the token
+                    request.UserId = uid;
 
-                    // what should be returned to the frontend is the redirection URL so they know how to get to the payment gateway
+                    var subscriptionId = await service.PurchaseSubscriptionAsync(request, cancellationToken);
 
                     return TypedResults.Ok(new V2PurchaseResponseDto
                     {
@@ -113,15 +102,14 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints
                     );
                 }
             })
-.WithName("PurchaseV2Subscription")
-.WithTags("V2 Subscription")
-.WithSummary("Purchase a V2 subscription")
-.WithDescription("Purchases a V2 subscription using the authenticated user's ID from token claims.")
-.Produces<V2PurchaseResponseDto>(StatusCodes.Status200OK)
-.Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-.Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
-.RequireAuthorization();
-
+            .WithName("PurchaseV2Subscription")
+            .WithTags("V2 Subscription")
+            .WithSummary("Purchase a V2 subscription")
+            .WithDescription("Purchases a V2 subscription using the authenticated user's ID from token claims.")
+            .Produces<V2PurchaseResponseDto>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
+            .RequireAuthorization();
 
             return group;
         }
@@ -129,10 +117,10 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints
         public static RouteGroupBuilder MapV2GetSubscriptionsByVertical(this RouteGroupBuilder group)
         {
             group.MapGet("/v2/vertical/{verticalTypeId}", async Task<IResult> (
-      HttpContext httpContext,
-      int verticalTypeId,
-      [FromServices] IV2SubscriptionService service,
-      CancellationToken cancellationToken) =>
+                HttpContext httpContext,
+                int verticalTypeId,
+                [FromServices] IV2SubscriptionService service,
+                CancellationToken cancellationToken) =>
             {
                 try
                 {
@@ -180,32 +168,51 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints
                     );
                 }
             })
-  .WithName("GetV2SubscriptionsByVertical")
-  .WithTags("V2 Subscription")
-  .WithSummary("Get V2 subscriptions by vertical (Authenticated User)")
-  .WithDescription("Retrieves all active V2 subscriptions for a specific vertical for the authenticated user.")
-  .Produces<V2SubscriptionGroupResponseDto>(StatusCodes.Status200OK)
-  .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-  .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
-  .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
-  .RequireAuthorization();
-
+            .WithName("GetV2SubscriptionsByVertical")
+            .WithTags("V2 Subscription")
+            .WithSummary("Get V2 subscriptions by vertical (Authenticated User)")
+            .WithDescription("Retrieves all active V2 subscriptions for a specific vertical for the authenticated user.")
+            .Produces<V2SubscriptionGroupResponseDto>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
+            .RequireAuthorization();
 
             return group;
         }
 
         public static RouteGroupBuilder MapV2GetUserSubscriptions(this RouteGroupBuilder group)
         {
-            group.MapGet("/v2/user/{userId}", async Task<IResult> (
+            group.MapGet("/v2/user", async Task<IResult> ( // Removed {userId} from route
                 Vertical? vertical,
                 SubVertical? subvertical,
-                string userId,
+                HttpContext httpContext,
                 [FromServices] IV2SubscriptionService service,
                 CancellationToken cancellationToken) =>
             {
                 try
-                {                    
-                    var subscriptions = await service.GetUserSubscriptionsAsync(vertical, subvertical, userId, cancellationToken);
+                {
+                    // Extract user id from token
+                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                    if (string.IsNullOrEmpty(userClaim))
+                    {
+                        return TypedResults.Unauthorized();
+                    }
+
+                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                    var uid = userData.GetProperty("uid").GetString();
+
+                    if (string.IsNullOrWhiteSpace(uid))
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "Authenticated user ID is missing or invalid.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    var subscriptions = await service.GetUserSubscriptionsAsync(vertical, subvertical, uid, cancellationToken);
                     return TypedResults.Ok(subscriptions);
                 }
                 catch (Exception ex)
@@ -217,54 +224,48 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints
                     );
                 }
             })
-.WithName("GetV2UserSubscriptions")
-.WithTags("V2 Subscription")
-.WithSummary("Get user's V2 subscriptions")
-.WithDescription("Retrieves all V2 subscriptions for the specified user or the authenticated user if not specified.")
-.Produces<List<V2SubscriptionResponseDto>>(StatusCodes.Status200OK)
-.Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-.Produces<ProblemDetails>(StatusCodes.Status401Unauthorized)
-.Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
-.RequireAuthorization();
-
+            .WithName("GetV2UserSubscriptions")
+            .WithTags("V2 Subscription")
+            .WithSummary("Get user's V2 subscriptions")
+            .WithDescription("Retrieves all V2 subscriptions for the authenticated user.")
+            .Produces<List<V2SubscriptionResponseDto>>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
+            .RequireAuthorization();
 
             return group;
         }
 
         public static RouteGroupBuilder MapV2GetAllActiveSubscriptions(this RouteGroupBuilder group)
         {
-            group.MapGet("/v2/active/{userId?}", async Task<IResult> (
-    HttpContext httpContext,
-    [FromServices] IV2SubscriptionService service,
-    CancellationToken cancellationToken) =>
+            group.MapGet("/v2/active", async Task<IResult> ( // Removed {userId?} from route
+                HttpContext httpContext,
+                [FromServices] IV2SubscriptionService service,
+                CancellationToken cancellationToken) =>
             {
                 try
                 {
-                    // If no userId provided, get it from token
-                   
-                        var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                        if (string.IsNullOrEmpty(userClaim))
+                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                    if (string.IsNullOrEmpty(userClaim))
+                    {
+                        return TypedResults.Unauthorized();
+                    }
+
+                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                    var uidFromToken = userData.GetProperty("uid").GetString();
+
+                    if (string.IsNullOrWhiteSpace(uidFromToken))
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
                         {
-                            return TypedResults.Unauthorized();
-                        }
+                            Title = "Validation Error",
+                            Detail = "Authenticated user ID is missing or invalid.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
 
-                        var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                        var uidFromToken = userData.GetProperty("uid").GetString();
-
-                        if (string.IsNullOrWhiteSpace(uidFromToken))
-                        {
-                            return TypedResults.BadRequest(new ProblemDetails
-                            {
-                                Title = "Validation Error",
-                                Detail = "Authenticated user ID is missing or invalid.",
-                                Status = StatusCodes.Status400BadRequest
-                            });
-                        }
-
-                       var userId = uidFromToken;
-                    
-
-                    var subscriptions = await service.GetAllActiveSubscriptionsAsync(userId, cancellationToken);
+                    var subscriptions = await service.GetAllActiveSubscriptionsAsync(uidFromToken, cancellationToken);
                     return TypedResults.Ok(subscriptions);
                 }
                 catch (Exception ex)
@@ -276,68 +277,61 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints
                     );
                 }
             })
-.WithName("GetAllActiveV2Subscriptions")
-.WithTags("V2 Subscription")
-.WithSummary("Retrieve all active V2 subscriptions for a user")
-.WithDescription("Fetches all active V2 subscriptions for the specified user, or the authenticated user if not specified.")
-.Produces<List<V2SubscriptionResponseDto>>(StatusCodes.Status200OK)
-.Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-.Produces<ProblemDetails>(StatusCodes.Status401Unauthorized)
-.Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
-.RequireAuthorization();
-
+            .WithName("GetAllActiveV2Subscriptions")
+            .WithTags("V2 Subscription")
+            .WithSummary("Retrieve all active V2 subscriptions for authenticated user")
+            .WithDescription("Fetches all active V2 subscriptions for the authenticated user.")
+            .Produces<List<V2SubscriptionResponseDto>>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
+            .RequireAuthorization();
 
             return group;
         }
 
         public static RouteGroupBuilder MapV2CancelSubscription(this RouteGroupBuilder group)
         {
-            group.MapPut("/v2/cancel/{subscriptionId}/{userId?}", async Task<Results<
-     Ok<string>,
-     BadRequest<ProblemDetails>,
-     UnauthorizedHttpResult,
-     NotFound<string>,
-     ProblemHttpResult>>
- (
-     HttpContext httpContext,
-     Guid subscriptionId,
-     
-     [FromServices] IV2SubscriptionService service,
-     CancellationToken cancellationToken
- ) =>
+            group.MapPut("/v2/cancel/{subscriptionId}", async Task<Results< // Removed {userId?} from route
+                Ok<string>,
+                BadRequest<ProblemDetails>,
+                UnauthorizedHttpResult,
+                NotFound<string>,
+                ProblemHttpResult>>
+            (
+                HttpContext httpContext,
+                Guid subscriptionId,
+                [FromServices] IV2SubscriptionService service,
+                CancellationToken cancellationToken
+            ) =>
             {
                 try
                 {
-                    // If no userId provided, get from token
-                   
-                        var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                        if (string.IsNullOrEmpty(userClaim))
+                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                    if (string.IsNullOrEmpty(userClaim))
+                    {
+                        return TypedResults.Unauthorized();
+                    }
+
+                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                    var uidFromToken = userData.GetProperty("uid").GetString();
+
+                    if (string.IsNullOrWhiteSpace(uidFromToken))
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
                         {
-                            return TypedResults.Unauthorized();
-                        }
-
-                        var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                        var uidFromToken = userData.GetProperty("uid").GetString();
-
-                        if (string.IsNullOrWhiteSpace(uidFromToken))
-                        {
-                            return TypedResults.BadRequest(new ProblemDetails
-                            {
-                                Title = "Validation Error",
-                                Detail = "Authenticated user ID is missing or invalid.",
-                                Status = StatusCodes.Status400BadRequest
-                            });
-                        }
-
-                       var userId = uidFromToken;
-                    
+                            Title = "Validation Error",
+                            Detail = "Authenticated user ID is missing or invalid.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
 
                     // Cancel subscription for that user
-                    var result = await service.CancelSubscriptionAsync(subscriptionId, userId, cancellationToken);
+                    var result = await service.CancelSubscriptionAsync(subscriptionId, uidFromToken, cancellationToken);
 
                     if (!result)
                     {
-                        return TypedResults.NotFound($"V2 Subscription with ID {subscriptionId} not found for user {userId}.");
+                        return TypedResults.NotFound($"V2 Subscription with ID {subscriptionId} not found for user {uidFromToken}.");
                     }
 
                     return TypedResults.Ok("V2 Subscription cancelled successfully.");
@@ -351,17 +345,16 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints
                     );
                 }
             })
- .WithName("CancelV2Subscription")
- .WithTags("V2 Subscription")
- .WithSummary("Cancel a V2 subscription for a user")
- .WithDescription("Cancels an existing V2 subscription for the specified user, or the authenticated user if not specified.")
- .Produces<string>(StatusCodes.Status200OK)
- .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
- .Produces(StatusCodes.Status401Unauthorized)
- .Produces<string>(StatusCodes.Status404NotFound)
- .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
- .RequireAuthorization();
-
+            .WithName("CancelV2Subscription")
+            .WithTags("V2 Subscription")
+            .WithSummary("Cancel a V2 subscription for authenticated user")
+            .WithDescription("Cancels an existing V2 subscription for the authenticated user.")
+            .Produces<string>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces<string>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
+            .RequireAuthorization();
 
             return group;
         }
@@ -369,40 +362,14 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints
         public static RouteGroupBuilder MapV2UsageValidation(this RouteGroupBuilder group)
         {
             group.MapPost("/v2/validate-usage", async Task<IResult> (
-    HttpContext httpContext,
-    [FromBody] V2UsageValidationRequest request,
-    [FromServices] IV2SubscriptionService service,
-    CancellationToken cancellationToken) =>
+                [FromBody] V2UsageValidationRequest request,
+                [FromServices] IV2SubscriptionService service,
+                CancellationToken cancellationToken) =>
             {
                 try
                 {
-                   
-                    
-                        var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                        if (string.IsNullOrEmpty(userClaim))
-                        {
-                            return TypedResults.Unauthorized();
-                        }
-
-                        var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                        var uidFromToken = userData.GetProperty("uid").GetString();
-
-                        if (string.IsNullOrWhiteSpace(uidFromToken))
-                        {
-                            return TypedResults.BadRequest(new ProblemDetails
-                            {
-                                Title = "Validation Error",
-                                Detail = "Authenticated user ID is missing or invalid.",
-                                Status = StatusCodes.Status400BadRequest
-                            });
-                        }
-
-                        var userid = uidFromToken;
-                    
-
                     var isValid = await service.ValidateSubscriptionUsageAsync(
                         request.SubscriptionId,
-                       
                         request.QuotaType,
                         request.RequestedAmount,
                         cancellationToken);
@@ -414,9 +381,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints
                         SubscriptionId = request.SubscriptionId,
                         QuotaType = request.QuotaType,
                         RequestedAmount = request.RequestedAmount,
-                        AvailableQuota = 0, 
-                        Version = "V2",
-                        //userid = request.userid
+                        AvailableQuota = 0,
+                        Version = "V2"
                     });
                 }
                 catch (Exception ex)
@@ -428,16 +394,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints
                     );
                 }
             })
-.WithName("ValidateV2Usage")
-.WithTags("V2 Subscription")
-.WithSummary("Validate V2 subscription usage for a user")
-.WithDescription("Validates if a user's V2 subscription has enough quota for the requested usage.")
-.Produces<V2UsageValidationResponseDto>(StatusCodes.Status200OK)
-.Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-.Produces(StatusCodes.Status401Unauthorized)
-.Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
-.RequireAuthorization();
-
+            .WithName("ValidateV2Usage")
+            .WithTags("V2 Subscription")
+            .WithSummary("Validate V2 subscription usage")
+            .WithDescription("Validates if a subscription has enough quota for the requested usage.")
+            .Produces<V2UsageValidationResponseDto>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
+            .RequireAuthorization();
 
             return group;
         }
@@ -445,40 +408,14 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints
         public static RouteGroupBuilder MapV2UsageRecording(this RouteGroupBuilder group)
         {
             group.MapPost("/v2/record-usage", async Task<IResult> (
-    HttpContext httpContext,
-    [FromBody] V2UsageRecordRequest request,
-    [FromServices] IV2SubscriptionService service,
-    CancellationToken cancellationToken) =>
+                [FromBody] V2UsageRecordRequest request,
+                [FromServices] IV2SubscriptionService service,
+                CancellationToken cancellationToken) =>
             {
                 try
                 {
-                    // Extract userid from token if not provided in request
-                    
-                        var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                        if (string.IsNullOrEmpty(userClaim))
-                        {
-                            return TypedResults.Unauthorized();
-                        }
-
-                        var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                        var uidFromToken = userData.GetProperty("uid").GetString();
-
-                        if (string.IsNullOrWhiteSpace(uidFromToken))
-                        {
-                            return TypedResults.BadRequest(new ProblemDetails
-                            {
-                                Title = "Usage Recording Error",
-                                Detail = "Authenticated user ID is missing or invalid.",
-                                Status = StatusCodes.Status400BadRequest
-                            });
-                        }
-
-                         var userid = uidFromToken;
-                    
-
                     var result = await service.RecordSubscriptionUsageAsync(
                         request.SubscriptionId,
-                       
                         request.QuotaType,
                         request.Amount,
                         cancellationToken);
@@ -492,8 +429,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints
                         AmountRecorded = request.Amount,
                         RemainingQuota = 0,
                         RecordedAt = DateTime.UtcNow,
-                        Version = "V2",
-                        //Userid = request.userid
+                        Version = "V2"
                     });
                 }
                 catch (Exception ex)
@@ -505,16 +441,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints
                     );
                 }
             })
-.WithName("RecordV2Usage")
-.WithTags("V2 Subscription")
-.WithSummary("Record V2 subscription usage")
-.WithDescription("Records usage against a V2 subscription quota.")
-.Produces<V2UsageRecordResponseDto>(StatusCodes.Status200OK)
-.Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-.Produces(StatusCodes.Status401Unauthorized)
-.Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
-.RequireAuthorization();
-
+            .WithName("RecordV2Usage")
+            .WithTags("V2 Subscription")
+            .WithSummary("Record V2 subscription usage")
+            .WithDescription("Records usage against a V2 subscription quota.")
+            .Produces<V2UsageRecordResponseDto>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
+            .RequireAuthorization();
 
             return group;
         }
@@ -526,44 +459,43 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints
         public static RouteGroupBuilder MapV2PurchaseAddon(this RouteGroupBuilder group)
         {
             group.MapPost("/v2/addon/purchase", async Task<Results<
-    Ok<V2PurchaseResponseDto>,
-    BadRequest<ProblemDetails>,
-    ProblemHttpResult>>
-(
-    HttpContext httpContext,
-    V2UserAddonPurchaseRequestDto request,
-    IV2SubscriptionService service,
-    CancellationToken cancellationToken = default) =>
+                Ok<V2PurchaseResponseDto>,
+                BadRequest<ProblemDetails>,
+                ProblemHttpResult>>
+            (
+                HttpContext httpContext,
+                V2UserAddonPurchaseRequestDto request,
+                IV2SubscriptionService service,
+                CancellationToken cancellationToken = default) =>
             {
                 try
                 {
-                    
-                        var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                        if (string.IsNullOrEmpty(userClaim))
+                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                    if (string.IsNullOrEmpty(userClaim))
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
                         {
-                            return TypedResults.BadRequest(new ProblemDetails
-                            {
-                                Title = "User ID Missing",
-                                Detail = "User ID not found in token claims.",
-                                Status = StatusCodes.Status400BadRequest
-                            });
-                        }
+                            Title = "User ID Missing",
+                            Detail = "User ID not found in token claims.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
 
-                        var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                        var uidFromToken = userData.GetProperty("uid").GetString();
+                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                    var uidFromToken = userData.GetProperty("uid").GetString();
 
-                        if (string.IsNullOrWhiteSpace(uidFromToken))
+                    if (string.IsNullOrWhiteSpace(uidFromToken))
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
                         {
-                            return TypedResults.BadRequest(new ProblemDetails
-                            {
-                                Title = "Invalid Token Data",
-                                Detail = "Authenticated user ID is missing or invalid in token.",
-                                Status = StatusCodes.Status400BadRequest
-                            });
-                        }
+                            Title = "Invalid Token Data",
+                            Detail = "Authenticated user ID is missing or invalid in token.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
 
-                         var UserId = uidFromToken;
-                    
+                    // Set the userId from the token
+                    request.UserId = uidFromToken;
 
                     var addonId = await service.PurchaseAddonAsync(request, cancellationToken);
 
@@ -573,8 +505,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints
                         ProductCode = request.ProductCode,
                         Message = "V2 Addon purchased successfully.",
                         Success = true,
-                        PurchasedAt = DateTime.UtcNow,
-                        //userId = request.UserId
+                        PurchasedAt = DateTime.UtcNow
                     });
                 }
                 catch (InvalidOperationException ex)
@@ -595,15 +526,14 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints
                     );
                 }
             })
-.WithName("PurchaseV2Addon")
-.WithTags("V2 Addon")
-.WithSummary("Purchase a V2 addon")
-.WithDescription("Purchases a V2 addon based on product code.")
-.Produces<V2PurchaseResponseDto>(StatusCodes.Status200OK)
-.Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-.Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
-.RequireAuthorization();
-
+            .WithName("PurchaseV2Addon")
+            .WithTags("V2 Addon")
+            .WithSummary("Purchase a V2 addon")
+            .WithDescription("Purchases a V2 addon based on product code.")
+            .Produces<V2PurchaseResponseDto>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
+            .RequireAuthorization();
 
             return group;
         }
@@ -620,7 +550,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints
                     var isValid = await service.ValidateAddonUsageAsync(
                         request.AddonId,
                         request.QuotaType,
-                        request.RequestedAmount, cancellationToken);
+                        request.RequestedAmount,
+                        cancellationToken);
 
                     return Results.Ok(new
                     {
@@ -646,7 +577,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints
             .WithSummary("Validate V2 addon usage")
             .WithDescription("Validates if a V2 addon has enough quota for the requested usage.")
             .Produces<object>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
+            .RequireAuthorization();
 
             return group;
         }
@@ -691,7 +623,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints
             .WithSummary("Record V2 addon usage")
             .WithDescription("Records usage against a V2 addon quota.")
             .Produces<object>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
+            .RequireAuthorization();
 
             return group;
         }
@@ -699,9 +632,9 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints
         public static RouteGroupBuilder MapV2GetUserAddons(this RouteGroupBuilder group)
         {
             group.MapGet("/v2/addon/user", async Task<IResult> (
-    HttpContext httpContext,
-    [FromServices] IV2SubscriptionService service,
-    CancellationToken cancellationToken) =>
+                HttpContext httpContext,
+                [FromServices] IV2SubscriptionService service,
+                CancellationToken cancellationToken) =>
             {
                 try
                 {
@@ -737,16 +670,15 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints
                     );
                 }
             })
-.WithName("GetV2UserAddons")
-.WithTags("V2 Addon")
-.WithSummary("Get user V2 addons")
-.WithDescription("Retrieves all V2 addons for the authenticated user.")
-.Produces<List<V2UserAddonResponseDto>>(StatusCodes.Status200OK)
-.Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-.Produces(StatusCodes.Status401Unauthorized)
-.Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
-.RequireAuthorization();
-
+            .WithName("GetV2UserAddons")
+            .WithTags("V2 Addon")
+            .WithSummary("Get user V2 addons")
+            .WithDescription("Retrieves all V2 addons for the authenticated user.")
+            .Produces<List<V2UserAddonResponseDto>>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
+            .RequireAuthorization();
 
             return group;
         }
