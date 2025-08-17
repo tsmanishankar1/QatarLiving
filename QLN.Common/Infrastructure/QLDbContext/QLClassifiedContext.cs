@@ -30,9 +30,6 @@ namespace QLN.Common.Infrastructure.QLDbContext
         public DbSet<FeaturedCategory> FeaturedCategories { get; set; }
         public DbSet<Services> Services { get; set; }
         public DbSet<Category> Categories { get; set; }     
-        public DbSet<SeasonalPicks> SeasonalPicks { get; set; }
-        public DbSet<FeaturedStore> FeaturedStores { get; set; }
-        public DbSet<FeaturedCategory> FeaturedCategories { get; set; }
         public DbSet<StoresDashboardHeader> StoresDashboardHeaderItems { get; set; }
         public DbSet<StoresDashboardSummary> StoresDashboardSummaryItems { get; set; }
 
