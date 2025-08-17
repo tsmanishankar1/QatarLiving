@@ -12,6 +12,7 @@ namespace QLN.Common.Infrastructure.Model
 {
     public class SeasonalPicks
     {
+
         public Guid Id { get; set; }
         [MaxLength(100)]
         public string Title { get; set; } = null!;
