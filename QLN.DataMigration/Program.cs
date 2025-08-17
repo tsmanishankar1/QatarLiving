@@ -114,12 +114,36 @@ app.MapGet("/migrate_items", async (
     [FromServices] IMigrationService migrationService,
     [FromQuery] string environment,
     [FromQuery(Name = "import_images")] bool importImages,
+    IFormFile file,
     CancellationToken cancellationToken = default
     ) =>
     {
-        return await migrationService.MigrateItems(environment, importImages, cancellationToken);
+        if (file == null || file.Length == 0)
+            return Results.BadRequest("No file uploaded.");
+
+        var totalCount = 0;
+        var records = new List<CsvCategoryMapper>();
+
+        using (var stream = file.OpenReadStream())
+        using (var reader = new StreamReader(stream))
+        using (var csv = new CsvReader(reader, CultureInfo.InvariantCulture))
+        {
+            csv.Read();
+            csv.ReadHeader();
+            while (csv.Read())
+            {
+                var record = csv.GetRecord<CsvCategoryMapper>();
+                if (record.L2Category == "NULL") record.L2Category = null;
+                Console.WriteLine($"ad_id: {record.AdId}, category: {record.Category}, l1_category: {record.L1Category}, l2_category: {record.L2Category}");
+                totalCount++;
+                records.Add(record);
+            }
+        }
+
+        return await migrationService.MigrateItems(records, environment, importImages, cancellationToken);
     })
-    .WithSummary("Migrate Items - not ready yet");
+    .WithSummary("Migrate Items")
+    .DisableAntiforgery();
 
 app.MapGet("/migrate_item_subscriptions", async (
     [FromServices] IMigrationService migrationService,
@@ -208,40 +232,6 @@ app.MapGet("/migrate_locations", async (
     return await migrationService.MigrateLocations(cancellationToken);
 })
     .WithSummary("Migrate Locations - Not yet required");
-
-app.MapPost("/import_csv_categories", async (IFormFile file) =>
-{
-    if (file == null || file.Length == 0)
-        return Results.BadRequest("No file uploaded.");
-
-    var totalCount = 0;
-    var records = new List<CsvCategoryImportRow>();
-
-    using (var stream = file.OpenReadStream())
-    using (var reader = new StreamReader(stream))
-    using (var csv = new CsvReader(reader, CultureInfo.InvariantCulture))
-    {
-        csv.Read();
-        csv.ReadHeader();
-        while (csv.Read())
-        {
-            var record = csv.GetRecord<CsvCategoryImportRow>();
-            if (record.L2Category == "NULL") record.L2Category = null;
-            Console.WriteLine($"ad_id: {record.AdId}, category: {record.Category}, l1_category: {record.L1Category}, l2_category: {record.L2Category}");
-            totalCount++;
-            // Do something with the record.
-        }
-    }
-    return Results.Ok(new
-    {
-        Message = "CSV file imported successfully.",
-        TotalCount = totalCount
-    });
-})
-.WithSummary("Import CSV file with ad_id, category, l1_category, l2_category")
-.DisableAntiforgery();
-
-
 
 
 app.Run();

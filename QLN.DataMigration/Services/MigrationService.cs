@@ -76,7 +76,7 @@ namespace QLN.DataMigration.Services
             });
         }
 
-        public async Task<IResult> MigrateItems(string environment, bool importImages, CancellationToken cancellationToken)
+        public async Task<IResult> MigrateItems(List<CsvCategoryMapper> csvImport, string environment, bool importImages, CancellationToken cancellationToken)
         {
             int pageSize = 30;
             int page = 1;

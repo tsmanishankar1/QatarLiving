@@ -3,7 +3,7 @@ using CsvHelper.Configuration.Attributes;
 
 namespace QLN.DataMigration.Models
 {
-    public class CsvCategoryImportRow
+    public class CsvCategoryMapper
     {
         [Name("ad_id")]
         public string AdId { get; set; } = string.Empty;

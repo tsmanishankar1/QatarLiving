@@ -1,11 +1,13 @@
 ﻿
 
+using QLN.DataMigration.Models;
+
 namespace QLN.DataMigration.Services
 {
     public interface IMigrationService
     {
         Task<IResult> MigrateMobileDevices(string environment, CancellationToken cancellationToken);
-        Task<IResult> MigrateItems(string environment, bool importImages, CancellationToken cancellationToken);
+        Task<IResult> MigrateItems(List<CsvCategoryMapper> csvImport, string environment, bool importImages, CancellationToken cancellationToken);
         Task<IResult> MigrateArticles(bool importImages, CancellationToken cancellationToken);
         Task<IResult> MigrateEvents(bool importImages, CancellationToken cancellationToken);
         Task<IResult> MigrateCommunityPosts(bool importImages, CancellationToken cancellationToken);
