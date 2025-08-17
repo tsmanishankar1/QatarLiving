@@ -33,7 +33,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.EditAd
 
         protected void GoBack()
         {
-            Navigation.NavigateTo("/manage/classified/items/view/listing");
+            Navigation.NavigateTo("/manage/classified/preloved/p2p/listing");
         }
         protected ItemEditAdPost adPostModel { get; set; } = new();
         protected EditContext editContext;
