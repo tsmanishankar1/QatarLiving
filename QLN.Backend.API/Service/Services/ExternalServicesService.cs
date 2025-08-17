@@ -666,7 +666,7 @@ namespace QLN.Backend.API.Service.Services
         public async Task<SubscriptionBudgetDto> GetSubscriptionBudgetsAsyncBySubVertical(
      Guid subscriptionIdFromToken,
      int verticalId,
-     int subverticalId,
+     int? subverticalId,  // <-- nullable now
      CancellationToken cancellationToken = default)
         {
             try
@@ -675,7 +675,7 @@ namespace QLN.Backend.API.Service.Services
                 {
                     SubscriptionId = subscriptionIdFromToken,
                     VerticalId = verticalId,
-                    SubVerticalId = subverticalId
+                    SubVerticalId = subverticalId // can be null
                 };
 
                 var response = await _dapr.InvokeMethodAsync<object, SubscriptionBudgetDto>(
@@ -694,6 +694,7 @@ namespace QLN.Backend.API.Service.Services
                 throw;
             }
         }
+
 
 
 

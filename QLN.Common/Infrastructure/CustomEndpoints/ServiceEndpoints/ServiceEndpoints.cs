@@ -1842,8 +1842,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
             group.MapGet("/getcountsbyvertical", async Task<Results<Ok<SubscriptionBudgetDto>, ProblemHttpResult>> (
                 HttpContext httpContext,
                 [FromServices] IServices service,
-                [FromQuery] int verticalId,       // explicitly typed as int
-                [FromQuery] int subverticalId,
+                [FromQuery] int verticalId,
+                [FromQuery] int? subverticalId,    // <-- now nullable
                 CancellationToken cancellationToken)
             =>
             {
@@ -1876,7 +1876,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                                 Status = StatusCodes.Status403Forbidden
                             });
                         }
-
                         subscription = subscriptionElement[0];
                     }
                     else if (subscriptionElement.ValueKind == JsonValueKind.Object)
@@ -1925,12 +1924,11 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
             })
             .WithName("GetServiceStatusCountsbySubvertical")
             .WithTags("Service")
-            .WithSummary("Get subscription budget details with vertical filter")
-            .WithDescription("Returns budget details for the logged-in subscription ID, specified verticalId, and subverticalId.")
+            .WithSummary("Get subscription budget details with vertical/subvertical filter")
+            .WithDescription("Returns budget details for the logged-in subscription ID. If subverticalId is provided, filters by both verticalId and subverticalId; otherwise, filters by verticalId only.")
             .Produces<SubscriptionBudgetDto>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-
 
             // Post endpoint for internal service calls
             group.MapPost("/getbudgetsbysubvertical", async Task<Results<Ok<SubscriptionBudgetDto>, ProblemHttpResult>> (
@@ -1941,7 +1939,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
             {
                 try
                 {
-                    // This service method should now also accept verticalId
                     var counts = await service.GetSubscriptionBudgetsAsyncBySubVertical(dto.SubscriptionId, dto.VerticalId, dto.SubVerticalId, cancellationToken);
                     return TypedResults.Ok(counts);
                 }
@@ -1956,6 +1953,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
 
             return group;
         }
+
 
 
 

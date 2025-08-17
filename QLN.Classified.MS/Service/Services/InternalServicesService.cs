@@ -1165,10 +1165,10 @@ namespace QLN.Classified.MS.Service.Services
 
 
         public async Task<SubscriptionBudgetDto> GetSubscriptionBudgetsAsyncBySubVertical(
-      Guid subscriptionIdFromToken,
-      int verticalId,
-      int subverticalId,
-      CancellationToken cancellationToken = default)
+     Guid subscriptionIdFromToken,
+     int verticalId,
+     int? subverticalId,
+     CancellationToken cancellationToken = default)
         {
             try
             {
@@ -1177,13 +1177,15 @@ namespace QLN.Classified.MS.Service.Services
                     .FirstOrDefaultAsync(s =>
                         s.SubscriptionId == subscriptionIdFromToken &&
                         (int?)s.Vertical == verticalId &&
-                        (int?)s.SubVertical == subverticalId,
+                        (subverticalId == null || (int?)s.SubVertical == subverticalId), // conditional filter
                         cancellationToken);
 
                 if (subscription == null)
                 {
                     throw new ArgumentException(
-                        $"No subscription found with Id {subscriptionIdFromToken} for vertical {verticalId} and subvertical {subverticalId}.");
+                        subverticalId == null
+                            ? $"No subscription found with Id {subscriptionIdFromToken} for vertical {verticalId}."
+                            : $"No subscription found with Id {subscriptionIdFromToken} for vertical {verticalId} and subvertical {subverticalId}.");
                 }
 
                 if (subscription.Quota == null)
@@ -1222,6 +1224,7 @@ namespace QLN.Classified.MS.Service.Services
                 throw new Exception("Error fetching subscription budgets", ex);
             }
         }
+
 
 
 

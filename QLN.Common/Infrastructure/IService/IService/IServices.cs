@@ -29,7 +29,7 @@ namespace QLN.Common.Infrastructure.IService.IService
         Task<SubscriptionBudgetDto> GetSubscriptionBudgetsAsyncBySubVertical(
         Guid subscriptionIdFromToken,
         int verticalId,
-        int subVerticalId,
+        int? subVerticalId,
         CancellationToken cancellationToken = default);
     }
 }
