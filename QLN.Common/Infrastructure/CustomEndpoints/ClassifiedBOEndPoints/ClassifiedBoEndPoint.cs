@@ -1539,6 +1539,50 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
+            group.MapGet("/getfeaturedcategorybyslug", async Task<Results<
+                Ok<List<FeaturedCategory>>,
+                BadRequest<ProblemDetails>,
+                ProblemHttpResult>> (
+                IClassifiedBoLandingService service,
+                HttpContext context,
+                [FromQuery] string slug,
+                CancellationToken cancellationToken
+                ) =>
+            {
+                try
+                {
+                    var result = await service.GetFeatureCategoryBySlug(slug, cancellationToken);
+
+                    return TypedResults.Ok(result);
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    return TypedResults.Problem(
+                        title: "No Featured Category Found",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status404NotFound,
+                        instance: context.Request.Path
+                    );
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        instance: context.Request.Path
+                    );
+                }
+            })
+                .WithName("GetFeaturedCategoryBySlug")
+                .WithTags("ClassifiedBo")
+                .AllowAnonymous()
+                .WithSummary("Get Featured category by slug")
+                .WithDescription("Fetches all active Featured category that match the provided slug.")
+                .Produces<List<FeaturedCategory>>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
 
             group.MapGet("/featured-stores/slotted", async Task<Results<
                  Ok<List<FeaturedStoreItem>>,
@@ -1881,6 +1925,50 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
    .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
    .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
    .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapGet("/getfeaturedstorebyslug", async Task<Results<
+                Ok<List<FeaturedStore>>,
+                BadRequest<ProblemDetails>,
+                ProblemHttpResult>> (
+                IClassifiedBoLandingService service,
+                HttpContext context,
+                [FromQuery] string slug,
+                CancellationToken cancellationToken
+                ) =>
+            {
+                try
+                {
+                    var result = await service.GetFeatureStoreBySlug(slug, cancellationToken);
+
+                    return TypedResults.Ok(result);
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    return TypedResults.Problem(
+                        title: "No Featured Store Found",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status404NotFound,
+                        instance: context.Request.Path
+                    );
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        instance: context.Request.Path
+                    );
+                }
+            })
+                .WithName("GetFeaturedStoreBySlug")
+                .WithTags("ClassifiedBo")
+                .AllowAnonymous()
+                .WithSummary("Get Featured store by slug")
+                .WithDescription("Fetches all active Featured store that match the provided slug.")
+                .Produces<List<FeaturedStore>>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             group.MapPut("/editfeaturedstore", async Task<Results<
             Ok<string>,

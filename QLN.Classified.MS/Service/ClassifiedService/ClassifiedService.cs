@@ -2359,7 +2359,7 @@ namespace QLN.Classified.MS.Service
                 await _context.SaveChangesAsync(cancellationToken);
                 await _subscriptionContext.SaveChangesAsync(cancellationToken);
 
-                if (dto.IsFeatured!.Value)
+                if (dto.IsFeatured.Value)
                 {
                     // reindex to search
                     switch (dto.SubVertical)
@@ -2471,7 +2471,7 @@ namespace QLN.Classified.MS.Service
                 await _context.SaveChangesAsync(cancellationToken);
                 await _subscriptionContext.SaveChangesAsync(cancellationToken);
 
-                if (dto.IsPromoted!.Value)
+                if (dto.IsPromoted.Value)
                 {
                     // reindex to search
                     switch (dto.SubVertical)
