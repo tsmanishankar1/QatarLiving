@@ -175,6 +175,7 @@ namespace QLN.Common.DTO_s
     public class SubscriptionRequest
     {
         public Guid SubscriptionId { get; set; }
+        public int VerticalId { get; set; }
         public int SubVerticalId { get; set; }
     }
 }

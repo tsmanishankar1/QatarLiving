@@ -28,6 +28,7 @@ namespace QLN.Common.Infrastructure.IService.IService
         Task<SubscriptionBudgetDto> GetSubscriptionBudgetsAsync(Guid subscriptionId,CancellationToken cancellationToken = default);
         Task<SubscriptionBudgetDto> GetSubscriptionBudgetsAsyncBySubVertical(
         Guid subscriptionIdFromToken,
+        int verticalId,
         int subVerticalId,
         CancellationToken cancellationToken = default);
     }

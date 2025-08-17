@@ -1162,70 +1162,13 @@ namespace QLN.Classified.MS.Service.Services
                 throw new Exception("Error fetching subscription budgets", ex);
             }
         }
-        // public async Task<SubscriptionBudgetDto> GetSubscriptionBudgetsAsync(
-        //Guid subscriptionId,
-        //CancellationToken cancellationToken = default)
-        // {
-        //     try
-        //     {
-        //         // Hardcoded for testing
-        //         subscriptionId = Guid.Parse("48887e22-782a-4825-a0b6-bd27259ef554");
-
-        //         var subscription = await _qLSubscriptionContext.Subscriptions
-        //             .AsNoTracking()
-        //             .FirstOrDefaultAsync(s =>
-        //                 s.SubscriptionId == subscriptionId &&
-        //                 (int)s.Vertical == 4,
-        //                 cancellationToken);
-
-        //         if (subscription == null)
-        //         {
-        //             throw new ArgumentException(
-        //                 $"No subscription found with Id {subscriptionId} for vertical 4.");
-        //         }
-
-        //         if (subscription.Quota == null)
-        //         {
-        //             throw new InvalidDataException("Subscription quota is empty.");
-        //         }
-
-        //         var quota = subscription.Quota;
-
-        //         var dto = new SubscriptionBudgetDto
-        //         {
-        //             // Totals
-        //             TotalAdsAllowed = quota.TotalAdsAllowed,
-        //             TotalPromotionsAllowed = quota.TotalPromotionsAllowed,
-        //             TotalFeaturesAllowed = quota.TotalFeaturesAllowed,
-        //             DailyRefreshesAllowed = quota.DailyRefreshesAllowed,
-        //             RefreshesPerAdAllowed = quota.RefreshesPerAdAllowed,
-        //             SocialMediaPostsAllowed = quota.SocialMediaPostsAllowed,
-
-        //             // Used
-        //             AdsUsed = quota.AdsUsed,
-        //             PromotionsUsed = quota.PromotionsUsed,
-        //             FeaturesUsed = quota.FeaturesUsed,
-        //             DailyRefreshesUsed = quota.DailyRefreshesUsed,
-        //             RefreshesPerAdUsed = quota.RefreshesPerAdUsed,
-        //             SocialMediaPostsUsed = quota.SocialMediaPostsUsed
-        //         };
-
-        //         return dto;
-        //     }
-        //     catch (ArgumentException) { throw; }
-        //     catch (InvalidDataException) { throw; }
-        //     catch (Exception ex)
-        //     {
-        //         throw new Exception("Error fetching subscription budgets", ex);
-        //     }
-        // }
-
 
 
         public async Task<SubscriptionBudgetDto> GetSubscriptionBudgetsAsyncBySubVertical(
-     Guid subscriptionIdFromToken,
-     int subverticalId,
-     CancellationToken cancellationToken = default)
+      Guid subscriptionIdFromToken,
+      int verticalId,
+      int subverticalId,
+      CancellationToken cancellationToken = default)
         {
             try
             {
@@ -1233,13 +1176,14 @@ namespace QLN.Classified.MS.Service.Services
                     .AsNoTracking()
                     .FirstOrDefaultAsync(s =>
                         s.SubscriptionId == subscriptionIdFromToken &&
+                        (int?)s.Vertical == verticalId &&
                         (int?)s.SubVertical == subverticalId,
                         cancellationToken);
 
                 if (subscription == null)
                 {
                     throw new ArgumentException(
-                        $"No subscription found with Id {subscriptionIdFromToken} for subvertical {subverticalId}.");
+                        $"No subscription found with Id {subscriptionIdFromToken} for vertical {verticalId} and subvertical {subverticalId}.");
                 }
 
                 if (subscription.Quota == null)
@@ -1251,7 +1195,6 @@ namespace QLN.Classified.MS.Service.Services
 
                 return new SubscriptionBudgetDto
                 {
-                    
                     TotalAdsAllowed = quota.TotalAdsAllowed,
                     TotalPromotionsAllowed = quota.TotalPromotionsAllowed,
                     TotalFeaturesAllowed = quota.TotalFeaturesAllowed,
