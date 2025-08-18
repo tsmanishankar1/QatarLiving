@@ -3,6 +3,7 @@ using Dapr.Client;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.IService.ISearchService;
+using System.Net.Http;
 
 namespace QLN.Backend.API.Service.AnalyticsService
 {
@@ -11,13 +12,16 @@ namespace QLN.Backend.API.Service.AnalyticsService
         private readonly DaprClient _dapr;
         private readonly ILogger<ExternalAnalyticsService> _logger;
         private readonly string SERVICE_APP_ID = ConstantValues.ServiceAppIds.SearchServiceApp;
+        private readonly HttpClient _httpClient;
 
         public ExternalAnalyticsService(
             DaprClient dapr,
-            ILogger<ExternalAnalyticsService> logger)
+            ILogger<ExternalAnalyticsService> logger,
+            HttpClient httpClient)
         {
             _dapr = dapr ?? throw new ArgumentNullException(nameof(dapr));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _httpClient = httpClient;
         }
 
         public async Task<AnalyticsIndex?> GetAsync(string section, string entityId)
@@ -91,6 +95,52 @@ namespace QLN.Backend.API.Service.AnalyticsService
                     "Unexpected error in UpsertAnalytics: {@Request}",
                     req);
                 throw;
+            }
+        }
+        public async Task<ApiResponse<object>> GetAnalyticsAsync(AnalyticsRequestDto request, string uid, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var keyValues = new List<KeyValuePair<string, string>>
+                {
+                    new("type", request.Type),
+                    new("uid", uid),
+                    new("start", request.Start),
+                    new("end", request.End)
+                };
+
+                using var content = new FormUrlEncodedContent(keyValues);
+
+                var response = await _httpClient.PostAsync("qlnapi/get/analytics", content, cancellationToken);
+                response.EnsureSuccessStatusCode();
+
+                var result = await response.Content.ReadAsStringAsync(cancellationToken);
+                var json = System.Text.Json.JsonSerializer.Deserialize<object>(result);
+
+                return new ApiResponse<object>
+                {
+                    Status = true,
+                    Message = $"Analytics data retrieved successfully for {request.Type}",
+                    Data = json
+                };
+            }
+            catch (HttpRequestException ex)
+            {
+                _logger.LogError(ex, "Error calling analytics service");
+                return new ApiResponse<object>
+                {
+                    Status = false,
+                    Message = ex.Message
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error in GetAnalyticsAsync");
+                return new ApiResponse<object>
+                {
+                    Status = false,
+                    Message = "An unexpected error occurred"
+                };
             }
         }
     }
