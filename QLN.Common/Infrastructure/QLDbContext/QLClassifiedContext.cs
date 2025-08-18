@@ -83,6 +83,7 @@ namespace QLN.Common.Infrastructure.QLDbContext
                 subs.""UserId"",
                 comp.""UserName"",
                 comp.""Status"",
+                comp.""CompanyVerificationStatus"",
                 comp.""CompanyName"",
                 comp.""CompanyLogo"",
                 subs.""StartDate"",
@@ -92,8 +93,8 @@ namespace QLN.Common.Infrastructure.QLDbContext
             FROM public.""Subscriptions"" AS subs
             INNER JOIN public.""Companies"" AS comp
                 ON subs.""CompanyId"" = comp.""Id""
-            WHERE subs.""Status"" = 1 
-              AND subs.""Vertical"" = 3
+            WHERE
+              subs.""Vertical"" = 3
               AND subs.""SubVertical"" = 3
         ");
                 entity.Property(e => e.CompanyId).HasColumnName("CompanyId");

@@ -5658,7 +5658,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 ProductDescription = g.ProductDescription,
                 Features = g.Features,
                 Images = g.Images,
-                 ProductSlug=g.ProductSlug
+                ProductSlug=g.ProductSlug
             }).ToList()
         })
         .ToList()
@@ -6159,35 +6159,34 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             {
                 try
                 {
-                    var user = context.User;
-                    var userId = user.FindFirst("sub")?.Value;
-                    var subscriptionsClaim = user.FindFirst("subscriptions")?.Value;
+
+                    var (userId, validSubscriptions, error) = GenericClaimsHelper.GetValidSubscriptions(context.User, (int)Vertical.Classifieds, (int)SubVertical.Stores);
+                    if (!string.IsNullOrEmpty(error))
+                    {
+                        return TypedResults.Problem(
+                        title: "Subscription issue in token.",
+                        detail: error,
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        instance: context.Request.Path
+                        );
+                    }
+
                     if (string.IsNullOrEmpty(userId))
                     {
                         return TypedResults.Forbid();
                     }
 
-                    if (!string.IsNullOrEmpty(subscriptionsClaim))
+                    if (validSubscriptions != null && validSubscriptions.Any())
                     {
-                        string fixedJson = $"[{subscriptionsClaim}]";
-                        var subscriptions = JsonSerializer.Deserialize<List<SubscriptionToken>>(fixedJson);
-                        var validSubscriptions = subscriptions?
-                            .Where(s => s.Vertical == 3 && s.SubVertical == 3 && s.EndDate >= DateTime.UtcNow)
-                            .ToList();
-                        if (validSubscriptions != null && validSubscriptions.Any())
-                        {
-                            var result = await service.GetStoresDashboardHeader(userId, CompanyId,cancellationToken);
+                        var result = await service.GetStoresDashboardHeader(userId, CompanyId, cancellationToken);
                         return TypedResults.Ok(result);
-                        }
-                        else
-                        {
-                            return TypedResults.Forbid();
-                            }
                     }
                     else
                     {
                         return TypedResults.Forbid();
                     }
+                
+                    
                 }
                 catch (Exception ex)
                 {
@@ -6235,7 +6234,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 }
             })
                     .WithName("StoresDashboardHeaders")
-                     .ExcludeFromDescription()
+                   .ExcludeFromDescription()              
                     .WithTags("Classified")
                     .WithSummary("To display the stores dashboard header information.")
                     .WithDescription("Fetches all stores dashboard header information.")
@@ -6257,37 +6256,32 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             {
                 try
                 {
-                    var user = context.User;
-                    var userId = user.FindFirst("sub")?.Value;
-                    var subscriptionsClaim = user.FindFirst("subscriptions")?.Value;
+                    var (userId, validSubscriptions, error) = GenericClaimsHelper.GetValidSubscriptions(context.User, (int)Vertical.Classifieds, (int)SubVertical.Stores);
+                    if (!string.IsNullOrEmpty(error))
+                    {
+                        return TypedResults.Problem(
+                        title: "Subscription issue in token.",
+                        detail: error,
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        instance: context.Request.Path
+                        );
+                    }
+
                     if (string.IsNullOrEmpty(userId))
                     {
                         return TypedResults.Forbid();
                     }
-
-                    if (!string.IsNullOrEmpty(subscriptionsClaim))
+                    if (validSubscriptions != null && validSubscriptions.Any())
                     {
-                        string fixedJson = $"[{subscriptionsClaim}]";
-                        var subscriptions = JsonSerializer.Deserialize<List<SubscriptionToken>>(fixedJson);
-                        var validSubscriptions = subscriptions?
-                            .Where(s => s.Vertical == 3 && s.SubVertical == 3 && s.EndDate >= DateTime.UtcNow)
-                            .ToList();
-                        if (validSubscriptions != null && validSubscriptions.Any())
-                        {
-                            var result = await service.GetStoresDashboardSummary(CompanyId, SubscriptionId, cancellationToken);
-                            return TypedResults.Ok(result);
-                        }
-                        else
-                        {
-                            return TypedResults.Forbid();
-                        }
-
+                        var result = await service.GetStoresDashboardSummary(CompanyId, SubscriptionId, cancellationToken);
+                        return TypedResults.Ok(result);
                     }
                     else
                     {
                         return TypedResults.Forbid();
                     }
 
+                   
 
                 }
                 catch (Exception ex)
@@ -6301,7 +6295,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 }
             })
                 .WithName("StoresDashboardSummary")
-                .AllowAnonymous()
                 .WithTags("Classified")
                 .WithSummary("To display the stores dashboard summary information.")
                 .WithDescription("Fetches all stores dashboard summary information.")
@@ -6347,8 +6340,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
             return group;
         }
-
-       
 
     }
 }
