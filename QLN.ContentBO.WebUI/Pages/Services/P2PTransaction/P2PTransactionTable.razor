@@ -41,7 +41,7 @@
 
     <RowTemplate>
         <MudTd title="@(string.IsNullOrWhiteSpace(context.Id.ToString()) ? "-" : context.Id)"Class="truncate-text hover-title">@context.Id</MudTd>
-        <MudTd title="@(string.IsNullOrWhiteSpace(context.OrderId) ? "-" : context.OrderId)"Class="truncate-text hover-title">@context.OrderId</MudTd>
+        <MudTd title="@(string.IsNullOrWhiteSpace(context.OrderId) ? "-" : context.OrderId)"Class="truncate-text hover-title">@(string.IsNullOrWhiteSpace(context.OrderId) ? "--" : context.OrderId)</MudTd>
         <MudTd title="@(string.IsNullOrWhiteSpace(context.ProductType) ? "-" : context.ProductType)"Class="truncate-text hover-title">@context.ProductType</MudTd>
         <MudTd title="@(string.IsNullOrWhiteSpace(context.UserName) ? "-" : context.UserName)"Class="truncate-text hover-title">@context.UserName</MudTd>
         <MudTd title="@(string.IsNullOrWhiteSpace(context.Email) ? "-" : context.Email)"Class="truncate-text hover-title">@context.Email</MudTd>
@@ -49,11 +49,25 @@
         <MudTd title="@(string.IsNullOrWhiteSpace(context.Whatsapp) ? "-" : context.Whatsapp)"Class="truncate-text hover-title">@context.Whatsapp</MudTd>
         <MudTd Class="truncate-text hover-title">@context.Amount</MudTd>
          <MudTd Class="truncate-text">@((ServiceStatus)context.Status)</MudTd>
-        <MudTd Class="truncate-text">@context.CreationDate.ToString("dd-MM-yyyy hh:mmtt")</MudTd>
-        <MudTd Class="truncate-text">@context.DatePublished?.ToString("dd-MM-yyyy hh:mmtt")</MudTd>
-        <MudTd Class="truncate-text">@context.StartDate</MudTd>
-        <MudTd Class="truncate-text">@context.EndDate</MudTd>
-        <MudTd Class="truncate-text">@context.Views</MudTd>
+       <MudTd Class="truncate-text">
+    @(context.CreationDate == default ? "--" : context.CreationDate.ToString("dd-MM-yyyy hh:mmtt"))
+</MudTd>
+
+<MudTd Class="truncate-text">
+    @(context.DatePublished.HasValue ? context.DatePublished.Value.ToString("dd-MM-yyyy hh:mmtt") : "--")
+</MudTd>
+
+<MudTd Class="truncate-text">
+    @(context.StartDate == default ? "--" : context.StartDate)
+</MudTd>
+
+<MudTd Class="truncate-text">
+    @(context.EndDate == default ? "--" : context.EndDate)
+</MudTd>
+
+<MudTd Class="truncate-text">
+    @(string.IsNullOrWhiteSpace(context.Views) ? "--" : context.Views)
+</MudTd>
     </RowTemplate>
 </MudTable>
      <PaginationFooter TotalItems="@TotalCount" CurrentPage="@currentPage" PageSize="@pageSize"

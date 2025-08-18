@@ -1,0 +1,53 @@
+@inherits UserVerificationProfileTableBase
+@using QLN.ContentBO.WebUI.Components.ToggleTabs
+@using MudBlazor
+@using QLN.ContentBO.WebUI.Components.PaginationFooter
+
+<MudPaper Class="pa-4">
+  
+    <MudTable Items="@Listings"
+              Hover="true"
+              Elevation="0"
+              Bordered="true"
+              Dense="true"
+              Class="mud-table event-custom-table">
+
+        <HeaderContent>
+            <MudTh class="header-cell">Business Name</MudTh>
+            <MudTh class="header-cell">User Name</MudTh>
+            <MudTh class="header-cell">CR File</MudTh>
+            <MudTh class="header-cell">CR License</MudTh>
+            <MudTh class="header-cell">End Date</MudTh>
+            <MudTh class="header-cell">Actions</MudTh>
+        </HeaderContent>
+
+        <RowTemplate>
+            <MudTd>@context.CompanyName</MudTd>
+            <MudTd>@context.UserName</MudTd>
+            <MudTd>@context.CrDocument</MudTd>
+            <MudTd>@context.LicenseNumber</MudTd>
+            <MudTd>
+            @(context.CrExpiryDate.HasValue 
+            ? context.CrExpiryDate.Value.ToString("dd-MM-yyyy") 
+            : string.Empty)
+            </MudTd>
+            <MudTd>
+                <MudMenu Class="mud-table-menu"
+                    Icon="@Icons.Material.Filled.MoreVert"
+                    Dense="true"
+                    AnchorOrigin="Origin.BottomLeft"
+                    TransformOrigin="Origin.TopRight">
+                    <MudMenuItem OnClick="@(() => ShowPreview(context.Id))">
+                       <img src="/qln-images/eye_icon.svg" class="menu-icon-style" alt="Ignore" />
+                        <span class="menu-text">View</span>
+                    </MudMenuItem>
+                </MudMenu>
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+    <PaginationFooter TotalItems="@TotalCount"
+                      CurrentPage="@currentPage"
+                      PageSize="@pageSize"
+                      OnPageChange="@HandlePageChange"
+                      OnPageSizeChange="@HandlePageSizeChange" />
+</MudPaper>
