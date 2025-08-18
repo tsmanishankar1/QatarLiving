@@ -1,8 +1,12 @@
-﻿using Microsoft.AspNetCore.Builder;
+﻿using Azure.Search.Documents.Models;
+using Azure.Search.Documents;
+using Azure;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Auditlog;
@@ -1702,6 +1706,24 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
             .WithName("GetServiceStatusCountsSubvertical")
             .WithTags("Service");
 
+            return group;
+        }
+        public static RouteGroupBuilder MapGetCategoryCount(this RouteGroupBuilder group)
+        {
+            group.MapGet("/getcategoryadcount", async (
+                IServices service,
+                CancellationToken ct) =>
+            {
+                var counts = await service.GetCategoryAdCount(ct);
+                return Results.Ok(counts);
+            })
+            .AllowAnonymous()
+            .WithName("GetCategoryAdCountsInternal")
+            .WithTags("Service")
+            .WithSummary("Get Category Ad Counts")
+            .WithDescription("Get the count of service ads by category")
+            .Produces<Dictionary<string, int>>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
             return group;
         }
     }
