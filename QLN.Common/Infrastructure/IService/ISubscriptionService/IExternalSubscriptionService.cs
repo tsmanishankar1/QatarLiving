@@ -3,7 +3,7 @@ using QLN.Common.DTOs;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-
+[Obsolete("This interface is deprecated and will be removed in future versions. Use the new IV2SubscriptionService interfaces instead.", false)]
 public interface IExternalSubscriptionService
 {
     Task<SubscriptionGroupResponseDto> GetSubscriptionsByVerticalAndCategoryAsync(  int verticalTypeId,  int? categoryId,CancellationToken cancellationToken = default);

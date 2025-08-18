@@ -13,50 +13,30 @@ namespace QLN.Common.Infrastructure.Utilities
 {
     public static class HttpContextExtensions
     {
-        public static Guid? GetSubscriptionId(ClaimsPrincipal user, Vertical vertical, SubVertical? subVertical = null)
+        public static (string? Uid, string? UserName, string? SubscriptionId) GetUserInfo(this HttpContext httpContext)
         {
-            var subscriptionClaims = user.FindAll("subscriptions").ToList();
-            if (!subscriptionClaims.Any())
-                return null;
+            var uid = httpContext.User.FindFirst("sub")?.Value;
+            var userName = httpContext.User.FindFirst("preferred_username")?.Value;
 
+            var subscriptionClaim = httpContext.User.FindFirst("subscriptions")?.Value;
             string? subscriptionId = null;
 
-            foreach (var subClaim in subscriptionClaims)
+            if (!string.IsNullOrEmpty(subscriptionClaim))
             {
-                using var doc = JsonDocument.Parse(subClaim.Value);
-                var sub = doc.RootElement;
+                using var jsonDoc = JsonDocument.Parse(subscriptionClaim);
+                var root = jsonDoc.RootElement;
 
-                if (sub.TryGetProperty("Vertical", out var verticalProp) &&
-                    verticalProp.ValueKind == JsonValueKind.Number)
+                if (root.ValueKind == JsonValueKind.Array)
                 {
-                    var v = (Vertical)verticalProp.GetInt32();
-                    var sv = sub.TryGetProperty("SubVertical", out var subVerticalProp) &&
-                             subVerticalProp.ValueKind == JsonValueKind.Number
-                        ? (SubVertical?)subVerticalProp.GetInt32()
-                        : null;
-
-                    bool match = v == vertical && (subVertical == null || sv == subVertical);
-
-                    if (match)
-                    {
-                        if (sub.TryGetProperty("Id", out var idProp))
-                        {
-                            subscriptionId = idProp.GetString();
-                            break; 
-                        }
-                    }
+                    subscriptionId = root[0].GetProperty("Id").GetString();
+                }
+                else if (root.ValueKind == JsonValueKind.Object)
+                {
+                    subscriptionId = root.GetProperty("Id").GetString();
                 }
             }
 
-            
-            if (string.IsNullOrEmpty(subscriptionId))
-            {
-                using var doc = JsonDocument.Parse(subscriptionClaims.First().Value);
-                subscriptionId = doc.RootElement.GetProperty("Id").GetString();
-            }
-
-            
-            return Guid.TryParse(subscriptionId, out var subId) ? subId : null;
+            return (uid, userName, subscriptionId);
         }
     }
 }

@@ -17,7 +17,7 @@ using QLN.Common.Infrastructure.IService.V2IClassifiedBoService;
 using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.QLDbContext;
 using QLN.Common.Infrastructure.Subscriptions;
-
+using QLN.Common.Infrastructure.Utilities;
 using System;
 using System.ComponentModel.Design;
 using System.Linq.Expressions;
@@ -50,9 +50,10 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
         private readonly QLSubscriptionContext _subscriptioncontext;
         private readonly QLPaymentsContext _Paymentcontext;
         private readonly QLApplicationContext _usercontext;
+        private readonly QLCompanyContext _company;
 
 
-        public InternalClassifiedLandigBo(IClassifiedService classified, DaprClient dapr, ILogger<IClassifiedBoLandingService> logger, QLClassifiedContext context, QLSubscriptionContext subscriptioncontext, QLPaymentsContext Paymentcontext , QLApplicationContext usercontext)
+        public InternalClassifiedLandigBo(IClassifiedService classified, DaprClient dapr, ILogger<IClassifiedBoLandingService> logger, QLClassifiedContext context, QLSubscriptionContext subscriptioncontext, QLPaymentsContext Paymentcontext , QLApplicationContext usercontext, QLCompanyContext company)
         {
             _classified = classified;
             _dapr = dapr;
@@ -62,6 +63,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
             _context = context;
             _subscriptioncontext = subscriptioncontext;
             _Paymentcontext = Paymentcontext;
+            _company = company;
             _usercontext = usercontext;
         }
 
@@ -87,10 +89,13 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                     throw new ConflictException(message);
                 }
 
+
+                var slug = SlugHelper.GenerateSlug(dto.Title, dto.CategoryName, "Classifieds_Seasonal", Guid.NewGuid());
                 var newPick = new SeasonalPicks
                 {
                     Id = Guid.NewGuid(),
                     Title = dto.Title,
+                    Slug = slug,
                     Vertical = dto.Vertical,
                     CategoryId = dto.CategoryId,
                     CategoryName = dto.CategoryName,
@@ -126,6 +131,29 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
             {
                 _logger.LogError(ex, "Failed to post seasonal pick. Category: {CategoryName}", dto.CategoryName);
                 throw new Exception(ex.Message);
+            }
+        }
+
+        public async Task<List<SeasonalPicks>> GetSeasonalPickBySlug(string slug, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var seasonalPicks = await _context.SeasonalPicks
+                    .Where(p => p.IsActive == true && p.Slug == slug).ToListAsync();
+
+                if (seasonalPicks == null || !seasonalPicks.Any())
+                {
+                    _logger.LogWarning("No seasonal picks found for slug: {Slug}", slug);
+                    throw new KeyNotFoundException($"No seasonal picks found for slug: {slug}");
+                }
+
+                return seasonalPicks;
+
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to retrieve seasonal picks by slug: {Slug}", slug);
+                throw new Exception($"An error occurred while fetching seasonal picks for the slug '{slug}'", ex);
             }
         }
 
@@ -301,7 +329,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                 throw new Exception(ex.Message);
             }
         }
-
+        
 
         public async Task<string> SoftDeleteSeasonalPick(string pickId, string userId, string userName, Vertical vertical, CancellationToken cancellationToken = default)
         {
@@ -459,13 +487,15 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                     throw new ConflictException(message);
                 }
 
+                var slug = SlugHelper.GenerateSlug(dto.Title, dto.StoreName, "Classifieds_Store", Guid.NewGuid());
                 var store = new FeaturedStore
                 {
                     Id = Guid.NewGuid(),
                     Title = dto.Title,
                     Vertical = dto.Vertical,
                     StoreId = dto.StoreId,
-                    StoreName = dto.StoreName,
+                    StoreName = dto.StoreName,    
+                    Slug = slug,
                     ImageUrl = dto.ImageUrl,
                     StartDate = dto.StartDate,
                     EndDate = dto.EndDate,
@@ -545,6 +575,8 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                 var productSummary = _context.StoresDashboardSummaryItems.ToList();
 
                 var featuredStoreDtos = (from store in slottedStores
+                                         join company in _company.Companies
+                                         on store.StoreId.ToLower() equals company.Id.ToString().ToLower()
                                          join summary in productSummary
                                              on store.StoreId.ToLower() equals summary.CompanyId.ToString().ToLower() into summaryGroup
                                          from summary in summaryGroup.DefaultIfEmpty()
@@ -559,6 +591,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                                              StartDate = store.StartDate,
                                              EndDate = store.EndDate,
                                              SlotOrder = store.SlotOrder,
+                                             StoreSlug = company.Slug,
                                              IsActive = store.IsActive,
                                              CreatedBy = store.CreatedBy,
                                              CreatedAt = store.CreatedAt,
@@ -575,6 +608,29 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
             {
                 _logger.LogError(ex, "Failed to fetch slotted featured stores.");
                 throw new Exception(ex.Message);
+            }
+        }
+
+        public async Task<List<FeaturedStore>> GetFeatureStoreBySlug(string slug, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var featuredStores = await _context.FeaturedStores
+                    .Where(p => p.IsActive == true && p.Slug == slug).ToListAsync();
+
+                if (featuredStores == null || !featuredStores.Any())
+                {
+                    _logger.LogWarning("No featured stores found for slug: {Slug}", slug);
+                    throw new KeyNotFoundException($"No featured stores found for slug: {slug}");
+                }
+
+                return featuredStores;
+
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to retrieve featured stores by slug: {Slug}", slug);
+                throw new Exception($"An error occurred while fetching featured stores for the slug '{slug}'", ex);
             }
         }
 
@@ -842,12 +898,15 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                     throw new ConflictException(message);
                 }
 
+                var slug = SlugHelper.GenerateSlug(dto.Title, dto.CategoryName, "Classifieds_FeaturedCategory", Guid.NewGuid());
+
                 var newCategory = new FeaturedCategory
                 {
                     Id = Guid.NewGuid(),
                     Title = dto.Title,
                     Vertical = dto.Vertical,
                     CategoryName = dto.CategoryName,
+                    Slug = slug,
                     CategoryId = dto.CategoryId,
                     L1categoryName = dto.L1categoryName,
                     L1CategoryId = dto.L1CategoryId,
@@ -953,8 +1012,29 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                 throw new Exception(ex.Message);
             }
         }
-        
 
+        public async Task<List<FeaturedCategory>> GetFeatureCategoryBySlug(string slug, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var featuredCategories = await _context.FeaturedCategories
+                    .Where(p => p.IsActive == true && p.Slug == slug).ToListAsync();
+
+                if (featuredCategories == null || !featuredCategories.Any())
+                {
+                    _logger.LogWarning("No featured categories found for slug: {Slug}", slug);
+                    throw new KeyNotFoundException($"No featured categories found for slug: {slug}");
+                }
+
+                return featuredCategories;
+
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to retrieve featured categories by slug: {Slug}", slug);
+                throw new Exception($"An error occurred while fetching featured categories for the slug '{slug}'", ex);
+            }
+        }
         public async Task<FeaturedCategory> GetFeaturedCategoryById(string id, CancellationToken cancellationToken = default)
         {
             try
@@ -1391,9 +1471,6 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                 Failed = failed
             };
         }
-
-
-
 
         public async Task<BulkAdActionResponseitems> BulkCollectiblesAction(
      BulkActionRequest request,
@@ -2163,9 +2240,10 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                                   DateCreated = d.CreatedAt,
                                   createdby = d.CreatedBy,
                                   ContactNumber = d.ContactNumber,
-                                  WhatsappNumber = d.WhatsappNumber,
+                                  WhatsappNumber = d.WhatsappNumber,                                  
                                   StartDate = d.StartDate ?? DateTime.UtcNow,
                                   EndDate = d.EndDate ?? DateTime.UtcNow,
+                                  CompanyId = s.CompanyId.ToString(),
                                   WebClick = 0,
                                   Weburl = d.WebsiteUrl,
                                   CoverImage = d.CoverImage,
@@ -3046,6 +3124,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                 SubVertical = dto.SubVertical.ToString(),
                 AdType = dto.AdType.ToString(),
                 Title = dto.Title,
+                Slug = dto.Slug,
                 Description = dto.Description,
                 CategoryId = dto.CategoryId.ToString(),
                 L1CategoryId = dto.L1CategoryId.ToString(),
@@ -3057,7 +3136,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                 Model = dto.Model,
                 Color = dto.Color,
                 Condition = dto.Condition,
-                //SubscriptionId = dto.SubscriptionId,
+                SubscriptionId = dto.SubscriptionId.ToString(),
                 Price = (double)dto.Price,
                 PriceType = dto.PriceType,
                 Location = dto.Location,
@@ -3124,7 +3203,8 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                 SubscriptionId = dto.SubscriptionId.ToString(),
                 SubVertical = dto.SubVertical.ToString(),
                 AdType = dto.AdType.ToString(),
-                Title = dto.Title,
+                Title = dto.Title,              
+                Slug = dto.Slug,
                 Description = dto.Description,
                 Price = dto.Price,
                 PriceType = dto.PriceType,
@@ -3204,17 +3284,18 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
             {
                 Id = dto.Id.ToString(),
                 SubVertical = dto.SubVertical.ToString(),
-                //SubscriptionId = dto.SubscriptionId,
+                SubscriptionId = dto.SubscriptionId.ToString(),
                 AdType = dto.AdType.ToString(),
                 Title = dto.Title,
+                Slug = dto.Slug,
                 Description = dto.Description,
                 Price = dto.Price,
                 PriceType = dto.PriceType,
-                //CategoryId = dto.CategoryId,
+                CategoryId = dto.CategoryId.ToString(),
                 Category = dto.Category,
-               // L1CategoryId = dto.L1CategoryId,
+                L1CategoryId = dto.L1CategoryId.ToString(),
                 L1Category = dto.L1Category,
-               // L2CategoryId = dto.L2CategoryId,
+                L2CategoryId = dto.L2CategoryId.ToString(),
                 L2Category = dto.L2Category,
                 Location = dto.Location,
                 CreatedAt = dto.CreatedAt,
@@ -3294,6 +3375,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                 BranchNames = dto.BranchNames,
                 BusinessType = dto.BusinessType,
                 offertitle = dto.Offertitle,
+                Slug = dto.Slug,
                 Description = dto.Description,
                 StartDate = dto.StartDate,
                 EndDate = dto.EndDate,
@@ -3503,8 +3585,6 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                 throw;
             }
         }
-
-
 
         //public async Task<List<SubscriptionTypes>> GetSubscriptionTypes(CancellationToken cancellationToken = default)
         //{

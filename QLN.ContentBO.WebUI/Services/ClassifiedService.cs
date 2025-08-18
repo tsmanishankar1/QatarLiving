@@ -377,7 +377,6 @@ namespace QLN.ContentBO.WebUI.Services
                     WriteIndented = true
                 };
                 var json = JsonSerializer.Serialize(company, options);
-                Console.WriteLine("Serialized Company Profile: " + json);
                 var request = new HttpRequestMessage(HttpMethod.Put, "/api/companyprofile/updatecompanyprofile")
                 {
                     Content = new StringContent(json, Encoding.UTF8, "application/json")
@@ -796,6 +795,53 @@ namespace QLN.ContentBO.WebUI.Services
             try
             {
                 var endpoint = $"/api/classified/items";
+
+                var serializeOptions = new JsonSerializerOptions
+                {
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                    WriteIndented = false
+                };
+
+                // Serialize the payload exactly as it will be sent
+                var jsonPayload = JsonSerializer.Serialize(payload, serializeOptions);
+
+                // Print the exact JSON that will be sent
+                Console.WriteLine("Payload JSON Sent: " + jsonPayload);
+
+                using var request = new HttpRequestMessage(HttpMethod.Post, endpoint)
+                {
+                    Content = new StringContent(jsonPayload, Encoding.UTF8, "application/json")
+                };
+
+                var response = await _httpClient.SendAsync(request);
+
+                // Print full response for debugging
+                var responseContent = await response.Content.ReadAsStringAsync();
+                Console.WriteLine("API Response (" + response.StatusCode + "): " + responseContent);
+
+                return response;
+            }
+            catch (HttpRequestException ex)
+            {
+                _logger.LogError("PostAdAsync " + ex);
+                return new HttpResponseMessage(HttpStatusCode.BadGateway);
+            }
+            catch (TaskCanceledException ex) when (!ex.CancellationToken.IsCancellationRequested)
+            {
+                _logger.LogError("PostAdAsync " + ex);
+                return new HttpResponseMessage(HttpStatusCode.RequestTimeout);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("PostAdAsync " + ex);
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+         public async Task<HttpResponseMessage?> PostCollectiblesAdAsync(object payload)
+        {
+            try
+            {
+                var endpoint = $"/api/classified/collectibles";
 
                 var serializeOptions = new JsonSerializerOptions
                 {

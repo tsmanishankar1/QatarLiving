@@ -33,7 +33,7 @@ namespace QLN.ContentBO.WebUI.Models
  
         [Required]
         [MaxLength(300)]
-        public string Description { get; set; } = string.Empty;
+        public string? Description { get; set; } 
  
         [Required]
         [MaxLength(10)]
@@ -124,6 +124,7 @@ public class ImageDto
         UnPromote = 8,
         Feature = 9,
         UnFeature = 10,
+        NeedChanges = 11
     }
     public enum ServiceAdType
     {

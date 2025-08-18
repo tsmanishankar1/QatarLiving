@@ -152,6 +152,7 @@ namespace QLN.Common.DTO_s.Subscription
                         (!CanRefreshAds ? "Refresh not allowed" :
                         (!CanRefreshNow() ? $"Must wait {RefreshIntervalHours} hours" : "Insufficient daily refresh quota"));
                     break;
+
                 case ActionTypes.SocialMediaPost:
                     r.IsValid = CanPostSocialMedia && RemainingSocialMediaPosts >= quantity;
                     r.RemainingQuota = RemainingSocialMediaPosts;
@@ -162,7 +163,6 @@ namespace QLN.Common.DTO_s.Subscription
             
             return r;
         }
-
         public bool RecordUsage(string actionType, int quantity = 1, Dictionary<string, object>? metadata = null)
         {
             
@@ -186,5 +186,6 @@ namespace QLN.Common.DTO_s.Subscription
             LastUsageUpdate = DateTime.UtcNow;
             return true;
         }
+
     }
 }

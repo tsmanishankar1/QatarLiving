@@ -14,8 +14,8 @@ using QLN.Common.Infrastructure.QLDbContext;
 namespace QLN.Common.Migrations.ClassifiedDev
 {
     [DbContext(typeof(QLClassifiedContext))]
-    [Migration("20250807181741_Service")]
-    partial class Service
+    [Migration("20250816094950_classifiedqamigrationv2")]
+    partial class classifiedqamigrationv2
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -65,6 +65,44 @@ namespace QLN.Common.Migrations.ClassifiedDev
                     b.HasIndex("StoreProductId");
 
                     b.ToTable("ProductImage");
+                });
+
+            modelBuilder.Entity("QLN.Common.DTO_s.ClassifiedsBo.StoreCompanyDto", b =>
+                {
+                    b.Property<string>("BranchLocations")
+                        .HasColumnType("text");
+
+                    b.Property<string>("CompanyLogo")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("CompanyName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("CoverImage1")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("PhoneNumber")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Slug")
+                        .HasColumnType("text");
+
+                    b.Property<string>("WebsiteUrl")
+                        .HasColumnType("text");
+
+                    b.ToTable("StoreCompanyDto");
+
+                    b.ToSqlQuery("\r\n        SELECT \r\n            \"Id\",\r\n            \"CompanyName\",\r\n            \"CompanyLogo\",\r\n            \"CoverImage1\",\r\n            \"PhoneNumber\",\r\n            \"Email\",\r\n            \"WebsiteUrl\",\r\n            \"BranchLocations\",\r\n            \"Slug\"\r\n        FROM public.\"Companies\"\r\n    ");
                 });
 
             modelBuilder.Entity("QLN.Common.DTO_s.ClassifiedsBo.StoreFlyers", b =>
@@ -123,6 +161,9 @@ namespace QLN.Common.Migrations.ClassifiedDev
 
                     b.Property<string>("ProductSummary")
                         .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Slug")
                         .HasColumnType("text");
 
                     b.HasKey("StoreProductId");
@@ -202,6 +243,153 @@ namespace QLN.Common.Migrations.ClassifiedDev
                     b.HasKey("OrderId");
 
                     b.ToTable("StoresSubscriptions");
+                });
+
+            modelBuilder.Entity("QLN.Common.DTO_s.ClassifiedsBo.ViewStoresSubscription", b =>
+                {
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("numeric")
+                        .HasColumnName("Amount");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("CompanyId");
+
+                    b.Property<string>("CompanyName")
+                        .HasColumnType("text")
+                        .HasColumnName("CompanyName");
+
+                    b.Property<string>("Email")
+                        .HasColumnType("text")
+                        .HasColumnName("Email");
+
+                    b.Property<DateTime>("EndDate")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("EndDate");
+
+                    b.Property<string>("Mobile")
+                        .HasColumnType("text")
+                        .HasColumnName("Mobile");
+
+                    b.Property<int>("OrderId")
+                        .HasColumnType("integer")
+                        .HasColumnName("OrderId");
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("StartDate");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer")
+                        .HasColumnName("Status");
+
+                    b.Property<Guid>("SubscriptionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("SubscriptionId");
+
+                    b.Property<string>("SubscriptionType")
+                        .HasColumnType("text")
+                        .HasColumnName("SubscriptionType");
+
+                    b.Property<string>("UserId")
+                        .HasColumnType("text")
+                        .HasColumnName("UserId");
+
+                    b.Property<string>("UserName")
+                        .HasColumnType("text")
+                        .HasColumnName("UserName");
+
+                    b.Property<string>("WebUrl")
+                        .HasColumnType("text")
+                        .HasColumnName("WebUrl");
+
+                    b.Property<string>("Whatsapp")
+                        .HasColumnType("text")
+                        .HasColumnName("Whatsapp");
+
+                    b.ToTable("ViewStoresSubscriptions");
+
+                    b.ToSqlQuery("\r\n        SELECT comp.\"Id\" as \"CompanyId\",\r\n               subs.\"SubscriptionId\",\r\n               subs.\"ProductName\" as \"SubscriptionType\",\r\n               subs.\"UserId\",\r\n               comp.\"UserName\",\r\n               comp.\"PhoneNumber\" as \"Mobile\",\r\n               comp.\"WhatsAppNumber\" as \"Whatsapp\",\r\n               comp.\"WebsiteUrl\" as \"WebUrl\",\r\n               comp.\"Email\",\r\n               comp.\"Status\",\r\n               comp.\"CompanyName\",\r\n               subs.\"StartDate\",\r\n               subs.\"EndDate\",\r\n               pay.\"PaymentId\" as \"OrderId\",\r\n               pay.\"Fee\" as \"Amount\"\r\n        FROM public.\"Subscriptions\" AS subs\r\n        INNER JOIN public.\"Companies\" AS comp\r\n            ON subs.\"CompanyId\" = comp.\"Id\"\r\n        INNER JOIN public.\"Payments\" AS pay\r\n            ON subs.\"PaymentId\" = pay.\"PaymentId\"\r\n        WHERE subs.\"Vertical\" = 3\r\n          AND subs.\"SubVertical\" = 3\r\n    ");
+                });
+
+            modelBuilder.Entity("QLN.Common.DTO_s.ClassifiedsFo.StoresDashboardHeader", b =>
+                {
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("CompanyId");
+
+                    b.Property<string>("CompanyLogo")
+                        .HasColumnType("text")
+                        .HasColumnName("CompanyLogo");
+
+                    b.Property<string>("CompanyName")
+                        .HasColumnType("text")
+                        .HasColumnName("CompanyName");
+
+                    b.Property<DateTime>("EndDate")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("EndDate");
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("StartDate");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer")
+                        .HasColumnName("Status");
+
+                    b.Property<Guid>("SubscriptionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("SubscriptionId");
+
+                    b.Property<string>("SubscriptionType")
+                        .HasColumnType("text")
+                        .HasColumnName("ProductName");
+
+                    b.Property<string>("UploadFeed")
+                        .HasColumnType("text");
+
+                    b.Property<string>("UserId")
+                        .HasColumnType("text")
+                        .HasColumnName("UserId");
+
+                    b.Property<string>("UserName")
+                        .HasColumnType("text")
+                        .HasColumnName("UserName");
+
+                    b.Property<string>("XMLFeed")
+                        .HasColumnType("text");
+
+                    b.ToTable("StoresDashboardHeaderItems");
+
+                    b.ToSqlQuery("\r\n            SELECT subs.\"CompanyId\",\r\n                subs.\"SubscriptionId\",\r\n                subs.\"ProductName\",\r\n                subs.\"UserId\",\r\n                comp.\"UserName\",\r\n                comp.\"Status\",\r\n                comp.\"CompanyName\",\r\n                comp.\"CompanyLogo\",\r\n                subs.\"StartDate\",\r\n                subs.\"EndDate\",\r\n                '' as \"XMLFeed\",\r\n            '' as \"UploadFeed\"\r\n            FROM public.\"Subscriptions\" AS subs\r\n            INNER JOIN public.\"Companies\" AS comp\r\n                ON subs.\"CompanyId\" = comp.\"Id\"\r\n            WHERE subs.\"Status\" = 1 \r\n              AND subs.\"Vertical\" = 3\r\n              AND subs.\"SubVertical\" = 3\r\n        ");
+                });
+
+            modelBuilder.Entity("QLN.Common.DTO_s.ClassifiedsFo.StoresDashboardSummary", b =>
+                {
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("CompanyId");
+
+                    b.Property<string>("CompanyName")
+                        .HasColumnType("text")
+                        .HasColumnName("CompanyName");
+
+                    b.Property<int>("ProductCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("ProductCount");
+
+                    b.Property<Guid>("SubscriptionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("SubscriptionId");
+
+                    b.Property<string>("SubscriptionType")
+                        .HasColumnType("text")
+                        .HasColumnName("ProductName");
+
+                    b.ToTable("StoresDashboardSummaryItems");
+
+                    b.ToSqlQuery("\r\n        SELECT \r\n            subs.\"SubscriptionId\",\r\n            subs.\"CompanyId\",\r\n            subs.\"ProductName\",\r\n            comp.\"CompanyName\",\r\n            COUNT(prod.\"StoreProductId\") as \"ProductCount\"\r\n        FROM public.\"Subscriptions\" AS subs\r\n        LEFT JOIN public.\"Companies\" AS comp\r\n            ON subs.\"CompanyId\" = comp.\"Id\"\r\n        LEFT JOIN public.\"StoreFlyer\" AS fly\r\n            ON subs.\"SubscriptionId\" = fly.\"SubscriptionId\"\r\n            AND subs.\"CompanyId\" = fly.\"CompanyId\"\r\n        LEFT JOIN public.\"StoreProduct\" AS prod\r\n            ON fly.\"StoreFlyersId\" = prod.\"FlyerId\"\r\n        WHERE subs.\"Status\" = 1 \r\n          AND subs.\"Vertical\" = 3\r\n          AND subs.\"SubVertical\" = 3\r\n        GROUP BY subs.\"SubscriptionId\",\r\n                 subs.\"CompanyId\",\r\n                 subs.\"ProductName\",\r\n                 comp.\"CompanyName\"\r\n    ");
                 });
 
             modelBuilder.Entity("QLN.Common.Infrastructure.Model.Category", b =>
@@ -314,7 +502,7 @@ namespace QLN.Common.Migrations.ClassifiedDev
                     b.Property<DateTime?>("FeaturedExpiryDate")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<bool>("HasAuthenticityCertificate")
+                    b.Property<bool?>("HasAuthenticityCertificate")
                         .HasColumnType("boolean");
 
                     b.Property<bool>("HasWarranty")
@@ -377,6 +565,10 @@ namespace QLN.Common.Migrations.ClassifiedDev
                     b.Property<DateTime?>("PublishedDate")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("Slug")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 
@@ -433,6 +625,267 @@ namespace QLN.Common.Migrations.ClassifiedDev
                     b.HasKey("Id");
 
                     b.ToTable("Collectible");
+                });
+
+            modelBuilder.Entity("QLN.Common.Infrastructure.Model.Deals", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("BranchNames")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("BusinessName")
+                        .HasMaxLength(1600)
+                        .HasColumnType("character varying(1600)");
+
+                    b.Property<string>("BusinessType")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("CompanyLogo")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("ContactNumber")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("CoverImage")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .HasColumnType("character varying(250)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("DataFeedUrl")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<DateTime?>("EndDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("ExpiryDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("FeaturedExpiryDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("FlyerFileUrl")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsFeatured")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsPromoted")
+                        .HasColumnType("boolean");
+
+                    b.Property<LocationsDtos>("Locations")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("Offertitle")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime?>("PromotedExpiryDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Slug")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("SocialMediaLinks")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime?>("StartDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid?>("SubscriptionId")
+                        .HasMaxLength(50)
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("WebsiteUrl")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("WhatsappNumber")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("XMLlink")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Deal");
+                });
+
+            modelBuilder.Entity("QLN.Common.Infrastructure.Model.FeaturedCategory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("CategoryId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("CategoryName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateOnly>("EndDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("ImageUrl")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<long>("L1CategoryId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("L1categoryName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<int>("SlotOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<DateOnly>("StartDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<int>("Vertical")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("FeaturedCategories");
+                });
+
+            modelBuilder.Entity("QLN.Common.Infrastructure.Model.FeaturedStore", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateOnly>("EndDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("ImageUrl")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("SlotOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<DateOnly>("StartDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("StoreId")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("StoreName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<int>("Vertical")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("FeaturedStores");
                 });
 
             modelBuilder.Entity("QLN.Common.Infrastructure.Model.Items", b =>
@@ -565,6 +1018,10 @@ namespace QLN.Common.Migrations.ClassifiedDev
                     b.Property<DateTime?>("PublishedDate")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("Slug")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 
@@ -633,6 +1090,9 @@ namespace QLN.Common.Migrations.ClassifiedDev
 
                     b.Property<Dictionary<string, string>>("Attributes")
                         .HasColumnType("jsonb");
+
+                    b.Property<string>("AuthenticityCertificateName")
+                        .HasColumnType("text");
 
                     b.Property<string>("AuthenticityCertificateUrl")
                         .HasColumnType("text");
@@ -759,6 +1219,10 @@ namespace QLN.Common.Migrations.ClassifiedDev
                     b.Property<DateTime?>("PublishedDate")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("Slug")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 
@@ -812,6 +1276,115 @@ namespace QLN.Common.Migrations.ClassifiedDev
                     b.HasKey("Id");
 
                     b.ToTable("Preloved");
+                });
+
+            modelBuilder.Entity("QLN.Common.Infrastructure.Model.SaveSearch", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<CommonSearchRequest>("SearchQuery")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("jsonb");
+
+                    b.Property<int?>("SubVertical")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("Vertical")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("saveSearches");
+                });
+
+            modelBuilder.Entity("QLN.Common.Infrastructure.Model.SeasonalPicks", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("CategoryId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("CategoryName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateOnly>("EndDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("ImageUrl")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<long>("L1CategoryId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("L1categoryName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<long>("L2categoryId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("L2categoryName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<int>("SlotOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<DateOnly>("StartDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<int>("Vertical")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("SeasonalPicks");
                 });
 
             modelBuilder.Entity("QLN.Common.Infrastructure.Model.Services", b =>
@@ -947,6 +1520,10 @@ namespace QLN.Common.Migrations.ClassifiedDev
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
+                    b.Property<string>("Slug")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
                     b.Property<int?>("Status")
                         .HasColumnType("integer");
 
@@ -954,9 +1531,9 @@ namespace QLN.Common.Migrations.ClassifiedDev
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
-                    b.Property<string>("SubscriptionId")
+                    b.Property<Guid?>("SubscriptionId")
                         .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
+                        .HasColumnType("uuid");
 
                     b.Property<string>("Title")
                         .IsRequired()
@@ -992,6 +1569,36 @@ namespace QLN.Common.Migrations.ClassifiedDev
                     b.HasKey("Id");
 
                     b.ToTable("Services");
+                });
+
+            modelBuilder.Entity("QLN.Common.Infrastructure.Model.Wishlist", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("AdId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Subvertical")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("Vertical")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Wishlists");
                 });
 
             modelBuilder.Entity("QLN.Common.DTO_s.ClassifiedsBo.ProductFeatures", b =>

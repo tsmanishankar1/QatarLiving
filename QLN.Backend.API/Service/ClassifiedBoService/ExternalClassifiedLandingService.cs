@@ -351,6 +351,26 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
             }
         }
 
+        public async Task<List<FeaturedCategory>> GetFeatureCategoryBySlug(string slug, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var response = await _dapr.InvokeMethodAsync<List<FeaturedCategory>>(
+                    HttpMethod.Get,
+                    SERVICE_APP_ID,
+                    $"api/v2/classifiedbo/getfeaturedcategorybyslug?slug={slug}",
+                    cancellationToken
+                );
+
+                return response ?? new List<FeaturedCategory>();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error in GetSeasonalPickBySlug.");
+                throw new Exception($"Error fetching seasonal picks for slug: {slug}", ex);
+            }
+        }
+
         public async Task<string> EditFeaturedCategory(string userId, string userName, EditFeaturedCategoryDto dto, CancellationToken cancellationToken = default)
         {
             try
@@ -507,6 +527,26 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
             {
                 _logger.LogError(ex, "Unexpected error in GetSlottedSeasonalPicks.");
                 throw new Exception("Error fetching slotted seasonal picks.", ex);
+            }
+        }
+
+        public async Task<List<SeasonalPicks>> GetSeasonalPickBySlug(string slug, CancellationToken cancellationToken = default)
+        {
+            try
+            {               
+                var response = await _dapr.InvokeMethodAsync<List<SeasonalPicks>>(
+                    HttpMethod.Get,
+                    SERVICE_APP_ID,
+                    $"api/v2/classifiedbo/getseasonalpicksbyslug?slug={slug}",
+                    cancellationToken
+                );
+                
+                return response ?? new List<SeasonalPicks>();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error in GetSeasonalPickBySlug.");
+                throw new Exception($"Error fetching seasonal picks for slug: {slug}", ex);
             }
         }
 
@@ -769,6 +809,7 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
                 throw new Exception(ex.Message);
             }
         }
+
         public async Task<List<FeaturedStore>> GetFeaturedStores(Vertical vertical, CancellationToken cancellationToken = default)
         {
             try
@@ -809,6 +850,25 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
             }
         }
 
+        public async Task<List<FeaturedStore>> GetFeatureStoreBySlug(string slug, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var response = await _dapr.InvokeMethodAsync<List<FeaturedStore>>(
+                    HttpMethod.Get,
+                    SERVICE_APP_ID,
+                    $"api/v2/classifiedbo/getfeaturedstorebyslug?slug={slug}",
+                    cancellationToken
+                );
+
+                return response ?? new List<FeaturedStore>();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error in GetFeaturedstoreBySlug.");
+                throw new Exception($"Error fetching featured store for slug: {slug}", ex);
+            }
+        }
         public async Task<string> ReplaceSlotWithFeaturedStore(string userId, string userName, ReplaceFeaturedStoresSlotRequest dto, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(userId))
@@ -939,6 +999,7 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
                 throw new Exception(ex.Message);
             }
         }
+   
 
         public async Task<string> EditFeaturedStore(string userId, string userName, EditFeaturedStoreDto dto, CancellationToken cancellationToken = default)
         {

@@ -29,17 +29,20 @@ namespace QLN.Common.Infrastructure.QLDbContext
         public DbSet<Preloveds> Preloved { get; set; }
         public DbSet<Collectibles> Collectible { get; set; }
         public DbSet<StoreFlyers> StoreFlyer { get; set; }
-        public DbSet<Services> Services { get; set; }
-        public DbSet<Category> Categories { get; set; }     
         public DbSet<SeasonalPicks> SeasonalPicks { get; set; }
+
         public DbSet<FeaturedStore> FeaturedStores { get; set; }
         public DbSet<FeaturedCategory> FeaturedCategories { get; set; }
+        public DbSet<Services> Services { get; set; }
+        public DbSet<Category> Categories { get; set; }     
         public DbSet<StoresDashboardHeader> StoresDashboardHeaderItems { get; set; }
         public DbSet<StoresDashboardSummary> StoresDashboardSummaryItems { get; set; }
         public DbSet<Wishlist> Wishlists { get; set; }
         public DbSet<StoreCompanyDto> StoreCompanyDto { get; set; }
+        public DbSet<StoreSubscriptionQuotaDto> StoreSubscriptionQuotaDtos { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+
 
             modelBuilder.Entity<StoreFlyers>()
                 .HasMany(s => s.Products)
@@ -122,8 +125,7 @@ namespace QLN.Common.Infrastructure.QLDbContext
             AND subs.""CompanyId"" = fly.""CompanyId""
         LEFT JOIN public.""StoreProduct"" AS prod
             ON fly.""StoreFlyersId"" = prod.""FlyerId""
-        WHERE subs.""Status"" = 1 
-          AND subs.""Vertical"" = 3
+        WHERE subs.""Vertical"" = 3
           AND subs.""SubVertical"" = 3
         GROUP BY subs.""SubscriptionId"",
                  subs.""CompanyId"",
@@ -181,40 +183,7 @@ namespace QLN.Common.Infrastructure.QLDbContext
                 entity.Property(e => e.OrderId).HasColumnName("OrderId");
                 entity.Property(e => e.Amount).HasColumnName("Amount");
             });
-  //          modelBuilder.Entity<StoreCompanyDto>(entity =>
-  //          {
-  //              entity.HasNoKey();
-  //              entity.ToSqlQuery(@"
-  //      SELECT 
-  //          ""Id"",
-  //          ""CompanyName"",
-  //          ""CompanyLogo"",
-  //          ""CoverImage1"",
-  //          ""PhoneNumber"",
-  //          ""Email"",
-  //          ""WebsiteUrl"",
-  //          ""BranchLocations"",
-  //          ""Slug""
-  //      FROM public.""Companies""
-  //  ");
-
-  //              entity.Property(e => e.Id).HasColumnName("Id");
-  //              entity.Property(e => e.CompanyName).HasColumnName("CompanyName");
-  //              entity.Property(e => e.CompanyLogo).HasColumnName("CompanyLogo");
-  //              entity.Property(e => e.CoverImage1).HasColumnName("CoverImage1");
-  //              entity.Property(e => e.PhoneNumber).HasColumnName("PhoneNumber");
-  //              entity.Property(e => e.Email).HasColumnName("Email");
-  //              entity.Property(e => e.WebsiteUrl).HasColumnName("WebsiteUrl");
-  //              //entity.Property(e => e.BranchLocations).HasColumnName("BranchLocations");
-  //              entity.Property(e => e.Slug).HasColumnName("Slug");
-  //              entity.Property(e => e.BranchLocations)
-  //.HasColumnName("BranchLocations")
-  //.HasConversion(
-  //    v => JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
-  //    v => JsonSerializer.Deserialize<List<string>>(v, (JsonSerializerOptions?)null)
-  //);
-  //          });
-
+ 
             modelBuilder.Entity<StoreCompanyDto>(entity =>
             {
                 entity.HasNoKey();
@@ -244,6 +213,21 @@ namespace QLN.Common.Infrastructure.QLDbContext
     ");
             });
 
+            modelBuilder.Entity<StoreSubscriptionQuotaDto>(entity =>
+            {
+                entity.HasNoKey();
+
+                entity.ToSqlQuery(@"
+        SELECT 
+            ""SubscriptionId"", 
+            ""Quota""
+        FROM public.""Subscriptions""
+        WHERE ""Vertical"" = 3 AND ""SubVertical"" = 3
+    ");
+
+                entity.Property(e => e.SubscriptionId).HasColumnName("SubscriptionId");
+                entity.Property(e => e.QuotaJson).HasColumnName("Quota");
+            });
 
             base.OnModelCreating(modelBuilder);
         }

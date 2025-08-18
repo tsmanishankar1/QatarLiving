@@ -1,0 +1,52 @@
+@using MudBlazor
+@inherits UserProfileFieldsBase
+
+<div class="user-profile-fields-container">
+
+    <!-- SECTION: Basic Info -->
+    <MudTextField T="string" Class="white-bg" Label="Company Name" Variant="Variant.Outlined" Text="@CompanyName" ReadOnly="true" />
+    <MudTextField T="string" Class="white-bg" Label="Country" Variant="Variant.Outlined" Text="@Country" ReadOnly="true" />
+    <MudTextField T="string" Class="white-bg" Label="City" Variant="Variant.Outlined" Text="@City" ReadOnly="true" />
+    <MudTextField T="string" Class="white-bg" Label="Location" Variant="Variant.Outlined" Text="@Location" ReadOnly="true" />
+    <MudTextField T="string" Class="white-bg" Label="Phone Number" Variant="Variant.Outlined" Text="@PhoneNumber" ReadOnly="true" />
+    <MudTextField T="string" Class="white-bg" Label="WhatsApp Number" Variant="Variant.Outlined" Text="@WhatsAppNumber" ReadOnly="true" />
+    <MudTextField T="string" Class="white-bg" Label="Website URL" Variant="Variant.Outlined" Text="@WebsiteUrl" ReadOnly="true" />
+    <MudTextField T="string" Class="white-bg" Label="Website URL" Variant="Variant.Outlined" Text="@WebsiteUrl" ReadOnly="true" />
+    <MudTextField T="string" Class="white-bg" Label="Website URL" Variant="Variant.Outlined" Text="@WebsiteUrl" ReadOnly="true" />
+
+    <!-- SECTION: Operating Hours -->
+    <h3 class="form-heading form-padding">Operating Hours</h3>
+    <MudGrid GutterSize="8px" Class="compact-grid">
+        <MudItem xs="12" md="6">
+            <MudTextField T="string" Label="Start Day" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Event" Class="white-bg custom-icon-style" Text="@StartDay" ReadOnly="true" />
+        </MudItem>
+        <MudItem xs="12" md="6">
+            <MudTextField T="string" Label="End Day" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Event" Class="white-bg custom-icon-style" Text="@EndDay" ReadOnly="true" />
+        </MudItem>
+        <MudItem xs="12" sm="6">
+            <MudTextField T="string" Label="Start Hour" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Schedule" Class="white-bg custom-icon-style" Text="@StartHour" ReadOnly="true" />
+        </MudItem>
+        <MudItem xs="12" sm="6">
+            <MudTextField T="string" Label="End Hour" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Schedule" Class="white-bg custom-icon-style" Text="@EndHour" ReadOnly="true" />
+        </MudItem>
+    </MudGrid>
+
+    <!-- SECTION: Company Profile -->
+    <h3 class="form-heading">Company Profile</h3>
+    <MudTextField T="string" Class="white-bg" Label="Nature of Business" Variant="Variant.Outlined" Text="@BusinessNature" ReadOnly="true" />
+    <MudTextField T="string" Class="white-bg" Label="Company Size" Variant="Variant.Outlined" Text="@CompanySize" ReadOnly="true" />
+    <MudTextField T="string" Class="white-bg" Label="Company Type" Variant="Variant.Outlined" Text="@CompanyType" ReadOnly="true" />
+    <MudTextField T="string" Class="white-bg" Label="User Designation" Variant="Variant.Outlined" Text="@UserDesignation" ReadOnly="true" />
+    <MudTextField T="string" Class="white-bg" Label="Business Description" Variant="Variant.Outlined" Text="@BusinessDescription" ReadOnly="true" Lines="3" />
+
+    <!-- SECTION: License & Visibility -->
+    <h3 class="form-heading">License & Visibility</h3>
+    <MudTextField T="string" Class="white-bg" Label="CR Number" Variant="Variant.Outlined" Text="@CRNumber" ReadOnly="true" />
+
+    <!-- Company Reference File Display -->
+     <div class="file-display-box">
+        <a class="file-name-link" href="@CompanyReferenceFileName" target="_blank">
+            @CompanyReferenceFileName
+        </a>
+    </div>
+</div>
