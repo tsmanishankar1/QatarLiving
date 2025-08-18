@@ -32,7 +32,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                  .MapDetailedGetByIdEndpoint()
                  .MapBulkActionsEndpoint()
                  .MapServicesFeaturedItemEndpoint()
-                 .MapServiceCountEndpoints()
                  .MapServiceCountbySubverticalEndpoints();
             return group;
         }
