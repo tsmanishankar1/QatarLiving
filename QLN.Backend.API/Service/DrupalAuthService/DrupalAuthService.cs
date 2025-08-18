@@ -16,23 +16,58 @@ namespace QLN.Backend.API.Service.DrupalAuthService
     {
         public async Task<DrupalAuthResponse> LoginAsync(string username, string password, CancellationToken cancellationToken)
         {
-            // Prepare form-url-encoded content
-            var formData = new Dictionary<string, string>
+            try
+            {
+                // Prepare form-url-encoded content
+                var formData = new Dictionary<string, string>
             {
                 { "username", username },
                 { "device_type", "web" },
                 { "password", password }
             };
-            using var content = new FormUrlEncodedContent(formData);
+                using var content = new FormUrlEncodedContent(formData);
 
-            // Send POST request
-            var response = await httpClient.PostAsync(DrupalContentConstants.LoginPath, content, cancellationToken);
+                var response = await httpClient.PostAsync(DrupalContentConstants.LoginPath, content, cancellationToken);
 
-            // Ensure success and deserialize response
-            response.EnsureSuccessStatusCode();
-            var drupalAuthResponse = await response.Content.ReadFromJsonAsync<DrupalAuthResponse>(cancellationToken);
-
-            return drupalAuthResponse!;
+                if (response.IsSuccessStatusCode)
+                {
+                    var drupalAuthResponse = await response.Content.ReadFromJsonAsync<DrupalAuthResponse>(cancellationToken);
+                    return drupalAuthResponse ?? new DrupalAuthResponse { Status = false, Message = "Empty response from Drupal" };
+                }
+                else
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync(cancellationToken);
+                    return new DrupalAuthResponse
+                    {
+                        Status = false,
+                        Message = $"Drupal login failed: {response.StatusCode}",
+                    };
+                }
+            }
+            catch (HttpRequestException ex)
+            {
+                return new DrupalAuthResponse
+                {
+                    Status = false,
+                    Message = "Network error connecting to Drupal",
+                };
+            }
+            catch (TaskCanceledException ex) when (ex.InnerException is TimeoutException)
+            {
+                return new DrupalAuthResponse
+                {
+                    Status = false,
+                    Message = "Drupal login timeout",
+                };
+            }
+            catch (Exception ex)
+            {
+                return new DrupalAuthResponse
+                {
+                    Status = false,
+                    Message = "Unexpected error during Drupal login",
+                };
+            }
         }
 
         public Task LogoutAsync(CancellationToken cancellationToken)

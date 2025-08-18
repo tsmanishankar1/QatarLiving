@@ -306,6 +306,7 @@ namespace QLN.ContentBO.WebUI.Services
             try
             {
                     var json = JsonSerializer.Serialize(requestModel, new JsonSerializerOptions { WriteIndented = true });
+                Console.Write("the json for services bulk office is" + json);
                     var request = new HttpRequestMessage(HttpMethod.Post, "api/service/moderatebulk")
                     {
                         Content = new StringContent(json, Encoding.UTF8, "application/json")

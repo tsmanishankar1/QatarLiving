@@ -52,7 +52,7 @@ namespace QLN.ContentBO.WebUI.Pages.Community
                     search: searchText,
                     page: currentPage,
                     pageSize: pageSize,
-                    sortDirection: ascending ? "asc" : "desc"
+                    sortDirection: ascending ? "desc" : "asc"
                 );
 
                 if (response.IsSuccessStatusCode)

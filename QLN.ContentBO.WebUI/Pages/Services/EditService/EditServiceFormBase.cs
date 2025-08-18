@@ -78,6 +78,14 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
                 if (selectedService == null)
                     return;
 
+                var json = JsonSerializer.Serialize(selectedService, new JsonSerializerOptions
+                {
+                    WriteIndented = true // pretty print
+                });
+
+                Console.WriteLine("fetched selectedService JSON:");
+                Console.WriteLine(json);
+
                 if (CategoryTrees == null || !CategoryTrees.Any())
                     await LoadCategoryTreesAsync();
 
@@ -87,13 +95,16 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
                     latitude = (double)selectedService.Lattitude;
                     Longitude = (double)selectedService.Longitude;
                     _shouldUpdateMap = true;
-                    //  await JS.InvokeVoidAsync("updateMapCoordinates", latitude, Longitude);
+                     await JS.InvokeVoidAsync("updateMapCoordinates", latitude, Longitude);
                 }
                 selectedFileName = GetFileNameFromUrl(selectedService.LicenseCertificate);
                 var selectedCategory = CategoryTrees.FirstOrDefault(c => c.Id == selectedService?.CategoryId);
                 _selectedL1Categories = selectedCategory?.Fields ?? new();
                 var selectedL1 = _selectedL1Categories.FirstOrDefault(l1 => l1.Id == selectedService?.L1CategoryId);
                 _selectedL2Categories = selectedL1?.Fields ?? new();
+                _priceOnRequest = selectedService.IsPriceOnRequest;
+                StateHasChanged();
+                
             }
             catch (Exception ex)
             {
@@ -377,6 +388,8 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
                 Snackbar.Add("Please agree to the terms and conditions before proceeding.", Severity.Error);
             try
             {
+                selectedService.IsPriceOnRequest = _priceOnRequest;
+                // selectedService.Description = Description;
                 if (selectedService?.PhotoUpload != null)
                 {
                     selectedService.PhotoUpload = await UploadImagesAsync(selectedService.PhotoUpload);
@@ -387,6 +400,14 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
                     selectedService.LicenseCertificate = certificateUrl;
                 }
                 var response = await _serviceService.UpdateService(selectedService);
+                var json = JsonSerializer.Serialize(selectedService, new JsonSerializerOptions
+{
+    WriteIndented = true // pretty print
+});
+
+Console.WriteLine("SelectedService JSON:");
+Console.WriteLine(json);
+
                 if (response != null && response.IsSuccessStatusCode)
                 {
                     await ShowSuccessModal("Service Ad Updated Successfully");
