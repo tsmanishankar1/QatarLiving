@@ -377,7 +377,6 @@ namespace QLN.ContentBO.WebUI.Services
                     WriteIndented = true
                 };
                 var json = JsonSerializer.Serialize(company, options);
-                Console.WriteLine("Serialized Company Profile: " + json);
                 var request = new HttpRequestMessage(HttpMethod.Put, "/api/companyprofile/updatecompanyprofile")
                 {
                     Content = new StringContent(json, Encoding.UTF8, "application/json")

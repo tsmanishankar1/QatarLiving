@@ -9,6 +9,7 @@ using System.Text.Json;
 using QLN.Common.Infrastructure.CustomException;
 using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.Auditlog;
+using QLN.Common.Infrastructure.Utilities;
 
 namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
 {
@@ -30,16 +31,27 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
                 HttpContext httpContext,
                 CancellationToken cancellationToken = default) =>
             {
-                string? uid = "unknown";
+                string uid = "unknown";
+                string? userName = null;
+
                 try
                 {
-                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                    var (extractedUid, extractedUserName, subscriptionId, expiryDate) =
+                        await UserTokenHelper.ExtractUserAndSubscriptionDetailsAsync(httpContext, vertical: 4);
 
-                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                    uid = userData.GetProperty("uid").GetString();
-                    var userName = userData.GetProperty("name").GetString();
-                    var isSubcriber = userData.GetProperty("roles").EnumerateArray()
-                        .Any(r => r.GetString() == "subscription");
+                    uid = extractedUid;
+                    userName = extractedUserName;
+                    if (string.IsNullOrEmpty(uid))
+                    {
+                        return TypedResults.Problem(new ProblemDetails
+                        {
+                            Title = "Unauthorized Access",
+                            Detail = "User ID or username could not be extracted from token.",
+                            Status = StatusCodes.Status403Forbidden
+                        });
+                    }
+                    //var isSubcriber = userData.GetProperty("roles").EnumerateArray()
+                    //    .Any(r => r.GetString() == "subscription");
                     var result = await service.CreateCompany(uid, userName, dto, cancellationToken);
                     await auditLogger.LogAuditAsync(
                     module: ModuleName,
@@ -249,6 +261,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
                     );
                 }
             })
+            .AllowAnonymous()
             .WithName("GetCompanyProfile")
             .WithTags("Company")
             .WithSummary("Get a company profile")
@@ -290,6 +303,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
                     );
                 }
             })
+            .AllowAnonymous()
             .WithName("GetCompanyProfileSlug")
             .WithTags("Company")
             .WithSummary("Get a company profile")
@@ -316,15 +330,26 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
                 HttpContext httpContext,
                 CancellationToken cancellationToken = default) =>
             {
-                string? uid = "unknown";
+                string uid = "unknown";
+                string? userName = null;
                 try
                 {
-                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                    uid = userData.GetProperty("uid").GetString();
-                    var username = userData.GetProperty("name").GetString();
-                    var isSubcriber = userData.GetProperty("roles").EnumerateArray()
-                        .Any(r => r.GetString() == "subscription");
+                    var (extractedUid, extractedUserName, subscriptionId, expiryDate) =
+                        await UserTokenHelper.ExtractUserAndSubscriptionDetailsAsync(httpContext, vertical: 4);
+
+                    uid = extractedUid;
+                    if (string.IsNullOrEmpty(uid))
+                    {
+                        return TypedResults.Problem(new ProblemDetails
+                        {
+                            Title = "Unauthorized Access",
+                            Detail = "User ID or username could not be extracted from token.",
+                            Status = StatusCodes.Status403Forbidden
+                        });
+                    }
+
+                    //var isSubcriber = userData.GetProperty("roles").EnumerateArray()
+                    //    .Any(r => r.GetString() == "subscription");
 
                     var existingCompany = await service.GetCompanyById(dto.Id, cancellationToken);
                     if (existingCompany == null)
@@ -337,11 +362,11 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
                         });
                     }
 
-                    if (existingCompany.UserId != uid)
-                        return TypedResults.Forbid();
+                    //if (existingCompany.UserId != uid)
+                    //    return TypedResults.Forbid();
 
-                    dto.UserId = uid;
-                    dto.UserName = username;
+                    dto.UserId = extractedUid;
+                    dto.UserName = extractedUserName;
                     var updated = await service.UpdateCompany(dto, cancellationToken);
                     await auditLogger.LogAuditAsync(
                        module: ModuleName,
@@ -473,31 +498,23 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
                 AuditLogger auditLogger) =>
             {
                 string uid = "unknown";
+                string? userName = null;
+
                 try
                 {
-                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                    if (string.IsNullOrEmpty(userClaim))
-                    {
-                        return TypedResults.Problem(new ProblemDetails
-                        {
-                            Title = "Unauthorized Access",
-                            Detail = "User information is missing or invalid in the token.",
-                            Status = StatusCodes.Status403Forbidden
-                        });
-                    }
+                    var (extractedUid, extractedUserName, subscriptionId, expiryDate) =
+                        await UserTokenHelper.ExtractUserAndSubscriptionDetailsAsync(httpContext, vertical: 4);
 
-                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                    uid = userData.GetProperty("uid").GetString();
+                    uid = extractedUid;
                     if (string.IsNullOrEmpty(uid))
                     {
                         return TypedResults.Problem(new ProblemDetails
                         {
                             Title = "Unauthorized Access",
-                            Detail = "User ID could not be extracted from token.",
+                            Detail = "User ID or username could not be extracted from token.",
                             Status = StatusCodes.Status403Forbidden
                         });
                     }
-
                     var result = await service.GetCompanyById(id, cancellationToken);
                     if (result == null)
                         throw new KeyNotFoundException($"Company with ID '{id}' not found.");
@@ -617,13 +634,24 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
             AuditLogger auditLogger,
             CancellationToken cancellationToken = default) =>
             {
-                string? uid = "unknown";
+                string uid = "unknown";
+                string? userName = null;
+
                 try
                 {
-                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                    var (extractedUid, extractedUserName, subscriptionId, expiryDate) =
+                        await UserTokenHelper.ExtractUserAndSubscriptionDetailsAsync(httpContext, vertical: 4);
 
-                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                    uid = userData.GetProperty("uid").GetString();
+                    uid = extractedUid;
+                    if (string.IsNullOrEmpty(uid))
+                    {
+                        return TypedResults.Problem(new ProblemDetails
+                        {
+                            Title = "Unauthorized Access",
+                            Detail = "User ID or username could not be extracted from token.",
+                            Status = StatusCodes.Status403Forbidden
+                        });
+                    }
                     if (dto == null)
                         throw new KeyNotFoundException($"Company with ID '{dto.CompanyId}' not found.");
 
@@ -747,13 +775,23 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
                 [FromServices] ICompanyProfileService service,
                 CancellationToken cancellationToken = default) =>
             {
+                string uid = "unknown";
+                string? userName = null;
                 try
                 {
-                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                    var (extractedUid, extractedUserName, subscriptionId, expiryDate) =
+                        await UserTokenHelper.ExtractUserAndSubscriptionDetailsAsync(httpContext, vertical: 4);
 
-                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                    var uid = userData.GetProperty("uid").GetString();
-
+                    uid = extractedUid;
+                    if (string.IsNullOrEmpty(uid))
+                    {
+                        return TypedResults.Problem(new ProblemDetails
+                        {
+                            Title = "Unauthorized Access",
+                            Detail = "User ID or username could not be extracted from token.",
+                            Status = StatusCodes.Status403Forbidden
+                        });
+                    }
                     var allCompanies = await service.GetCompaniesByTokenUser(uid, cancellationToken);
                     var userCompanies = allCompanies
                         .Where(c => c.UserId == uid)

@@ -361,8 +361,8 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.EditCompnay
             {
                     Company.CrDocument = await UploadCertificateAsync();
             }
-
-
+            Company.CompanySize = SelectedProfileValues["Company Size"];
+            Company.CompanyType = SelectedProfileValues["Company Type"];
 
             if (OnSubmitForm.HasDelegate)
             {
