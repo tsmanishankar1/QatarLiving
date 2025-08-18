@@ -48,6 +48,7 @@ namespace QLN.Common.DTO_s
         public string? Availability { get; set; }
         public string? Duration { get; set; }
         public string? Reservation { get; set; }
+        public Guid? SubscriptionId { get; set; }
     }
     public class ServiceRequest : ServiceDto
     {
@@ -72,20 +73,24 @@ namespace QLN.Common.DTO_s
         Unpublished = 4,
         Rejected = 5,
         Expired = 6,
-        Promote=7,
-        UnPromote=8,
-        Feature=9,
+        Promote = 7,
+        UnPromote = 8,
+        Feature = 9,
         UnFeature = 10,
+        NeedChanges = 11
     }
     public enum BulkModerationAction
     {
         Approve = 1,
         Publish = 2,
         Unpublish = 3,
-        UnPromote =4,
-        feature =5,
+        UnPromote = 4,
+        Feature = 5,
         Remove = 6,
-        UnFeature = 7
+        UnFeature = 7,
+        Promote = 8,
+        IsRefreshed = 9,
+        NeedChanges = 10
     }
     public enum ServiceAdType
     {
@@ -136,6 +141,7 @@ namespace QLN.Common.DTO_s
     {
         public List<long> AdIds { get; set; } = new();
         public BulkModerationAction Action { get; set; }
+        public Guid? SubscriptionId { get; set; }
         public string? Reason { get; set; }
         [JsonIgnore]
         public string? UpdatedBy { get; set; } 
