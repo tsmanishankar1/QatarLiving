@@ -71,7 +71,7 @@ CancellationToken cancellationToken = default);
 
         Task<BulkAdActionResponseitems> BulkCollectiblesAction(
     BulkActionRequest request,
-    string userId,
+    string userId, string userName,
     CancellationToken cancellationToken = default);
         Task<PaginatedResult<PrelovedAdPaymentSummaryDto>> GetAllPrelovedAdPaymentSummaries(int? pageNumber = 1, int? pageSize = 12, string? search = null,
             string? sortBy = null, CancellationToken cancellationToken = default);
@@ -104,7 +104,9 @@ CancellationToken cancellationToken = default);
 
         Task<string> SoftDeleteDeals(DealsBulkDelete dto, string userId, CancellationToken cancellationToken = default);
 
-        Task<string> BulkPrelovedAction(BulkActionRequest request, string userId, CancellationToken ct);
+        Task<BulkAdActionResponseitems> BulkPrelovedAction(
+    BulkActionRequest request, string userId, string userName,
+    CancellationToken cancellationToken = default);
 
         Task<PrelovedTransactionListResponseDto> GetPrelovedTransactionsAsync(
                  int pageNumber,
