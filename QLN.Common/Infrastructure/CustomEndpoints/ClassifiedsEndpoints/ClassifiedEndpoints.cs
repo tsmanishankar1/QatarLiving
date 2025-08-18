@@ -27,6 +27,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Globalization;
 using System.Net.Http;
+using System.Net.NetworkInformation;
 using System.Security.Claims;
 using System.Text.Json;
 using static QLN.Common.DTO_s.ClassifiedsIndex;
@@ -1041,50 +1042,59 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 CancellationToken token) =>      
             {
                 string? uid = "unknown";
-
+                string? subId = null;
+                string? name = null;
                 try
                 {
-                    if (adId <= 0)
+                    uid = httpContext.User.FindFirst("sub")?.Value ?? "unknown";
+                    var userName = httpContext.User.FindFirst("preferred_username")?.Value ?? "unknown";
+
+                    // Get all subscription claims
+                    var subscriptionClaims = httpContext.User.FindAll("subscriptions").ToList();
+                    Guid? subscriptionId = null;
+                    DateTime? expiryDate = null;
+
+                    // Find Preloved subscription (Vertical=3 and SubVertical=4)
+                    foreach (var claim in subscriptionClaims)
+                    {
+                        try
+                        {
+                            using (var doc = JsonDocument.Parse(claim.Value))
+                            {
+                                var subscription = doc.RootElement;
+
+                                if (subscription.TryGetProperty("Vertical", out var verticalProp) &&
+                                    verticalProp.GetInt32() == 3 &&
+                                    subscription.TryGetProperty("SubVertical", out var subVerticalProp) &&
+                                    subVerticalProp.GetInt32() == (int)subVertical)
+                                {
+                                    if (subscription.TryGetProperty("EndDate", out var endDateProp) &&
+                                    endDateProp.ValueKind == JsonValueKind.String)
+                                    {
+
+                                        expiryDate = DateTime.Parse(endDateProp.GetString()).ToUniversalTime();
+                                        subscriptionId = Guid.Parse(subscription.GetProperty("Id").GetString());
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        catch
+                        {
+                            continue;
+                        }
+                    }
+
+                    if (subscriptionId == null)
                     {
                         return TypedResults.BadRequest(new ProblemDetails
                         {
-                            Title = "Validation Error",
-                            Detail = "AdId is required.",
+                            Title = "Subscription Required",
+                            Detail = "No Preloved subscription found for this user.",
                             Status = StatusCodes.Status400BadRequest
                         });
                     }
-
-                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                    if (string.IsNullOrEmpty(userClaim))
-                    {
-                        return Results.Unauthorized();
-                    }
-
-                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                    string userId = userData.GetProperty("uid").GetString();
-                   var subscriptionId = new Guid("5a024f96-7414-4473-80b8-f5d70297e262");
-                    // if (!userData.TryGetProperty("subscription", out var subscriptionElement) ||
-                    //!subscriptionElement.TryGetProperty("subscription_id", out var subscriptionIdElement))
-                    // {
-                    //     return TypedResults.Problem(new ProblemDetails
-                    //     {
-                    //         Title = "Unauthorized Access",
-                    //         Detail = "Subscription ID is missing in token.",
-                    //         Status = StatusCodes.Status403Forbidden
-                    //     });
-                    // }
-                    uid = userData.GetProperty("uid").GetString();
-
-                    // if (!Guid.TryParse(subscriptionIdElement.GetString(), out var subscriptionId))
-                    // {
-                    //     return TypedResults.Problem(new ProblemDetails
-                    //     {
-                    //         Title = "Invalid Subscription ID",
-                    //         Detail = "Subscription ID in token is not a valid GUID.",
-                    //         Status = StatusCodes.Status400BadRequest
-                    //     });
-                    // }
-                    var result = await service.RefreshClassifiedItemsAd(subVertical, adId, userId, subscriptionId, token);
+                    var result = await service.RefreshClassifiedItemsAd(subVertical, adId, uid, subscriptionId.Value, token);
 
                     await auditLogger.LogAuditAsync(
                         module: "Classified",
@@ -4538,7 +4548,9 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
     AuditLogger auditLogger,
     CancellationToken token) =>
             {
-                string uid = "unknown";
+                string? uid = "unknown";
+                string? subId = null;
+                string? name = null;
                 try
                 {
                     uid = httpContext.User.FindFirst("sub")?.Value ?? "unknown";
@@ -4561,25 +4573,19 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                                 if (subscription.TryGetProperty("Vertical", out var verticalProp) &&
                                     verticalProp.GetInt32() == 3 &&
                                     subscription.TryGetProperty("SubVertical", out var subVerticalProp) &&
-                                    subVerticalProp.GetInt32() == 4)
-
-                                    if (subscription.TryGetProperty("EndDate", out var endDateProp) &&
-                                        endDateProp.ValueKind == JsonValueKind.String)
-                                    {
-                                        expiryDate = DateTime.Parse(endDateProp.GetString()).ToUniversalTime();
-                                    }
-
-                                if (subscription.TryGetProperty("Id", out var idProp) && idProp.ValueKind == JsonValueKind.String)
+                                    subVerticalProp.GetInt32() == (int)dto.SubVertical)
                                 {
-                                    if (Guid.TryParse(idProp.GetString(), out var guid))
+                                    if (subscription.TryGetProperty("EndDate", out var endDateProp) &&
+                                    endDateProp.ValueKind == JsonValueKind.String)
                                     {
-                                        subscriptionId = guid;
+                                        
+                                        expiryDate = DateTime.Parse(endDateProp.GetString()).ToUniversalTime();
+                                        subscriptionId = Guid.Parse(subscription.GetProperty("Id").GetString());
                                         break;
                                     }
                                 }
                             }
                         }
-
                         catch
                         {
                             continue;
@@ -4720,67 +4726,60 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
              IClassifiedService service,
              CancellationToken token) =>
             {
-                string uid = "unknown";
+                string? uid = "unknown";
+                string? subId = null;
+                string? name = null;
                 try
                 {
-                    if (dto.AdId <= 0)
-                    {
-                        return TypedResults.BadRequest(new ProblemDetails
-                        {
-                            Title = "Validation Error",
-                            Detail = "AdId is required.",
-                            Status = StatusCodes.Status400BadRequest
-                        });
-                    }
-
-                    //var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-
-                    //if (string.IsNullOrEmpty(userClaim))
-                    //{
-                    //    return Results.Unauthorized();
-                    //}
-                    //// Get user info
                     uid = httpContext.User.FindFirst("sub")?.Value ?? "unknown";
                     var userName = httpContext.User.FindFirst("preferred_username")?.Value ?? "unknown";
 
-                    // Get subscription claim
-                    var subscriptionClaim = httpContext.User.FindFirst("subscriptions")?.Value;
-                    if (string.IsNullOrEmpty(subscriptionClaim))
+                    // Get all subscription claims
+                    var subscriptionClaims = httpContext.User.FindAll("subscriptions").ToList();
+                    Guid? subscriptionId = null;
+                    DateTime? expiryDate = null;
+
+                    // Find Preloved subscription (Vertical=3 and SubVertical=4)
+                    foreach (var claim in subscriptionClaims)
+                    {
+                        try
+                        {
+                            using (var doc = JsonDocument.Parse(claim.Value))
+                            {
+                                var subscription = doc.RootElement;
+
+                                if (subscription.TryGetProperty("Vertical", out var verticalProp) &&
+                                    verticalProp.GetInt32() == 3 &&
+                                    subscription.TryGetProperty("SubVertical", out var subVerticalProp) &&
+                                    subVerticalProp.GetInt32() == (int)dto.SubVertical)
+                                {
+                                    if (subscription.TryGetProperty("EndDate", out var endDateProp) &&
+                                    endDateProp.ValueKind == JsonValueKind.String)
+                                    {
+
+                                        expiryDate = DateTime.Parse(endDateProp.GetString()).ToUniversalTime();
+                                        subscriptionId = Guid.Parse(subscription.GetProperty("Id").GetString());
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        catch
+                        {
+                            continue;
+                        }
+                    }
+
+                    if (subscriptionId == null)
                     {
                         return TypedResults.BadRequest(new ProblemDetails
                         {
-                            Title = "Missing Claim",
-                            Detail = "No 'subscriptions' claim found in token.",
+                            Title = "Subscription Required",
+                            Detail = "No Preloved subscription found for this user.",
                             Status = StatusCodes.Status400BadRequest
                         });
                     }
-
-                    string? subscriptionId = null;
-                    using (var doc = JsonDocument.Parse(subscriptionClaim))
-                    {
-                        var root = doc.RootElement;
-
-                        if (root.ValueKind == JsonValueKind.Array)
-                        {
-                            // Take the first subscription
-                            subscriptionId = root[0].GetProperty("Id").GetString();
-                        }
-                        else if (root.ValueKind == JsonValueKind.Object)
-                        {
-                            subscriptionId = root.GetProperty("Id").GetString();
-                        }
-                    }
-
-                    if (string.IsNullOrEmpty(subscriptionId))
-                    {
-                        return TypedResults.BadRequest(new ProblemDetails
-                        {
-                            Title = "Invalid Claim",
-                            Detail = "Could not extract subscription Id from token.",
-                            Status = StatusCodes.Status400BadRequest
-                        });
-                    }
-                    await service.FeatureClassifiedAd(dto, uid, Guid.Parse(subscriptionId), token);
+                    await service.FeatureClassifiedAd(dto, uid, subscriptionId.Value, token);
 
                     await auditLogger.LogAuditAsync(
                         module: "Classified",

@@ -125,6 +125,7 @@ namespace QLN.Common.DTO_s.Subscription
                 case ActionTypes.Promote:
                     r.IsValid = CanPromoteAds && RemainingPromotions >= quantity;
                     r.RemainingQuota = RemainingPromotions;
+                    Console.WriteLine("RemainingQuota" + r.RemainingQuota);
                     r.Message = r.IsValid ? "Can promote" : (!CanPromoteAds ? "Promotion not allowed" : "Insufficient promotion quota");
                     break;
 

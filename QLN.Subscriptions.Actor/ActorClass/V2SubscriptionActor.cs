@@ -109,13 +109,19 @@ namespace QLN.Subscriptions.Actor.ActorClass
             var data = await SyncFromDatabaseAsync(force: false, cancellationToken);
             if (data == null) return false;
 
+            Console.WriteLine(data + "Beforehit");
             if (data.StatusId != V2Status.Active || data.EndDate <= DateTime.UtcNow)
                 return false;
-
+            Console.WriteLine("Status" + data.StatusId);
+            Console.WriteLine("data" + data.EndDate);
+            Console.WriteLine(data + "afterhiitting");
             var qty = (int)Math.Ceiling(requestedAmount);
             var action = MapQuotaTypeToAction(quotaType);
             var res = data.Quota.ValidateAction(action, qty);
+            Console.WriteLine("Quantity" + qty);
+            Console.WriteLine("Valid" + res.IsValid);
             return res.IsValid;
+           
         }
 
         public async Task<bool> RecordUsageAsync(string quotaType, decimal amount, CancellationToken cancellationToken = default)
@@ -168,6 +174,7 @@ namespace QLN.Subscriptions.Actor.ActorClass
             var dbSub = await db.Subscriptions
                 .AsNoTracking()
                 .FirstOrDefaultAsync(s => s.SubscriptionId == subscriptionId, ct);
+            Console.WriteLine("DBsub" + dbSub);
 
             if (dbSub == null)
             {
