@@ -10,6 +10,7 @@ using QLN.Common.DTO_s;
 using QLN.Common.DTO_s.Classifieds;
 using QLN.Common.DTO_s.ClassifiedsBo;
 using QLN.Common.DTO_s.ClassifiedsFo;
+using QLN.Common.DTO_s.Company;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.CustomException;
 using QLN.Common.Infrastructure.DTO_s;
@@ -25,6 +26,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Reflection;
+using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -57,18 +59,19 @@ namespace QLN.Classified.MS.Service
                     foreach (var item in query)
                     {
                         StoresDashboardHeaderDto dashboardHeaderDto = new StoresDashboardHeaderDto();
-                        dashboardHeaderDto.CompanyId = item.CompanyId.ToString();
-                        dashboardHeaderDto.CompanyName = item.CompanyName;
-                        dashboardHeaderDto.UserId = item.UserId.ToString();
-                        dashboardHeaderDto.UserName = item.UserName;
-                        dashboardHeaderDto.Status = Enum.GetName(typeof(Status), item.Status);
+                        dashboardHeaderDto.CompanyId = item?.CompanyId?.ToString() ?? string.Empty;
+                        dashboardHeaderDto.CompanyName = item?.CompanyName ?? string.Empty;
+                        dashboardHeaderDto.UserId = item?.UserId ?? string.Empty;
+                        dashboardHeaderDto.UserName = item?.UserName ?? string.Empty;
+                        dashboardHeaderDto.Status = Enum.GetName(typeof(SubscriptionStatus), item.Status);
+                        dashboardHeaderDto.CompanyVerificationStatus = Enum.GetName(typeof(VerifiedStatus), item.CompanyVerificationStatus);
                         dashboardHeaderDto.StartDate=item.StartDate;
                         dashboardHeaderDto.EndDate=item.EndDate;
-                        dashboardHeaderDto.XMLFeed = item.XMLFeed;
-                        dashboardHeaderDto.UploadFeed=item.UploadFeed;
-                        dashboardHeaderDto.CompanyLogo = item.CompanyLogo;
-                        dashboardHeaderDto.SubscriptionId=item.SubscriptionId.ToString();
-                        dashboardHeaderDto.SubscriptionType = item.SubscriptionType;
+                        dashboardHeaderDto.XMLFeed = item?.XMLFeed??string.Empty;
+                        dashboardHeaderDto.UploadFeed=item?.UploadFeed??string.Empty;
+                        dashboardHeaderDto.CompanyLogo = item?.CompanyLogo?? string.Empty;
+                        dashboardHeaderDto.SubscriptionId=item?.SubscriptionId.ToString()??string.Empty;
+                        dashboardHeaderDto.SubscriptionType = item?.SubscriptionType ?? string.Empty;
 
                         storesDashboardHeaderDtos.Add(dashboardHeaderDto);
                     }
@@ -95,20 +98,53 @@ namespace QLN.Classified.MS.Service
             {
                 List<StoresDashboardSummaryDto> storesDashboardSummaryDtos = new List<StoresDashboardSummaryDto>();
                 var query = _context.StoresDashboardSummaryItems.AsQueryable();
+                List<StoreSubscriptionQuota> storeSubscriptionQuotaDtos = new List<StoreSubscriptionQuota>();
+                var Quotas = _context.StoreSubscriptionQuotaDtos.AsQueryable();
+                if (Quotas.Any())
+                {
+                    foreach(var item in Quotas)
+                    {
+                        int Totalcount = 0;
+                        int Product = 0;
+                        var json = item.QuotaJson;
+                        if (json != null) {
+                            var quotaUsage = JsonSerializer.Deserialize<QuotaUsageSummary>(json, new JsonSerializerOptions
+                            {
+                                PropertyNameCaseInsensitive = true
+                            });
+                            if (quotaUsage != null)
+                            {
+                                Totalcount=quotaUsage.TotalAdsAllowed;
+                                Product = quotaUsage.AdsUsed;
+                            }
+                        }
 
-                if (query != null)
+                        storeSubscriptionQuotaDtos.Add(new StoreSubscriptionQuota()
+                        {
+                            TotalInventory = Totalcount,
+                            Inventory = Product,
+                            SubscriptionId = item.SubscriptionId
+                        });
+                    }
+                }
+
+                if (query.Any())
                 {
                     foreach (var item in query)
                     {
                         StoresDashboardSummaryDto dashboardSummaryDto = new StoresDashboardSummaryDto();
-                        dashboardSummaryDto.CompanyId = item.CompanyId.ToString();
-                        dashboardSummaryDto.CompanyName = item.CompanyName;
-                        dashboardSummaryDto.Inventory = item.ProductCount;
-                      
-                        dashboardSummaryDto.SubscriptionId = item.SubscriptionId.ToString();
-                        dashboardSummaryDto.SubscriptionType = item.SubscriptionType;
+                        dashboardSummaryDto.CompanyId = item?.CompanyId?.ToString() ?? string.Empty;
+                        dashboardSummaryDto.CompanyName = item?.CompanyName ?? string.Empty;
+                        dashboardSummaryDto.Inventory = item?.ProductCount ?? 0;
 
-                        storesDashboardSummaryDtos.Add(dashboardSummaryDto);
+                      
+                        dashboardSummaryDto.SubscriptionId = item?.SubscriptionId?.ToString() ?? string.Empty;
+                        dashboardSummaryDto.SubscriptionType = item?.SubscriptionType ?? string.Empty;
+
+                        dashboardSummaryDto.InventoryTotal = storeSubscriptionQuotaDtos.Where(x => x.SubscriptionId.ToString() == dashboardSummaryDto.SubscriptionId).FirstOrDefault().TotalInventory;
+
+
+                       storesDashboardSummaryDtos.Add(dashboardSummaryDto);
                     }
                 }
 
