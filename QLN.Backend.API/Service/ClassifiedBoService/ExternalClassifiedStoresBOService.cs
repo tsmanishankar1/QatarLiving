@@ -172,6 +172,28 @@ namespace QLN.Backend.API.Service.ClassifiedBoService
             }
         }
 
-       
+        public async Task<string> GetProcessStoresCSV(string Url, string CsvPlatform,string? CompanyId, string? SubscriptionId,
+           string? UserId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                using var cts = new CancellationTokenSource(TimeSpan.FromMinutes(10));
+                var queryParams = $"?Url={Url}&CsvPlatform={CsvPlatform}&CompanyId={CompanyId}&SubscriptionId={SubscriptionId}&UserId={UserId}";
+                var response = await _dapr.InvokeMethodAsync<string>(
+                    HttpMethod.Get,
+                    SERVICE_APP_ID,
+                    $"api/v2/classifiedbo/stores-processing-csv{queryParams}",
+                    cts.Token
+                );
+
+                return response;
+            }
+            catch (Exception ex)
+            {
+
+                _logger.LogError(ex, "Error in processing the csv file.");
+                throw;
+            }
+        }
     }
 }

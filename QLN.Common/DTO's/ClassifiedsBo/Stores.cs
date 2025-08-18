@@ -29,7 +29,8 @@ namespace QLN.Common.DTO_s.ClassifiedsBo
         public Guid StoreFlyersId { get; set; }
         public Guid? SubscriptionId { get; set; } = Guid.Empty;
         public Guid? CompanyId { get; set; }=Guid.Empty;
-        public Guid FlyerId { get; set; }
+        public Guid? FlyerId { get; set; }
+        public string? FileName { get; set; }
         public virtual ICollection<StoreProducts> Products { get; set; }
     }
     
@@ -40,15 +41,17 @@ namespace QLN.Common.DTO_s.ClassifiedsBo
         public string ProductName { get; set; }
         public string ProductLogo { get; set; }
         public decimal ProductPrice { get; set; } = 0;
-        public string Currency { get; set; }
+        public string Currency { get; set; } = "QAR";
         public string ProductSummary { get; set; }
         public string ProductDescription { get; set; }
-        public int PageNumber { get; set; }
+        public int? PageNumber { get; set; } = 1;
         public string?  PageCoordinates { get; set; }
         public string? Slug { get; set; }
-        public Guid FlyerId { get; set; }
-        public virtual StoreFlyers StoreFlyer { get; set; }
-       
+        public string? Category { get; set; }
+        public int? Qty { get; set; } = 0;
+        public string? ProductBarcode { get; set; }
+        public Guid FlyerId { get; set; }      
+        public virtual StoreFlyers StoreFlyer { get; set; }       
         public virtual ICollection<ProductFeatures> Features { get; set; }
         public virtual ICollection<ProductImages> Images { get; set; }
     }

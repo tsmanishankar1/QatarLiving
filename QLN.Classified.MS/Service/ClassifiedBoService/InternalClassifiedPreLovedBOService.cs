@@ -94,7 +94,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                                 {
                                     AdId = preloved.Id,
                                     OrderId = payment.PaymentId,
-                                    SubscriptionType = SubscriptionDictionary.GetDescription(subscription.ProductCode),
+                                    SubscriptionType = subscription.ProductName,
                                     UserName = company.CompanyName,
                                     Email = company.Email,
                                     Mobile = company.PhoneNumber,
