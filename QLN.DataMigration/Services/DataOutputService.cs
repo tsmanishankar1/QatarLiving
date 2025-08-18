@@ -7,11 +7,13 @@
     using Microsoft.EntityFrameworkCore.Metadata.Internal;
     using Microsoft.Extensions.Logging;
     using QLN.Common.DTO_s;
+    using QLN.Common.DTO_s.Subscription;
     using QLN.Common.DTOs;
     using QLN.Common.Infrastructure.Constants;
     using QLN.Common.Infrastructure.DTO_s;
     using QLN.Common.Infrastructure.IService;
     using QLN.Common.Infrastructure.IService.IContentService;
+    using QLN.Common.Infrastructure.IService.IProductService;
     using QLN.Common.Infrastructure.IService.IService;
     using QLN.Common.Infrastructure.IService.V2IContent;
     using QLN.Common.Infrastructure.Model;
@@ -31,7 +33,7 @@
         private readonly IV2NewsService _newsService;
         private readonly IV2CommunityPostService _communityPostService;
         private readonly IClassifiedService _classifiedsService;
-        private readonly IExternalSubscriptionService _subscriptionService;
+        private readonly IV2SubscriptionService _subscriptionService;
         private readonly IServices _servicesService;
         private readonly DaprClient _daprClient;
 
@@ -41,7 +43,7 @@
             IV2NewsService newsService,
             IV2CommunityPostService communityPostService,
             IClassifiedService classifiedService,
-            IExternalSubscriptionService subscriptionService,
+            IV2SubscriptionService subscriptionService,
             IServices servicesService,
             DaprClient daprClient
             )
@@ -69,7 +71,7 @@
             _logger.LogInformation("Completed saving all state");
         }
 
-        public async Task SaveMigrationItemsAsync(List<CsvCategoryMapper> csvImport, List<DrupalItem> migrationItems, CancellationToken cancellationToken)
+        public async Task SaveMigrationItemsAsync(List<ItemsCategoryMapper> csvImport, List<DrupalItem> migrationItems, CancellationToken cancellationToken)
         {
             const int CollectablesCategory = 7311;
 
@@ -88,7 +90,6 @@
                                 Title = item.Title,
                                 Description = item.Desc,
                                 Price = item.Price,
-                                CategoryId = item.CategoryParent.Tid, // may need to look this up
                                 SubVertical = SubVertical.Items,
                                 UserName = item.Author.Username,
                                 CreatedAt = DateTime.TryParse(item.CreatedDate, out var createdAt) ? createdAt : DateTime.UtcNow,
@@ -119,7 +120,7 @@
                                 Status = item.Published ? AdStatus.Published : AdStatus.Unpublished,
                                 zone = item.Zone?.Name ?? string.Empty,
                                 PublishedDate = DateTime.TryParse(item.CreatedDate, out var publishedDate) ? publishedDate : DateTime.UtcNow, // not sure if this is required
-                                
+
                             };
 
                             var categoryMapper = csvImport.FirstOrDefault(x => x.AdId == item.AdId);
@@ -191,6 +192,80 @@
             _logger.LogInformation("Completed saving all items to state");
         }
 
+        public async Task SaveMigrationServicesAsync(List<ServicesCategoryMapper> csvImport, List<DrupalItem> migrationItems, CancellationToken cancellationToken, bool isFreeAds = false)
+        {
+            foreach (var item in migrationItems)
+            {
+                if (long.TryParse(item.AdId, out var id))
+                {
+                    try
+                    {
+                        var entity = new Services
+                        {
+                            Id = id,
+                            Title = item.Title,
+                            Description = item.Desc,
+                            Price = Convert.ToDecimal(item.Price),
+                            UserName = item.Author.Username,
+                            CreatedAt = DateTime.TryParse(item.CreatedDate, out var createdAt) ? createdAt : DateTime.UtcNow,
+                            LastRefreshedOn = DateTime.TryParse(item.RefreshedDate, out var lastRefreshed) ? lastRefreshed : DateTime.UtcNow,
+                            BuildingNumber = item.BuildingNo,
+                            StreetNumber = item.StreetNo,
+                            EmailAddress = item.Email,
+                            PhoneNumberCountryCode = "+974",// assuming Qatar country code
+                            PhoneNumber = item.Phone ?? string.Empty,
+                            WhatsappNumberCountryCode = "+974",// assuming Qatar country code
+                            WhatsappNumber = item.Whatsapp ?? item.Phone ?? string.Empty,
+                            CreatedBy = item.Author.Username,
+                            IsFeatured = item.Feature,
+                            IsPromoted = item.Promote,
+                            UpdatedAt = DateTime.UtcNow,
+                            IsActive = !item.Sold,
+                            PhotoUpload = item.Images?.Select(img => new ImageDto
+                            {
+                                Url = img
+                            }).ToList() ?? new List<ImageDto>(),
+                            IsRefreshed = lastRefreshed > createdAt,
+                            Lattitude = item.GeoLocation != null ? Convert.ToDecimal(item.GeoLocation.Lat) : 0,
+                            Longitude = item.GeoLocation != null ? Convert.ToDecimal(item.GeoLocation.Lng) : 0,
+                            Location = item.Location?.Name ?? string.Empty,
+                            Status = item.Published ? ServiceStatus.Published : ServiceStatus.Unpublished,
+                            ZoneId = item.Zone?.Tid.ToString() ?? string.Empty, // NOTE: not sure if this works
+                            PublishedDate = DateTime.TryParse(item.CreatedDate, out var publishedDate) ? publishedDate : DateTime.UtcNow, // not sure if this is required
+
+                        };
+
+                        var categoryMapper = csvImport.FirstOrDefault(x => x.AdId == item.AdId);
+
+                        if (categoryMapper != null)
+                        {
+                            entity.CategoryId = item.CategoryParent.Tid; // may need to look this up
+                            entity.CategoryName = categoryMapper.Category;
+                            entity.L1CategoryName = categoryMapper.L1Category;
+                            entity.L2CategoryName = categoryMapper.L2Category;
+                            entity.AdType = ServiceAdType.Subscription; // need to see if I can know this
+                                                                        //entity.SubscriptionId = categoryMapper.SubscriptionId;
+                        }
+
+                        if (isFreeAds)
+                        {
+                            // create a corresponding subscription for this ad and store it in a dictionary
+                            // with an index based on username for additional lookups and reuse of the same subscription
+                        }
+
+                        await _servicesService.MigrateServiceAd(entity, cancellationToken);
+
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError($"Failed to create articles - {ex.Message}");
+                        throw new Exception("Unexpected error during article creation", ex);
+                    }
+                }
+            }
+            _logger.LogInformation("Completed saving all items to state");
+        }
+
         public async Task SaveContentNewsAsync(List<ArticleItem> items, int categoryId, int subcategoryId, CancellationToken cancellationToken)
         {
             //var articles = new List<V2NewsArticleDTO>();
@@ -234,7 +309,7 @@
                 }
                 //articles.Add(article);
             }
-                
+
         }
 
         public async Task SaveContentEventsAsync(List<ContentEvent> items, CancellationToken cancellationToken)
@@ -339,7 +414,7 @@
                     throw new Exception("Unexpected error during events creation", ex);
                 }
 
-                
+
 
             }
 
@@ -496,7 +571,7 @@
             foreach (var primaryCategory in items)
             {
                 var subCategories = new List<V2NewsSubCategory>();
-                
+
                 foreach (var subCategory in primaryCategory.SubCategories)
                 {
                     subCategories.Add(new V2NewsSubCategory
@@ -535,7 +610,7 @@
             {
                 var areas = new List<Common.DTO_s.LocationDto.AreaDto>();
 
-                if(location.Areas != null && location.Areas.Count > 0)
+                if (location.Areas != null && location.Areas.Count > 0)
                 {
                     foreach (var area in location.Areas)
                     {
@@ -586,30 +661,31 @@
                     {
                         DateTime.TryParse(subscription.StartDate, out var startDate);
                         DateTime.TryParse(subscription.EndDate, out var endDate);
-                        TimeSpan duration = endDate - startDate;
-                        if (duration.TotalDays < 0)
-                        {
-                            duration = TimeSpan.FromDays(30); // Default to 30 days if the duration is negative
-                        }
 
-                        var migratedSubscription = new SubscriptionRequestDto
+                        var migratedSubscription = new V2SubscriptionDto
                         {
-                            adsbudget = subscription.AdsLimitDaily,
-                            CategoryId = SubscriptionCategory.Services,
+                            Id = ProcessingHelpers.StringToGuid(subscription.SubscriptionId.ToString()), // deterministic GUID so should lways be the same
+                            Quota = new SubscriptionQuota
+                            {
+                                TotalAdsAllowed = subscription.AdsLimitDaily,
+                                TotalFeaturesAllowed = int.TryParse(subscription.FeatureLimit, out var featureLimit) ? featureLimit : 0,
+                                TotalPromotionsAllowed = 0,
+                                DailyRefreshesAllowed = int.TryParse(subscription.RefreshLimitDaily, out var refreshLimitDaily) ? refreshLimitDaily : 0,
+                            },
+                            //CategoryId = SubscriptionCategory.Services,
                             Currency = "QAR",
-                            Description = subscription.Product,
-                            Duration = duration,
-                            featurebudget = int.TryParse(subscription.FeatureLimit, out var featureLimit) ? featureLimit : 0,
+                            ProductName = subscription.Product,
+                            StartDate = startDate,
+                            EndDate = endDate,
                             Price = 0,
-                            promotebudget = 0, // not found in source
-                            refreshbudget = int.TryParse(subscription.RefreshLimitDaily, out var refreshLimitDaily) ? refreshLimitDaily : 0,
-                            StatusId = Status.Active,
-                            SubscriptionName = subscription.Product,
-                            VerticalTypeId = Vertical.Services
+                            StatusId = SubscriptionStatus.Active,
+                            Vertical = Vertical.Services,
+                            lastUpdated = DateTime.UtcNow,
+                            UserId = subscription.UserId,
+                            SubVertical = SubVertical.Services
                         };
 
-                        // this will work but wont have any idea what the subscription ID is
-                        await _subscriptionService.CreateSubscriptionAsync(migratedSubscription);
+                        //await _subscriptionService.CreateSubscriptionAsync(migratedSubscription);
                     }
                 }
                 catch (Exception ex)
@@ -638,24 +714,30 @@
                             duration = TimeSpan.FromDays(30); // Default to 30 days if the duration is negative
                         }
 
-                        var migratedSubscription = new SubscriptionRequestDto
+                        var migratedSubscription = new V2SubscriptionDto
                         {
-                            adsbudget = subscription.AdsLimitDaily,
-                            CategoryId = SubscriptionCategory.Items,
+                            Id = ProcessingHelpers.StringToGuid(subscription.SubscriptionId.ToString()), // deterministic GUID so should lways be the same
+                            Quota = new SubscriptionQuota
+                            {
+                                TotalAdsAllowed = subscription.AdsLimitDaily,
+                                TotalFeaturesAllowed = int.TryParse(subscription.FeatureLimit, out var featureLimit) ? featureLimit : 0,
+                                TotalPromotionsAllowed = 0,
+                                DailyRefreshesAllowed = int.TryParse(subscription.RefreshLimitDaily, out var refreshLimitDaily) ? refreshLimitDaily : 0,
+                            },
+                            //CategoryId = SubscriptionCategory.Services,
                             Currency = "QAR",
-                            Description = subscription.Product,
-                            Duration = duration,
-                            featurebudget = int.TryParse(subscription.FeatureLimit, out var featureLimit) ? featureLimit : 0,
+                            ProductName = subscription.Product,
+                            StartDate = startDate,
+                            EndDate = endDate,
                             Price = 0,
-                            promotebudget = 0,
-                            refreshbudget = int.TryParse(subscription.RefreshLimitDaily, out var refreshLimitDaily) ? refreshLimitDaily : 0,
-                            StatusId = Status.Active,
-                            SubscriptionName = subscription.Product,
-                            VerticalTypeId = Vertical.Classifieds,
+                            StatusId = SubscriptionStatus.Active,
+                            Vertical = Vertical.Services,
+                            lastUpdated = DateTime.UtcNow,
+                            UserId = subscription.UserId,
+                            SubVertical = SubVertical.Services
                         };
 
-                        // this will work but wont have any idea what the subscription ID is
-                        await _subscriptionService.CreateSubscriptionAsync(migratedSubscription);
+                        //await _subscriptionService.CreateSubscriptionAsync(migratedSubscription);
                     }
                 }
                 catch (Exception ex)

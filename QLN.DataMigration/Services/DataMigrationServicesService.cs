@@ -1,17 +1,23 @@
 ﻿using Dapr.Client;
+using Microsoft.AspNetCore.Mvc;
 using QLN.Common.DTO_s;
+using QLN.Common.DTO_s.Subscription;
 using QLN.Common.Infrastructure.Constants;
+using QLN.Common.Infrastructure.CustomException;
 using QLN.Common.Infrastructure.IService.IService;
 using QLN.Common.Infrastructure.Model;
+using System.Net;
+using System.Text;
+using System.Text.Json;
 
 namespace QLN.DataMigration.Services
 {
-    public class ServicesService : IServices
+    public class DataMigrationServicesService : IServices
     {
         private readonly DaprClient _dapr;
-        private readonly ILogger<ServicesService> _logger;
+        private readonly ILogger<DataMigrationServicesService> _logger;
 
-        public ServicesService(DaprClient dapr, ILogger<ServicesService> logger)
+        public DataMigrationServicesService(DaprClient dapr, ILogger<DataMigrationServicesService> logger)
         {
             _dapr = dapr;
             _logger = logger;
@@ -106,6 +112,26 @@ namespace QLN.DataMigration.Services
         public Task<SubscriptionBudgetDto> GetSubscriptionBudgetsAsyncBySubVertical(Guid subscriptionIdFromToken, int verticalId, int? subVerticalId, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
+        }
+
+        public async Task<string> MigrateServiceAd(Common.Infrastructure.Model.Services dto, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                await _dapr.PublishEventAsync(
+                            pubsubName: ConstantValues.PubSubName,
+                            topicName: ConstantValues.PubSubTopics.ServicesMigration,
+                            data: dto,
+                            cancellationToken: cancellationToken
+                        );
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error publishing article {dto.Title} to {ConstantValues.PubSubTopics.ServicesMigration} topic");
+                throw;
+            }
+
+            return $"Published article {dto.Title} to {ConstantValues.PubSubTopics.ServicesMigration} topic";
         }
 
         public Task<List<Common.Infrastructure.Model.Services>> ModerateBulkService(BulkModerationRequest request, CancellationToken cancellationToken = default)

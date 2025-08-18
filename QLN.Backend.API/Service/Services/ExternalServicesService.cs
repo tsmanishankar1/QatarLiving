@@ -942,9 +942,9 @@ namespace QLN.Backend.API.Service.Services
             }
         }
 
-
-
-
-
+        public Task<string> MigrateServiceAd(Common.Infrastructure.Model.Services dto, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

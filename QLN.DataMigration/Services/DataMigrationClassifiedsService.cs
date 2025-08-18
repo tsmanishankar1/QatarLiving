@@ -10,14 +10,14 @@ using QLN.Common.Infrastructure.Subscriptions;
 
 namespace QLN.DataMigration.Services
 {
-    public class ClassifiedsService : IClassifiedService
+    public class DataMigrationClassifiedsService : IClassifiedService
     {
         private readonly DaprClient _dapr;
-        private readonly ILogger<ClassifiedsService> _logger;
+        private readonly ILogger<DataMigrationClassifiedsService> _logger;
 
-        public ClassifiedsService(
+        public DataMigrationClassifiedsService(
             DaprClient dapr,
-            ILogger<ClassifiedsService> logger
+            ILogger<DataMigrationClassifiedsService> logger
             )
         {
             _dapr = dapr;

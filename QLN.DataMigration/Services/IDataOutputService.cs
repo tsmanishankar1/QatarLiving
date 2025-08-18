@@ -7,7 +7,7 @@ namespace QLN.DataMigration.Services
     public interface IDataOutputService
     {
         Task SaveCategoriesAsync(ItemsCategories itemsCategories, CancellationToken cancellationToken);
-        Task SaveMigrationItemsAsync(List<CsvCategoryMapper> csvImport, List<DrupalItem> migrationItems, CancellationToken cancellationToken);
+        Task SaveMigrationItemsAsync(List<ItemsCategoryMapper> csvImport, List<DrupalItem> migrationItems, CancellationToken cancellationToken);
         Task SaveContentNewsAsync(List<ArticleItem> items, int categoryId, int subcategoryId, CancellationToken cancellationToken);
         Task SaveContentEventsAsync(List<ContentEvent> items, CancellationToken cancellationToken);
         Task SaveContentCommunityPostsAsync(List<CommunityPost> items, CancellationToken cancellationToken);
@@ -18,5 +18,6 @@ namespace QLN.DataMigration.Services
         Task SaveContentCommunityCommentsAsync(Dictionary<string, List<ContentComment>> items, CancellationToken cancellationToken);
         Task SaveLegacyServicesSubscriptionsAsync(List<SubscriptionItem> subscriptions, CancellationToken cancellationToken);
         Task SaveLegacyItemsSubscriptionsAsync(List<SubscriptionItem> subscriptions, CancellationToken cancellationToken);
+        Task SaveMigrationServicesAsync(List<ServicesCategoryMapper> csvImport, List<DrupalItem> migrationItems, CancellationToken cancellationToken, bool isFreeAds = false);
     }
 }

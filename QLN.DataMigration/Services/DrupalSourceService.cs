@@ -27,13 +27,54 @@
             string environment,
             int? page,
             int? page_size,
+            string? type,
             CancellationToken cancellationToken
             )
         {
             page ??= 1;
             page_size ??= 30;
+            type = "classifieds";
             
-            var requestUri = $"{Constants.ItemsEndpoint}?env={environment}&page={page}&page_size={page_size}";
+            var requestUri = $"{Constants.ItemsEndpoint}?env={environment}&page={page}&page_size={page_size}&type={type}";
+
+            var response = await _httpClient.GetAsync(requestUri, cancellationToken);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogError($"Failed to migrate items. Status: {response.StatusCode}");
+                return null;
+            }
+            _logger.LogInformation($"Got Response from migration endpoint {Constants.ItemsEndpoint}");
+            var json = await response.Content.ReadAsStringAsync();
+            try
+            {
+                var items = JsonSerializer.Deserialize<DrupalItems>(json, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+                _logger.LogInformation("Completed Deserialization");
+                return items;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Deserialization error: {ex.Message}");
+                return null;
+            }
+        }
+
+        public async Task<DrupalItems?> GetServicesAsync(
+            string environment,
+            int? page,
+            int? page_size,
+            string? type,
+            CancellationToken cancellationToken
+            )
+        {
+            page ??= 1;
+            page_size ??= 30;
+            type = "services";
+
+            var requestUri = $"{Constants.ItemsEndpoint}?env={environment}&page={page}&page_size={page_size}&type={type}";
 
             var response = await _httpClient.GetAsync(requestUri, cancellationToken);
 

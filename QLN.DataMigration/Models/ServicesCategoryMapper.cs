@@ -4,7 +4,7 @@ using QLN.Common.DTO_s;
 
 namespace QLN.DataMigration.Models
 {
-    public class CsvCategoryMapper
+    public class ServicesCategoryMapper
     {
         [Name("ad_id")]
         public string AdId { get; set; } = string.Empty;
@@ -27,8 +27,8 @@ namespace QLN.DataMigration.Models
         [Name("L2")]
         public string? L2Category { get; set; }
 
-        [Name("snid")]
-        public string? SubscriptionId { get; set; } = string.Empty;
+        //[Name("snid")]
+        //public string? SubscriptionId { get; set; } = string.Empty;
 
         [Ignore]
         public AdTypeEnum? AdType { get; set; } = AdTypeEnum.Free;

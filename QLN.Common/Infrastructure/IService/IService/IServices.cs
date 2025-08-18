@@ -31,5 +31,6 @@ namespace QLN.Common.Infrastructure.IService.IService
         int verticalId,
         int? subVerticalId,
         CancellationToken cancellationToken = default);
+        Task<string> MigrateServiceAd(Services dto, CancellationToken cancellationToken = default);
     }
 }

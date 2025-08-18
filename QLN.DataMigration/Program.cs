@@ -9,6 +9,7 @@ using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.IService;
 using QLN.Common.Infrastructure.IService.IContentService;
 using QLN.Common.Infrastructure.IService.IFileStorage;
+using QLN.Common.Infrastructure.IService.IProductService;
 using QLN.Common.Infrastructure.IService.IService;
 using QLN.Common.Infrastructure.IService.V2IContent;
 using QLN.Common.Infrastructure.Service.FileStorage;
@@ -18,6 +19,7 @@ using QLN.DataMigration.Services;
 using System.Globalization;
 using System.Net.Http.Headers;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading;
 using static System.Net.Mime.MediaTypeNames;
 
@@ -30,6 +32,11 @@ builder.Services.AddAuthorization();
 
 builder.Services.AddDaprClient();
 
+builder.Services.AddActors(options =>
+{
+    options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+});
+
 builder.Services.AddHttpClient("DaprClient")
     .ConfigureHttpClient(client =>
     {
@@ -38,12 +45,12 @@ builder.Services.AddHttpClient("DaprClient")
 
 builder.Services.AddSingleton<IFileStorageBlobService, FileStorageBlobService>();
 builder.Services.AddSingleton<IDataOutputService, DataOutputService>();
-builder.Services.AddSingleton<IV2CommunityPostService, CommunityPostService>();
-builder.Services.AddSingleton<IV2NewsService, NewsService>();
-builder.Services.AddSingleton<IV2EventService, EventsService>();
-builder.Services.AddSingleton<IClassifiedService, ClassifiedsService>();
-builder.Services.AddSingleton<IServices, ServicesService>();
-builder.Services.AddSingleton<IExternalSubscriptionService, SubscriptionService>();
+builder.Services.AddSingleton<IV2CommunityPostService, DataMigrationCommunityPostService>();
+builder.Services.AddSingleton<IV2NewsService, DataMigrationNewsService>();
+builder.Services.AddSingleton<IV2EventService, DataMigrationEventsService>();
+builder.Services.AddSingleton<IClassifiedService, DataMigrationClassifiedsService>();
+builder.Services.AddSingleton<IServices, DataMigrationServicesService>();
+builder.Services.AddSingleton<IV2SubscriptionService, DataMigrationSubscriptionService>();
 
 var drupalUrl = builder.Configuration.GetSection("BaseUrl")["LegacyDrupal"] ?? throw new ArgumentNullException("LegacyDrupal");
 if (Uri.TryCreate(drupalUrl, UriKind.Absolute, out var drupalBaseUrl))
@@ -120,7 +127,7 @@ app.MapPost("/migrate_items", async (
             return Results.BadRequest("No file uploaded.");
 
         var totalCount = 0;
-        var records = new List<CsvCategoryMapper>();
+        var records = new List<ItemsCategoryMapper>();
 
         using (var stream = file.OpenReadStream())
         using (var reader = new StreamReader(stream))
@@ -130,7 +137,7 @@ app.MapPost("/migrate_items", async (
             csv.ReadHeader();
             while (csv.Read())
             {
-                var record = csv.GetRecord<CsvCategoryMapper>();
+                var record = csv.GetRecord<ItemsCategoryMapper>();
                 if (record.L2Category == "NULL") record.L2Category = null;
                 Console.WriteLine($"ad_id: {record.AdId}, category: {record.Category}, l1_category: {record.L1Category}, l2_category: {record.L2Category}");
                 totalCount++;
@@ -141,6 +148,181 @@ app.MapPost("/migrate_items", async (
         return await migrationService.MigrateItems(records, importImages, cancellationToken);
     })
     .WithSummary("Migrate Items")
+    .DisableAntiforgery();
+
+app.MapPost("/test_items_csv", async (
+    [FromServices] IServices servicesService,
+    IFormFile file,
+    CancellationToken cancellationToken = default
+    ) =>
+{
+    if (file == null || file.Length == 0)
+        return Results.BadRequest("No file uploaded.");
+
+    var categoryLookup = await servicesService.GetAllCategories("classifieds", "items", cancellationToken);
+
+    var totalCount = 0;
+    var processedCount = 0;
+    //var records = new List<CsvCategoryMapper>();
+    var categoriesNotFound = new List<string>();
+    var l1CategoriesNotFound = new List<string>();
+    var l2CategoriesNotFound = new List<string>();
+
+    using (var stream = file.OpenReadStream())
+    using (var reader = new StreamReader(stream))
+    using (var csv = new CsvReader(reader, CultureInfo.InvariantCulture))
+    {
+        csv.Read();
+        csv.ReadHeader();
+        while (csv.Read())
+        {
+            var record = csv.GetRecord<ItemsCategoryMapper>();
+            if (record.L2Category == "NULL") record.L2Category = null;
+            Console.WriteLine($"ad_id: {record.AdId}, category: {record.Category}, l1_category: {record.L1Category}, l2_category: {record.L2Category}");
+            var category = categoryLookup.FirstOrDefault(c => c.CategoryName == record.Category);
+            if(category == null && !categoriesNotFound.Any(x => x == record.Category)) { categoriesNotFound.Add(record.Category); }
+            var l1Category = category?.Fields?.FirstOrDefault(x => x.CategoryName == record.L1Category);
+            if (l1Category == null && !l1CategoriesNotFound.Any(x => x == record.L1Category)) { l1CategoriesNotFound.Add(record.L1Category); }
+            ;
+
+            long? l2CategoryId = null;
+            if(record.L2Category != null)
+            {
+                var l2Category = l1Category?.Fields?.FirstOrDefault(x => x.CategoryName == record.L2Category);
+                if (l1Category == null && !l2CategoriesNotFound.Any(x => x == record.L2Category)) { l2CategoriesNotFound.Add(record.L2Category); }
+
+                if (l2Category != null)
+                {
+                    l2CategoryId = l2Category.Id;
+                }
+            }
+
+            if(category != null && l1Category != null)
+            {
+                record.CategoryId = category.Id;
+                record.L1CategoryId = l1Category.Id;
+                record.L2CategoryId = l2CategoryId;
+                processedCount++;
+            }
+            totalCount++;
+            //records.Add(record);
+        }
+    }
+
+    return Results.Ok(new
+    {
+        Message = $"Processed {processedCount} out of {totalCount} records",
+        CategoriesNotFound = categoriesNotFound,
+        L1CategoriesNotFound = l1CategoriesNotFound,
+        L2CategoriesNotFound = l2CategoriesNotFound
+    });
+})
+    .WithSummary("Test Items CSV")
+    .DisableAntiforgery();
+
+app.MapPost("/migrate_services", async (
+    [FromServices] IMigrationService migrationService,
+    IFormFile file,
+    [FromQuery(Name = "import_images")] bool importImages = false,
+    [FromQuery(Name = "is_free_ads")] bool isFreeAds = false,
+    CancellationToken cancellationToken = default
+    ) =>
+{
+    if (file == null || file.Length == 0)
+        return Results.BadRequest("No file uploaded.");
+
+    var totalCount = 0;
+    var records = new List<ServicesCategoryMapper>();
+
+    using (var stream = file.OpenReadStream())
+    using (var reader = new StreamReader(stream))
+    using (var csv = new CsvReader(reader, CultureInfo.InvariantCulture))
+    {
+        csv.Read();
+        csv.ReadHeader();
+        while (csv.Read())
+        {
+            var record = csv.GetRecord<ServicesCategoryMapper>();
+            if (record.L2Category == "NULL") record.L2Category = null;
+            Console.WriteLine($"ad_id: {record.AdId}, category: {record.Category}, l1_category: {record.L1Category}, l2_category: {record.L2Category}");
+            totalCount++;
+            records.Add(record);
+        }
+    }
+
+    return await migrationService.MigrateServices(records, importImages, isFreeAds, cancellationToken);
+})
+    .WithSummary("Migrate Services")
+    .DisableAntiforgery();
+
+app.MapPost("/test_services_csv", async (
+    [FromServices] IServices servicesService,
+    IFormFile file,
+    CancellationToken cancellationToken = default
+    ) =>
+{
+    if (file == null || file.Length == 0)
+        return Results.BadRequest("No file uploaded.");
+
+    var categoryLookup = await servicesService.GetAllCategories("classifieds", "items", cancellationToken);
+
+    var totalCount = 0;
+    var processedCount = 0;
+    //var records = new List<CsvCategoryMapper>();
+    var categoriesNotFound = new List<string>();
+    var l1CategoriesNotFound = new List<string>();
+    var l2CategoriesNotFound = new List<string>();
+
+    using (var stream = file.OpenReadStream())
+    using (var reader = new StreamReader(stream))
+    using (var csv = new CsvReader(reader, CultureInfo.InvariantCulture))
+    {
+        csv.Read();
+        csv.ReadHeader();
+        while (csv.Read())
+        {
+            var record = csv.GetRecord<ItemsCategoryMapper>();
+            if (record.L2Category == "NULL") record.L2Category = null;
+            Console.WriteLine($"ad_id: {record.AdId}, category: {record.Category}, l1_category: {record.L1Category}, l2_category: {record.L2Category}");
+            var category = categoryLookup.FirstOrDefault(c => c.CategoryName == record.Category);
+            if (category == null && !categoriesNotFound.Any(x => x == record.Category)) { categoriesNotFound.Add(record.Category); }
+            var l1Category = category?.Fields?.FirstOrDefault(x => x.CategoryName == record.L1Category);
+            if (l1Category == null && !l1CategoriesNotFound.Any(x => x == record.L1Category)) { l1CategoriesNotFound.Add(record.L1Category); }
+            ;
+
+            long? l2CategoryId = null;
+            if (record.L2Category != null)
+            {
+                var l2Category = l1Category?.Fields?.FirstOrDefault(x => x.CategoryName == record.L2Category);
+                if (l1Category == null && !l2CategoriesNotFound.Any(x => x == record.L2Category)) { l2CategoriesNotFound.Add(record.L2Category); }
+
+                if (l2Category != null)
+                {
+                    l2CategoryId = l2Category.Id;
+                }
+            }
+
+            if (category != null && l1Category != null)
+            {
+                record.CategoryId = category.Id;
+                record.L1CategoryId = l1Category.Id;
+                record.L2CategoryId = l2CategoryId;
+                processedCount++;
+            }
+            totalCount++;
+            //records.Add(record);
+        }
+    }
+
+    return Results.Ok(new
+    {
+        Message = $"Processed {processedCount} out of {totalCount} records",
+        CategoriesNotFound = categoriesNotFound,
+        L1CategoriesNotFound = l1CategoriesNotFound,
+        L2CategoriesNotFound = l2CategoriesNotFound
+    });
+})
+    .WithSummary("Test Services CSV")
     .DisableAntiforgery();
 
 app.MapGet("/migrate_item_subscriptions", async (

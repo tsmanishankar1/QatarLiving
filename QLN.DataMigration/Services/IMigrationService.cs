@@ -7,7 +7,7 @@ namespace QLN.DataMigration.Services
     public interface IMigrationService
     {
         Task<IResult> MigrateMobileDevices(CancellationToken cancellationToken);
-        Task<IResult> MigrateItems(List<CsvCategoryMapper> csvImport, bool importImages, CancellationToken cancellationToken);
+        Task<IResult> MigrateItems(List<ItemsCategoryMapper> csvImport, bool importImages, CancellationToken cancellationToken);
         Task<IResult> MigrateArticles(bool importImages, CancellationToken cancellationToken);
         Task<IResult> MigrateEvents(bool importImages, CancellationToken cancellationToken);
         Task<IResult> MigrateCommunityPosts(bool importImages, CancellationToken cancellationToken);
@@ -16,5 +16,6 @@ namespace QLN.DataMigration.Services
         Task<IResult> MigrateLocations(CancellationToken cancellationToken);
         Task<IResult> MigrateLegacyItemsSubscriptions(CancellationToken cancellationToken = default);
         Task<IResult> MigrateLegacyServicesSubscriptions(CancellationToken cancellationToken = default);
+        Task<IResult> MigrateServices(List<ServicesCategoryMapper> csvImport, bool importImages, bool isFreeAds, CancellationToken cancellationToken);
     }
 }

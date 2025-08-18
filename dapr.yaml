@@ -55,12 +55,12 @@ apps:
   #   command:
   #     - dotnet
   #     - run
-  # - appID: qln-datamigration
-  #   appDirPath: QLN.DataMigration
-  #   appPort: 5084
-  #   command:
-  #     - dotnet
-  #     - run
+  - appID: qln-datamigration
+    appDirPath: QLN.DataMigration
+    appPort: 5084
+    command:
+      - dotnet
+      - run
   # - appID: qln-search-ms
   #   appDirPath: QLN.SearchService
   #   appPort: 5244

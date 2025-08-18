@@ -45,11 +45,11 @@ namespace QLN.DataMigration.Services
 
         public async Task<IResult> MigrateMobileDevices(CancellationToken cancellationToken)
         {
-            var environment = _config["LegacySubscriptions:Environment"];
+            var environment = _config["LegacyMigrations:Environment"];
 
             if (string.IsNullOrEmpty(environment))
             {
-                return Results.Problem("Environment is not configured for legacy subscriptions.");
+                return Results.Problem("Environment is not configured for legacy migrations.");
             }
 
             _logger.LogInformation($"Starting Migrations @ {DateTime.UtcNow}");
@@ -83,23 +83,24 @@ namespace QLN.DataMigration.Services
             });
         }
 
-        public async Task<IResult> MigrateItems(List<CsvCategoryMapper> csvImport, bool importImages, CancellationToken cancellationToken)
+        public async Task<IResult> MigrateItems(List<ItemsCategoryMapper> csvImport, bool importImages, CancellationToken cancellationToken)
         {
             int pageSize = 30;
             int page = 1;
+            string type = "classifieds";
 
-            var environment = _config["LegacySubscriptions:Environment"];
+            var environment = _config["LegacyMigrations:Environment"];
 
             if (string.IsNullOrEmpty(environment))
             {
-                return Results.Problem("Environment is not configured for legacy subscriptions.");
+                return Results.Problem("Environment is not configured for legacy migrations.");
             }
 
             var startTime = DateTime.Now;
 
             _logger.LogInformation($"Starting Items Migration @ {startTime}");
 
-            var drupalItems = await _drupalSourceService.GetItemsAsync(environment, pageSize, page, cancellationToken);
+            var drupalItems = await _drupalSourceService.GetItemsAsync(environment, pageSize, page, type, cancellationToken);
 
             if (drupalItems == null || drupalItems.Items == null || !drupalItems.Items.Any())
             {
@@ -129,7 +130,7 @@ namespace QLN.DataMigration.Services
             {
                 page += 1;
                 _logger.LogInformation($"Fetching data for page {page}");
-                drupalItems = await _drupalSourceService.GetItemsAsync(environment, pageSize, page, cancellationToken);
+                drupalItems = await _drupalSourceService.GetItemsAsync(environment, pageSize, page, type, cancellationToken);
                 migrationItems = new List<DrupalItem>();
                 if (drupalItems != null && drupalItems.Items.Count > 0)
                 {
@@ -155,7 +156,80 @@ namespace QLN.DataMigration.Services
             });
         }
 
-        
+        public async Task<IResult> MigrateServices(List<ServicesCategoryMapper> csvImport, bool importImages, bool isFreeAds, CancellationToken cancellationToken)
+        {
+            int pageSize = 30;
+            int page = 1;
+            string type = "services";
+            var adType = isFreeAds ? "Free" : "Paid";
+
+            var environment = _config["LegacyMigrations:Environment"];
+
+            if (string.IsNullOrEmpty(environment))
+            {
+                return Results.Problem("Environment is not configured for legacy migrations.");
+            }
+
+            var startTime = DateTime.Now;
+
+            _logger.LogInformation($"Starting Services Migration @ {startTime}");
+
+            var drupalItems = await _drupalSourceService.GetServicesAsync(environment, pageSize, page, type, cancellationToken);
+
+            if (drupalItems == null || drupalItems.Items == null || !drupalItems.Items.Any())
+            {
+                return Results.Problem("No items found or deserialized data is invalid.");
+            }
+
+            var migrationItems = new List<DrupalItem>();
+            int totalCount = 0;
+
+            // iterate over each drupal item and fetch its data from current storage
+            // and upload it into Azure Blob
+            foreach (var drupalItem in drupalItems.Items)
+            {
+                await ProcessMigrationItem(drupalItem, importImages: importImages);
+
+                migrationItems.Add(drupalItem);
+                totalCount += 1;
+            }
+
+            await _dataOutputService.SaveMigrationServicesAsync(csvImport, migrationItems, cancellationToken, isFreeAds);
+
+            var totalItemCount = drupalItems.Total;
+
+            
+            _logger.LogInformation($"Migrated {totalCount} out of {totalItemCount} {adType} Services");
+
+            while (totalItemCount > totalCount)
+            {
+                page += 1;
+                _logger.LogInformation($"Fetching data for page {page}");
+                drupalItems = await _drupalSourceService.GetServicesAsync(environment, pageSize, page, type, cancellationToken);
+                migrationItems = new List<DrupalItem>();
+                if (drupalItems != null && drupalItems.Items.Count > 0)
+                {
+                    foreach (var drupalItem in drupalItems.Items)
+                    {
+                        await ProcessMigrationItem(drupalItem, importImages: importImages);
+
+                        migrationItems.Add(drupalItem);
+                        totalCount += 1;
+                    }
+
+                    await _dataOutputService.SaveMigrationServicesAsync(csvImport, migrationItems, cancellationToken, isFreeAds);
+
+                    _logger.LogInformation($"Migrated {totalCount} out of {totalItemCount} {adType} Services");
+                }
+            }
+
+            _logger.LogInformation($"Completed Services Migration @ {DateTime.UtcNow}");
+
+            return Results.Ok(new
+            {
+                Message = $"Migrated {totalCount} out of {totalItemCount} {adType} Services - Started @ {startTime} - Completed @ {DateTime.UtcNow}.",
+            });
+        }
 
         public async Task<IResult> MigrateArticles(bool importImages, CancellationToken cancellationToken)
         {
