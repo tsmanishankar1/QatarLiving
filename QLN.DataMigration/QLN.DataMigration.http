@@ -23,7 +23,11 @@ env=dev
 &type=service
 
 ### Migrate Ads
-GET http://ql-migrate.westeurope.cloudapp.azure.com/qlnext-v2/items.php?env=prod&page_size=30&page=1
+GET http://ql-migrate.westeurope.cloudapp.azure.com/qlnext-v2/items.php?env=prod&page_size=30&page=1&type=classifieds
+Accept: application/json
+
+### Migrate Services
+GET http://ql-migrate.westeurope.cloudapp.azure.com/qlnext-v2/items.php?env=prod&page_size=30&page=1&type=services
 Accept: application/json
 
 #########
