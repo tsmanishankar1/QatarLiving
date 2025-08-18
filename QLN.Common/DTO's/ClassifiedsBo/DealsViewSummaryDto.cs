@@ -19,6 +19,7 @@ namespace QLN.Common.DTO_s.ClassifiedsBo
         public int Phonelead { get; set; }
         public string email { get; set; }
         public string createdby { get; set; }
+        public string CompanyId { get; set; }
         public string ContactNumber { get; set; }
         public string WhatsappNumber { get; set; }
         public string CoverImage { get; set; }

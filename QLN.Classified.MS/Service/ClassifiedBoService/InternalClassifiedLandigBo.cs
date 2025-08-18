@@ -49,9 +49,10 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
         private readonly QLSubscriptionContext _subscriptioncontext;
         private readonly QLPaymentsContext _Paymentcontext;
         private readonly QLApplicationContext _usercontext;
+        private readonly QLCompanyContext _company;
 
 
-        public InternalClassifiedLandigBo(IClassifiedService classified, DaprClient dapr, ILogger<IClassifiedBoLandingService> logger, QLClassifiedContext context, QLSubscriptionContext subscriptioncontext, QLPaymentsContext Paymentcontext , QLApplicationContext usercontext)
+        public InternalClassifiedLandigBo(IClassifiedService classified, DaprClient dapr, ILogger<IClassifiedBoLandingService> logger, QLClassifiedContext context, QLSubscriptionContext subscriptioncontext, QLPaymentsContext Paymentcontext , QLApplicationContext usercontext, QLCompanyContext company)
         {
             _classified = classified;
             _dapr = dapr;
@@ -61,6 +62,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
             _context = context;
             _subscriptioncontext = subscriptioncontext;
             _Paymentcontext = Paymentcontext;
+            _company = company;
             _usercontext = usercontext;
         }
 
@@ -572,6 +574,8 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                 var productSummary = _context.StoresDashboardSummaryItems.ToList();
 
                 var featuredStoreDtos = (from store in slottedStores
+                                         join company in _company.Companies
+                                         on store.StoreId.ToLower() equals company.Id.ToString().ToLower()
                                          join summary in productSummary
                                              on store.StoreId.ToLower() equals summary.CompanyId.ToString().ToLower() into summaryGroup
                                          from summary in summaryGroup.DefaultIfEmpty()
@@ -586,6 +590,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                                              StartDate = store.StartDate,
                                              EndDate = store.EndDate,
                                              SlotOrder = store.SlotOrder,
+                                             StoreSlug = company.Slug,
                                              IsActive = store.IsActive,
                                              CreatedBy = store.CreatedBy,
                                              CreatedAt = store.CreatedAt,
@@ -1466,9 +1471,6 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
             };
         }
 
-
-
-
         public async Task<BulkAdActionResponseitems> BulkCollectiblesAction(
      BulkActionRequest request,
      string userId,
@@ -2237,9 +2239,10 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                                   DateCreated = d.CreatedAt,
                                   createdby = d.CreatedBy,
                                   ContactNumber = d.ContactNumber,
-                                  WhatsappNumber = d.WhatsappNumber,
+                                  WhatsappNumber = d.WhatsappNumber,                                  
                                   StartDate = d.StartDate ?? DateTime.UtcNow,
                                   EndDate = d.EndDate ?? DateTime.UtcNow,
+                                  CompanyId = s.CompanyId.ToString(),
                                   WebClick = 0,
                                   Weburl = d.WebsiteUrl,
                                   CoverImage = d.CoverImage,
