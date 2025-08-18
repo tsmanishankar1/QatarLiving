@@ -21,6 +21,11 @@ namespace QLN.SearchService.Service
             _logger = logger;
         }
 
+        public Task<ApiResponse<object>> GetAnalyticsAsync(AnalyticsRequestDto request, string userId, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+
         public async Task<AnalyticsIndex?> GetAsync(string section, string entityId)
         {
             if (string.IsNullOrWhiteSpace(section) || string.IsNullOrWhiteSpace(entityId))

@@ -1,12 +1,14 @@
 ﻿using Azure;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Logging;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.IService.ISearchService;
 using System;
+using System.Text.Json;
 
 namespace QLN.Common.Infrastructure.CustomEndpoints
 {
@@ -148,6 +150,49 @@ namespace QLN.Common.Infrastructure.CustomEndpoints
                 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
                 .Produces<ProblemDetails>(StatusCodes.Status502BadGateway)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapPost("/analytics", async Task<Results<
+            Ok<ApiResponse<object>>,
+            ProblemHttpResult,
+            ForbidHttpResult>> (
+            [FromBody] AnalyticsRequestDto request,
+            [FromServices] IAnalyticsService analyticsService,
+            HttpContext httpContext,
+            CancellationToken cancellationToken) =>
+            {
+                try
+                {
+                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                    if (string.IsNullOrEmpty(userClaim))
+                        return TypedResults.Forbid();
+
+                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                    var userId = userData.GetProperty("uid").GetString();
+                    var userName = userData.GetProperty("name").GetString();
+
+                    if (string.IsNullOrWhiteSpace(userId))
+                        return TypedResults.Forbid();
+
+                    var result = await analyticsService.GetAnalyticsAsync(request, userId!, cancellationToken);
+                    return TypedResults.Ok(result);
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Internal Server Error",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status500InternalServerError
+                    });
+                }
+            })
+            .WithName("GetAnalyticsFromUrl")
+            .WithTags(TAG)
+            .WithSummary("Get analytics data from external service")
+            .WithDescription("Forwards the request to the external analytics service and returns the response")
+            .Produces<ApiResponse<object>>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
+            .Produces(StatusCodes.Status403Forbidden);
 
             return group;
         }

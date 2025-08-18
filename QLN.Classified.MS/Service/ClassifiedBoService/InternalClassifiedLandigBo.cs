@@ -23,6 +23,7 @@ using System.ComponentModel.Design;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Reflection.Metadata.Ecma335;
+using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 using System.Xml.Serialization;
 using static QLN.Common.Infrastructure.Constants.ConstantValues;
@@ -2573,7 +2574,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Bulk action failed unexpectedly for Preloved.");
+                _logger.LogError(ex, "Bulk preloved action failed unexpectedly.");
                 throw;
             }
         }

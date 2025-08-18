@@ -1,5 +1,6 @@
 ﻿using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Model;
+using QLN.Common.Infrastructure.Subscriptions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -25,11 +26,7 @@ namespace QLN.Common.Infrastructure.IService.IService
         Task<Services> RefreshService(RefreshServiceRequest request, string? uid, string? subscriptionId,  CancellationToken ct);
         Task<Services> PublishService(PublishServiceRequest request, string? uid, string? subscriptionId, CancellationToken ct);
         Task<BulkAdActionResponseitems> ModerateBulkService(BulkModerationRequest request, string userId, string subscriptionId, DateTime? expiryDate, CancellationToken cancellationToken = default);
-        Task<SubscriptionBudgetDto> GetSubscriptionBudgetsAsync(Guid subscriptionId,CancellationToken cancellationToken = default);
-        Task<SubscriptionBudgetDto> GetSubscriptionBudgetsAsyncBySubVertical(
-        Guid subscriptionIdFromToken,
-        int verticalId,
-        int? subVerticalId,
-        CancellationToken cancellationToken = default);
+        Task<SubscriptionBudgetDto> GetSubscriptionBudgetsAsyncBySubVertical(Guid subscriptionIdFromToken, Vertical verticalId, SubVertical? subVerticalId, CancellationToken cancellationToken = default);
+        Task<List<CategoryAdCountDto>> GetCategoryAdCount(CancellationToken ct = default);
     }
 }

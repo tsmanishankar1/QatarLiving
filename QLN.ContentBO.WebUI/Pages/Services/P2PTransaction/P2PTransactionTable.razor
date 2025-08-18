@@ -25,13 +25,13 @@
     <HeaderContent>
         <MudTh class="header-cell">Ad ID</MudTh>
         <MudTh class="header-cell">Order Id</MudTh>
-        <MudTh class="header-cell">Product Type</MudTh>
         <MudTh class="header-cell">Username</MudTh>
         <MudTh class="header-cell">Email</MudTh>
         <MudTh class="header-cell">Mobile</MudTh>
         <MudTh class="header-cell">Whatsapp</MudTh>
         <MudTh class="header-cell">Amount</MudTh>
         <MudTh class="header-cell">Status</MudTh>
+        <MudTh class="header-cell">Duration</MudTh>
         <MudTh class="header-cell">Create Date</MudTh>
         <MudTh class="header-cell">Publish Date</MudTh>
         <MudTh class="header-cell">Start Date</MudTh>
@@ -42,13 +42,13 @@
     <RowTemplate>
         <MudTd title="@(string.IsNullOrWhiteSpace(context.Id.ToString()) ? "-" : context.Id)"Class="truncate-text hover-title">@context.Id</MudTd>
         <MudTd title="@(string.IsNullOrWhiteSpace(context.OrderId) ? "-" : context.OrderId)"Class="truncate-text hover-title">@(string.IsNullOrWhiteSpace(context.OrderId) ? "--" : context.OrderId)</MudTd>
-        <MudTd title="@(string.IsNullOrWhiteSpace(context.ProductType) ? "-" : context.ProductType)"Class="truncate-text hover-title">@context.ProductType</MudTd>
         <MudTd title="@(string.IsNullOrWhiteSpace(context.UserName) ? "-" : context.UserName)"Class="truncate-text hover-title">@context.UserName</MudTd>
         <MudTd title="@(string.IsNullOrWhiteSpace(context.Email) ? "-" : context.Email)"Class="truncate-text hover-title">@context.Email</MudTd>
         <MudTd title="@(string.IsNullOrWhiteSpace(context.Mobile) ? "-" : context.Mobile)"Class="truncate-text hover-title">@context.Mobile</MudTd>
         <MudTd title="@(string.IsNullOrWhiteSpace(context.Whatsapp) ? "-" : context.Whatsapp)"Class="truncate-text hover-title">@context.Whatsapp</MudTd>
         <MudTd Class="truncate-text hover-title">@context.Amount</MudTd>
-         <MudTd Class="truncate-text">@((ServiceStatus)context.Status)</MudTd>
+        <MudTd Class="truncate-text">@((ServiceStatus)context.Status)</MudTd>
+        <MudTd title="@(string.IsNullOrWhiteSpace(context.ProductType) ? "-" : context.ProductType)"Class="truncate-text hover-title">@context.ProductType</MudTd>
        <MudTd Class="truncate-text">
     @(context.CreationDate == default ? "--" : context.CreationDate.ToString("dd-MM-yyyy hh:mmtt"))
 </MudTd>

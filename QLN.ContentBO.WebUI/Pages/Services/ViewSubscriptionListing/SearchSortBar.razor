@@ -46,9 +46,9 @@
             <div class="label-and-value">
                 <div class="custom-label">Dates</div>
                 <div class="custom-value">
-                    @if (_dateRange.Start.HasValue && _dateRange.End.HasValue)
+                    @if (_dateRange?.Start.HasValue == true && _dateRange?.End.HasValue == true)
                     {
-                        <text>@_dateRange.Start.Value.ToString("dd MMM yyyy") - @_dateRange.End.Value.ToString("dd MMM yyyy")</text>
+                        <text>@_dateRange!.Start.Value.ToString("dd MMM yyyy") - @_dateRange.End.Value.ToString("dd MMM yyyy")</text>
                     }
                     else
                     {

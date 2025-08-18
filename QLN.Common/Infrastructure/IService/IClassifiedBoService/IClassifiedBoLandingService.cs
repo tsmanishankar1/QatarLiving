@@ -65,10 +65,9 @@ namespace QLN.Common.Infrastructure.IService.V2IClassifiedBoService
         Task<string> ReplaceFeaturedCategorySlots(string userId, string userName, LandingBoSlotReplaceRequest dto, CancellationToken cancellationToken = default);
 
         Task<BulkAdActionResponseitems> BulkItemsAction(
-BulkActionRequest request,
-string UserId, string UserName,
-CancellationToken cancellationToken = default);
-
+     BulkActionRequest request,
+     string userId,string username,
+     CancellationToken cancellationToken = default);
         Task<BulkAdActionResponseitems> BulkCollectiblesAction(
     BulkActionRequest request,
     string userId, string userName,

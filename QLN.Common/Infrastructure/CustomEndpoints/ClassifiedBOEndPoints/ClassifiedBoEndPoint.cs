@@ -2761,10 +2761,10 @@ Conflict<ProblemDetails>,
 NotFound<ProblemDetails>,
 ProblemHttpResult
 >> (
-BulkActionRequest req,
-HttpContext httpContext,
-IClassifiedBoLandingService service,
-CancellationToken ct
+    BulkActionRequest req,
+    HttpContext httpContext,
+    IClassifiedBoLandingService service,
+    CancellationToken ct
 ) =>
             {
                 var uid = httpContext.User.FindFirst("sub")?.Value ?? "unknown";
@@ -2896,6 +2896,7 @@ CancellationToken ct
             .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
 
 
 

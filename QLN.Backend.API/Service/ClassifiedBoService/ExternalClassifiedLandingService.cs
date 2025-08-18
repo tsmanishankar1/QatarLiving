@@ -1045,6 +1045,10 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
             var failedIds = new List<long>();
             var succeededIds = new List<long>();
 
+
+
+                _logger.LogInformation("Started Bulk Items Action. Request: {Action} for {Count} Ads.", request.Action, request.AdIds?.Count);
+
             try
             {
                 _logger.LogInformation("Started Bulk Items Action. Request: {Action} for {Count} Ads.", request.Action, request.AdIds?.Count);
@@ -1939,11 +1943,12 @@ CancellationToken cancellationToken = default)
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unexpected error in SoftDeleteDeals (bulk external call).");
-                throw new InvalidOperationException("Error while performing bulk soft delete.", ex);
+        
+                _logger.LogError(ex, "Error bulk preloved action");
+                throw;
             }
         }
-        
+
 
         public async Task<PrelovedTransactionListResponseDto> GetPrelovedTransactionsAsync(int pageNumber,
             int pageSize,
