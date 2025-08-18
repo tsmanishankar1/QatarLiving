@@ -66,7 +66,7 @@ namespace QLN.Common.Infrastructure.IService.V2IClassifiedBoService
 
         Task<BulkAdActionResponseitems> BulkItemsAction(
      BulkActionRequest request,
-     string userId,
+     string userId,string username,
      CancellationToken cancellationToken = default);
         Task<BulkAdActionResponseitems> BulkCollectiblesAction(
     BulkActionRequest request,

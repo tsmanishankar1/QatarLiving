@@ -1033,7 +1033,7 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
 
         public async Task<BulkAdActionResponseitems> BulkItemsAction(
 BulkActionRequest request,
-string userId,
+string userId,string username,
 CancellationToken cancellationToken = default)
         {
             if (request == null)
@@ -1155,7 +1155,7 @@ CancellationToken cancellationToken = default)
                     try
                     {
 
-                        var url = $"api/v2/classifiedbo/bulk-items-action-userid/{userId}&subscriptionId={subscriptionId}";
+                        var url = $"api/v2/classifiedbo/bulk-items-action-userid/{userId}/{username}&subscriptionId={subscriptionId}";
                         var serviceRequest = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, SERVICE_APP_ID, url);
                         serviceRequest.Content = new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json");
 

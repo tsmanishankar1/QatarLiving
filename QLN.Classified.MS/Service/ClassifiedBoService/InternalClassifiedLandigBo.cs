@@ -1250,7 +1250,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
 
         public async Task<BulkAdActionResponseitems> BulkItemsAction(
      BulkActionRequest request,
-     string userId,
+     string userId,string username,
      CancellationToken cancellationToken = default)
         {
             if (request == null)

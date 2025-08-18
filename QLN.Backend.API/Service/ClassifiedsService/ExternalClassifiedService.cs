@@ -227,7 +227,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
             try
             {
-                subscriptionId = Guid.Parse("5a024f96-7414-4473-80b8-f5d70297e262");
+                //subscriptionId = Guid.Parse("5a024f96-7414-4473-80b8-f5d70297e262");
 
                 if (subscriptionId != Guid.Empty)
                 {
@@ -1278,12 +1278,12 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
             try
             {
-                var subscriptionid = Guid.Parse("5a024f96-7414-4473-80b8-f5d70297e262");
+                //var subscriptionid = Guid.Parse("5a024f96-7414-4473-80b8-f5d70297e262");
 
-                if (subscriptionid != Guid.Empty && dto.IsFeatured == true)
+                if (subscriptionId != Guid.Empty && dto.IsFeatured == true)
                 {
                     var canUse = await _subscriptionContext.ValidateSubscriptionUsageAsync(
-                        subscriptionid,
+                        subscriptionId,
                         "feature",
                         1,
                         cancellationToken
@@ -1293,7 +1293,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                     {
                         _log.LogWarning(
                             "Subscription {SubscriptionId} has insufficient quota for feature.",
-                            GuidToLong(subscriptionid)
+                            GuidToLong(subscriptionId)
                         );
                         throw new InvalidOperationException("Insufficient subscription quota for feature.");
                     }
@@ -1309,7 +1309,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 var queryString = "?" + string.Join("&", queryParams.Select(kv =>
                     $"{Uri.EscapeDataString(kv.Key)}={Uri.EscapeDataString(kv.Value)}"));
 
-                var url = $"/api/classifieds/featured/{queryString}&subscriptionId={subscriptionid}";
+                var url = $"/api/classifieds/featured/{queryString}&subscriptionId={subscriptionId}";
 
                 var serviceRequest = _dapr.CreateInvokeMethodRequest(HttpMethod.Put, SERVICE_APP_ID, url);
                 serviceRequest.Content = new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
@@ -1343,12 +1343,12 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 }
 
                 // Record subscription usage for feature/unfeature
-                if (subscriptionid != Guid.Empty)
+                if (subscriptionId != Guid.Empty)
                 {
                     if (dto.IsFeatured == true)
                     {
                         var success = await _subscriptionContext.RecordSubscriptionUsageAsync(
-                            subscriptionid,
+                            subscriptionId,
                             "feature",
                             1,
                             cancellationToken
@@ -1358,14 +1358,14 @@ namespace QLN.Backend.API.Service.ClassifiedService
                         {
                             _log.LogWarning(
                                 "Failed to record subscription usage for SubscriptionId {SubscriptionId}",
-                                GuidToLong(subscriptionid)
+                                GuidToLong(subscriptionId)
                             );
                         }
                     }
                     else
                     {
                         var success = await _subscriptionContext.RecordSubscriptionUsageAsync(
-                            subscriptionid,
+                            subscriptionId,
                             "unfeature",
                             1,
                             cancellationToken
@@ -1375,7 +1375,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                         {
                             _log.LogWarning(
                                 "Failed to decrement subscription usage for SubscriptionId {SubscriptionId}",
-                                GuidToLong(subscriptionid)
+                                GuidToLong(subscriptionId)
                             );
                         }
                     }

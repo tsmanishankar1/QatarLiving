@@ -349,7 +349,7 @@ namespace QLN.Classified.MS.Service
 
             try
             {
-                subscriptionId = Guid.Parse("5a024f96-7414-4473-80b8-f5d70297e262");
+               // subscriptionId = Guid.Parse("5a024f96-7414-4473-80b8-f5d70297e262");
                 //var subcription = await _subscriptionContext.Subscriptions.AsNoTracking().FirstOrDefaultAsync(s => s.SubscriptionId == subscriptionid,cancellationToken);
                 string? adTitle;
 
@@ -1484,6 +1484,8 @@ namespace QLN.Classified.MS.Service
                 existingAd.CreatedAt = existingAd.CreatedAt;
                 existingAd.CreatedBy = existingAd.CreatedBy;               
                 existingAd.UpdatedAt = DateTime.UtcNow;
+                existingAd.SubscriptionId = existingAd.SubscriptionId;
+                existingAd.ExpiryDate = existingAd.ExpiryDate;
 
                 _context.Item.Update(existingAd);
                 await _context.SaveChangesAsync(cancellationToken);
@@ -1563,6 +1565,8 @@ namespace QLN.Classified.MS.Service
                 existingAd.Images = dto.Images;
                 existingAd.Attributes = dto.Attributes;
                 existingAd.UpdatedAt = DateTime.UtcNow;
+                existingAd.SubscriptionId = existingAd.SubscriptionId;
+                existingAd.ExpiryDate = existingAd.ExpiryDate;
 
                 _context.Preloved.Update(existingAd);
                 await _context.SaveChangesAsync(cancellationToken);
@@ -1637,6 +1641,8 @@ namespace QLN.Classified.MS.Service
                 existingAd.IsActive = true;
                 existingAd.CreatedAt = existingAd.CreatedAt;
                 existingAd.CreatedBy = existingAd.CreatedBy;
+                existingAd.SubscriptionId = existingAd.SubscriptionId;
+                existingAd.ExpiryDate = existingAd.ExpiryDate;
 
                 existingAd.UpdatedAt = DateTime.UtcNow;
 
@@ -1736,6 +1742,8 @@ namespace QLN.Classified.MS.Service
                 existingAd.UpdatedBy = dto.UpdatedBy;
                 existingAd.IsActive = true;
                 existingAd.UpdatedAt = existingAd.UpdatedAt;
+                existingAd.SubscriptionId = existingAd.SubscriptionId;
+                existingAd.ExpiryDate = existingAd.ExpiryDate;
 
 
                 _context.Deal.Update(existingAd);
@@ -2331,7 +2339,7 @@ namespace QLN.Classified.MS.Service
 
             try
             {
-                subscriptionId = Guid.Parse("5a024f96-7414-4473-80b8-f5d70297e262");
+                //subscriptionId = Guid.Parse("5a024f96-7414-4473-80b8-f5d70297e262");
 
                 var subscription = await _subscriptionContext.Subscriptions
                     .FirstOrDefaultAsync(s => s.SubscriptionId == subscriptionId, cancellationToken);
