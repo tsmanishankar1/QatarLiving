@@ -25,6 +25,7 @@
         public class SeasonalPickDto
         {
             public string Id { get; set; } = "";
+            public string Title { get; set; } = "";
             public string CategoryName { get; set; } = "";
             public string? StoreName { get; set; } = "";
             public DateTime EndDate { get; set; }

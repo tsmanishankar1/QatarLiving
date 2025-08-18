@@ -10,9 +10,9 @@ namespace QLN.ContentBO.WebUI.Pages
 
         protected readonly List<TabItem> Tabs = new()
         {
-            new TabItem("View  Subscription  Listing", "/manage/services/listing/subscriptions"),
+            new TabItem("View  Subscriptions", "/manage/services/listing/subscriptions"),
             new TabItem("P2P Listings", "/manage/services/listing/p2p/listing"),
-            new TabItem("P2P Transactions", "/manage/services/listing/p2p/transactions"),
+            new TabItem("Transactions", "/manage/services/listing/transactions"),
             new TabItem("Subscription Ads", "/manage/services/listing/subscription/ads"),
             new TabItem("Verified Seller Request", "/manage/services/listing/vertified/seller/request")
         };
