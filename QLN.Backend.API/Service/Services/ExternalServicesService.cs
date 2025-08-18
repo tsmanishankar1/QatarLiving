@@ -204,7 +204,7 @@ namespace QLN.Backend.API.Service.Services
                     }
                     throw new InvalidDataException(errorMessage);
                 }
-                if (dto.SubscriptionId != Guid.Empty)
+                if (Guid.Parse(subscriptionId) != Guid.Empty)
                 {
                     var success = await _v2SubscriptionService.RecordSubscriptionUsageAsync(
                         Guid.Parse(subscriptionId),
@@ -217,7 +217,7 @@ namespace QLN.Backend.API.Service.Services
                     {
                         _logger.LogWarning(
                             "Failed to record subscription usage for SubscriptionId {SubscriptionId}",
-                            dto.SubscriptionId
+                            subscriptionId
                         );
                     }
                 }
