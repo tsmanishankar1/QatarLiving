@@ -23,12 +23,8 @@ env=dev
 &type=service
 
 ### Migrate Ads
-POST http://ql-migrate.westeurope.cloudapp.azure.com/qlnext-v2/items.php
-Content-Type: application/x-www-form-urlencoded
-
-env=prod
-&page_size=30
-&page=1
+GET http://ql-migrate.westeurope.cloudapp.azure.com/qlnext-v2/items.php?env=prod&page_size=30&page=1
+Accept: application/json
 
 #########
 

@@ -1,8 +1,10 @@
 ﻿namespace QLN.DataMigration.Services
 {
+    using Azure.Search.Documents.Indexes.Models;
     using Dapr.Client;
     using Dapr.Client.Autogen.Grpc.v1;
     using Microsoft.AspNetCore.Mvc;
+    using Microsoft.EntityFrameworkCore.Metadata.Internal;
     using Microsoft.Extensions.Logging;
     using QLN.Common.DTO_s;
     using QLN.Common.DTOs;
@@ -10,8 +12,10 @@
     using QLN.Common.Infrastructure.DTO_s;
     using QLN.Common.Infrastructure.IService;
     using QLN.Common.Infrastructure.IService.IContentService;
+    using QLN.Common.Infrastructure.IService.IService;
     using QLN.Common.Infrastructure.IService.V2IContent;
     using QLN.Common.Infrastructure.Model;
+    using QLN.Common.Infrastructure.Subscriptions;
     using QLN.Common.Infrastructure.Utilities;
     using QLN.DataMigration.Models;
     using System.Text;
@@ -19,7 +23,6 @@
     using System.Text.RegularExpressions;
     using System.Threading;
     using System.Threading.Tasks;
-    using QLN.Common.Infrastructure.Subscriptions;
 
     public class DataOutputService : IDataOutputService
     {
@@ -29,6 +32,7 @@
         private readonly IV2CommunityPostService _communityPostService;
         private readonly IClassifiedService _classifiedsService;
         private readonly IExternalSubscriptionService _subscriptionService;
+        private readonly IServices _servicesService;
         private readonly DaprClient _daprClient;
 
         public DataOutputService(
@@ -38,6 +42,7 @@
             IV2CommunityPostService communityPostService,
             IClassifiedService classifiedService,
             IExternalSubscriptionService subscriptionService,
+            IServices servicesService,
             DaprClient daprClient
             )
         {
@@ -47,6 +52,7 @@
             _communityPostService = communityPostService;
             _classifiedsService = classifiedService;
             _subscriptionService = subscriptionService;
+            _servicesService = servicesService;
             _daprClient = daprClient;
         }
 
@@ -63,107 +69,123 @@
             _logger.LogInformation("Completed saving all state");
         }
 
-        public async Task SaveMigrationItemsAsync(List<DrupalItem> migrationItems, CancellationToken cancellationToken)
+        public async Task SaveMigrationItemsAsync(List<CsvCategoryMapper> csvImport, List<DrupalItem> migrationItems, CancellationToken cancellationToken)
         {
             const int CollectablesCategory = 7311;
 
             // needs to be modified to call a Classifieds MS
             foreach (var item in migrationItems)
             {
-                try
+                if (long.TryParse(item.AdId, out var id))
                 {
-                    if (item.CategoryParent.Tid != CollectablesCategory)
+                    try
                     {
-                        var entity = new Items
+                        if (item.CategoryParent.Tid != CollectablesCategory)
                         {
-                            //Id = item.Nid, // dont have an ID so cant make this repeatable
-                            Title = item.Title,
-                            Description = item.Desc,
-                            Price = item.Price,
-                            CategoryId = item.CategoryParent.Tid, // may need to look this up
-                            AdType = AdTypeEnum.Subscription,
-                            SubVertical = SubVertical.Items,
-                            UserName = item.Author.Username,
-                            CreatedAt = DateTime.TryParse(item.CreatedDate, out var createdAt) ? createdAt : DateTime.UtcNow,
-                            LastRefreshedOn = DateTime.TryParse(item.RefreshedDate, out var lastRefreshed) ? lastRefreshed : DateTime.UtcNow,
-                            BuildingNumber = item.BuildingNo,
-                            StreetNumber = item.StreetNo,
-                            Brand = item.Make?.Name,
-                            Model = item.Model?.Name,
-                            UserId = item.Author.Uid.ToString(),
-                            ContactEmail = item.Email,
-                            ContactNumberCountryCode = "+974",// assuming Qatar country code
-                            ContactNumber = item.Phone,
-                            WhatsappNumberCountryCode = "+974",// assuming Qatar country code
-                            WhatsAppNumber = item.Whatsapp ?? item.Phone ?? string.Empty,
-                            CreatedBy = item.Author.Username,
-                            IsFeatured = item.Feature,
-                            IsPromoted = item.Promote,
-                            UpdatedAt = DateTime.UtcNow,
-                            IsActive = true,
-                            Images = item.Images?.Select(img => new ImageInfo
+                            var entity = new Items
                             {
-                                Url = img
-                            }).ToList() ?? new List<ImageInfo>(),
-                            IsRefreshed = lastRefreshed > createdAt,
-                            Latitude = item.GeoLocation?.Lat,
-                            Longitude = item.GeoLocation?.Lng,
-                            Location = item.Location?.Name,
-                            Status = item.Published ? AdStatus.Published : AdStatus.Unpublished,
-                            zone = item.Zone?.Name ?? string.Empty,
-                            PublishedDate = DateTime.TryParse(item.CreatedDate, out var publishedDate) ? publishedDate : DateTime.UtcNow, // not sure if this is required
-                        };
+                                Id = id,
+                                Title = item.Title,
+                                Description = item.Desc,
+                                Price = item.Price,
+                                CategoryId = item.CategoryParent.Tid, // may need to look this up
+                                SubVertical = SubVertical.Items,
+                                UserName = item.Author.Username,
+                                CreatedAt = DateTime.TryParse(item.CreatedDate, out var createdAt) ? createdAt : DateTime.UtcNow,
+                                LastRefreshedOn = DateTime.TryParse(item.RefreshedDate, out var lastRefreshed) ? lastRefreshed : DateTime.UtcNow,
+                                BuildingNumber = item.BuildingNo,
+                                StreetNumber = item.StreetNo,
+                                Brand = item.Make?.Name,
+                                Model = item.Model?.Name,
+                                UserId = item.Author.Uid.ToString(),
+                                ContactEmail = item.Email,
+                                ContactNumberCountryCode = "+974",// assuming Qatar country code
+                                ContactNumber = item.Phone ?? string.Empty,
+                                WhatsappNumberCountryCode = "+974",// assuming Qatar country code
+                                WhatsAppNumber = item.Whatsapp ?? item.Phone ?? string.Empty,
+                                CreatedBy = item.Author.Username,
+                                IsFeatured = item.Feature,
+                                IsPromoted = item.Promote,
+                                UpdatedAt = DateTime.UtcNow,
+                                IsActive = !item.Sold,
+                                Images = item.Images?.Select(img => new ImageInfo
+                                {
+                                    Url = img
+                                }).ToList() ?? new List<ImageInfo>(),
+                                IsRefreshed = lastRefreshed > createdAt,
+                                Latitude = item.GeoLocation?.Lat,
+                                Longitude = item.GeoLocation?.Lng,
+                                Location = item.Location?.Name,
+                                Status = item.Published ? AdStatus.Published : AdStatus.Unpublished,
+                                zone = item.Zone?.Name ?? string.Empty,
+                                PublishedDate = DateTime.TryParse(item.CreatedDate, out var publishedDate) ? publishedDate : DateTime.UtcNow, // not sure if this is required
+                                
+                            };
 
-                        await _classifiedsService.MigrateClassifiedItemsAd(entity, cancellationToken);
+                            var categoryMapper = csvImport.FirstOrDefault(x => x.AdId == item.AdId);
 
-                    } else
-                    {
-                        var entity = new Collectibles
+                            if (categoryMapper != null)
+                            {
+                                entity.CategoryId = item.CategoryParent.Tid; // may need to look this up
+                                entity.Category = categoryMapper.Category;
+                                entity.L1Category = categoryMapper.L1Category;
+                                entity.L2Category = categoryMapper.L2Category;
+                                entity.AdType = AdTypeEnum.Subscription; // need to see if I can know this
+                                //entity.SubscriptionId = categoryMapper.SubscriptionId;
+                            }
+
+                            await _classifiedsService.MigrateClassifiedItemsAd(entity, cancellationToken);
+
+                        }
+                        else
                         {
-                            //Id = item.Nid, // dont have an ID so cant make this repeatable
-                            Title = item.Title,
-                            Description = item.Desc,
-                            Price = item.Price,
-                            CategoryId = item.CategoryParent.Tid, // may need to look this up
-                            AdType = AdTypeEnum.Subscription,
-                            SubVertical = SubVertical.Collectibles,
-                            UserName = item.Author.Username,
-                            CreatedAt = DateTime.TryParse(item.CreatedDate, out var createdAt) ? createdAt : DateTime.UtcNow,
-                            BuildingNumber = item.BuildingNo,
-                            StreetNumber = item.StreetNo,
-                            Brand = item.Make?.Name,
-                            Model = item.Model?.Name,
-                            UserId = item.Author.Uid.ToString(),
-                            ContactEmail = item.Email,
-                            ContactNumberCountryCode = "+974",// assuming Qatar country code
-                            ContactNumber = item.Phone,
-                            WhatsappNumberCountryCode = "+974",// assuming Qatar country code
-                            WhatsAppNumber = item.Whatsapp ?? item.Phone ?? string.Empty,
-                            CreatedBy = item.Author.Username,
-                            IsFeatured = item.Feature,
-                            IsPromoted = item.Promote,
-                            UpdatedAt = DateTime.UtcNow,
-                            IsActive = true,
-                            Images = item.Images?.Select(img => new ImageInfo
+                            var entity = new Collectibles
                             {
-                                Url = img
-                            }).ToList() ?? new List<ImageInfo>(),
-                            Latitude = item.GeoLocation?.Lat,
-                            Longitude = item.GeoLocation?.Lng,
-                            Location = item.Location?.Name,
-                            Status = item.Published ? AdStatus.Published : AdStatus.Unpublished,
-                            zone = item.Zone?.Name ?? string.Empty,
-                            PublishedDate = DateTime.TryParse(item.CreatedDate, out var publishedDate) ? publishedDate : DateTime.UtcNow, // not sure if this is required
-                            
-                        };
+                                Id = id,
+                                Title = item.Title,
+                                Description = item.Desc,
+                                Price = item.Price,
+                                AdType = AdTypeEnum.P2P, // collectables are only P2P
+                                SubVertical = SubVertical.Collectibles,
+                                UserName = item.Author.Username,
+                                CreatedAt = DateTime.TryParse(item.CreatedDate, out var createdAt) ? createdAt : DateTime.UtcNow,
+                                BuildingNumber = item.BuildingNo,
+                                StreetNumber = item.StreetNo,
+                                Brand = item.Make?.Name,
+                                Model = item.Model?.Name,
+                                UserId = item.Author.Uid.ToString(),
+                                ContactEmail = item.Email,
+                                ContactNumberCountryCode = "+974",// assuming Qatar country code
+                                ContactNumber = item.Phone ?? string.Empty,
+                                WhatsappNumberCountryCode = "+974",// assuming Qatar country code
+                                WhatsAppNumber = item.Whatsapp ?? item.Phone ?? string.Empty,
+                                CreatedBy = item.Author.Username,
+                                IsFeatured = item.Feature,
+                                IsPromoted = item.Promote,
+                                UpdatedAt = DateTime.UtcNow,
+                                IsActive = true,
+                                Images = item.Images?.Select(img => new ImageInfo
+                                {
+                                    Url = img
+                                }).ToList() ?? new List<ImageInfo>(),
+                                Latitude = item.GeoLocation?.Lat,
+                                Longitude = item.GeoLocation?.Lng,
+                                Location = item.Location?.Name,
+                                Status = item.Published ? AdStatus.Published : AdStatus.Unpublished,
+                                zone = item.Zone?.Name ?? string.Empty,
+                                PublishedDate = DateTime.TryParse(item.CreatedDate, out var publishedDate) ? publishedDate : DateTime.UtcNow, // not sure if this is required
 
-                        await _classifiedsService.MigrateClassifiedCollectiblesAd(entity, cancellationToken);
+                            };
+
+                            await _classifiedsService.MigrateClassifiedCollectiblesAd(entity, cancellationToken);
+                        }
+
                     }
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError($"Failed to create articles - {ex.Message}");
-                    throw new Exception("Unexpected error during article creation", ex);
+                    catch (Exception ex)
+                    {
+                        _logger.LogError($"Failed to create articles - {ex.Message}");
+                        throw new Exception("Unexpected error during article creation", ex);
+                    }
                 }
             }
             _logger.LogInformation("Completed saving all items to state");

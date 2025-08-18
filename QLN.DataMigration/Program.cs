@@ -102,19 +102,17 @@ app.UseAntiforgery();
 
 app.MapGet("/migrate_mobile_devices", async (
     [FromServices] IMigrationService migrationService,
-    [FromQuery] string environment,
     CancellationToken cancellationToken = default
     ) =>
 {
-    return await migrationService.MigrateMobileDevices(environment, cancellationToken);
+    return await migrationService.MigrateMobileDevices(cancellationToken);
 })
 .WithSummary("Migrate Mobile Devices - Not to be used");
 
 app.MapPost("/migrate_items", async (
     [FromServices] IMigrationService migrationService,
-    [FromQuery] string environment,
-    [FromQuery(Name = "import_images")] bool importImages,
     IFormFile file,
+    [FromQuery(Name = "import_images")] bool importImages = false,
     CancellationToken cancellationToken = default
     ) =>
     {
@@ -140,7 +138,7 @@ app.MapPost("/migrate_items", async (
             }
         }
 
-        return await migrationService.MigrateItems(records, environment, importImages, cancellationToken);
+        return await migrationService.MigrateItems(records, importImages, cancellationToken);
     })
     .WithSummary("Migrate Items")
     .DisableAntiforgery();

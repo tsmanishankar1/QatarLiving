@@ -43,8 +43,15 @@ namespace QLN.DataMigration.Services
             _config = config;
         }
 
-        public async Task<IResult> MigrateMobileDevices(string environment, CancellationToken cancellationToken)
+        public async Task<IResult> MigrateMobileDevices(CancellationToken cancellationToken)
         {
+            var environment = _config["LegacySubscriptions:Environment"];
+
+            if (string.IsNullOrEmpty(environment))
+            {
+                return Results.Problem("Environment is not configured for legacy subscriptions.");
+            }
+
             _logger.LogInformation($"Starting Migrations @ {DateTime.UtcNow}");
 
             // first fetch all results from source
@@ -76,10 +83,17 @@ namespace QLN.DataMigration.Services
             });
         }
 
-        public async Task<IResult> MigrateItems(List<CsvCategoryMapper> csvImport, string environment, bool importImages, CancellationToken cancellationToken)
+        public async Task<IResult> MigrateItems(List<CsvCategoryMapper> csvImport, bool importImages, CancellationToken cancellationToken)
         {
             int pageSize = 30;
             int page = 1;
+
+            var environment = _config["LegacySubscriptions:Environment"];
+
+            if (string.IsNullOrEmpty(environment))
+            {
+                return Results.Problem("Environment is not configured for legacy subscriptions.");
+            }
 
             var startTime = DateTime.Now;
 
@@ -99,8 +113,6 @@ namespace QLN.DataMigration.Services
             // and upload it into Azure Blob
             foreach (var drupalItem in drupalItems.Items)
             {
-                var categoryMapper = csvImport.FirstOrDefault(x => x.AdId == drupalItem.AdId);
-
                 await ProcessMigrationItem(drupalItem, importImages: importImages);
                 
                 migrationItems.Add(drupalItem);

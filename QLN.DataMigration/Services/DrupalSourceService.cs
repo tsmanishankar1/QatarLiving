@@ -25,43 +25,18 @@
 
         public async Task<DrupalItems?> GetItemsAsync(
             string environment,
-            //int categoryId,
-            //string sortField,
-            //string sortOrder,
-            //string? keywords,
             int? page,
-            int? pageSize, 
+            int? page_size,
             CancellationToken cancellationToken
             )
         {
-            var formData = new List<KeyValuePair<string, string>>
-            {
-                new KeyValuePair<string, string>("env", environment),
-                //new KeyValuePair<string, string>("category_id", categoryId.ToString()),
-                //new KeyValuePair<string, string>("sort_field", sortField),
-                //new KeyValuePair<string, string>("sort_order", sortOrder)
-            };
-
-            //if(!string.IsNullOrEmpty(keywords))
-            //{
-            //    formData.Add(new KeyValuePair<string, string>("keywords", keywords));
-            //}
+            page ??= 1;
+            page_size ??= 30;
             
-            if (page != null)
-            {
-                formData.Add(new KeyValuePair<string, string>("page_size", pageSize.ToString()));
-            }
+            var requestUri = $"{Constants.ItemsEndpoint}?env={environment}&page={page}&page_size={page_size}";
 
-            if(pageSize != null)
-            {
-                formData.Add(new KeyValuePair<string, string>("page", page.ToString()));
-            }
+            var response = await _httpClient.GetAsync(requestUri, cancellationToken);
 
-            var content = new FormUrlEncodedContent(formData);
-
-            content.Headers.ContentType = new MediaTypeHeaderValue("application/x-www-form-urlencoded");
-
-            var response = await _httpClient.PostAsync(Constants.ItemsEndpoint, content);
             if (!response.IsSuccessStatusCode)
             {
                 _logger.LogError($"Failed to migrate items. Status: {response.StatusCode}");
