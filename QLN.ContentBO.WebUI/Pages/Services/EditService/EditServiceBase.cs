@@ -123,6 +123,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
                         BulkModerationAction.Publish => ServiceStatus.Published,
                         BulkModerationAction.Unpublish => ServiceStatus.Unpublished,
                         BulkModerationAction.Remove => ServiceStatus.Rejected,
+                        BulkModerationAction.NeedChanges => ServiceStatus.NeedChanges,
                         _ => selectedService.Status
                     };
                     selectedService.Status = status;
@@ -141,8 +142,6 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
                     };
                     selectedService.IsPromoted = isPromoted;
 
-                
-
                 Snackbar.Add(
                 _selectedAction switch
                 {
@@ -154,6 +153,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
                     BulkModerationAction.feature => "Service Ad Featured Successfully",
                     BulkModerationAction.Promote => "Service Ad Un promoted Successfully",
                     BulkModerationAction.UnFeature => "Service Ad Un Featured Successfully",
+                    BulkModerationAction.NeedChanges => "Requested for Change Successfully",
                     _ => "Service Ad Updated Successfully"
                 },
                     Severity.Success
@@ -183,7 +183,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
             {
                 Reason = result.Data?.ToString() ?? "";
             }
-            // await ShowConfirmation("Need Changes", "Are you sure you want to Request For a Change?", "Request", BulkModerationAction.);
+            await ShowConfirmation("Need Changes", "Are you sure you want to Request For a Change?", "Request", BulkModerationAction.NeedChanges);
         }
         protected Task OnCustomButtonClicked(MarkdownButtonEventArgs eventArgs)
         {

@@ -12,5 +12,6 @@ namespace QLN.Common.Infrastructure.IService.ISearchService
     {
         Task<AnalyticsIndex?> GetAsync(string section, string entityId);
         Task UpsertAsync(AnalyticsEventRequest request);
+        Task<ApiResponse<object>> GetAnalyticsAsync(AnalyticsRequestDto request, string userId, CancellationToken cancellationToken = default);
     }
 }

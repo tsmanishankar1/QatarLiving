@@ -124,6 +124,7 @@ public class ImageDto
         UnPromote = 8,
         Feature = 9,
         UnFeature = 10,
+        NeedChanges = 11
     }
     public enum ServiceAdType
     {

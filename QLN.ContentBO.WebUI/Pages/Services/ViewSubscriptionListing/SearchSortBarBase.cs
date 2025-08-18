@@ -27,7 +27,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services.ViewSubscriptionListing
         protected DateTime? datePublished;
         protected DateTime? tempCreatedDate;
         protected DateTime? tempPublishedDate;
-        protected DateRange _dateRange = new();
+        protected DateRange? _dateRange = new();
         protected List<string> SubscriptionTypes = new()
         {
             "1 Months",
@@ -76,6 +76,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services.ViewSubscriptionListing
         }
         protected async Task ClearFilters()
         {
+            _dateRange = null;
             dateCreated = null;
             datePublished = null;
             _tempDateRange = null;
