@@ -48,7 +48,6 @@ namespace QLN.Common.DTO_s
         public string? Availability { get; set; }
         public string? Duration { get; set; }
         public string? Reservation { get; set; }
-        public Guid? SubscriptionId { get; set; }
     }
     public class ServiceRequest : ServiceDto
     {
@@ -141,7 +140,6 @@ namespace QLN.Common.DTO_s
     {
         public List<long> AdIds { get; set; } = new();
         public BulkModerationAction Action { get; set; }
-        public Guid? SubscriptionId { get; set; }
         public string? Reason { get; set; }
         [JsonIgnore]
         public string? UpdatedBy { get; set; } 
