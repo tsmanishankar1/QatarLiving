@@ -173,6 +173,7 @@ public class ServiceLandingPageBase : QLComponentBase
                 .ToDictionary(x => x.SlotOrder, x => new LandingPageItem
                 {
                     Id = Guid.Parse(x.Id),
+                    Title = x.Title,
                     Category = x.CategoryName,
                     EndDate = x.EndDate,
                     SlotOrder = x.SlotOrder,
@@ -221,6 +222,7 @@ public class ServiceLandingPageBase : QLComponentBase
                 .ToDictionary(x => x.SlotOrder, x => new LandingPageItem
                 {
                     Id = Guid.Parse(x.Id),
+                    Title = x.Title,
                     Category = x.CategoryName,
                     EndDate = x.EndDate,
                     SlotOrder = x.SlotOrder,
