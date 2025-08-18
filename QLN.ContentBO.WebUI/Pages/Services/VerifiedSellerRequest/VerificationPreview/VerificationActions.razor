@@ -1,0 +1,35 @@
+@using MudBlazor
+@using QLN.ContentBO.WebUI.Models;
+@inherits VerificationActionsBase
+
+<div class="verification-preview-container">
+    <!-- Top section with icon and heading -->
+    <div class="verification-header">
+        <MudIconButton Icon="@Icons.Material.Filled.KeyboardArrowLeft"  OnClick="GoBack"  Color="Color.Default" />
+        <h4 class="verification-title">Verification Preview</h4>
+    </div>
+
+    <!-- Action buttons -->
+    @if(CurrentStatus == VerifiedStatus.Pending || CurrentStatus == VerifiedStatus.NeedChanges)
+    {
+        <div class="verification-actions">
+            <MudButton Class="flat-btn" Color="Color.Primary" Variant="Variant.Filled" OnClick="@NeedChangesAsync">Need Changes</MudButton>
+            <MudButton Class="flat-btn" Color="Color.Error" Variant="Variant.Filled" OnClick="@RejectAsync">Reject</MudButton>
+            <MudButton Class="flat-btn" Color="Color.Success" Variant="Variant.Filled" OnClick="@ApproveAsync">Approve</MudButton>
+        </div>
+    }
+    else if(CurrentStatus == VerifiedStatus.Approved)
+    {
+        <div class="verification-actions">
+            <MudButton Class="flat-btn" Color="Color.Primary" Variant="Variant.Filled" OnClick="@NeedChangesAsync">Need Changes</MudButton>
+            <MudButton Class="flat-btn" Color="Color.Error" Variant="Variant.Filled" OnClick="@RejectAsync">Reject</MudButton>
+        </div>
+    }
+    else if(CurrentStatus == VerifiedStatus.Rejected)
+    {
+        <div class="verification-actions">
+            <MudButton Class="flat-btn" Color="Color.Primary" Variant="Variant.Filled" OnClick="@NeedChangesAsync">Need Changes</MudButton>
+            <MudButton Class="flat-btn" Color="Color.Success" Variant="Variant.Filled" OnClick="@ApproveAsync">Approve</MudButton>
+        </div>
+    }
+</div>
