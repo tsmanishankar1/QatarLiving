@@ -119,7 +119,7 @@ namespace QLN.DataMigration.Services
                 totalCount += 1;
             }
 
-            await _dataOutputService.SaveMigrationItemsAsync(migrationItems, cancellationToken); 
+            await _dataOutputService.SaveMigrationItemsAsync(csvImport, migrationItems, cancellationToken); 
             
             var totalItemCount = drupalItems.Total;
 
@@ -141,7 +141,7 @@ namespace QLN.DataMigration.Services
                         totalCount += 1;
                     }
 
-                    await _dataOutputService.SaveMigrationItemsAsync(migrationItems, cancellationToken);
+                    await _dataOutputService.SaveMigrationItemsAsync(csvImport, migrationItems, cancellationToken);
 
                     _logger.LogInformation($"Migrated {totalCount} out of {totalItemCount} Items");
                 }
