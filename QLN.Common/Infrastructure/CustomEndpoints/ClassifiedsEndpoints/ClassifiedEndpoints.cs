@@ -5582,7 +5582,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 ProductDescription = g.ProductDescription,
                 Features = g.Features,
                 Images = g.Images,
-                 ProductSlug=g.ProductSlug
+                ProductSlug=g.ProductSlug
             }).ToList()
         })
         .ToList()
@@ -6158,7 +6158,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 }
             })
                     .WithName("StoresDashboardHeaders")
-                     .ExcludeFromDescription()
+                   .ExcludeFromDescription()              
                     .WithTags("Classified")
                     .WithSummary("To display the stores dashboard header information.")
                     .WithDescription("Fetches all stores dashboard header information.")
@@ -6254,7 +6254,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 }
             })
                 .WithName("StoresDashboardSummarys")
-                .ExcludeFromDescription()               
+                .ExcludeFromDescription()
                 .WithTags("Classified")
                 .WithSummary("To display the stores dashboard summary information.")
                 .WithDescription("Fetches all stores dashboard summary information.")
