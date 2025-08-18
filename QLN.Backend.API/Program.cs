@@ -453,27 +453,14 @@ var contentGroup = app.MapGroup("/api/content");
 contentGroup.MapContentLandingEndpoints();
 var analyticGroup = app.MapGroup("/api/analytics");
 analyticGroup.MapAnalyticsEndpoints();
-/*app.MapGroup("/api/subscriptions")
-   .MapSubscriptionEndpoints();*/
+
 app.MapGroup("/api/v2/subscriptions")
     .MapV2SubscriptionEndpoints()
+    .MapV2AdminEndpoints()
     .RequireAuthorization();
 
 var fatoraGroup = app.MapGroup("/api/pay");
 fatoraGroup.MapFaturaEndpoints();
-
-/*app.MapGroup("/api/payments")
- .MapPaymentEndpoints();
-app.MapGroup("/api/paytofeature")
- .MapPayToFeatureEndpoints();
-app.MapGroup("/api/paytopublish")
-    .MapPayToPublishEndpoints();*/
-
-/*app.MapGroup("/api/addon")
- .MapAddonEndpoints();
-var quotaGroup = app.MapGroup("/api/userquota");
-quotaGroup.MapUserQuotaEndpoints();*/
-
 
 var newsGroup = app.MapGroup("/api/v2/news");
 newsGroup.MapNewsEndpoints();

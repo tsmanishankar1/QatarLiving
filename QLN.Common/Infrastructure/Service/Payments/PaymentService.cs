@@ -269,7 +269,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
 
                 if (subscription != null)
                 {
-                    subscription.Status = SubscriptionStatus.Failed; 
+                    subscription.Status = SubscriptionStatus.PaymentFailed; 
                     subscription.StartDate = DateTime.MinValue; 
                     subscription.EndDate = DateTime.MinValue;  
 
@@ -428,12 +428,12 @@ namespace QLN.Common.Infrastructure.Service.Payments
                 _logger.LogDebug("Payment information sent to D365 for Order ID: {OrderId}", orderId);
 
                 // Return success URL
-                return $"{baseRedirectUrl}?paymentSuccess=true&productType={payment.ProductType}&subscriptionId={subscription.SubscriptionId}";
+                return baseRedirectUrl;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error updating payment and subscription for Order ID: {OrderId}", orderId);
-                return $"{baseRedirectUrl}?paymentSuccess=false&error=update_failed";
+                return baseRedirectUrl;
             }
         }
         private DateTime CalculateExpiryDate(DateTime startDate, Product product)
@@ -463,7 +463,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
                                                           .ToDictionary(x => x.Key, x => x.Value);
                     if (classifiedBaseUrls.TryGetValue(subVerticalKey, out var subVerticalUrl))
                     {
-                        return subVerticalUrl + "/dashboard";
+                        return subVerticalUrl;
                     }
                     else
                     {
@@ -472,7 +472,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
                 }
                 else if(vertical == Vertical.Services)
                 {
-                    var servicesBaseUrls = _configuration.GetSection("BaseUrl:Services").ToString();
+                    var servicesBaseUrls = _configuration.GetSection("BaseUrl:Services").Value;
                     baseRedirectUrl = servicesBaseUrls;
                 }
             }
@@ -481,7 +481,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
                 baseRedirectUrl = _configuration.GetSection("BaseUrl")["LegacyDrupal"] ?? "https://default-legacy-url.com";
             }
 
-            return baseRedirectUrl + "/dashboard";
+            return baseRedirectUrl;
         }
     }
 }

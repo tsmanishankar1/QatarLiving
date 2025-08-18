@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 
 namespace QLN.Common.Infrastructure.Subscriptions
 {
+    [Obsolete("This interface is deprecated and will be removed in future versions. Use the new IV2SubscriptionActor interfaces instead.", false)]
     public interface ISubscriptionActor : IActor
     {
         Task<bool> SetDataAsync(SubscriptionDto data, CancellationToken cancellationToken = default);

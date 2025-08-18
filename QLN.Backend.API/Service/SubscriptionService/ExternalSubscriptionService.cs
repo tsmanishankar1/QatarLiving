@@ -7,7 +7,7 @@ using QLN.Common.Infrastructure.IService.ISubscriptionService;
 using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.Subscriptions;
 using System.Collections.Concurrent;
-
+[Obsolete("This service is deprecated and will be removed in future versions. Use the new V2SubscriptionService in the product folder instead.")]
 public class ExternalSubscriptionService : IExternalSubscriptionService
 {
     private readonly ILogger<ExternalSubscriptionService> _logger;

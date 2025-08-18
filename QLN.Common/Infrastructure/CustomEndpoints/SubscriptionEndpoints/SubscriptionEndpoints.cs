@@ -13,7 +13,7 @@ using System.Text.Json;
 
 
 
- 
+[Obsolete("This class is deprecated and will be removed in future versions. Use the new V2Subscription endpoints instead.")]
 public static class SubscriptionEndpoints
 {
     public static RouteGroupBuilder MapCreateSubscriptionEndpoints(this RouteGroupBuilder group)
