@@ -6,6 +6,7 @@ using System.Net.Sockets;
 
 namespace QLN.Subscriptions.Actor.ActorClass
 {
+    [Obsolete("This actor is deprecated and will be removed in future versions. Use the new IV2SubscriptionActor instead.", false)]
     public class SubscriptionActor : Dapr.Actors.Runtime.Actor, ISubscriptionActor
     {
         private const string StateKey = "subscription-data";

@@ -65,6 +65,18 @@ namespace QLN.ContentBO.WebUI.Pages.Services.P2PListings
     {
       currentPage = 1;
       Status = status;
+      if (status == 7)
+      {
+        Status = null;
+        IsPromoted = true;
+        IsFeatured = null;
+      }
+      else if (status == 9)
+      {
+        Status = null;
+        IsFeatured = true;
+        IsPromoted = null;
+      }
       PaginatedData = await LoadP2PListingsAsync();
       StateHasChanged();
     }

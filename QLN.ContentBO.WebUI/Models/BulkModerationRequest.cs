@@ -16,6 +16,7 @@ namespace QLN.ContentBO.WebUI.Models
       Unpublish = 3,
       UnPromote = 4,
       feature = 5,
+      Promote = 8,
       Remove = 6,
       UnFeature = 7,
   }
