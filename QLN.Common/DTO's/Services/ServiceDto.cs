@@ -185,4 +185,10 @@ namespace QLN.Common.DTO_s
         public Vertical VerticalId { get; set; }
         public SubVertical? SubVerticalId { get; set; }
     }
+    public class CategoryAdCountDto
+    {
+        public int CategoryId { get; set; }
+        public string CategoryName { get; set; }
+        public int Count { get; set; }
+    }
 }
