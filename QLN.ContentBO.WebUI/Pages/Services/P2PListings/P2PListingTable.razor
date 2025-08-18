@@ -127,7 +127,17 @@
         <MudTd title="@(string.IsNullOrWhiteSpace(context.UserName) ? "-" : context.UserName)" Class="truncate-text hover-title">@context.UserName</MudTd>
         <MudTd title="@(string.IsNullOrWhiteSpace(context.Category) ? "-" : context.Category)" Class="truncate-text hover-title">@context.Category</MudTd>
         <MudTd title="@(string.IsNullOrWhiteSpace(context.SubCategory) ? "-" : context.SubCategory)" Class="truncate-text hover-title">@context.SubCategory</MudTd>
-        <MudTd>Id</MudTd>
+        <MudTd>@if (!string.IsNullOrEmpty(context.Certificate))
+    {
+        var displayText = context.Certificate;
+        var link = context.Certificate;
+        if (Uri.TryCreate(context.Certificate, UriKind.Absolute, out var uri))
+        {
+            displayText = Path.GetFileName(uri.LocalPath);
+            link = uri.ToString();
+        }
+        <MudLink Href="@link" Target="_blank">@displayText</MudLink>
+    }</MudTd>
         <MudTd>@context.CreationDate.ToString("dd-MM-yyyy hh:mm tt")</MudTd>
         <MudTd>@context.DatePublished?.ToString("dd-MM-yyyy hh:mm tt")</MudTd>
         <MudTd>@context.DateExpiry?.ToString("dd-MM-yyyy hh:mm tt")</MudTd>

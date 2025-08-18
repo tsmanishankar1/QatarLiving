@@ -33,7 +33,7 @@ namespace QLN.ContentBO.WebUI.Models
  
         [Required]
         [MaxLength(300)]
-        public string Description { get; set; } = string.Empty;
+        public string? Description { get; set; } 
  
         [Required]
         [MaxLength(10)]
