@@ -472,7 +472,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
                 }
                 else if(vertical == Vertical.Services)
                 {
-                    var servicesBaseUrls = _configuration.GetSection("BaseUrl:Services").ToString();
+                    var servicesBaseUrls = _configuration.GetSection("BaseUrl:Services").Value;
                     baseRedirectUrl = servicesBaseUrls;
                 }
             }
