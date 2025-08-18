@@ -353,8 +353,6 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-
-
         public async Task<AdCreatedResponseDto> CreateClassifiedPrelovedAd(Preloveds dto, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(dto);
@@ -1128,7 +1126,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
             try
             {
-                subscriptionId = Guid.Parse("5a024f96-7414-4473-80b8-f5d70297e262");
+                //subscriptionId = Guid.Parse("5a024f96-7414-4473-80b8-f5d70297e262");
                 
 
                 if (subscriptionId != Guid.Empty && dto.IsPromoted == true) 

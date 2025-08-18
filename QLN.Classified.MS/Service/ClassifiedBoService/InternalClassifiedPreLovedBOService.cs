@@ -583,13 +583,13 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                         updatedAds.Add(ad);
                     }
                 }
-                
+
 
                 if (updatedAds.Any())
                 {
                     await _context.SaveChangesAsync(cancellationToken);
 
-                   
+
                 }
 
                 _logger.LogInformation("Preloved P2P edit functionality completed.");
@@ -601,6 +601,9 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                 throw;
             }
         }
+
+
+
 
         #endregion
 

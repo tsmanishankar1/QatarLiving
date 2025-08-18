@@ -2411,7 +2411,7 @@ namespace QLN.Classified.MS.Service
 
             try
             {
-                subscriptionId = Guid.Parse("5a024f96-7414-4473-80b8-f5d70297e262");
+                //subscriptionId = Guid.Parse("5a024f96-7414-4473-80b8-f5d70297e262");
 
                 var subscription = await _subscriptionContext.Subscriptions
                     .FirstOrDefaultAsync(s => s.SubscriptionId == subscriptionId, cancellationToken);

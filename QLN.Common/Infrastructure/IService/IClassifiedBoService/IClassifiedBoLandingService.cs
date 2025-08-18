@@ -100,7 +100,10 @@ namespace QLN.Common.Infrastructure.IService.V2IClassifiedBoService
 
         Task<string> SoftDeleteDeals(DealsBulkDelete dto, string userId, CancellationToken cancellationToken = default);
 
-        Task<string> BulkPrelovedAction(BulkActionRequest request, string userId, CancellationToken ct);
+        Task<BulkAdActionResponseitems> BulkPrelovedAction(
+    BulkActionRequest request,
+    string userId,
+    CancellationToken cancellationToken = default);
 
         Task<PrelovedTransactionListResponseDto> GetPrelovedTransactionsAsync(
                  int pageNumber,

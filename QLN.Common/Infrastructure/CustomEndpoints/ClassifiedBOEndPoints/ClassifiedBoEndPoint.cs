@@ -2653,19 +2653,19 @@ CancellationToken cancellationToken
 
 
             group.MapPost("/bulk-preloved-action", async Task<Results<
-Ok<string>,
-BadRequest<ProblemDetails>,
-NotFound<ProblemDetails>,
-Conflict<ProblemDetails>,
-ProblemHttpResult
+    Ok<BulkAdActionResponseitems>,
+    BadRequest<ProblemDetails>,
+    Conflict<ProblemDetails>,
+    NotFound<ProblemDetails>,
+    ProblemHttpResult
 >> (
-BulkActionRequest req,
-HttpContext httpContext,
-IClassifiedBoLandingService service,
-CancellationToken ct
+    BulkActionRequest req,
+    HttpContext httpContext,
+    IClassifiedBoLandingService service,
+    CancellationToken ct
 ) =>
             {
-                var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "sub")?.Value;
                 if (string.IsNullOrEmpty(userClaim))
                 {
                     return TypedResults.Problem(new ProblemDetails
@@ -2675,9 +2675,11 @@ CancellationToken ct
                         Status = StatusCodes.Status403Forbidden
                     });
                 }
+
                 var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
                 var uid = userData.GetProperty("uid").GetString();
                 var userName = userData.GetProperty("name").GetString();
+
                 if (uid == null && userName == null)
                 {
                     return TypedResults.Problem(new ProblemDetails
@@ -2687,11 +2689,13 @@ CancellationToken ct
                         Status = StatusCodes.Status403Forbidden
                     });
                 }
+
                 if (!req.AdIds.Any())
                     return TypedResults.BadRequest(new ProblemDetails { Title = "No ads selected." });
 
                 if (req.Action == BulkActionEnum.Remove && string.IsNullOrWhiteSpace(req.Reason))
                     return TypedResults.BadRequest(new ProblemDetails { Title = "Reason required for removal." });
+
                 var userId = uid;
                 try
                 {
@@ -2725,9 +2729,9 @@ CancellationToken ct
 .WithTags("ClassifiedBo")
 .WithSummary("Bulk preloved action classifieds")
 .WithDescription("Performs bulk preloved actions (approve, publish, unpublish, unpromote, unfeature, remove) on selected classifieds. " +
-        "Requires a list of ad IDs and the action to perform. " +
-        "If removing, a reason must be provided.")
-.Produces<string>(StatusCodes.Status200OK)
+                 "Requires a list of ad IDs and the action to perform. " +
+                 "If removing, a reason must be provided.")
+.Produces<BulkAdActionResponseitems>(StatusCodes.Status200OK)
 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
 .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
 .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
@@ -2735,31 +2739,37 @@ CancellationToken ct
 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
 
-            group.MapPost("/bulk-preloved-action-userid", async Task<Results<
-               Ok<string>,
-               BadRequest<ProblemDetails>,
-               Conflict<ProblemDetails>,
-               NotFound<ProblemDetails>,
-               ProblemHttpResult
->> (
-               BulkActionRequest req,
-               string? userId,
-               HttpContext httpContext,
-               IClassifiedBoLandingService service,
-               CancellationToken ct
-           ) =>
+            group.MapPost("/bulk-preloved-action-userid/{userId}", async Task<Results<
+                Ok<BulkAdActionResponseitems>,
+                BadRequest<ProblemDetails>,
+                Conflict<ProblemDetails>,
+                NotFound<ProblemDetails>,
+                ProblemHttpResult
+            >> (
+                BulkActionRequest req,
+                string userId,
+                HttpContext httpContext,
+                IClassifiedBoLandingService service,
+                CancellationToken ct
+            ) =>
             {
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "UserId is required.",
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+
+                if (!req.AdIds.Any())
+                    return TypedResults.BadRequest(new ProblemDetails { Title = "No ads selected." });
+
+                if (req.Action == BulkActionEnum.Remove && string.IsNullOrWhiteSpace(req.Reason))
+                    return TypedResults.BadRequest(new ProblemDetails { Title = "Reason required for removal." });
+
                 try
                 {
-                    if (userId == string.Empty)
-                    {
-                        return TypedResults.BadRequest(new ProblemDetails
-                        {
-                            Title = "Invalid Data",
-                            Detail = "UpdatedBy cannot be null.",
-                            Status = StatusCodes.Status400BadRequest
-                        });
-                    }
                     var result = await service.BulkPrelovedAction(req, userId, ct);
                     return TypedResults.Ok(result);
                 }
@@ -2785,21 +2795,19 @@ CancellationToken ct
                 {
                     return TypedResults.Problem(ex.Message);
                 }
-            })
-           .ExcludeFromDescription()
-           .WithName("BulkPrelovedActionByUserId")
-           .WithTags("ClassifiedBo")
-           .WithSummary("Bulk preloved action classifieds")
-           .WithDescription("Performs bulk preloved actions (approve, publish, unpublish, unpromote, unfeature, remove) on selected classifieds ads. " +
-                            "Requires a list of ad IDs and the action to perform. " +
-                            "If removing, a reason must be provided.")
-           .Produces<string>(StatusCodes.Status200OK)
-           .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-           .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
-           .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
-           .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-         
-           
+            }).ExcludeFromDescription()
+            .WithName("BulkPrelovedActionByUserId")
+            .WithTags("ClassifiedBo")
+            .WithSummary("Bulk preloved action classifieds (by userId)")
+            .WithDescription("Performs bulk preloved actions by passing a specific userId as a query parameter instead of extracting from token.")
+            .Produces<BulkAdActionResponseitems>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+
+
 
 
             group.MapPost("items/admin/post-by-id", async Task<IResult> (
