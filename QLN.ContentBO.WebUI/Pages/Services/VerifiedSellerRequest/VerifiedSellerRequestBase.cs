@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Components;
 using QLN.ContentBO.WebUI.Interfaces;
+using QLN.ContentBO.WebUI.Components.ToggleTabs;
 using QLN.ContentBO.WebUI.Models;
 namespace QLN.ContentBO.WebUI.Pages.Services.VerifiedSellerRequest
 {
@@ -8,8 +9,30 @@ namespace QLN.ContentBO.WebUI.Pages.Services.VerifiedSellerRequest
     [Inject] public IServiceBOService _serviceBOService { get; set; }
     [Inject] ILogger<VerifiedSellerRequestBase> Logger { get; set; }
     protected PaginatedServiceResponse PaginatedData { get; set; } = new();
-    public List<VerificationProfileStatus> Listings { get; set; } = new();
+    public List<CompanyProfileItem> Listings { get; set; } = new();
+    protected string selectedTab = "verificationrequests";
+    protected List<ToggleTabs.TabOption> tabOptions = new()
+        {
+            new() { Label = "Verification Requests", Value = "verificationrequests" },
+            new() { Label = "Rejected", Value = "rejected" },
+            new() { Label = "Approved", Value = "approved" },
+        };
     protected int currentPage = 1;
+    protected async Task OnTabChanged(string newTab)
+        {
+            selectedTab = newTab;
+
+            Status = newTab switch
+            {
+                "verificationrequests" => 1,
+                "rejected" => 4,
+                "approved" => 8,
+                _ => null
+            };
+            Listings = await GetVerifiedSellerRequest();
+            StateHasChanged();
+        }
+
     protected int pageSize = 12;
     protected int? currentStatus = 1;
     public string? SortBy { get; set; }
@@ -69,16 +92,15 @@ namespace QLN.ContentBO.WebUI.Pages.Services.VerifiedSellerRequest
 
     protected async Task HandlePageChange(int newPage)
     {
-      // currentPage = newPage;
-      // PaginatedData = await LoadP2PListingsAsync();
-      // StateHasChanged();
+      currentPage = newPage;
+      Listings = await GetVerifiedSellerRequest();
+      StateHasChanged();
     }
     protected async Task HandlePageSizeChange(int newPageSize)
         {
-            // pageSize = newPageSize;
-            // currentPage = 1;
-            // PaginatedData = await LoadP2PListingsAsync();
-            // StateHasChanged();
+            pageSize = newPageSize;
+            Listings = await GetVerifiedSellerRequest();
+            StateHasChanged();
         }
 
 
@@ -88,23 +110,23 @@ namespace QLN.ContentBO.WebUI.Pages.Services.VerifiedSellerRequest
       // PaginatedData = await LoadP2PListingsAsync();
       // StateHasChanged();
     }
-    private async Task<List<VerificationProfileStatus>> GetVerifiedSellerRequest()
+    private async Task<List<CompanyProfileItem>> GetVerifiedSellerRequest()
     {
       try
       {
         var payload = new
         {
             isBasicProfile = false,
-            status = Status,
             vertical = 4,
-            pageNumber = 1,
-            pageSize = 50
+            companyVerificationStatus = Status,
+            pageNumber = currentPage,
+            pageSize = pageSize
         };
         var response = await _serviceBOService.GetAllCompaniesAsync(payload);
         if (response.IsSuccessStatusCode)
         {
-          var result = await response.Content.ReadFromJsonAsync<List<VerificationProfileStatus>>();
-          return result ?? new List<VerificationProfileStatus>();
+          var result = await response.Content.ReadFromJsonAsync<CompanyProfileResponse>();
+          return result?.Items ?? new List<CompanyProfileItem>();
         }
       }
       catch (Exception ex)
@@ -112,7 +134,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services.VerifiedSellerRequest
         Logger.LogError(ex, "GetVerifiedSellerRequest");
       }
 
-      return new List<VerificationProfileStatus>();
+      return new List<CompanyProfileItem>();
     }
   }
 }

@@ -71,12 +71,10 @@ else
                         }
                         else
                         {
-                            <a href="@($"{EventDetailBaseURL}{@context.Item.Category}")"
-                               class="event-link"
-                               style="text-decoration: none; color: #787878;"
-                               target="_blank">
+                             <span 
+                                  @onclick="@(() => ReplaceItem.InvokeAsync(context.Item))">
                                 @context.Item.Category
-                            </a>
+                            </span>
                         }
                     </td>
                     <td>

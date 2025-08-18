@@ -56,9 +56,15 @@
         <MudTd title="@(string.IsNullOrWhiteSpace(context.Category) ? "-" : context.Category)" class="truncate-text hover-title">@context.Category</MudTd>
         <MudTd title="@(string.IsNullOrWhiteSpace(context.SubCategory) ? "-" : context.SubCategory)" class="truncate-text hover-title">@context.SubCategory</MudTd>
         <MudTd>@((ServiceStatus)context.Status)</MudTd>
-        <MudTd>@context.CreationDate.ToString("dd-MM-yyyy hh:mm tt")</MudTd>
-        <MudTd>@context.DatePublished?.ToString("dd-MM-yyyy hh:mm tt")</MudTd>
-        <MudTd>@context.DateExpiry?.ToString("dd-MM-yyyy hh:mm tt")</MudTd>
+       <MudTd>
+            @(context.CreationDate == default ? "--" : context.CreationDate.ToString("dd-MM-yyyy hh:mm tt"))
+        </MudTd>
+        <MudTd>
+            @(context.DatePublished?.ToString("dd-MM-yyyy hh:mm tt") ?? "--")
+        </MudTd>
+        <MudTd>
+            @(context.DateExpiry?.ToString("dd-MM-yyyy hh:mm tt") ?? "--")
+        </MudTd>
         <MudTd>@context.Favorites</MudTd>
         <MudTd>
             <MudMenu Icon="@Icons.Material.Filled.MoreVert">

@@ -236,10 +236,10 @@ public static class FatoraEndpoints
         {
             var userDetails = new UserReqDto
             {
-                UserName = user.FindFirst(ClaimTypes.Name)?.Value ?? string.Empty,
-                UserId = user.FindFirst("ql:uid")?.Value ?? user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty,
-                Email = user.FindFirst(ClaimTypes.Email)?.Value ?? string.Empty,
-                Mobile = user.FindFirst("ql:phone")?.Value ?? string.Empty
+                UserName = user.FindFirst("name")?.Value ?? string.Empty,
+                UserId = user.FindFirst("sub")?.Value ?? user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty,
+                Email = user.FindFirst("email")?.Value ?? string.Empty,
+                Mobile = user.FindFirst("phone_number")?.Value ?? string.Empty
             };
 
             if (!string.IsNullOrEmpty(userDetails.UserId))

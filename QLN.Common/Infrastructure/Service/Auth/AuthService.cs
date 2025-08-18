@@ -1024,9 +1024,11 @@ namespace QLN.Common.Infrastructure.Service.AuthService
                     return TypedResults.ValidationProblem(errors, title: "Parsing Drupal ID Error");
                 }
 
-                var user = await _userManager.Users.FirstOrDefaultAsync(u => u.LegacyUid == userId);
-                //var user = await _userManager.FindByEmailAsync(drupalUser.Email);
-
+                var user = await _userManager.Users
+                    .Include(u => u.Subscriptions)   
+                    .Include(x => x.Companies)       
+                    .FirstOrDefaultAsync(u =>
+                        u.LegacyUid == userId);             
                 if (user == null)
                 {
                     // Create new user with mapped values from DrupalUser

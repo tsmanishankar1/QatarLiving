@@ -109,6 +109,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services
                 UserId = source.UserName, 
                 UserName = source.UserName,
                 Title = source.Title,
+                Description = source.Title,
                 Status = (int?)source.Status,
                 IsPromoted = source.IsPromoted,
                 IsFeatured = source.IsFeatured,
