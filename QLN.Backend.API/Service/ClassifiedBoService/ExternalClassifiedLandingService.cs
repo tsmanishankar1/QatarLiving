@@ -1033,28 +1033,20 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
 
         public async Task<BulkAdActionResponseitems> BulkItemsAction(
 BulkActionRequest request,
-string userId,
+string UserId, string UserName,
 CancellationToken cancellationToken = default)
         {
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
 
-
-
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentException("UserId cannot be null or empty.");
 
-
-
             var failedIds = new List<long>();
             var succeededIds = new List<long>();
-
-
-
             try
             {
-                var ads = await Task.WhenAll(
-                request.AdIds.Select(id => _classifiedService.GetItemAdById(id, cancellationToken))
+                var ads = await Task.WhenAll(request.AdIds.Select(id => _classifiedService.GetItemAdById(id, cancellationToken))
                 );
 
                 var invalidAds = ads
@@ -1163,7 +1155,7 @@ CancellationToken cancellationToken = default)
                     try
                     {
 
-                        var url = $"api/v2/classifiedbo/bulk-items-action-userid/{userId}&subscriptionId={subscriptionId}";
+                        var url = $"api/v2/classifiedbo/bulk-items-action-userid/{userId}/{username}&subscriptionId={subscriptionId}";
                         var serviceRequest = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, SERVICE_APP_ID, url);
                         serviceRequest.Content = new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json");
 

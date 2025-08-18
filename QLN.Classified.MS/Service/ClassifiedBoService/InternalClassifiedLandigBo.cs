@@ -1248,18 +1248,14 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
         }
 
         public async Task<BulkAdActionResponseitems> BulkItemsAction(
-     BulkActionRequest request,
-     string userId,
-     CancellationToken cancellationToken = default)
+BulkActionRequest request, string UserId, string UserName,
+CancellationToken cancellationToken = default)
         {
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
 
-            if (string.IsNullOrWhiteSpace(userId))
-                throw new ArgumentException("UserId cannot be null or empty.");
 
-            _logger.LogInformation("BulkItemsAction started by User {UserId} with Action {Action} for {Count} Ads.",
-                userId, request.Action, request.AdIds?.Count);
+            _logger.LogInformation("BulkItemsAction started by User {UserId} with Action {Action} for {Count} Ads.", request.Action, request.AdIds?.Count);
 
             var ads = await _context.Item
                 .Where(ad => request.AdIds.Contains(ad.Id) && ad.IsActive == true)
@@ -1294,6 +1290,13 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
 
                 try
                 {
+                    string actionReason = string.Empty;
+                    string actionComment = request.Comments ?? string.Empty;
+                    string reason = null;
+
+                    string userId = ad.UserId;
+                    string userName = ad.UserName;
+
                     switch (request.Action)
                     {
                         case BulkActionEnum.Approve:
@@ -1302,6 +1305,8 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                                 ad.Status = AdStatus.Published;
                                 shouldUpdate = true;
                                 ad.CreatedAt = DateTime.UtcNow;
+                                actionReason = null;
+                                actionComment = null;
                                 _logger.LogInformation("Ad {AdId} approved by {UserId}.", ad.Id, userId);
                             }
                             else failReason = $"Cannot approve ad with status '{ad.Status}'.";
@@ -1313,6 +1318,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                                 ad.Status = AdStatus.NeedsModification;
                                 shouldUpdate = true;
                                 ad.CreatedAt = DateTime.UtcNow;
+                                actionReason = "Ad Needs Changes";
                                 _logger.LogInformation("Ad {AdId} marked as NeedsModification by {UserId}.", ad.Id, userId);
                             }
                             else failReason = $"Cannot need changes ad with status '{ad.Status}'.";
@@ -1324,6 +1330,8 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                                 ad.Status = AdStatus.Published;
                                 shouldUpdate = true;
                                 ad.CreatedAt = DateTime.UtcNow;
+                                actionReason = null;
+                                actionComment = null;
                                 _logger.LogInformation("Ad {AdId} published by {UserId}.", ad.Id, userId);
                             }
                             else failReason = $"Cannot publish ad with status '{ad.Status}'.";
@@ -1335,6 +1343,8 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                                 ad.Status = AdStatus.Unpublished;
                                 shouldUpdate = true;
                                 ad.CreatedAt = DateTime.UtcNow;
+                                actionReason = null;
+                                actionComment = null;
                                 _logger.LogInformation("Ad {AdId} unpublished by {UserId}.", ad.Id, userId);
                             }
                             else failReason = $"Cannot unpublish ad with status '{ad.Status}'.";
@@ -1346,6 +1356,8 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                                 ad.IsPromoted = false;
                                 shouldUpdate = true;
                                 ad.CreatedAt = DateTime.UtcNow;
+                                actionReason = null;
+                                actionComment = null;
                                 _logger.LogInformation("Ad {AdId} unpromoted by {UserId}.", ad.Id, userId);
                             }
                             else failReason = "Cannot unpromote an ad that is not promoted.";
@@ -1357,6 +1369,8 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                                 ad.IsFeatured = false;
                                 shouldUpdate = true;
                                 ad.CreatedAt = DateTime.UtcNow;
+                                actionReason = null;
+                                actionComment = null;
                                 _logger.LogInformation("Ad {AdId} unfeatured by {UserId}.", ad.Id, userId);
                             }
                             else failReason = "Cannot unfeature an ad that is not featured.";
@@ -1369,6 +1383,8 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                                 ad.PromotedExpiryDate = DateTime.UtcNow;
                                 shouldUpdate = true;
                                 ad.CreatedAt = DateTime.UtcNow;
+                                actionReason = null;
+                                actionComment = null;
                                 _logger.LogInformation("Ad {AdId} promoted by {UserId}.", ad.Id, userId);
                             }
                             else failReason = "Cannot promote an ad that is already promoted.";
@@ -1381,6 +1397,8 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                                 ad.FeaturedExpiryDate = DateTime.UtcNow;
                                 shouldUpdate = true;
                                 ad.CreatedAt = DateTime.UtcNow;
+                                actionReason = null;
+                                actionComment = null;
                                 _logger.LogInformation("Ad {AdId} featured by {UserId}.", ad.Id, userId);
                             }
                             else failReason = "Cannot feature an ad that is already featured.";
@@ -1390,6 +1408,8 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                             ad.Status = AdStatus.Rejected;
                             shouldUpdate = true;
                             ad.CreatedAt = DateTime.UtcNow;
+                            actionReason = "Ad Removed (Rejected)";
+                            reason = "Ad rejected by admin.";
                             _logger.LogInformation("Ad {AdId} removed (rejected) by {UserId}.", ad.Id, userId);
                             break;
 
@@ -1401,6 +1421,8 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                                 ad.Status = AdStatus.Hold;
                                 shouldUpdate = true;
                                 ad.CreatedAt = DateTime.UtcNow;
+                                actionReason = "Ad On Hold";
+                                reason = "Ad placed on hold by admin.";
                                 _logger.LogInformation("Ad {AdId} placed on Hold by {UserId}.", ad.Id, userId);
                             }
                             else failReason = "Ad is already on hold.";
@@ -1428,6 +1450,26 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                         ad.UpdatedBy = userId;
                         updatedAds.Add(ad);
 
+                        if (request.Action == BulkActionEnum.Hold || request.Action == BulkActionEnum.Remove || request.Action == BulkActionEnum.NeedChanges)
+                        {
+                            var actionCommentEntity = new Comment
+                            {
+                                AdId = ad.Id,
+                                Action = actionReason,
+                                Reason = reason ?? string.Empty,
+                                Comments = actionComment,
+                                Vertical = Vertical.Classifieds,
+                                SubVertical = ad.SubVertical,
+                                CreatedAt = DateTime.UtcNow,
+                                CreatedUserId = userId,
+                                CreatedUserName = userName,
+                                UpdatedUserId = UserId,
+                                UpdatedUserName = UserName,
+                            };
+
+                            await _context.Comments.AddAsync(actionCommentEntity, cancellationToken);
+                        }
+
                         succeeded.Count++;
                         succeeded.Ids.Add(ad.Id);
                     }
@@ -1445,8 +1487,6 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                     failed.Count++;
                     failed.Ids.Add(ad.Id);
                     failed.Reason += $"Ad {ad.Id}: {ex.Message} ";
-                    _logger.LogError(ex, "Error while processing Ad {AdId} with action {Action} by {UserId}.",
-                        ad.Id, request.Action, userId);
                 }
             }
 

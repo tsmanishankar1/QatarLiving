@@ -40,6 +40,7 @@ namespace QLN.Common.Infrastructure.QLDbContext
         public DbSet<Wishlist> Wishlists { get; set; }
         public DbSet<StoreCompanyDto> StoreCompanyDto { get; set; }
         public DbSet<StoreSubscriptionQuotaDto> StoreSubscriptionQuotaDtos { get; set; }
+        public DbSet<Comment> Comments { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
 

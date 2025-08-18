@@ -2158,42 +2158,20 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             group.MapPost("/bulk-items-action", async Task<Results<
-    Ok<BulkAdActionResponseitems>,
-    BadRequest<ProblemDetails>,
-    Conflict<ProblemDetails>,
-    NotFound<ProblemDetails>,
-    ProblemHttpResult
+Ok<BulkAdActionResponseitems>,
+BadRequest<ProblemDetails>,
+Conflict<ProblemDetails>,
+NotFound<ProblemDetails>,
+ProblemHttpResult
 >> (
-    BulkActionRequest req,
-    HttpContext httpContext,
-    IClassifiedBoLandingService service,
-    CancellationToken ct
+BulkActionRequest req,
+HttpContext httpContext,
+IClassifiedBoLandingService service,
+CancellationToken ct
 ) =>
             {
-                var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                if (string.IsNullOrEmpty(userClaim))
-                {
-                    return TypedResults.Problem(new ProblemDetails
-                    {
-                        Title = "Unauthorized Access",
-                        Detail = "User information is missing or invalid in the token.",
-                        Status = StatusCodes.Status403Forbidden
-                    });
-                }
-
-                var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                var uid = userData.GetProperty("uid").GetString();
-                var userName = userData.GetProperty("name").GetString();
-
-                if (uid == null && userName == null)
-                {
-                    return TypedResults.Problem(new ProblemDetails
-                    {
-                        Title = "Unauthorized Access",
-                        Detail = "User ID or username could not be extracted from token.",
-                        Status = StatusCodes.Status403Forbidden
-                    });
-                }
+                string uid = httpContext.User.FindFirst("sub")?.Value;
+                string userName = httpContext.User.FindFirst("preferred_username")?.Value;
 
                 if (!req.AdIds.Any())
                     return TypedResults.BadRequest(new ProblemDetails { Title = "No ads selected." });
@@ -2204,7 +2182,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 var userId = uid;
                 try
                 {
-                    var result = await service.BulkItemsAction(req, userId, ct);
+                    var result = await service.BulkItemsAction(req, userId, userName, ct);
                     return TypedResults.Ok(result);
                 }
                 catch (ConflictException ex)
@@ -2234,8 +2212,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
 .WithTags("ClassifiedBo")
 .WithSummary("Bulk items action classifieds")
 .WithDescription("Performs bulk items actions (approve, publish, unpublish, unpromote, unfeature, remove) on selected classifieds. " +
-                 "Requires a list of ad IDs and the action to perform. " +
-                 "If removing, a reason must be provided.")
+     "Requires a list of ad IDs and the action to perform. " +
+     "If removing, a reason must be provided.")
 .Produces<BulkAdActionResponseitems>(StatusCodes.Status200OK)
 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
 .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
@@ -2245,7 +2223,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
 
 
 
-            group.MapPost("/bulk-items-action-userid/{userId}", async Task<Results<
+            group.MapPost("/bulk-items-action-userid/{userId}/{username}", async Task<Results<
     Ok<BulkAdActionResponseitems>,
     BadRequest<ProblemDetails>,
     Conflict<ProblemDetails>,
@@ -2254,6 +2232,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
 >> (
     BulkActionRequest req,
      string userId,
+     string userName,
      HttpContext httpContext,
     IClassifiedBoLandingService service,
     CancellationToken ct
@@ -2276,7 +2255,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
 
                 try
                 {
-                    var result = await service.BulkItemsAction(req, userId, ct);
+                    var result = await service.BulkItemsAction(req, userId, userName, ct);
                     return TypedResults.Ok(result);
                 }
                 catch (ConflictException ex)
