@@ -8,6 +8,8 @@ using QLN.Common.DTO_s;
 using QLN.Common.DTO_s.ClassifiedsBo;
 using QLN.Common.Infrastructure.Auditlog;
 using QLN.Common.Infrastructure.IService.IClassifiedBoService;
+using QLN.Common.Infrastructure.Subscriptions;
+using QLN.Common.Infrastructure.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -160,29 +162,26 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedBOEndPoints
             {
                 try
                 {
-                    var user = httpContext.User;
-                    var userId = user.FindFirst("sub")?.Value;
-                    var subscriptionsClaim = user.FindFirst("subscriptions")?.Value;
+                    var (userId, validSubscriptions, error) = GenericClaimsHelper.GetValidSubscriptions(httpContext.User, (int)Vertical.Classifieds, (int)SubVertical.Stores);
+                    if (!string.IsNullOrEmpty(error))
+                    {
+                        return TypedResults.Problem(
+                        title: "Subscription issue in token.",
+                        detail: error,
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        instance: httpContext.Request.Path
+                        );
+                    }
+
                     if (string.IsNullOrEmpty(userId))
                     {
                         return TypedResults.Forbid();
                     }
-
-                    if (string.IsNullOrEmpty(subscriptionsClaim))
-                    {
-                        return TypedResults.Forbid();
-                    }
-
-                        string fixedJson = $"[{subscriptionsClaim}]";
-                    var subscriptions = JsonSerializer.Deserialize<List<SubscriptionToken>>(fixedJson);
-                    var validSubscriptions = subscriptions?
-                        .Where(s => s.Vertical == 3 && s.SubVertical == 3 && s.EndDate >= DateTime.UtcNow)
-                        .ToList();
-
                     if (dto==null)
                         return TypedResults.BadRequest(new ProblemDetails() { Detail="Bulk PreLoved edit object cannot be null."});
                     else if(dto.AdIds == null || dto.AdStatus==0)
                         return TypedResults.BadRequest(new ProblemDetails() { Detail = "AdIs cannot be null or Status not be '0'." });
+                    
 
                     if (validSubscriptions != null && validSubscriptions.Any())
                     {

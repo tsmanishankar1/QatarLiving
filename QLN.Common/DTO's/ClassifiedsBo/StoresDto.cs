@@ -141,24 +141,63 @@ namespace QLN.Common.DTO_s.ClassifiedsBo
     {
         public Guid SubscriptionId { get; set; }
         public string QuotaJson { get; set; } 
+      
     }
-    public class JwtPayload
+
+    public class StoreSubscriptionQuota
     {
-        public List<SubscriptionToken> Subscriptions { get; set; }
+        public Guid SubscriptionId { get; set; }
+        public string Quota { get; set; }
+        public int TotalInventory { get; set; }
+        public int Inventory { get; set; }
+
     }
-        public class SubscriptionToken
+
+    public class SubscriptionToken
     {
         public Guid UserId { get; set; }
         public Guid Id { get; set; }
         public string DisplayName { get; set; }
         public string ProductCode { get; set; }
         public string ProductName { get; set; }
-        public int Vertical { get; set; }
-        public int SubVertical { get; set; }
+        public int? Vertical { get; set; }
+        public int? SubVertical { get; set; }
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
     }
 
-    
+    public class QuotaUsageSummary
+    {
+        public string Scope { get; set; }
+        public int AdsUsed { get; set; }
+        public string Vertical { get; set; }
+        public string? SocialMedia { get; set; }
+        public int FeaturesUsed { get; set; }
+        public bool CanFeatureAds { get; set; }
+        public bool CanPromoteAds { get; set; }
+        public bool CanPublishAds { get; set; }
+        public bool CanRefreshAds { get; set; }
+        public DateTime LastDailyReset { get; set; }
+        public int PromotionsUsed { get; set; }
+        public bool CanUnFeatureAds { get; set; }
+        public bool CanUnPromoteAds { get; set; }
+        public bool CanUnPublishAds { get; set; }
+        public string LastRefreshUsed { get; set; } 
+        public DateTime LastUsageUpdate { get; set; }
+        public string RefreshInterval { get; set; }
+        public int TotalAdsAllowed { get; set; }
+        public bool CanPostSocialMedia { get; set; }
+        public int DailyRefreshesUsed { get; set; }
+        public int RefreshesPerAdUsed { get; set; }
+        public int RefreshIntervalHours { get; set; }
+        public int SocialMediaPostsUsed { get; set; }
+        public int TotalFeaturesAllowed { get; set; }
+        public int DailyRefreshesAllowed { get; set; }
+        public int? ListingsPerL2Category { get; set; }
+        public int RefreshesPerAdAllowed { get; set; }
+        public int TotalPromotionsAllowed { get; set; }
+        public int SocialMediaPostsAllowed { get; set; }
+    }
+
 
 }
