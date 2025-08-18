@@ -36,7 +36,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services
             {
                 "verificationRequests" => 1,
                 "rejected" => 4,
-                "approved" => 2,
+                "approved" => 8,
                 _ => null
             };
             await OnStatusChanged.InvokeAsync(status); 

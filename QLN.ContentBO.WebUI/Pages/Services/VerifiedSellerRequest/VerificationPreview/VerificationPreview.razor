@@ -1,0 +1,16 @@
+@page "/manage/services/userprofile/preview/{UserId:int}"
+@inherits VerificationPreviewBase
+@using QLN.ContentBO.WebUI.Models;
+@layout ServicesLayout
+
+<div >
+    <VerificationActions OnCompanyAction="UpdateStatus" CompanyDetails="@CompanyDetails"/>
+    <MudGrid>
+        <MudItem xs="12" md="3">
+            <UserImageCard ImageUrl="@CompanyDetails.CompanyLogo" />
+        </MudItem>
+        <MudItem xs="12" md="8">
+            <UserProfileFields CompanyDetails="@CompanyDetails" />
+        </MudItem>
+    </MudGrid>
+</div>
