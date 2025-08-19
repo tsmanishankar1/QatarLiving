@@ -1,5 +1,4 @@
-﻿using Dapr;
-using Dapr.Client;
+﻿using Dapr.Client;
 using Microsoft.AspNetCore.Mvc;
 using QLN.Common.DTO_s;
 using QLN.Common.DTO_s.Subscription;
@@ -8,11 +7,10 @@ using QLN.Common.Infrastructure.CustomException;
 using QLN.Common.Infrastructure.IService.IProductService;
 using QLN.Common.Infrastructure.IService.IService;
 using QLN.Common.Infrastructure.Model;
-using QLN.Common.Migrations.QLSubscription;
+using QLN.Common.Infrastructure.Subscriptions;
 using System.Net;
 using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
 
 namespace QLN.Backend.API.Service.Services
 {
@@ -628,29 +626,38 @@ namespace QLN.Backend.API.Service.Services
         {
             try
             {
-                var quotaAction = request.Status == ServiceStatus.Published
+                var quotaActionPublish = request.Status == ServiceStatus.Published
                     ? ActionTypes.Publish
                     : ActionTypes.UnPublish;
 
-                if (quotaAction == ActionTypes.Publish)
-                {
-                    var canUse = await _v2SubscriptionService.ValidateSubscriptionUsageAsync(
-                        Guid.Parse(subscriptionId),
-                        quotaAction,
-                        1,
-                        ct
-                    );
+                var quotaActionPromote = request.Status == ServiceStatus.Published
+                    ? ActionTypes.Promote
+                    : ActionTypes.UnPromote;
 
-                    if (!canUse)
+                var quotaActionFeature = request.Status == ServiceStatus.Published
+                    ? ActionTypes.Feature
+                    : ActionTypes.UnFeature;
+
+                if (request.Status == ServiceStatus.Published)
+                {
+                    var canPublish = await _v2SubscriptionService.ValidateSubscriptionUsageAsync(
+                        Guid.Parse(subscriptionId), quotaActionPublish, 1, ct);
+
+                    var canPromote = await _v2SubscriptionService.ValidateSubscriptionUsageAsync(
+                        Guid.Parse(subscriptionId), quotaActionPromote, 1, ct);
+
+                    var canFeature = await _v2SubscriptionService.ValidateSubscriptionUsageAsync(
+                        Guid.Parse(subscriptionId), quotaActionFeature, 1, ct);
+
+                    if (!canPublish || !canPromote || !canFeature)
                     {
                         _logger.LogWarning(
-                            "Subscription {SubscriptionId} has insufficient quota for {QuotaAction}.",
-                           subscriptionId, quotaAction
-                        );
-                        throw new InvalidDataException($"Insufficient subscription quota for {quotaAction.ToLower()}.");
+                            "Subscription {SubscriptionId} insufficient quota. Publish={Publish}, Promote={Promote}, Feature={Feature}",
+                            subscriptionId, canPublish, canPromote, canFeature);
+
+                        throw new InvalidDataException("Insufficient subscription quota.");
                     }
                 }
-
                 var url = $"/api/service/publishbyuserid?uid={uid}&subscriptionId={subscriptionId}";
                 var serviceRequest = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, ConstantValues.Services.ServiceAppId, url);
                 serviceRequest.Content = new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json");
@@ -672,11 +679,22 @@ namespace QLN.Backend.API.Service.Services
                     {
                         var success = await _v2SubscriptionService.RecordSubscriptionUsageAsync(
                             Guid.Parse(subscriptionId),
-                            quotaAction,
+                            quotaActionPublish,
                             1,
                             ct
                         );
-
+                        var success1 = await _v2SubscriptionService.RecordSubscriptionUsageAsync(
+                            Guid.Parse(subscriptionId),
+                            quotaActionPromote,
+                            1,
+                            ct
+                        );
+                        var success2 = await _v2SubscriptionService.RecordSubscriptionUsageAsync(
+                            Guid.Parse(subscriptionId),
+                            quotaActionFeature,
+                            1,
+                            ct
+                        );
                         if (!success)
                         {
                             _logger.LogWarning(
@@ -704,12 +722,7 @@ namespace QLN.Backend.API.Service.Services
                 throw;
             }
         }
-        public async Task<BulkAdActionResponseitems> ModerateBulkService(
-            BulkModerationRequest request,
-            string userId,
-            string subscriptionGuid,
-            DateTime? expiryDate,
-            CancellationToken cancellationToken = default)
+        public async Task<BulkAdActionResponseitems> ModerateBulkService(BulkModerationRequest request, string userId, string subscriptionGuid, DateTime? expiryDate, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -740,15 +753,17 @@ namespace QLN.Backend.API.Service.Services
                         BulkModerationAction.UnFeature => "unfeature",
                         BulkModerationAction.Unpublish => "unpublish",
                         BulkModerationAction.Publish => "publish",
-                        BulkModerationAction.Approve => "publish",       // Approve acts like publish
-                        BulkModerationAction.Remove => "reject",        // moderation only
-                        BulkModerationAction.NeedChanges => "need changes",  // moderation only
+                        BulkModerationAction.Approve => "publish",      
+                        BulkModerationAction.Remove => "reject",        
+                        BulkModerationAction.NeedChanges => "need changes", 
+                        BulkModerationAction.Hold => "hold",
+                        BulkModerationAction.Onhold => "on hold",
+                        BulkModerationAction.IsRefreshed => "isrefreshed",
                         _ => throw new InvalidOperationException("Invalid bulk action.")
                     };
 
                     var usageCount = group.Count();
 
-                    // ✅ Only some actions require quota check
                     var requiresQuota = group.Key.ActionType is
                         BulkModerationAction.Promote or
                         BulkModerationAction.Feature or
@@ -887,34 +902,7 @@ namespace QLN.Backend.API.Service.Services
                 return errorContent;
             }
         }
-        public async Task<SubscriptionBudgetDto> GetSubscriptionBudgetsAsync(Guid subscriptionId,CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var request = new SubscriptionIdRequest { SubscriptionId = subscriptionId };
-
-               
-                var response = await _dapr.InvokeMethodAsync<SubscriptionIdRequest, SubscriptionBudgetDto>(
-                    HttpMethod.Post,
-                    ConstantValues.Services.ServiceAppId,
-                    "/api/service/getbudgets",
-                    request,
-                    cancellationToken
-                );
-
-                return response ?? new SubscriptionBudgetDto();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error fetching subscription budgets for {SubscriptionId}", subscriptionId);
-                throw;
-            }
-        }
-        public async Task<SubscriptionBudgetDto> GetSubscriptionBudgetsAsyncBySubVertical(
-     Guid subscriptionIdFromToken,
-     int verticalId,
-     int? subverticalId,  // <-- nullable now
-     CancellationToken cancellationToken = default)
+        public async Task<SubscriptionBudgetDto> GetSubscriptionBudgetsAsyncBySubVertical(Guid subscriptionIdFromToken, Vertical verticalId, SubVertical? subverticalId, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -922,7 +910,7 @@ namespace QLN.Backend.API.Service.Services
                 {
                     SubscriptionId = subscriptionIdFromToken,
                     VerticalId = verticalId,
-                    SubVerticalId = subverticalId // can be null
+                    SubVerticalId = subverticalId 
                 };
 
                 var response = await _dapr.InvokeMethodAsync<object, SubscriptionBudgetDto>(
@@ -941,10 +929,23 @@ namespace QLN.Backend.API.Service.Services
                 throw;
             }
         }
-
-
-
-
-
+        public async Task<List<CategoryAdCountDto>> GetCategoryAdCount(CancellationToken ct = default)
+        {
+            try
+            {
+                var response = await _dapr.InvokeMethodAsync<List<CategoryAdCountDto>>(
+                    HttpMethod.Get,
+                    ConstantValues.Services.ServiceAppId,
+                    "/api/service/getcategoryadcount",
+                    cancellationToken: ct
+                );
+                return response ?? new List<CategoryAdCountDto>();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching category ad counts");
+                throw;
+            }
+        }
     }
 }

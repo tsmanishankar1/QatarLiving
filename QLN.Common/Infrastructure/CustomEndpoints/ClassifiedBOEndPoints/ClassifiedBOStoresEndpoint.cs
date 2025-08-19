@@ -3,9 +3,12 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
+using QLN.Common.DTO_s;
 using QLN.Common.DTO_s.ClassifiedsBo;
 using QLN.Common.Infrastructure.IService.IClassifiedBoService;
 using QLN.Common.Infrastructure.IService.V2IClassifiedBoService;
+using QLN.Common.Infrastructure.Subscriptions;
+using QLN.Common.Infrastructure.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -336,6 +339,107 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
                 .Produces(StatusCodes.Status403Forbidden)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapGet("/stores-process-csv",
+    async Task<Results<Ok<string>, BadRequest<ProblemDetails>, ForbidHttpResult, ProblemHttpResult>> (
+        string Url,
+        string CsvPlatform,
+        string CompanyId,
+        string SubscriptionId,
+        [FromServices] IClassifiedStoresBOService service,
+        HttpContext context,
+        CancellationToken cancellationToken
+    ) =>
+    {
+        try
+        {
+            var (userId, validSubscriptions, error) = GenericClaimsHelper.GetValidSubscriptions(context.User, (int)Vertical.Classifieds, (int)SubVertical.Stores);
+            if (!string.IsNullOrEmpty(error))
+            {
+                return TypedResults.Problem(
+                title: "Subscription issue in token.",
+                detail: error,
+                statusCode: StatusCodes.Status500InternalServerError,
+                instance: context.Request.Path
+                );
+            }
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return TypedResults.Forbid();
+            }
+
+            var result = await service.GetProcessStoresCSV(Url, CsvPlatform,CompanyId, SubscriptionId, userId?.ToString(), cancellationToken);
+
+            if (result?.ToString() == "created")
+            {
+                return TypedResults.Ok("Products have been successfully created at the specified store(s).");
+            }
+
+            return TypedResults.BadRequest(new ProblemDetails
+            {
+                Title = "Store Processing Failed",
+                Detail = result?.ToString() ?? "Unknown error occurred.",
+                Status = StatusCodes.Status400BadRequest
+            });
+        }
+        catch (Exception ex)
+        {
+            return TypedResults.Problem(
+                title: "Internal Server Error",
+                detail: ex.Message,
+                statusCode: StatusCodes.Status500InternalServerError,
+                instance: context.Request.Path
+            );
+        }
+    })
+                .WithName("GetProcessStoresCSV")
+                .WithTags("ClassifiedBo")
+                .WithSummary("Process the csv file.")
+                .WithDescription("Processing the uploaded csv.Storing the products into data layer.")
+                .Produces<string>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                .Produces(StatusCodes.Status403Forbidden)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapGet("/stores-processing-csv",
+   async Task<Results<Ok<string>, BadRequest<ProblemDetails>, ForbidHttpResult, ProblemHttpResult>> (
+       string Url,
+        string CsvPlatform,
+       string CompanyId,
+       string SubscriptionId,
+       string UserId,
+       [FromServices] IClassifiedStoresBOService service,
+       HttpContext context,
+       CancellationToken cancellationToken
+   ) =>
+   {
+       try
+       {
+           var result = await service.GetProcessStoresCSV(Url, CsvPlatform, CompanyId, SubscriptionId, UserId, cancellationToken);
+           return TypedResults.Ok(result);
+
+       }
+       catch (Exception ex)
+       {
+           return TypedResults.Problem(
+               title: "Internal Server Error",
+               detail: ex.Message,
+               statusCode: StatusCodes.Status500InternalServerError,
+               instance: context.Request.Path
+           );
+       }
+   })
+               .ExcludeFromDescription()
+               //.AllowAnonymous()
+               .WithName("GetProcessStoreCSV")
+               .WithTags("ClassifiedBo")
+               .WithSummary("Processing the csv.")
+               .WithDescription("Processing the uploaded csv.Storing the products into data layer.")
+               .Produces<string>(StatusCodes.Status200OK)
+               .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+               .Produces(StatusCodes.Status403Forbidden)
+               .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             group.MapGet("/stores-test-xml-validation", async Task<Results<
            Ok<string>,

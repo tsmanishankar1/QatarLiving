@@ -18,5 +18,10 @@ namespace QLN.Common.Infrastructure.Model
         public string Reason { get; set; }
         public string Comments { get; set; }
         public DateTime CreatedAt { get; set; }
+        public string CreatedUserId { get; set; }
+        public string CreatedUserName { get; set; } 
+
+        public string? UpdatedUserId { get; set; }
+        public string? UpdatedUserName { get; set; }
     }
 }

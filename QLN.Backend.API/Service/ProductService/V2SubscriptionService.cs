@@ -241,7 +241,9 @@ namespace QLN.Backend.API.Service.ProductService
             try
             {
                 var actor = GetV2SubscriptionActorProxy(subscriptionId);
+                Console.WriteLine("subscriptionId:" + subscriptionId + "quotaType" + quotaType + "requestedAmount" + requestedAmount);
                 return await actor.ValidateUsageAsync(quotaType, requestedAmount, cancellationToken);
+                
             }
             catch (Exception ex)
             {

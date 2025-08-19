@@ -14,5 +14,8 @@ namespace QLN.Common.Infrastructure.IService.IClassifiedBoService
         //Task<string> EditStoreSubscriptions(int OrderID, string Status, CancellationToken cancellationToken = default);
         Task<string> GetTestXMLValidation(CancellationToken cancellationToken = default);
         Task<string> GetProcessStoresXML(string Url, string? CompanyId, string? SubscriptionId, string UserName, CancellationToken cancellationToken = default);
+
+        Task<string> GetProcessStoresCSV(string Url,string CsvPlatform, string? CompanyId, string? SubscriptionId,
+           string? UserId, CancellationToken cancellationToken = default);
     }
 }
