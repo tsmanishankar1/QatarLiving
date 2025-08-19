@@ -84,7 +84,7 @@
     }
     else{
          <MudButton Color="Color.Primary" Variant="Variant.Filled" Class="action-btn"
-                   OnClick='@(() => ShowConfirmation("Feature Ad", "Are you sure you want to Feature this ad?", "Feature",BulkModerationAction.feature))'>
+                   OnClick='@(() => OpenFeatureUnfeatureDialog(BulkModerationAction.feature))'>
             Feature
         </MudButton>
     }
@@ -97,7 +97,7 @@
     }
     else{
          <MudButton Color="Color.Primary" Variant="Variant.Filled" Class="action-btn"
-                   OnClick='@(() => ShowConfirmation("Promote Ad", "Are you sure you want to Promote this ad?", "Promote",BulkModerationAction.Promote))'>
+                   OnClick='@(() => OpenFeatureUnfeatureDialog(BulkModerationAction.Promote))'>
             Promote
         </MudButton>
     }
