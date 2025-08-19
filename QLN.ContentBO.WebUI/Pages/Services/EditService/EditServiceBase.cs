@@ -185,6 +185,30 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
             }
             await ShowConfirmation("Need Changes", "Are you sure you want to Request For a Change?", "Request", BulkModerationAction.NeedChanges);
         }
+        protected async Task OpenFeatureUnfeatureDialog(BulkModerationAction status)
+        {
+            var options = new DialogOptions
+            {
+                CloseButton = true,
+                MaxWidth = MaxWidth.Small,
+                FullWidth = true
+            };
+            var dialog = DialogService.Show<CommentDialog>("", options: options);
+            var result = await dialog.Result;
+            if (!result.Canceled)
+            {
+                Reason = result.Data?.ToString() ?? "";
+            }
+            if (status == BulkModerationAction.feature)
+            {
+                await ShowConfirmation("Feature Ad", "Are you sure you want to Feature This Ad?", "Feature", BulkModerationAction.feature);
+            }
+            else if (status == BulkModerationAction.Promote)
+            { 
+                await ShowConfirmation("Promote Ad", "Are you sure you want to Promote This Ad?", "Promote", BulkModerationAction.Promote);
+
+            }
+        }
         protected Task OnCustomButtonClicked(MarkdownButtonEventArgs eventArgs)
         {
             if (eventArgs.Name is not null)
