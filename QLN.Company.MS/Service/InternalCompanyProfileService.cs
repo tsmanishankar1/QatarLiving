@@ -437,22 +437,6 @@ namespace QLN.Company.MS.Service
                         cancellationToken: cancellationToken
                     );
                 }
-                await _dapr.PublishEventAsync("pubsub", "notifications-email", new NotificationEntity
-                {
-                    Destinations = new List<string> { "email" },
-                    Recipients = new List<RecipientDto>
-                    {
-                        new RecipientDto
-                        {
-                            Name = dto.UserName,
-                            Email = dto.Email
-                        }
-                    },
-                    Subject = $"Company '{dto.CompanyName}' was updated",
-                    Plaintext = $"Hello,\n\nYour company titled '{dto.CompanyName}' has been updated.\n\nStatus: {dto.Status}\n\nThanks,\nQL Team",
-                    Html = $"{dto.CompanyName} has been updated."
-                }, cancellationToken);
-
 
                 return "Company Profile Updated Successfully";
             }
@@ -615,8 +599,13 @@ namespace QLN.Company.MS.Service
                     },
                     Subject = $"Company '{company.CompanyName}' was updated",
                     Plaintext = $"Hello,\n\nYour company titled '{company.CompanyName}' has been updated.\n\nStatus: {dto.Status}\n\nThanks,\nQL Team",
-                    Html = $"{company.CompanyName} has been updated."
+                    Html = $@"
+                    <p>Hi,</p>
+                    <p>Your company titled '<b>{company.CompanyName}</b>' has been updated.</p>
+                    <p>Status: <b>{dto.Status}</b></p>
+                    <p>Thanks,<br/>QL Team</p>"
                 }, cancellationToken);
+
                 return "Company Status Changed Successfully";
             }
             catch (KeyNotFoundException)

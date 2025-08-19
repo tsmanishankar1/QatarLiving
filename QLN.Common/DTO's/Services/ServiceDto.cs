@@ -159,15 +159,12 @@ namespace QLN.Common.DTO_s
     }
     public class SubscriptionBudgetDto
     {
-        // Totals
         public int TotalAdsAllowed { get; set; }
         public int TotalPromotionsAllowed { get; set; }
         public int TotalFeaturesAllowed { get; set; }
         public int DailyRefreshesAllowed { get; set; }
         public int RefreshesPerAdAllowed { get; set; }
         public int SocialMediaPostsAllowed { get; set; }
-
-        // Used
         public int AdsUsed { get; set; }
         public int PromotionsUsed { get; set; }
         public int FeaturesUsed { get; set; }

@@ -11,6 +11,7 @@ using QLN.Common.Infrastructure.Subscriptions;
 using QLN.Common.Infrastructure.Utilities;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using System.Threading;
 
 namespace QLN.Classified.MS.Service.Services
 {
@@ -515,22 +516,6 @@ namespace QLN.Classified.MS.Service.Services
                         cancellationToken: cancellationToken
                     );
                 }
-
-                await _dapr.PublishEventAsync("pubsub", "notifications-email", new NotificationEntity
-                {
-                    Destinations = new List<string> { "email" },
-                    Recipients = new List<RecipientDto>
-                    {
-                        new RecipientDto
-                        {
-                            Name = dto.UserName,
-                            Email = dto.EmailAddress
-                        }
-                    },
-                    Subject = $"Service Ad '{dto.Title}' was updated",
-                    Plaintext = $"Hello,\n\nYour ad titled '{dto.Title}' has been updated.\n\nStatus: {dto.Status}\n\nThanks,\nQL Team",
-                    Html = $"{dto.Title} has been updated."
-                }, cancellationToken);
 
                 return "Service Ad updated successfully.";
             }
@@ -1266,6 +1251,27 @@ namespace QLN.Classified.MS.Service.Services
 
                             await _dbContext.Comments.AddAsync(actionCommentEntity, ct);
                             _dbContext.Services.Update(ad);
+
+                            await _dapr.PublishEventAsync("pubsub", "notifications-email", new NotificationEntity
+                            {
+                                Destinations = new List<string> { "email" },
+                                Recipients = new List<RecipientDto>
+                                {
+                                    new RecipientDto
+                                    {
+                                        Name = username,
+                                        Email = ad.EmailAddress
+                                    }
+                                },
+                                Subject = $"Service '{ad.Title} was updated",
+                                Plaintext = $"Hello,\n\nYour ad titled '{ad.Title}' has been updated.\n\nStatus: {ad.Status}\n\nThanks,\nQL Team",
+                                Html = $@"
+                                <p>Hi,</p>
+                                <p>Your ad titled '<b>{ad.Title}</b>' has been updated.</p>
+                                <p>Status: <b>{ad.Status}</b></p>
+                                <p>Thanks,<br/>QL Team</p>"
+                            }, ct);
+
                             succeeded.Count++;
                             succeeded.Ids.Add(ad.Id);
                         }
