@@ -82,6 +82,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.ViewListing
         {
             selectedTab = newTab;
             SelectedListings.Clear();
+            Console.Write("the selected table is the" + newTab);
             await OnTabChange.InvokeAsync(newTab);
         }
 
