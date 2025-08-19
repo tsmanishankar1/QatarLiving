@@ -5,8 +5,10 @@ using Microsoft.Identity.Client;
 using Microsoft.IdentityModel.Tokens;
 using QLN.Common.DTO_s;
 using QLN.Common.DTO_s.Payments;
+using QLN.Common.DTO_s.Subscription;
 using QLN.Common.Infrastructure.CustomException;
 using QLN.Common.Infrastructure.IService.IPayments;
+using QLN.Common.Infrastructure.IService.IProductService;
 using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.QLDbContext;
 using System;
@@ -27,6 +29,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
         private readonly D365Config _d365Config;
         private readonly QLPaymentsContext _dbContext;
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly IV2SubscriptionService _subscriptionService;
         private readonly IConfidentialClientApplication _msalApp;
         private readonly SemaphoreSlim _tokenSemaphore = new(1, 1);
         private string? _cachedToken;
@@ -38,7 +41,8 @@ namespace QLN.Common.Infrastructure.Service.Payments
             HttpClient httpClient,
             D365Config d365Config,
             QLPaymentsContext dbContext,
-            UserManager<ApplicationUser> userManager
+            UserManager<ApplicationUser> userManager,
+            IV2SubscriptionService subscriptionService
             )
         {
             _logger = logger;
@@ -46,6 +50,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
             _d365Config = d365Config;
             _dbContext = dbContext;
             _userManager = userManager;
+            _subscriptionService = subscriptionService;
 
             // Acquire Bearer token using MSAL
             var authority = $"https://login.microsoftonline.com/{_d365Config.TenantId}";
@@ -480,7 +485,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
                 Source = Source.Web,
                 Status = PaymentStatus.Success,
                 Vertical = order.D365Itemid.StartsWith("QLC") ? Subscriptions.Vertical.Classifieds : Subscriptions.Vertical.Services,
-                SubVertical = order.D365Itemid.StartsWith("QLS") ? SubVertical.Services : SubVertical.Items, // this isnt right - likely need to hand this into this method
+                SubVertical = order.D365Itemid.StartsWith("QLC") ? SubVertical.Items : SubVertical.Services, // this isnt right - likely need to hand this into this method
                 TriggeredSource = TriggeredSource.Web
             };
 
@@ -489,13 +494,23 @@ namespace QLN.Common.Infrastructure.Service.Payments
 
             // create the subscription and reference the payment Id
 
-            // TODO: Create the subscription creation logic
+            var subscriptionId = await _subscriptionService.PurchaseSubscriptionAsync(new V2SubscriptionPurchaseRequestDto
+            {
+                UserId = user.Id.ToString(),
+                ProductCode = order.D365Itemid,
+                PaymentId = paymentEntity.PaymentId,
+            });
 
-            // temporary example
             var subscription = new UserSubscription {
                 DisplayName = order.D365Itemid,
-                Id = Guid.NewGuid(), // this would be the actual subscription ID.
-                UserId = user.Id
+                Id = subscriptionId,
+                UserId = user.Id,
+                ProductCode = order.D365Itemid,
+                StartDate = order.StartDate ?? DateTime.UtcNow,
+                EndDate = order.EndDate ?? DateTime.UtcNow.AddYears(1), // Assuming a default duration of 1 year
+                ProductName = order.SalesType ?? "Default Subscription",
+                Vertical = order.D365Itemid.StartsWith("QLC") ? Subscriptions.Vertical.Classifieds : Subscriptions.Vertical.Services,
+                SubVertical = order.D365Itemid.StartsWith("QLC") ? SubVertical.Services : SubVertical.Items, // this isnt right - likely need to hand this into this method
             };
 
             if (user.Subscriptions != null)
@@ -548,15 +563,26 @@ namespace QLN.Common.Infrastructure.Service.Payments
 
             // create the pay to publish and reference the payment Id
 
-            // TODO: Create the pay to publish creation logic
+            var subscriptionId = await _subscriptionService.PurchaseSubscriptionAsync( new V2SubscriptionPurchaseRequestDto
+            {
+                UserId = user.Id.ToString(),
+                ProductCode = order.D365Itemid,
+                PaymentId = paymentEntity.PaymentId,
+            });
 
             // temporary example
             // TODO: Is Pay to publish different from a subscription and if so how
             var subscription = new UserSubscription
             {
                 DisplayName = order.D365Itemid,
-                Id = Guid.NewGuid(), // this would be the actual subscription ID.
-                UserId = user.Id
+                Id = subscriptionId,
+                UserId = user.Id,
+                ProductCode = order.D365Itemid,
+                StartDate = order.StartDate ?? DateTime.UtcNow,
+                EndDate = order.EndDate ?? DateTime.UtcNow.AddYears(1), // Assuming a default duration of 1 year
+                ProductName = order.SalesType ?? "Default Subscription",
+                Vertical = order.D365Itemid.StartsWith("QLC") ? Subscriptions.Vertical.Classifieds : Subscriptions.Vertical.Services,
+                SubVertical = order.D365Itemid.StartsWith("QLC") ? SubVertical.Services : SubVertical.Items, // this isnt right - likely need to hand this into this method
             };
 
             if (user.Subscriptions != null)
