@@ -123,7 +123,7 @@ namespace QLN.Backend.API.Service.ProductService
 
         public Task<Guid> MigrateSubscriptionAsync(Guid subscriptionId, V2SubscriptionDto request, CancellationToken cancellationToken = default)
         {
-            throw new NotImplementedException;
+            throw new NotImplementedException();
         }
 
         public async Task<List<V2SubscriptionResponseDto>> GetUserSubscriptionsAsync(
