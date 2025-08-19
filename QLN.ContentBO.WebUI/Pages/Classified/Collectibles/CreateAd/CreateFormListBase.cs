@@ -3,6 +3,8 @@ using QLN.ContentBO.WebUI.Models;
 using Microsoft.JSInterop;
 using Microsoft.AspNetCore.Components.Forms;
 using MudBlazor;
+using PSC.Blazor.Components.MarkdownEditor;
+using PSC.Blazor.Components.MarkdownEditor.EventsArgs;
 using MudExRichTextEditor;
 using QLN.ContentBO.WebUI.Interfaces;
 using System.Text.Json;
@@ -15,6 +17,9 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.CreateAd
         [Parameter]
         public string? UserEmail { get; set; }
         [Parameter] public List<LocationZoneDto> Zones { get; set; }
+        protected string UploadImageButtonName { get; set; } = "uploadImage";
+        protected MarkdownEditor MarkdownEditorRef;
+        protected string[] HiddenIcons = ["fullscreen"];
         [Parameter] public List<ClassifiedsCategory> CategoryTrees { get; set; } = new();
         protected ClassifiedsCategory SelectedCategory => CategoryTrees.FirstOrDefault(x => x.Id.ToString() == Ad.SelectedCategoryId);
         protected ClassifiedsCategoryField SelectedSubcategory => SelectedCategory?.Fields?.FirstOrDefault(x => x.Id.ToString() == Ad.SelectedSubcategoryId);
@@ -42,6 +47,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.CreateAd
         private DotNetObjectReference<CreateFormListBase>? _dotNetRef;
         [Inject] ILogger<CreateFormListBase> Logger { get; set; }
         protected CountryModel SelectedPhoneCountry;
+        protected MudFileUpload<IBrowserFile> _markdownfileUploadRef;
         protected CountryModel SelectedWhatsappCountry;
 
         protected Task OnPhoneCountryChanged(CountryModel model)
@@ -50,11 +56,41 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.CreateAd
             Ad.PhoneCode = model.Code;
             return Task.CompletedTask;
         }
+        protected void TriggerCustomImageUpload()
+        {
+            _markdownfileUploadRef.OpenFilePickerAsync();
+        }
+
+
+protected async void ToggleMarkdownPreview()
+        {
+            if (MarkdownEditorRef != null)
+            {
+                await MarkdownEditorRef.TogglePreviewAsync();
+            }
+        }
+
 
         protected Task OnWhatsappCountryChanged(CountryModel model)
         {
             SelectedWhatsappCountry = model;
             Ad.WhatsappCode = model.Code;
+            return Task.CompletedTask;
+        }
+        protected Task OnCustomButtonClicked(MarkdownButtonEventArgs eventArgs)
+        {
+            if (eventArgs.Name is not null)
+            {
+                if (eventArgs.Name == UploadImageButtonName)
+                {
+                    TriggerCustomImageUpload();
+                }
+
+                if (eventArgs.Name == "CustomPreview")
+                {
+                    ToggleMarkdownPreview();
+                }
+            }
             return Task.CompletedTask;
         }
         protected Task OnPhoneChanged(string phone)

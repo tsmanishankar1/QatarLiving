@@ -1,8 +1,12 @@
-﻿using Microsoft.AspNetCore.Builder;
+﻿using Azure.Search.Documents.Models;
+using Azure.Search.Documents;
+using Azure;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Auditlog;
@@ -11,6 +15,8 @@ using QLN.Common.Infrastructure.CustomException;
 using QLN.Common.Infrastructure.IService.ISearchService;
 using QLN.Common.Infrastructure.IService.IService;
 using QLN.Common.Infrastructure.Model;
+using QLN.Common.Infrastructure.Subscriptions;
+using QLN.Common.Infrastructure.Utilities;
 using System.ComponentModel.DataAnnotations;
 using System.Net.Http;
 using System.Text.Json;
@@ -262,23 +268,17 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                 HttpContext httpContext,
                 CancellationToken cancellationToken) =>
             {
-                string? uid = "unknown";
+                string uid = "unknown";
+                string? userName = null;
+
                 try
                 {
-                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                    if (string.IsNullOrEmpty(userClaim))
-                    {
-                        return TypedResults.Problem(new ProblemDetails
-                        {
-                            Title = "Unauthorized Access",
-                            Detail = "User information is missing or invalid in the token.",
-                            Status = StatusCodes.Status403Forbidden
-                        });
-                    }
-                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                    uid = userData.GetProperty("uid").GetString();
-                    var userName = userData.GetProperty("name").GetString();
-                    if (uid == null && userName == null)
+                    var (extractedUid, extractedUserName, subscriptionId, expiryDate) =
+                        await UserTokenHelper.ExtractUserAndSubscriptionDetailsAsync(httpContext, vertical: (int)Vertical.Services);
+                    uid = extractedUid;
+                    userName = extractedUserName;
+                    subscriptionId = subscriptionId;
+                    if (string.IsNullOrEmpty(uid) || string.IsNullOrEmpty(userName))
                     {
                         return TypedResults.Problem(new ProblemDetails
                         {
@@ -287,8 +287,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                             Status = StatusCodes.Status403Forbidden
                         });
                     }
+                    var result = await service.CreateServiceAd(uid, userName, subscriptionId, dto, cancellationToken);
 
-                    var result = await service.CreateServiceAd(uid, userName, dto, cancellationToken);
                     await auditLogger.LogAuditAsync(
                        module: ModuleName,
                        httpMethod: "POST",
@@ -330,7 +330,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
             .WithTags("Service")
             .WithSummary("Create a new service ad")
             .WithDescription("Creates a new service ad with the provided details. " +
-                                 "The ad must include a valid category and description.")
+                             "The ad must include a valid category and description.")
             .Produces<string>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
@@ -340,6 +340,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
             ServiceRequest dto,
             [FromQuery] string uid,
             [FromQuery] string userName,
+            [FromQuery] string subscriptionId,
             IServices service,
             HttpContext httpContext,
             CancellationToken cancellationToken) =>
@@ -348,7 +349,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                 {
                     dto.CreatedBy = uid;
                     dto.userName = userName;
-                    var result = await service.CreateServiceAd(uid, userName, dto, cancellationToken);
+                    var result = await service.CreateServiceAd(uid, userName, subscriptionId, dto, cancellationToken);
                     return TypedResults.Ok(result);
                 }
                 catch (InvalidDataException ex)
@@ -395,22 +396,17 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                 IServices service,
                 CancellationToken cancellationToken) =>
             {
+                string uid = "unknown";
+                string? userName = null;
+
                 try
                 {
-                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                    if (string.IsNullOrEmpty(userClaim))
-                    {
-                        return TypedResults.Problem(new ProblemDetails
-                        {
-                            Title = "Unauthorized Access",
-                            Detail = "User information is missing or invalid in the token.",
-                            Status = StatusCodes.Status403Forbidden
-                        });
-                    }
-                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                    var uid = userData.GetProperty("uid").GetString();
-                    var userName = userData.GetProperty("name").GetString();
-                    if (uid == null && userName == null)
+                    var (extractedUid, extractedUserName, subscriptionId, expiryDate) =
+                        await UserTokenHelper.ExtractUserAndSubscriptionDetailsAsync(httpContext, vertical: 4);
+                    uid = extractedUid;
+                    userName = extractedUserName;
+                    subscriptionId = subscriptionId;
+                    if (string.IsNullOrEmpty(uid) || string.IsNullOrEmpty(userName))
                     {
                         return TypedResults.Problem(new ProblemDetails
                         {
@@ -725,28 +721,21 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                 IServices service,
                 CancellationToken cancellationToken) =>
             {
-                string? uid = "unknown";
+                string uid = "unknown";
+                string? userName = null;
+
                 try
                 {
-                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                    if (string.IsNullOrEmpty(userClaim))
-                    {
-                        return TypedResults.Problem(new ProblemDetails
-                        {
-                            Title = "Unauthorized Access",
-                            Detail = "User information is missing or invalid in the token.",
-                            Status = StatusCodes.Status403Forbidden
-                        });
-                    }
-
-                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                    uid = userData.GetProperty("uid").GetString();
+                    var (extractedUid, extractedUserName, subscriptionId, expiryDate) =
+                        await UserTokenHelper.ExtractUserAndSubscriptionDetailsAsync(httpContext, vertical: 4);
+                    uid = extractedUid;
+                    subscriptionId = subscriptionId;
                     if (string.IsNullOrEmpty(uid))
                     {
                         return TypedResults.Problem(new ProblemDetails
                         {
                             Title = "Unauthorized Access",
-                            Detail = "User ID could not be extracted from token.",
+                            Detail = "User ID or username could not be extracted from token.",
                             Status = StatusCodes.Status403Forbidden
                         });
                     }
@@ -872,41 +861,27 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                 IServices service,
                 CancellationToken cancellationToken) =>
             {
+                string uid = "unknown";
+                string? userName = null;
+
                 try
                 {
-                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                    if (string.IsNullOrEmpty(userClaim))
+                    var (extractedUid, extractedUserName, subscriptionId, expiryDate) =
+                        await UserTokenHelper.ExtractUserAndSubscriptionDetailsAsync(httpContext, vertical: 4);
+
+                    uid = extractedUid;
+                    subscriptionId = subscriptionId;
+                    if (string.IsNullOrEmpty(uid))
                     {
                         return TypedResults.Problem(new ProblemDetails
                         {
                             Title = "Unauthorized Access",
-                            Detail = "User information is missing or invalid in the token.",
+                            Detail = "User ID or username could not be extracted from token.",
                             Status = StatusCodes.Status403Forbidden
-                        });
-                    }
-                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                    var uid = userData.GetProperty("uid").GetString();
-                    request.UpdatedBy = uid;
-                    if (uid == null)
-                    {
-                        return TypedResults.Problem(new ProblemDetails
-                        {
-                            Title = "Unauthorized Access",
-                            Detail = "User ID could not be extracted from token.",
-                            Status = StatusCodes.Status403Forbidden
-                        });
-                    }
-                    if (request == null || request.ServiceId <= 0)
-                    {
-                        return Results.BadRequest(new ProblemDetails
-                        {
-                            Title = "Invalid Request",
-                            Detail = "Invalid request data. ServiceId must be a positive number.",
-                            Status = StatusCodes.Status400BadRequest
                         });
                     }
 
-                    var resultMessage = await service.PromoteService(request, uid, cancellationToken);
+                    var resultMessage = await service.PromoteService(request, uid, subscriptionId, cancellationToken);
 
                     if (resultMessage == null)
                     {
@@ -915,6 +890,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                             statusCode: StatusCodes.Status404NotFound,
                             title: "Service Not Found");
                     }
+
                     await auditLogger.LogAuditAsync(
                         module: ModuleName,
                         httpMethod: "POST",
@@ -924,11 +900,12 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                         payload: request,
                         cancellationToken: cancellationToken
                     );
+
                     return Results.Ok(resultMessage);
                 }
                 catch (KeyNotFoundException ex)
                 {
-                    await auditLogger.LogExceptionAsync(ModuleName, "/api/service/promote", ex, request.UpdatedBy, cancellationToken);
+                    await auditLogger.LogExceptionAsync(ModuleName, "/api/service/promote", ex, uid, cancellationToken);
                     return Results.Problem(
                         detail: ex.Message,
                         statusCode: StatusCodes.Status404NotFound,
@@ -936,7 +913,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                 }
                 catch (InvalidDataException ex)
                 {
-                    await auditLogger.LogExceptionAsync(ModuleName, "/api/service/promote", ex, request.UpdatedBy, cancellationToken);
+                    await auditLogger.LogExceptionAsync(ModuleName, "/api/service/promote", ex, uid, cancellationToken);
                     return Results.Problem(
                         detail: ex.Message,
                         statusCode: StatusCodes.Status400BadRequest,
@@ -944,7 +921,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                 }
                 catch (Exception ex)
                 {
-                    await auditLogger.LogExceptionAsync(ModuleName, "/api/service/promote", ex, request.UpdatedBy, cancellationToken);
+                    await auditLogger.LogExceptionAsync(ModuleName, "/api/service/promote", ex, uid, cancellationToken);
                     return Results.Problem(
                         detail: ex.Message,
                         statusCode: StatusCodes.Status500InternalServerError,
@@ -963,6 +940,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
             group.MapPost("/promotebyuserid", async Task<IResult> (
                 PromoteServiceRequest request,
                 [FromQuery] string? uid,
+                [FromQuery] string? subscriptionId,
                 IServices service,
                 CancellationToken cancellationToken) =>
             {
@@ -978,7 +956,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                         });
                     }
 
-                    var resultMessage = await service.PromoteService(request, uid, cancellationToken);
+                    var resultMessage = await service.PromoteService(request, uid, subscriptionId, cancellationToken);
 
                     if (resultMessage == null)
                     {
@@ -1033,44 +1011,23 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                 CancellationToken cancellationToken) =>
             {
                 string uid = "unknown";
+                string? userName = null;
+
                 try
                 {
-                    if (request == null || request.ServiceId <= 0)
+                    var (extractedUid, extractedUserName, subscriptionId, expiryDate) =
+                        await UserTokenHelper.ExtractUserAndSubscriptionDetailsAsync(httpContext, vertical: 4);
+                    uid = extractedUid;
+                    subscriptionId = subscriptionId;
+                    if (string.IsNullOrEmpty(uid))
                     {
-                        return Results.BadRequest(new ProblemDetails
-                        {
-                            Title = "Invalid Request",
-                            Detail = "Invalid request data. ServiceId must be a positive number.",
-                            Status = StatusCodes.Status400BadRequest
-                        });
-                    }
-
-                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                    if (string.IsNullOrEmpty(userClaim))
-                    {
-                        return Results.Problem(new ProblemDetails
+                        return TypedResults.Problem(new ProblemDetails
                         {
                             Title = "Unauthorized Access",
-                            Detail = "User information is missing or invalid in the token.",
+                            Detail = "User ID or username could not be extracted from token.",
                             Status = StatusCodes.Status403Forbidden
                         });
                     }
-
-                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                    uid = userData.GetProperty("uid").GetString();
-                    var subscriptionId = new Guid("752ea67e-5fc3-4dae-ab96-4aa3822afc38");
-                    //if (!userData.TryGetProperty("subscription", out var subscriptionElement) ||
-                    //    !subscriptionElement.TryGetProperty("subscription_id", out var subscriptionIdElement) ||
-                    //    !Guid.TryParse(subscriptionIdElement.GetString(), out var subscriptionId))
-                    //{
-                    //    return Results.Problem(new ProblemDetails
-                    //    {
-                    //        Title = "Invalid Subscription",
-                    //        Detail = "Subscription ID is missing or invalid in the token.",
-                    //        Status = StatusCodes.Status403Forbidden
-                    //    });
-                    //}
-
                     var result = await service.FeatureService(request, uid, subscriptionId, cancellationToken);
 
                     await auditLogger.LogAuditAsync(
@@ -1106,7 +1063,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
             .WithTags("Service")
             .WithSummary("Feature a service ad")
             .WithDescription("Marks a service as featured and records subscription usage.")
-            .Produces<QLN.Common.Infrastructure.Model.Services>(StatusCodes.Status200OK)
+            .Produces<Services>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
@@ -1114,7 +1071,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
             group.MapPost("/featurebyuserid", async Task<IResult> (
                 FeatureServiceRequest request,
                 [FromQuery] string? uid,
-                Guid subscriptionId,
+                [FromQuery] string? subscriptionId,
                 IServices service,
                 CancellationToken cancellationToken) =>
             {
@@ -1160,7 +1117,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
             .WithTags("Service")
             .WithSummary("Feature a service ad (explicit user + subscription)")
             .WithDescription("Marks a service as featured when both user and subscription are explicitly provided.")
-            .Produces<QLN.Common.Infrastructure.Model.Services>(StatusCodes.Status200OK)
+            .Produces<Services>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
@@ -1176,40 +1133,25 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                 IServices service,
                 CancellationToken cancellationToken) =>
             {
+                string uid = "unknown";
+                string? userName = null;
+
                 try
                 {
-                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                    if (string.IsNullOrEmpty(userClaim))
+                    var (extractedUid, extractedUserName, subscriptionId, expiryDate) =
+                        await UserTokenHelper.ExtractUserAndSubscriptionDetailsAsync(httpContext, vertical: 4);
+                    uid = extractedUid;
+                    subscriptionId = subscriptionId;
+                    if (string.IsNullOrEmpty(uid))
                     {
                         return TypedResults.Problem(new ProblemDetails
                         {
                             Title = "Unauthorized Access",
-                            Detail = "User information is missing or invalid in the token.",
+                            Detail = "User ID or username could not be extracted from token.",
                             Status = StatusCodes.Status403Forbidden
                         });
                     }
-                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                    var uid = userData.GetProperty("uid").GetString();
-                    request.UpdatedBy = uid;
-                    if (uid == null)
-                    {
-                        return TypedResults.Problem(new ProblemDetails
-                        {
-                            Title = "Unauthorized Access",
-                            Detail = "User ID could not be extracted from token.",
-                            Status = StatusCodes.Status403Forbidden
-                        });
-                    }
-                    if (request == null || request.ServiceId <= 0)
-                    {
-                        return Results.BadRequest(new ProblemDetails
-                        {
-                            Title = "Invalid Request",
-                            Detail = "Invalid request data. ServiceId must be a positive number.",
-                            Status = StatusCodes.Status400BadRequest
-                        });
-                    }
-                    var resultMessage = await service.RefreshService(request, uid, cancellationToken);
+                    var resultMessage = await service.RefreshService(request, uid, subscriptionId, cancellationToken);
                     if (resultMessage == null)
                     {
                         return Results.Problem(
@@ -1230,7 +1172,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                 }
                 catch (KeyNotFoundException ex)
                 {
-                    await auditLogger.LogExceptionAsync(ModuleName, "/api/service/refresh", ex, request.UpdatedBy, cancellationToken);
+                    await auditLogger.LogExceptionAsync(ModuleName, "/api/service/refresh", ex, uid, cancellationToken);
                     return Results.Problem(
                         detail: ex.Message,
                         statusCode: StatusCodes.Status404NotFound,
@@ -1238,7 +1180,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                 }
                 catch (InvalidDataException ex)
                 {
-                    await auditLogger.LogExceptionAsync(ModuleName, "/api/service/refresh", ex, request.UpdatedBy, cancellationToken);
+                    await auditLogger.LogExceptionAsync(ModuleName, "/api/service/refresh", ex, uid, cancellationToken);
                     return Results.Problem(
                         detail: ex.Message,
                         statusCode: StatusCodes.Status400BadRequest,
@@ -1246,7 +1188,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                 }
                 catch (Exception ex)
                 {
-                    await auditLogger.LogExceptionAsync(ModuleName, "/api/service/refresh", ex, request.UpdatedBy, cancellationToken);
+                    await auditLogger.LogExceptionAsync(ModuleName, "/api/service/refresh", ex, uid, cancellationToken);
                     return Results.Problem(
                         detail: ex.Message,
                         statusCode: StatusCodes.Status500InternalServerError,
@@ -1265,6 +1207,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
             group.MapPost("/refreshbyuserid", async Task<IResult> (
                 RefreshServiceRequest request,
                 [FromQuery] string? uid,
+                [FromQuery] string? subscriptionId, 
                 IServices service,
                 CancellationToken cancellationToken) =>
             {
@@ -1279,7 +1222,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                             Status = StatusCodes.Status400BadRequest
                         });
                     }
-                    var resultMessage = await service.RefreshService(request, uid, cancellationToken);
+                    var resultMessage = await service.RefreshService(request, uid, subscriptionId, cancellationToken);
                     if (resultMessage == null)
                     {
                         return Results.Problem(
@@ -1331,31 +1274,26 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                 IServices service,
                 CancellationToken cancellationToken) =>
             {
+                string uid = "unknown";
+                string? userName = null;
+
                 try
                 {
-                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                    if (string.IsNullOrEmpty(userClaim))
+                    var (extractedUid, extractedUserName, subscriptionId, expiryDate) =
+                        await UserTokenHelper.ExtractUserAndSubscriptionDetailsAsync(httpContext, vertical: 4);
+                    uid = extractedUid;
+                    subscriptionId = subscriptionId;
+                    if (string.IsNullOrEmpty(uid))
                     {
                         return TypedResults.Problem(new ProblemDetails
                         {
                             Title = "Unauthorized Access",
-                            Detail = "User information is missing or invalid in the token.",
-                            Status = StatusCodes.Status403Forbidden
-                        });
-                    }
-                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                    var uid = userData.GetProperty("uid").GetString();
-                    if (uid == null)
-                    {
-                        return TypedResults.Problem(new ProblemDetails
-                        {
-                            Title = "Unauthorized Access",
-                            Detail = "User ID could not be extracted from token.",
+                            Detail = "User ID or username could not be extracted from token.",
                             Status = StatusCodes.Status403Forbidden
                         });
                     }
                     request.UpdatedBy = uid;
-                    var result = await service.PublishService(request, uid, cancellationToken);
+                    var result = await service.PublishService(request, uid, subscriptionId, cancellationToken);
                     if (result == null)
                     {
                         return Results.Problem(
@@ -1376,7 +1314,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                 }
                 catch (ConflictException ex)
                 {
-                    await auditLogger.LogExceptionAsync(ModuleName, "/api/service/publish", ex, request.UpdatedBy, cancellationToken);
+                    await auditLogger.LogExceptionAsync(ModuleName, "/api/service/publish", ex, uid, cancellationToken);
                     return Results.Problem(
                         detail: ex.Message,
                         statusCode: StatusCodes.Status409Conflict,
@@ -1384,7 +1322,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                 }
                 catch (KeyNotFoundException ex)
                 {
-                    await auditLogger.LogExceptionAsync(ModuleName, "/api/service/publish", ex, request.UpdatedBy, cancellationToken);
+                    await auditLogger.LogExceptionAsync(ModuleName, "/api/service/publish", ex, uid, cancellationToken);
                     return Results.Problem(
                         detail: ex.Message,
                         statusCode: StatusCodes.Status404NotFound,
@@ -1392,7 +1330,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                 }
                 catch (InvalidDataException ex)
                 {
-                    await auditLogger.LogExceptionAsync(ModuleName, "/api/service/publish", ex, request.UpdatedBy, cancellationToken);
+                    await auditLogger.LogExceptionAsync(ModuleName, "/api/service/publish", ex, uid, cancellationToken);
                     return Results.Problem(
                         detail: ex.Message,
                         statusCode: StatusCodes.Status400BadRequest,
@@ -1420,12 +1358,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
             group.MapPost("/publishbyuserid", async Task<IResult> (
                 PublishServiceRequest request,
                 [FromQuery] string? uid,
+                [FromQuery] string? subscriptionId,
                 IServices service,
                 CancellationToken cancellationToken) =>
             {
                 try
                 {
-                    var result = await service.PublishService(request, uid, cancellationToken);
+                    var result = await service.PublishService(request, uid, subscriptionId, cancellationToken);
                     if (result == null)
                     {
                         return Results.Problem(
@@ -1480,7 +1419,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
         public static RouteGroupBuilder MapBulkActionsEndpoint(this RouteGroupBuilder group)
         {
             group.MapPost("/moderatebulk", async Task<Results<
-                    Ok<List<Services>>,
+                    Ok<BulkAdActionResponseitems>,
                     BadRequest<ProblemDetails>,
                     ProblemHttpResult
                 >> (
@@ -1491,20 +1430,14 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                     CancellationToken ct
                 ) =>
             {
-                var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                if (string.IsNullOrEmpty(userClaim))
-                {
-                    return TypedResults.Problem(new ProblemDetails
-                    {
-                        Title = "Unauthorized Access",
-                        Detail = "User information is missing or invalid in the token.",
-                        Status = StatusCodes.Status403Forbidden
-                    });
-                }
-                var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                var uid = userData.GetProperty("uid").GetString();
-                var userName = userData.GetProperty("name").GetString();
-                if (uid == null && userName == null)
+                string? uid = "unknown";
+                string? userName = null;
+                var (extractedUid, extractedUserName, subscriptionId, expiryDate) =
+                        await UserTokenHelper.ExtractUserAndSubscriptionDetailsAsync(httpContext, vertical: 4);
+                uid = extractedUid;
+                subscriptionId = subscriptionId;
+                expiryDate = expiryDate;
+                if (string.IsNullOrEmpty(uid))
                 {
                     return TypedResults.Problem(new ProblemDetails
                     {
@@ -1513,15 +1446,10 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                         Status = StatusCodes.Status403Forbidden
                     });
                 }
-                if (!req.AdIds.Any())
-                    return TypedResults.BadRequest(new ProblemDetails { Title = "No ads selected." });
-
-                if (req.Action == BulkModerationAction.Remove && string.IsNullOrWhiteSpace(req.Reason))
-                    return TypedResults.BadRequest(new ProblemDetails { Title = "Reason required for removal." });
                 req.UpdatedBy = uid;
                 try
                 {
-                    var result = await service.ModerateBulkService(req, ct);
+                    var result = await service.ModerateBulkService(req, uid, subscriptionId, expiryDate, ct);
                     await auditLogger.LogAuditAsync(
                         module: ModuleName,
                         httpMethod: "POST",
@@ -1572,11 +1500,14 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             group.MapPost("/moderatebulkbyuserid", async Task<Results<
-               Ok<List<Services>>,
+               Ok<BulkAdActionResponseitems>,
                BadRequest<ProblemDetails>,
                ProblemHttpResult
            >> (
                BulkModerationRequest req,
+               string userId,
+               string subscriptionId,
+               DateTime? expiryDate,
                HttpContext httpContext,
                IServices service,
                CancellationToken ct
@@ -1593,7 +1524,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                             Status = StatusCodes.Status400BadRequest
                         });
                     }
-                    var result = await service.ModerateBulkService(req, ct);
+                    var result = await service.ModerateBulkService(req, userId, subscriptionId, expiryDate, ct);
                     return TypedResults.Ok(result);
                 }
                 catch (InvalidDataException ex)
@@ -1688,240 +1619,65 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
 
             return group;
         }
-        public static RouteGroupBuilder MapServiceCountEndpoints(this RouteGroupBuilder group)
-        {
-            group.MapGet("/getcounts", async Task<Results<Ok<SubscriptionBudgetDto>, ProblemHttpResult>> (
-                HttpContext httpContext,
-                [FromServices] IServices service,
-                CancellationToken cancellationToken
-            ) =>
-            {
-                try
-                {
-                    // Get "subscriptions" claim directly from token
-                    var subscriptionsClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "subscriptions")?.Value;
-                    if (string.IsNullOrEmpty(subscriptionsClaim))
-                    {
-                        return TypedResults.Problem(new ProblemDetails
-                        {
-                            Title = "Unauthorized Access",
-                            Detail = "Subscriptions information is missing or invalid in the token.",
-                            Status = StatusCodes.Status403Forbidden
-                        });
-                    }
-
-                    // Deserialize array of subscriptions
-                    var subscriptions = JsonSerializer.Deserialize<JsonElement>(subscriptionsClaim);
-                    if (subscriptions.ValueKind != JsonValueKind.Array || subscriptions.GetArrayLength() == 0)
-                    {
-                        return TypedResults.Problem(new ProblemDetails
-                        {
-                            Title = "Invalid Token",
-                            Detail = "No valid subscription found in token.",
-                            Status = StatusCodes.Status403Forbidden
-                        });
-                    }
-
-                    // Take first subscription (or select specific one as needed)
-                    var subscription = subscriptions[0];
-
-                    if (!subscription.TryGetProperty("Id", out var subscriptionIdElement))
-                    {
-                        return TypedResults.Problem(new ProblemDetails
-                        {
-                            Title = "Invalid Subscription",
-                            Detail = "Subscription Id is missing in token.",
-                            Status = StatusCodes.Status400BadRequest
-                        });
-                    }
-
-                    var subscriptionIdString = subscriptionIdElement.GetString();
-                    if (!Guid.TryParse(subscriptionIdString, out var subscriptionId))
-                    {
-                        return TypedResults.Problem(new ProblemDetails
-                        {
-                            Title = "Invalid Subscription ID",
-                            Detail = "Subscription ID in token is not a valid GUID.",
-                            Status = StatusCodes.Status400BadRequest
-                        });
-                    }
-
-                    // Call your service using subscriptionId
-                    var counts = await service.GetSubscriptionBudgetsAsync(subscriptionId, cancellationToken);
-                    return TypedResults.Ok(counts);
-                }
-                catch (Exception ex)
-                {
-                    return TypedResults.Problem("Internal Server Error", ex.Message);
-                }
-            })
-            .WithName("GetServiceStatusCountsbysubscription")
-            .WithTags("Service")
-            .WithSummary("Get subscription budget details")
-            .WithDescription("Returns budget details for the logged-in subscription ID.")
-            .Produces<SubscriptionBudgetDto>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
-            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-
-            group.MapPost("/getbudgets", async Task<Results<Ok<SubscriptionBudgetDto>, ProblemHttpResult>> (
-                 [FromBody] SubscriptionIdRequest dto,
-                 [FromServices] IServices service,
-                 CancellationToken cancellationToken
-             ) =>
-            {
-                try
-                {
-                    var counts = await service.GetSubscriptionBudgetsAsync(dto.SubscriptionId, cancellationToken);
-                    return TypedResults.Ok(counts);
-                }
-                catch (Exception ex)
-                {
-                    return TypedResults.Problem("Internal Server Error", ex.Message);
-                }
-            })
-            .ExcludeFromDescription()
-            .WithName("GetServiceStatusCounts")
-            .WithTags("Service");
-
-            return group;
-        }
-
-
-        //public static RouteGroupBuilder MapServiceCountEndpoints(this RouteGroupBuilder group)
-        //{
-        //    group.MapGet("/getcounts", async Task<Results<Ok<SubscriptionBudgetDto>, ProblemHttpResult>> (
-        //        [FromServices] IServices service,
-        //        CancellationToken cancellationToken
-        //    ) =>
-        //    {
-        //        try
-        //        {
-        //            // Hardcoded subscriptionId for testing
-        //            var subscriptionId = new Guid("48887e22-782a-4825-a0b6-bd27259ef554");
-
-        //            var counts = await service.GetSubscriptionBudgetsAsync(subscriptionId, cancellationToken);
-        //            return TypedResults.Ok(counts);
-        //        }
-        //        catch (Exception ex)
-        //        {
-        //            return TypedResults.Problem("Internal Server Error", ex.Message);
-        //        }
-        //    })
-        //    .WithName("GetServiceStatusCountsbysubscription")
-        //    .WithTags("Service")
-        //    .WithSummary("Get subscription budget details")
-        //    .WithDescription("Returns budget details for the hardcoded subscription ID (testing).")
-        //    .Produces<SubscriptionBudgetDto>(StatusCodes.Status200OK)
-        //    .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-
-        //    group.MapPost("/getbudgets", async Task<Results<Ok<SubscriptionBudgetDto>, ProblemHttpResult>> (
-        //        [FromBody] SubscriptionIdRequest dto,
-        //        [FromServices] IServices service,
-        //        CancellationToken cancellationToken
-        //    ) =>
-        //    {
-        //        try
-        //        {
-        //            var counts = await service.GetSubscriptionBudgetsAsync(dto.SubscriptionId, cancellationToken);
-        //            return TypedResults.Ok(counts);
-        //        }
-        //        catch (Exception ex)
-        //        {
-        //            return TypedResults.Problem("Internal Server Error", ex.Message);
-        //        }
-        //    })
-        //    .ExcludeFromDescription()
-        //    .WithName("GetServiceStatusCounts")
-        //    .WithTags("Service");
-
-        //    return group;
-        //}
-
         public static RouteGroupBuilder MapServiceCountbySubverticalEndpoints(this RouteGroupBuilder group)
         {
             group.MapGet("/getcountsbyvertical", async Task<Results<Ok<SubscriptionBudgetDto>, ProblemHttpResult>> (
                 HttpContext httpContext,
                 [FromServices] IServices service,
-                [FromQuery] int verticalId,
-                [FromQuery] int? subverticalId,    // <-- now nullable
+                Vertical verticalId,
+                SubVertical? subverticalId,
                 CancellationToken cancellationToken)
             =>
             {
                 try
                 {
-                    // Get "subscriptions" claim directly from token
-                    var subscriptionsClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "subscriptions")?.Value;
-                    if (string.IsNullOrEmpty(subscriptionsClaim))
+                    var (uid, username, subscriptionId, expiryDate) =
+                        await UserTokenHelper.ExtractUserAndSubscriptionDetailsAsync(
+                            httpContext,
+                            (int)verticalId,
+                            subverticalId.HasValue ? (int?)subverticalId.Value : null
+                        );
+
+                    if (string.IsNullOrEmpty(subscriptionId))
                     {
                         return TypedResults.Problem(new ProblemDetails
                         {
                             Title = "Unauthorized Access",
-                            Detail = "Subscriptions information is missing or invalid in the token.",
+                            Detail = "No valid subscription found for given vertical/subvertical.",
                             Status = StatusCodes.Status403Forbidden
                         });
                     }
 
-                    // Deserialize subscriptions (can be object or array)
-                    var subscriptionElement = JsonSerializer.Deserialize<JsonElement>(subscriptionsClaim);
-                    JsonElement subscription;
-
-                    if (subscriptionElement.ValueKind == JsonValueKind.Array)
-                    {
-                        if (subscriptionElement.GetArrayLength() == 0)
-                        {
-                            return TypedResults.Problem(new ProblemDetails
-                            {
-                                Title = "Invalid Token",
-                                Detail = "No valid subscription found in token.",
-                                Status = StatusCodes.Status403Forbidden
-                            });
-                        }
-                        subscription = subscriptionElement[0];
-                    }
-                    else if (subscriptionElement.ValueKind == JsonValueKind.Object)
-                    {
-                        subscription = subscriptionElement;
-                    }
-                    else
-                    {
-                        return TypedResults.Problem(new ProblemDetails
-                        {
-                            Title = "Invalid Token",
-                            Detail = "Invalid subscriptions format in token.",
-                            Status = StatusCodes.Status403Forbidden
-                        });
-                    }
-
-                    // Extract Id property
-                    if (!subscription.TryGetProperty("Id", out var subscriptionIdElement))
-                    {
-                        return TypedResults.Problem(new ProblemDetails
-                        {
-                            Title = "Unauthorized Access",
-                            Detail = "Subscription Id is missing in token.",
-                            Status = StatusCodes.Status403Forbidden
-                        });
-                    }
-
-                    if (!Guid.TryParse(subscriptionIdElement.GetString(), out var subscriptionId))
+                    if (!Guid.TryParse(subscriptionId, out var subscriptionGuid))
                     {
                         return TypedResults.Problem(new ProblemDetails
                         {
                             Title = "Invalid Subscription ID",
-                            Detail = "Subscription ID in token is not a valid GUID.",
+                            Detail = $"Subscription ID {subscriptionId} is not a valid GUID.",
                             Status = StatusCodes.Status400BadRequest
                         });
                     }
 
-                    // Pass subscriptionId, verticalId, and subverticalId to your service
-                    var counts = await service.GetSubscriptionBudgetsAsyncBySubVertical(subscriptionId, verticalId, subverticalId, cancellationToken);
+                    var counts = await service.GetSubscriptionBudgetsAsyncBySubVertical(
+                        subscriptionGuid,
+                        verticalId,
+                        subverticalId,
+                        cancellationToken
+                    );
+
                     return TypedResults.Ok(counts);
                 }
                 catch (Exception ex)
                 {
-                    return TypedResults.Problem("Internal Server Error", ex.Message);
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Internal Server Error",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status500InternalServerError
+                    });
                 }
             })
+            .AllowAnonymous()
             .WithName("GetServiceStatusCountsbySubvertical")
             .WithTags("Service")
             .WithSummary("Get subscription budget details with vertical/subvertical filter")
@@ -1930,7 +1686,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
             .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-            // Post endpoint for internal service calls
             group.MapPost("/getbudgetsbysubvertical", async Task<Results<Ok<SubscriptionBudgetDto>, ProblemHttpResult>> (
                 [FromBody] SubscriptionRequest dto,
                 [FromServices] IServices service,
@@ -1953,12 +1708,23 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
 
             return group;
         }
-
-
-
-
-
-
-
+        public static RouteGroupBuilder MapGetCategoryCount(this RouteGroupBuilder group)
+        {
+            group.MapGet("/getcategoryadcount", async (
+                IServices service,
+                CancellationToken ct) =>
+            {
+                var counts = await service.GetCategoryAdCount(ct);
+                return Results.Ok(counts);
+            })
+            .AllowAnonymous()
+            .WithName("GetCategoryAdCountsInternal")
+            .WithTags("Service")
+            .WithSummary("Get Category Ad Counts")
+            .WithDescription("Get the count of service ads by category")
+            .Produces<Dictionary<string, int>>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+            return group;
+        }
     }
 }

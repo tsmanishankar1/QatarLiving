@@ -1,5 +1,6 @@
 ﻿using System.Text;
 using System.Text.RegularExpressions;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace QLN.Common.Infrastructure.Utilities
 {
@@ -30,6 +31,8 @@ namespace QLN.Common.Infrastructure.Utilities
                     "image/heic" => "heic",
                     "application/pdf" => "pdf",
                     "application/xml" => "xml",
+                    "application/csv"=>"csv",
+                    "application/vnd.ms-excel"=>"csv",
                     "text/xml" => "xml",
                     _ => throw new ArgumentException($"Unsupported MIME type: {mime}")
                 };
@@ -78,6 +81,13 @@ namespace QLN.Common.Infrastructure.Utilities
             var headerString = Encoding.ASCII.GetString(bytes.Take(5).ToArray());
             if (headerString == "<?xml")
                 return "xml";
+
+            Encoding baseEncoding=EncodingHelper.DetectEncoding(bytes);
+            var text = baseEncoding.GetString(bytes);
+            if (text.Contains(",") && text.Contains("\n") )
+            {
+                return "csv";
+            }
             return "bin";
         }
     }

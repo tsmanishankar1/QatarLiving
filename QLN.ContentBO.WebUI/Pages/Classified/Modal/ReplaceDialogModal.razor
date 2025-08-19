@@ -15,13 +15,13 @@
                          @bind-SearchText="_searchText"
                          Adornment="Adornment.None"
                          SearchFunc="SearchEventTitles"
-                         ToStringFunc="@(e => e?.CategoryName ?? string.Empty)"
+                         ToStringFunc="@(e => e?.Title ?? string.Empty)"
                          ResetValueOnEmptyText="true"
                          CoerceText="true"
                          Clearable="true"
                          OnSearchTextChanged="ValidateTypedText">
             <ItemTemplate Context="eventItem">
-                <MudText>@eventItem.CategoryName</MudText>
+                <MudText>@eventItem.Title</MudText>
             </ItemTemplate>
         </MudAutocomplete>
         @if (!string.IsNullOrEmpty(_autocompleteError))

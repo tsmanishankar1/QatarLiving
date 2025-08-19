@@ -37,9 +37,10 @@
         <MudSelectItem T="long" Value="@l2.Id">@l2.CategoryName</MudSelectItem>
     }
 </MudSelect>
+       
         <h3 class="form-heading">Price</h3>
-        <MudCheckBox T="bool" @bind-Checked="selectedService.IsPriceOnRequest" Label="This Price on request services" />
-
+        <MudCheckBox T="bool" @bind-Value="@_priceOnRequest" Label="This Price on request services" />
+        
         <div class="services-custom-alert" style="margin-bottom: 20px;">
             <div class="services-icon-box">
                 <img src="qln-images/services_bulb_icon.svg" alt="Bulb Icon"/>
@@ -113,7 +114,7 @@
                             StartIcon="@Icons.Material.Outlined.Visibility"
                             OnClick="@(() => PreviewFile(selectedService.LicenseCertificate))"
                             Class="catification-upload-button">
-                        View
+                        Download
                     </MudButton>
                         
                     }

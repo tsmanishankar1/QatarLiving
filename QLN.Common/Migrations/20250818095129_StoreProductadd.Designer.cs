@@ -14,8 +14,8 @@ using QLN.Common.Infrastructure.QLDbContext;
 namespace QLN.Common.Migrations.ClassifiedDev
 {
     [DbContext(typeof(QLClassifiedContext))]
-    [Migration("20250815090341_DealsLocationField1-v2")]
-    partial class DealsLocationField1v2
+    [Migration("20250818095129_StoreProductadd")]
+    partial class StoreProductadd
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -67,6 +67,44 @@ namespace QLN.Common.Migrations.ClassifiedDev
                     b.ToTable("ProductImage");
                 });
 
+            modelBuilder.Entity("QLN.Common.DTO_s.ClassifiedsBo.StoreCompanyDto", b =>
+                {
+                    b.Property<string>("BranchLocations")
+                        .HasColumnType("text");
+
+                    b.Property<string>("CompanyLogo")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("CompanyName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("CoverImage1")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("PhoneNumber")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Slug")
+                        .HasColumnType("text");
+
+                    b.Property<string>("WebsiteUrl")
+                        .HasColumnType("text");
+
+                    b.ToTable("StoreCompanyDto");
+
+                    b.ToSqlQuery("\r\n        SELECT \r\n            \"Id\",\r\n            \"CompanyName\",\r\n            \"CompanyLogo\",\r\n            \"CoverImage1\",\r\n            \"PhoneNumber\",\r\n            \"Email\",\r\n            \"WebsiteUrl\",\r\n            \"BranchLocations\",\r\n            \"Slug\"\r\n        FROM public.\"Companies\"\r\n    ");
+                });
+
             modelBuilder.Entity("QLN.Common.DTO_s.ClassifiedsBo.StoreFlyers", b =>
                 {
                     b.Property<Guid>("StoreFlyersId")
@@ -76,7 +114,10 @@ namespace QLN.Common.Migrations.ClassifiedDev
                     b.Property<Guid?>("CompanyId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("FlyerId")
+                    b.Property<string>("FileName")
+                        .HasColumnType("text");
+
+                    b.Property<Guid?>("FlyerId")
                         .HasColumnType("uuid");
 
                     b.Property<Guid?>("SubscriptionId")
@@ -93,6 +134,9 @@ namespace QLN.Common.Migrations.ClassifiedDev
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<string>("Category")
+                        .HasColumnType("text");
+
                     b.Property<string>("Currency")
                         .IsRequired()
                         .HasColumnType("text");
@@ -103,8 +147,11 @@ namespace QLN.Common.Migrations.ClassifiedDev
                     b.Property<string>("PageCoordinates")
                         .HasColumnType("text");
 
-                    b.Property<int>("PageNumber")
+                    b.Property<int?>("PageNumber")
                         .HasColumnType("integer");
+
+                    b.Property<string>("ProductBarcode")
+                        .HasColumnType("text");
 
                     b.Property<string>("ProductDescription")
                         .IsRequired()
@@ -123,6 +170,12 @@ namespace QLN.Common.Migrations.ClassifiedDev
 
                     b.Property<string>("ProductSummary")
                         .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int?>("Qty")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Slug")
                         .HasColumnType("text");
 
                     b.HasKey("StoreProductId");
@@ -147,6 +200,22 @@ namespace QLN.Common.Migrations.ClassifiedDev
                     b.HasKey("StoreStatusId");
 
                     b.ToTable("StoreStatuses");
+                });
+
+            modelBuilder.Entity("QLN.Common.DTO_s.ClassifiedsBo.StoreSubscriptionQuotaDto", b =>
+                {
+                    b.Property<string>("QuotaJson")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("Quota");
+
+                    b.Property<Guid>("SubscriptionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("SubscriptionId");
+
+                    b.ToTable("StoreSubscriptionQuotaDtos");
+
+                    b.ToSqlQuery("\r\n        SELECT \r\n            \"SubscriptionId\", \r\n            \"Quota\"\r\n        FROM public.\"Subscriptions\"\r\n        WHERE \"Vertical\" = 3 AND \"SubVertical\" = 3\r\n    ");
                 });
 
             modelBuilder.Entity("QLN.Common.DTO_s.ClassifiedsBo.StoresSubscriptionDto", b =>
@@ -273,7 +342,7 @@ namespace QLN.Common.Migrations.ClassifiedDev
 
             modelBuilder.Entity("QLN.Common.DTO_s.ClassifiedsFo.StoresDashboardHeader", b =>
                 {
-                    b.Property<Guid>("CompanyId")
+                    b.Property<Guid?>("CompanyId")
                         .HasColumnType("uuid")
                         .HasColumnName("CompanyId");
 
@@ -284,6 +353,9 @@ namespace QLN.Common.Migrations.ClassifiedDev
                     b.Property<string>("CompanyName")
                         .HasColumnType("text")
                         .HasColumnName("CompanyName");
+
+                    b.Property<int>("CompanyVerificationStatus")
+                        .HasColumnType("integer");
 
                     b.Property<DateTime>("EndDate")
                         .HasColumnType("timestamp with time zone")
@@ -297,7 +369,7 @@ namespace QLN.Common.Migrations.ClassifiedDev
                         .HasColumnType("integer")
                         .HasColumnName("Status");
 
-                    b.Property<Guid>("SubscriptionId")
+                    b.Property<Guid?>("SubscriptionId")
                         .HasColumnType("uuid")
                         .HasColumnName("SubscriptionId");
 
@@ -321,12 +393,12 @@ namespace QLN.Common.Migrations.ClassifiedDev
 
                     b.ToTable("StoresDashboardHeaderItems");
 
-                    b.ToSqlQuery("\r\n            SELECT subs.\"CompanyId\",\r\n                subs.\"SubscriptionId\",\r\n                subs.\"ProductName\",\r\n                subs.\"UserId\",\r\n                comp.\"UserName\",\r\n                comp.\"Status\",\r\n                comp.\"CompanyName\",\r\n                comp.\"CompanyLogo\",\r\n                subs.\"StartDate\",\r\n                subs.\"EndDate\",\r\n                '' as \"XMLFeed\",\r\n            '' as \"UploadFeed\"\r\n            FROM public.\"Subscriptions\" AS subs\r\n            INNER JOIN public.\"Companies\" AS comp\r\n                ON subs.\"CompanyId\" = comp.\"Id\"\r\n            WHERE subs.\"Status\" = 1 \r\n              AND subs.\"Vertical\" = 3\r\n              AND subs.\"SubVertical\" = 3\r\n        ");
+                    b.ToSqlQuery("\r\n            SELECT subs.\"CompanyId\",\r\n                subs.\"SubscriptionId\",\r\n                subs.\"ProductName\",\r\n                subs.\"UserId\",\r\n                comp.\"UserName\",\r\n                comp.\"Status\",\r\n                comp.\"CompanyVerificationStatus\",\r\n                comp.\"CompanyName\",\r\n                comp.\"CompanyLogo\",\r\n                subs.\"StartDate\",\r\n                subs.\"EndDate\",\r\n                '' as \"XMLFeed\",\r\n            '' as \"UploadFeed\"\r\n            FROM public.\"Subscriptions\" AS subs\r\n            INNER JOIN public.\"Companies\" AS comp\r\n                ON subs.\"CompanyId\" = comp.\"Id\"\r\n            WHERE\r\n              subs.\"Vertical\" = 3\r\n              AND subs.\"SubVertical\" = 3\r\n        ");
                 });
 
             modelBuilder.Entity("QLN.Common.DTO_s.ClassifiedsFo.StoresDashboardSummary", b =>
                 {
-                    b.Property<Guid>("CompanyId")
+                    b.Property<Guid?>("CompanyId")
                         .HasColumnType("uuid")
                         .HasColumnName("CompanyId");
 
@@ -338,7 +410,7 @@ namespace QLN.Common.Migrations.ClassifiedDev
                         .HasColumnType("integer")
                         .HasColumnName("ProductCount");
 
-                    b.Property<Guid>("SubscriptionId")
+                    b.Property<Guid?>("SubscriptionId")
                         .HasColumnType("uuid")
                         .HasColumnName("SubscriptionId");
 
@@ -348,7 +420,7 @@ namespace QLN.Common.Migrations.ClassifiedDev
 
                     b.ToTable("StoresDashboardSummaryItems");
 
-                    b.ToSqlQuery("\r\n        SELECT \r\n            subs.\"SubscriptionId\",\r\n            subs.\"CompanyId\",\r\n            subs.\"ProductName\",\r\n            comp.\"CompanyName\",\r\n            COUNT(prod.\"StoreProductId\") as \"ProductCount\"\r\n        FROM public.\"Subscriptions\" AS subs\r\n        LEFT JOIN public.\"Companies\" AS comp\r\n            ON subs.\"CompanyId\" = comp.\"Id\"\r\n        LEFT JOIN public.\"StoreFlyer\" AS fly\r\n            ON subs.\"SubscriptionId\" = fly.\"SubscriptionId\"\r\n            AND subs.\"CompanyId\" = fly.\"CompanyId\"\r\n        LEFT JOIN public.\"StoreProduct\" AS prod\r\n            ON fly.\"StoreFlyersId\" = prod.\"FlyerId\"\r\n        WHERE subs.\"Status\" = 1 \r\n          AND subs.\"Vertical\" = 3\r\n          AND subs.\"SubVertical\" = 3\r\n        GROUP BY subs.\"SubscriptionId\",\r\n                 subs.\"CompanyId\",\r\n                 subs.\"ProductName\",\r\n                 comp.\"CompanyName\"\r\n    ");
+                    b.ToSqlQuery("\r\n        SELECT \r\n            subs.\"SubscriptionId\",\r\n            subs.\"CompanyId\",\r\n            subs.\"ProductName\",\r\n            comp.\"CompanyName\",\r\n            COUNT(prod.\"StoreProductId\") as \"ProductCount\"\r\n        FROM public.\"Subscriptions\" AS subs\r\n        LEFT JOIN public.\"Companies\" AS comp\r\n            ON subs.\"CompanyId\" = comp.\"Id\"\r\n        LEFT JOIN public.\"StoreFlyer\" AS fly\r\n            ON subs.\"SubscriptionId\" = fly.\"SubscriptionId\"\r\n            AND subs.\"CompanyId\" = fly.\"CompanyId\"\r\n        LEFT JOIN public.\"StoreProduct\" AS prod\r\n            ON fly.\"StoreFlyersId\" = prod.\"FlyerId\"\r\n        WHERE subs.\"Vertical\" = 3\r\n          AND subs.\"SubVertical\" = 3\r\n        GROUP BY subs.\"SubscriptionId\",\r\n                 subs.\"CompanyId\",\r\n                 subs.\"ProductName\",\r\n                 comp.\"CompanyName\"\r\n    ");
                 });
 
             modelBuilder.Entity("QLN.Common.Infrastructure.Model.Category", b =>
@@ -461,7 +533,7 @@ namespace QLN.Common.Migrations.ClassifiedDev
                     b.Property<DateTime?>("FeaturedExpiryDate")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<bool>("HasAuthenticityCertificate")
+                    b.Property<bool?>("HasAuthenticityCertificate")
                         .HasColumnType("boolean");
 
                     b.Property<bool>("HasWarranty")
@@ -607,8 +679,8 @@ namespace QLN.Common.Migrations.ClassifiedDev
                         .HasColumnType("character varying(100)");
 
                     b.Property<string>("CompanyLogo")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
 
                     b.Property<string>("ContactNumber")
                         .IsRequired()
@@ -763,6 +835,10 @@ namespace QLN.Common.Migrations.ClassifiedDev
                     b.Property<int>("SlotOrder")
                         .HasColumnType("integer");
 
+                    b.Property<string>("Slug")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
                     b.Property<DateOnly>("StartDate")
                         .HasColumnType("date");
 
@@ -813,6 +889,10 @@ namespace QLN.Common.Migrations.ClassifiedDev
 
                     b.Property<int>("SlotOrder")
                         .HasColumnType("integer");
+
+                    b.Property<string>("Slug")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
 
                     b.Property<DateOnly>("StartDate")
                         .HasColumnType("date");
@@ -1049,6 +1129,9 @@ namespace QLN.Common.Migrations.ClassifiedDev
 
                     b.Property<Dictionary<string, string>>("Attributes")
                         .HasColumnType("jsonb");
+
+                    b.Property<string>("AuthenticityCertificateName")
+                        .HasColumnType("text");
 
                     b.Property<string>("AuthenticityCertificateUrl")
                         .HasColumnType("text");
@@ -1319,6 +1402,10 @@ namespace QLN.Common.Migrations.ClassifiedDev
 
                     b.Property<int>("SlotOrder")
                         .HasColumnType("integer");
+
+                    b.Property<string>("Slug")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
 
                     b.Property<DateOnly>("StartDate")
                         .HasColumnType("date");

@@ -349,7 +349,7 @@ namespace QLN.Classified.MS.Service
 
             try
             {
-                subscriptionId = Guid.Parse("5a024f96-7414-4473-80b8-f5d70297e262");
+               // subscriptionId = Guid.Parse("5a024f96-7414-4473-80b8-f5d70297e262");
                 //var subcription = await _subscriptionContext.Subscriptions.AsNoTracking().FirstOrDefaultAsync(s => s.SubscriptionId == subscriptionid,cancellationToken);
                 string? adTitle;
 
@@ -464,33 +464,62 @@ namespace QLN.Classified.MS.Service
 
         public async Task<AdCreatedResponseDto> CreateClassifiedPrelovedAd(Preloveds dto, CancellationToken cancellationToken = default)
         {
-            if (dto == null) throw new ArgumentNullException(nameof(dto));
-            if (string.IsNullOrWhiteSpace(dto.UserId)) throw new ArgumentException("UserId is required.");
-            if (string.IsNullOrWhiteSpace(dto.Title)) throw new ArgumentException("Title is required.");
+            _logger.LogInformation("Starting ad creation for Preloved item with UserId: {UserId}, Title: {Title}", dto.UserId, dto.Title);
+
+            if (dto == null)
+            {
+                _logger.LogError("ArgumentNullException: DTO is null.");
+                throw new ArgumentNullException(nameof(dto));
+            }
+
+            if (string.IsNullOrWhiteSpace(dto.UserId))
+            {
+                _logger.LogError("ArgumentException: UserId is required.");
+                throw new ArgumentException("UserId is required.");
+            }
+
+            if (string.IsNullOrWhiteSpace(dto.Title))
+            {
+                _logger.LogError("ArgumentException: Title is required.");
+                throw new ArgumentException("Title is required.");
+            }
+
             if (dto.Images == null || dto.Images.Count == 0)
-                throw new ArgumentException("Image URLs must be provided.");                
+            {
+                _logger.LogError("ArgumentException: Image URLs must be provided.");
+                throw new ArgumentException("Image URLs must be provided.");
+            }
 
             try
             {
+                _logger.LogInformation("Checking authenticity certificate validity.");
                 if (dto.HasAuthenticityCertificate == true)
                 {
                     if (string.IsNullOrWhiteSpace(dto.AuthenticityCertificateUrl))
-                        throw new ArgumentException("AuthenticityCertificateUrl is required when HasAuthenticityCertificate is true.");                    
+                    {
+                        _logger.LogError("ArgumentException: AuthenticityCertificateUrl is required when HasAuthenticityCertificate is true.");
+                        throw new ArgumentException("AuthenticityCertificateUrl is required when HasAuthenticityCertificate is true.");
+                    }
                 }
                 else
                 {
                     dto.HasAuthenticityCertificate = false;
                     dto.AuthenticityCertificateUrl = null;
                     dto.AuthenticityCertificateName = null;
+                    _logger.LogInformation("No authenticity certificate provided. Fields set to null.");
                 }
 
                 dto.Status = AdStatus.Draft;
                 dto.CreatedAt = DateTime.UtcNow;
 
+                _logger.LogInformation("Adding Preloved ad to the database.");
                 _context.Preloved.Add(dto);
                 await _context.SaveChangesAsync(cancellationToken);
+                _logger.LogInformation("Preloved ad saved to database with Id: {AdId}", dto.Id);
 
+                _logger.LogInformation("Indexing Preloved ad to Azure Search.");
                 await IndexPrelovedToAzureSearch(dto, cancellationToken);
+                _logger.LogInformation("Preloved ad indexed successfully.");
 
                 return new AdCreatedResponseDto
                 {
@@ -507,7 +536,7 @@ namespace QLN.Classified.MS.Service
             }
             catch (ArgumentException ex)
             {
-                _logger.LogWarning(ex, "Validation failed in CreateClassifiedPrelovedAd");
+                _logger.LogWarning(ex, "Validation failed in CreateClassifiedPrelovedAd.");
                 throw;
             }
             catch (InvalidOperationException ex)
@@ -521,6 +550,7 @@ namespace QLN.Classified.MS.Service
                 throw new InvalidOperationException("An unexpected error occurred while creating the Preloved ad. Please try again later.", ex);
             }
         }
+
 
         public async Task<AdCreatedResponseDto> CreateClassifiedCollectiblesAd(Collectibles dto, CancellationToken cancellationToken = default)
         {
@@ -1454,6 +1484,8 @@ namespace QLN.Classified.MS.Service
                 existingAd.CreatedAt = existingAd.CreatedAt;
                 existingAd.CreatedBy = existingAd.CreatedBy;               
                 existingAd.UpdatedAt = DateTime.UtcNow;
+                existingAd.SubscriptionId = existingAd.SubscriptionId;
+                existingAd.ExpiryDate = existingAd.ExpiryDate;
 
                 _context.Item.Update(existingAd);
                 await _context.SaveChangesAsync(cancellationToken);
@@ -1507,6 +1539,7 @@ namespace QLN.Classified.MS.Service
 
                 existingAd.HasAuthenticityCertificate = dto.HasAuthenticityCertificate;
                 existingAd.AuthenticityCertificateUrl = dto.AuthenticityCertificateUrl;
+                existingAd.ExpiryDate = existingAd.ExpiryDate;
                 existingAd.Inclusion = dto.Inclusion;
                 existingAd.IsFeatured = existingAd.IsFeatured;
                 existingAd.FeaturedExpiryDate = existingAd.FeaturedExpiryDate;
@@ -1532,6 +1565,8 @@ namespace QLN.Classified.MS.Service
                 existingAd.Images = dto.Images;
                 existingAd.Attributes = dto.Attributes;
                 existingAd.UpdatedAt = DateTime.UtcNow;
+                existingAd.SubscriptionId = existingAd.SubscriptionId;
+                existingAd.ExpiryDate = existingAd.ExpiryDate;
 
                 _context.Preloved.Update(existingAd);
                 await _context.SaveChangesAsync(cancellationToken);
@@ -1602,9 +1637,12 @@ namespace QLN.Classified.MS.Service
                 existingAd.Images = dto.Images;
                 existingAd.Attributes = dto.Attributes;
                 existingAd.Slug = existingAd.Slug;
+                existingAd.SubscriptionId = existingAd.SubscriptionId;
                 existingAd.IsActive = true;
                 existingAd.CreatedAt = existingAd.CreatedAt;
                 existingAd.CreatedBy = existingAd.CreatedBy;
+                existingAd.SubscriptionId = existingAd.SubscriptionId;
+                existingAd.ExpiryDate = existingAd.ExpiryDate;
 
                 existingAd.UpdatedAt = DateTime.UtcNow;
 
@@ -1704,6 +1742,8 @@ namespace QLN.Classified.MS.Service
                 existingAd.UpdatedBy = dto.UpdatedBy;
                 existingAd.IsActive = true;
                 existingAd.UpdatedAt = existingAd.UpdatedAt;
+                existingAd.SubscriptionId = existingAd.SubscriptionId;
+                existingAd.ExpiryDate = existingAd.ExpiryDate;
 
 
                 _context.Deal.Update(existingAd);
@@ -2299,7 +2339,7 @@ namespace QLN.Classified.MS.Service
 
             try
             {
-                subscriptionId = Guid.Parse("5a024f96-7414-4473-80b8-f5d70297e262");
+                //subscriptionId = Guid.Parse("5a024f96-7414-4473-80b8-f5d70297e262");
 
                 var subscription = await _subscriptionContext.Subscriptions
                     .FirstOrDefaultAsync(s => s.SubscriptionId == subscriptionId, cancellationToken);
@@ -2411,7 +2451,7 @@ namespace QLN.Classified.MS.Service
 
             try
             {
-                subscriptionId = Guid.Parse("5a024f96-7414-4473-80b8-f5d70297e262");
+                //subscriptionId = Guid.Parse("5a024f96-7414-4473-80b8-f5d70297e262");
 
                 var subscription = await _subscriptionContext.Subscriptions
                     .FirstOrDefaultAsync(s => s.SubscriptionId == subscriptionId, cancellationToken);

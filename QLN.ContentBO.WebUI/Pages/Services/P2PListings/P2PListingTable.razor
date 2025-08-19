@@ -19,12 +19,20 @@
                                OnClick='() => ShowConfirmation("Approve Items", "Are you sure you want to approve selected Items?", "Approve", () => TriggerUpdate(BulkModerationAction.Approve))'>
                         Approve
                     </MudButton>
+                     <MudButton Class="capitalize-button" Color="Color.Error" Variant="Variant.Filled" 
+                               OnClick="OpenNeedChangeDialog">
+                        Need Changes
+                    </MudButton>
                 }
                 else if (selectedTab == "published")
                 {
                     <MudButton Class="capitalize-button" Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Outlined.VisibilityOff"
                                OnClick='() => ShowConfirmation("Unpublish Items", "Are you sure you want to unpublish selected Items?", "Unpublish", () => TriggerUpdate(BulkModerationAction.Unpublish))'>
                         Unpublish
+                    </MudButton>
+                    <MudButton Class="capitalize-button" Color="Color.Error" Variant="Variant.Filled" 
+                               OnClick="OpenNeedChangeDialog">
+                        Need Changes
                     </MudButton>
                     <MudButton Class="capitalize-button" Color="Color.Error" Variant="Variant.Filled" StartIcon="@Icons.Material.Rounded.Close"
                                OnClick="OpenRejectDialog">
@@ -36,6 +44,10 @@
                     <MudButton Class="capitalize-button" Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Outlined.RemoveRedEye"
                                OnClick='() => ShowConfirmation("Publish Items", "Are you sure you want to publish selected Items?", "Publish", () => TriggerUpdate(BulkModerationAction.Publish))'>
                         Publish
+                    </MudButton>
+                    <MudButton Class="capitalize-button" Color="Color.Error" Variant="Variant.Filled" 
+                               OnClick="OpenNeedChangeDialog">
+                        Need Changes
                     </MudButton>
                     <MudButton Class="capitalize-button" Color="Color.Error" Variant="Variant.Filled" StartIcon="@Icons.Material.Rounded.Close"
                                OnClick='() => ShowConfirmation("Remove Items", "Are you sure you want to remove selected Items?", "Remove", () => TriggerUpdate(BulkModerationAction.Remove))'>
@@ -127,7 +139,17 @@
         <MudTd title="@(string.IsNullOrWhiteSpace(context.UserName) ? "-" : context.UserName)" Class="truncate-text hover-title">@context.UserName</MudTd>
         <MudTd title="@(string.IsNullOrWhiteSpace(context.Category) ? "-" : context.Category)" Class="truncate-text hover-title">@context.Category</MudTd>
         <MudTd title="@(string.IsNullOrWhiteSpace(context.SubCategory) ? "-" : context.SubCategory)" Class="truncate-text hover-title">@context.SubCategory</MudTd>
-        <MudTd>Id</MudTd>
+        <MudTd>@if (!string.IsNullOrEmpty(context.Certificate))
+    {
+        var displayText = context.Certificate;
+        var link = context.Certificate;
+        if (Uri.TryCreate(context.Certificate, UriKind.Absolute, out var uri))
+        {
+            displayText = Path.GetFileName(uri.LocalPath);
+            link = uri.ToString();
+        }
+        <MudLink Href="@link" Target="_blank">@displayText</MudLink>
+    }</MudTd>
         <MudTd>@context.CreationDate.ToString("dd-MM-yyyy hh:mm tt")</MudTd>
         <MudTd>@context.DatePublished?.ToString("dd-MM-yyyy hh:mm tt")</MudTd>
         <MudTd>@context.DateExpiry?.ToString("dd-MM-yyyy hh:mm tt")</MudTd>

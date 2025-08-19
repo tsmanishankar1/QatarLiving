@@ -69,7 +69,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.UserVerificationProf
                 {
                     vertical = Vertical.Classifieds,
                     subVertical = SubVertical.Items,
-                    companyVerificationStatus = 1,
+                    companyVerificationStatus = Status,
                     pageNumber = currentPage,
                     pageSize = pageSize
                 };

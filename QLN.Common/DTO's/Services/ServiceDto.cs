@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using QLN.Common.Infrastructure.Subscriptions;
+using System.ComponentModel.DataAnnotations;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -66,26 +67,31 @@ namespace QLN.Common.DTO_s
     }
     public enum ServiceStatus
     {
-        Draft = 1,
-        PendingApproval = 2,
+        Draft = 0,
+        PendingApproval = 1,
+        Approved = 2,
         Published = 3,
         Unpublished = 4,
         Rejected = 5,
         Expired = 6,
-        Promote=7,
-        UnPromote=8,
-        Feature=9,
-        UnFeature = 10,
+        NeedsModification = 7,
+        Hold = 8,
+        Onhold = 9
     }
     public enum BulkModerationAction
     {
         Approve = 1,
         Publish = 2,
         Unpublish = 3,
-        UnPromote =4,
-        feature =5,
+        UnPromote = 4,
+        UnFeature = 5,
         Remove = 6,
-        UnFeature = 7
+        NeedChanges = 7,
+        Promote = 8,
+        Feature = 9,
+        Hold = 10,
+        Onhold = 11,
+        IsRefreshed = 12
     }
     public enum ServiceAdType
     {
@@ -123,6 +129,8 @@ namespace QLN.Common.DTO_s
     public class ServicesPagedResponse<T>
     {
         public int TotalCount { get; set; }
+        public int PublishedCount { get; set; }
+        public int UnpublishedCount { get; set; }
         public int? PageNumber { get; set; }
         public int? PerPage { get; set; }
         public List<T> Items { get; set; } = new();
@@ -171,11 +179,16 @@ namespace QLN.Common.DTO_s
     {
         public Guid SubscriptionId { get; set; }
     }
-
     public class SubscriptionRequest
     {
         public Guid SubscriptionId { get; set; }
-        public int VerticalId { get; set; }
-        public int? SubVerticalId { get; set; }
+        public Vertical VerticalId { get; set; }
+        public SubVertical? SubVerticalId { get; set; }
+    }
+    public class CategoryAdCountDto
+    {
+        public int CategoryId { get; set; }
+        public string CategoryName { get; set; }
+        public int Count { get; set; }
     }
 }

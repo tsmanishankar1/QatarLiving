@@ -22,11 +22,10 @@
         </MudButton>
         <MudButton Color="Color.Error" Variant="Variant.Filled" Class="action-btn"
                    OnClick='@(() => OpenNeedChangesDialog())'>
-            <img src="/qln-images/delete_icon.svg" class="btn-icon" />
             Need Changes
         </MudButton>
         <MudButton Color="Color.Error" Variant="Variant.Filled" Class="action-btn"
-                   OnClick='@(() => ShowConfirmation("Reject Ad", "Are you sure you want to Reject this ad?", "Reject",BulkModerationAction.Remove))'>
+                   OnClick='@(() => ShowConfirmation("Remove Ad", "Are you sure you want to Remove this ad?", "Remove",BulkModerationAction.Remove))'>
             <img src="/qln-images/delete_icon.svg" class="btn-icon" />
             Remove
         </MudButton>
@@ -47,15 +46,64 @@
         </MudButton>
         <MudButton Color="Color.Error" Variant="Variant.Filled" Class="action-btn"
                    OnClick='@(() => OpenNeedChangesDialog())'>
-            <img src="/qln-images/delete_icon.svg" class="btn-icon" />
             Need Changes
         </MudButton>
         <MudButton Color="Color.Error" Variant="Variant.Filled" Class="action-btn"
-                   OnClick='@(() => ShowConfirmation("Reject Ad", "Are you sure you want to Reject this ad?", "Reject",BulkModerationAction.Remove))'>
+                   OnClick='@(() => ShowConfirmation("Remove Ad", "Are you sure you want to Remove this ad?", "Remove",BulkModerationAction.Remove))'>
             <img src="/qln-images/delete_icon.svg" class="btn-icon" />
             Remove
         </MudButton>
     }
+    else if (selectedService.Status == ServiceStatus.NeedChanges)
+    {
+         <MudButton Color="Color.Primary" Variant="Variant.Filled" Class="action-btn"
+                   StartIcon="@Icons.Material.Outlined.Visibility"
+                   OnClick='@(() => ShowConfirmation("Publish Ad", "Are you sure you want to Publish this ad?", "Publish",BulkModerationAction.Publish))'>
+            Publish
+        </MudButton>
+         <MudButton Color="Color.Warning" Variant="Variant.Filled" Class="action-btn"
+                   OnClick='@(() => ShowConfirmation("Unpublish Ad", "Are you sure you want to Unpublish this ad?", "Unpublish",BulkModerationAction.Unpublish))'>
+            Unpublish
+        </MudButton>
+        <MudButton Color="Color.Error" Variant="Variant.Filled" Class="action-btn"
+                   OnClick='@(() => OpenNeedChangesDialog())'>
+            Need Changes
+        </MudButton>
+        <MudButton Color="Color.Error" Variant="Variant.Filled" Class="action-btn"
+                   OnClick='@(() => ShowConfirmation("Remove Ad", "Are you sure you want to Remove this ad?", "Remove",BulkModerationAction.Remove))'>
+            <img src="/qln-images/delete_icon.svg" class="btn-icon" />
+            Remove
+        </MudButton>
+    }
+     @if (selectedService.IsFeatured)
+    {
+         <MudButton Color="Color.Error" Variant="Variant.Filled" Class="action-btn"
+                   OnClick='@(() => ShowConfirmation("Un Feature Ad", "Are you sure you want to Unfeature this ad?", "Un Feature",BulkModerationAction.UnFeature))'>
+            Un Feature
+        </MudButton>
+    }
+    else{
+         <MudButton Color="Color.Primary" Variant="Variant.Filled" Class="action-btn"
+                   OnClick='@(() => OpenFeatureUnfeatureDialog(BulkModerationAction.feature))'>
+            Feature
+        </MudButton>
+    }
+     @if (selectedService.IsPromoted)
+    {
+         <MudButton Color="Color.Error" Variant="Variant.Filled" Class="action-btn"
+                   OnClick='@(() => ShowConfirmation("Un Promote Ad", "Are you sure you want to Unpromote this ad?", "Un Promote",BulkModerationAction.UnPromote))'>
+            Un Promote
+        </MudButton>
+    }
+    else{
+         <MudButton Color="Color.Primary" Variant="Variant.Filled" Class="action-btn"
+                   OnClick='@(() => OpenFeatureUnfeatureDialog(BulkModerationAction.Promote))'>
+            Promote
+        </MudButton>
+    }
+
+
+    
 </div>
 <div class="create-form-container">
     <MudGrid GutterSize="24px">

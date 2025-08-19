@@ -40,6 +40,7 @@ namespace QLN.Common.Infrastructure.QLDbContext
         public DbSet<Wishlist> Wishlists { get; set; }
         public DbSet<StoreCompanyDto> StoreCompanyDto { get; set; }
         public DbSet<StoreSubscriptionQuotaDto> StoreSubscriptionQuotaDtos { get; set; }
+        public DbSet<Comment> Comments { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
 
@@ -83,6 +84,7 @@ namespace QLN.Common.Infrastructure.QLDbContext
                 subs.""UserId"",
                 comp.""UserName"",
                 comp.""Status"",
+                comp.""CompanyVerificationStatus"",
                 comp.""CompanyName"",
                 comp.""CompanyLogo"",
                 subs.""StartDate"",
@@ -92,8 +94,8 @@ namespace QLN.Common.Infrastructure.QLDbContext
             FROM public.""Subscriptions"" AS subs
             INNER JOIN public.""Companies"" AS comp
                 ON subs.""CompanyId"" = comp.""Id""
-            WHERE subs.""Status"" = 1 
-              AND subs.""Vertical"" = 3
+            WHERE
+              subs.""Vertical"" = 3
               AND subs.""SubVertical"" = 3
         ");
                 entity.Property(e => e.CompanyId).HasColumnName("CompanyId");

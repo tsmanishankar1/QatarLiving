@@ -19,6 +19,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
         [Inject] ISnackbar Snackbar { get; set; }
         protected string UploadImageButtonName { get; set; } = "uploadImage";
         protected MudFileUpload<IBrowserFile> _markdownfileUploadRef;
+        public string? Reason { get; set; }
         protected string[] HiddenIcons = ["fullscreen"];
         protected MarkdownEditor MarkdownEditorRef;
         [Inject] ILogger<EditServiceBase> Logger { get; set; }
@@ -36,6 +37,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
                 if (Id.HasValue)
                 {
                     selectedService = await GetServiceById(Id.Value);
+                    StateHasChanged();
                 }
             }
             catch (Exception ex)
@@ -115,15 +117,30 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
             var response = await serviceBOService.UpdateServiceStatus(request);
             if (response.IsSuccessStatusCode)
             {
-                var status = _selectedAction switch
-                {
-                    BulkModerationAction.Approve => ServiceStatus.Published,
-                    BulkModerationAction.Publish => ServiceStatus.Published,
-                    BulkModerationAction.Unpublish => ServiceStatus.Unpublished,
-                    BulkModerationAction.Remove => ServiceStatus.Rejected,
-                    _ => ServiceStatus.Draft
-                };
-                selectedService.Status = status;
+                    var status = _selectedAction switch
+                    {
+                        BulkModerationAction.Approve => ServiceStatus.Published,
+                        BulkModerationAction.Publish => ServiceStatus.Published,
+                        BulkModerationAction.Unpublish => ServiceStatus.Unpublished,
+                        BulkModerationAction.Remove => ServiceStatus.Rejected,
+                        BulkModerationAction.NeedChanges => ServiceStatus.NeedChanges,
+                        _ => selectedService.Status
+                    };
+                    selectedService.Status = status;
+                     var isFeatured = _selectedAction switch
+                     {
+                         BulkModerationAction.feature => true,
+                         BulkModerationAction.UnFeature => false,
+                         _ => selectedService.IsFeatured
+                    };
+                    selectedService.IsFeatured = isFeatured;
+                     var isPromoted = _selectedAction switch
+                     {
+                         BulkModerationAction.Promote => true,
+                         BulkModerationAction.UnPromote => false,
+                         _ => selectedService.IsPromoted
+                    };
+                    selectedService.IsPromoted = isPromoted;
 
                 Snackbar.Add(
                 _selectedAction switch
@@ -132,6 +149,11 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
                     BulkModerationAction.Publish => "Service Ad Published Successfully",
                     BulkModerationAction.Unpublish => "Service Ad Unpublished Successfully",
                     BulkModerationAction.Remove => "Service Ad Removed Successfully",
+                    BulkModerationAction.UnPromote => "Service Ad Un promoted Successfully",
+                    BulkModerationAction.feature => "Service Ad Featured Successfully",
+                    BulkModerationAction.Promote => "Service Ad Un promoted Successfully",
+                    BulkModerationAction.UnFeature => "Service Ad Un Featured Successfully",
+                    BulkModerationAction.NeedChanges => "Requested for Change Successfully",
                     _ => "Service Ad Updated Successfully"
                 },
                     Severity.Success
@@ -159,7 +181,32 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
             var result = await dialog.Result;
             if (!result.Canceled)
             {
-                selectedService.Comments = result.Data?.ToString() ?? "";
+                Reason = result.Data?.ToString() ?? "";
+            }
+            await ShowConfirmation("Need Changes", "Are you sure you want to Request For a Change?", "Request", BulkModerationAction.NeedChanges);
+        }
+        protected async Task OpenFeatureUnfeatureDialog(BulkModerationAction status)
+        {
+            var options = new DialogOptions
+            {
+                CloseButton = true,
+                MaxWidth = MaxWidth.Small,
+                FullWidth = true
+            };
+            var dialog = DialogService.Show<CommentDialog>("", options: options);
+            var result = await dialog.Result;
+            if (!result.Canceled)
+            {
+                Reason = result.Data?.ToString() ?? "";
+            }
+            if (status == BulkModerationAction.feature)
+            {
+                await ShowConfirmation("Feature Ad", "Are you sure you want to Feature This Ad?", "Feature", BulkModerationAction.feature);
+            }
+            else if (status == BulkModerationAction.Promote)
+            { 
+                await ShowConfirmation("Promote Ad", "Are you sure you want to Promote This Ad?", "Promote", BulkModerationAction.Promote);
+
             }
         }
         protected Task OnCustomButtonClicked(MarkdownButtonEventArgs eventArgs)
