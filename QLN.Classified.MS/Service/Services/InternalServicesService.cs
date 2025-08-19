@@ -671,7 +671,7 @@ namespace QLN.Classified.MS.Service.Services
             }
             catch (Exception ex)
             {
-                throw; 
+                throw;
             }
         }
         public async Task<ServicesPagedResponse<Common.Infrastructure.Model.Services>> GetAllServicesWithPagination(BasePaginationQuery? dto, CancellationToken cancellationToken = default)
@@ -921,7 +921,7 @@ namespace QLN.Classified.MS.Service.Services
             }
 
             return serviceAd;
-        }        
+        }
         public async Task<Common.Infrastructure.Model.Services> RefreshService(RefreshServiceRequest request, string? uid, string? subscriptionId, CancellationToken ct)
         {
             var serviceAd = await _dbContext.Services
@@ -1031,7 +1031,7 @@ namespace QLN.Classified.MS.Service.Services
                 serviceAd.PromotedExpiryDate = null;
                 serviceAd.FeaturedExpiryDate = null;
                 serviceAd.Status = ServiceStatus.Unpublished;
-                serviceAd.PublishedDate = null; 
+                serviceAd.PublishedDate = null;
             }
             else
             {
@@ -1271,11 +1271,7 @@ namespace QLN.Classified.MS.Service.Services
                 Failed = failed
             };
         }
-        public async Task<SubscriptionBudgetDto> GetSubscriptionBudgetsAsyncBySubVertical(
-         Guid subscriptionIdFromToken,
-         Vertical verticalId,
-         SubVertical? subverticalId,
-         CancellationToken cancellationToken = default)
+        public async Task<SubscriptionBudgetDto> GetSubscriptionBudgetsAsyncBySubVertical(Guid subscriptionIdFromToken, Vertical verticalId, SubVertical? subverticalId, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -1330,6 +1326,21 @@ namespace QLN.Classified.MS.Service.Services
             {
                 throw new Exception("Error fetching subscription budgets", ex);
             }
+        }
+        public async Task<List<CategoryAdCountDto>> GetCategoryAdCount(CancellationToken ct = default)
+        {
+            return await _dbContext.Services
+                .GroupBy(s => s.CategoryId)
+                .Select(g => new CategoryAdCountDto
+                {
+                    CategoryId = (int)g.Key,
+                    CategoryName = _dbContext.Categories
+                                              .Where(c => c.Id == g.Key)
+                                              .Select(c => c.CategoryName)
+                                              .FirstOrDefault(),
+                    Count = g.Count()
+                })
+                .ToListAsync(ct);
         }
     }
 }
