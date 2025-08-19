@@ -70,7 +70,7 @@ namespace QLN.Common.Infrastructure.IService.V2IClassifiedBoService
      CancellationToken cancellationToken = default);
         Task<BulkAdActionResponseitems> BulkCollectiblesAction(
     BulkActionRequest request,
-    string userId,
+    string userId, string userName,
     CancellationToken cancellationToken = default);
         Task<PaginatedResult<PrelovedAdPaymentSummaryDto>> GetAllPrelovedAdPaymentSummaries(int? pageNumber = 1, int? pageSize = 12, string? search = null,
             string? sortBy = null, CancellationToken cancellationToken = default);
@@ -104,8 +104,7 @@ namespace QLN.Common.Infrastructure.IService.V2IClassifiedBoService
         Task<string> SoftDeleteDeals(DealsBulkDelete dto, string userId, CancellationToken cancellationToken = default);
 
         Task<BulkAdActionResponseitems> BulkPrelovedAction(
-    BulkActionRequest request,
-    string userId,
+    BulkActionRequest request, string userId, string userName,
     CancellationToken cancellationToken = default);
 
         Task<PrelovedTransactionListResponseDto> GetPrelovedTransactionsAsync(
