@@ -144,6 +144,7 @@ namespace QLN.Common.DTO_s
     {
         public List<long> AdIds { get; set; } = new();
         public BulkModerationAction Action { get; set; }
+        public string? Comments { get; set; }
         public string? Reason { get; set; }
         [JsonIgnore]
         public string? UpdatedBy { get; set; } 
