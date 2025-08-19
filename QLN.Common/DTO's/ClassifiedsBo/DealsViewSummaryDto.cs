@@ -23,8 +23,8 @@ namespace QLN.Common.DTO_s.ClassifiedsBo
         public string ContactNumber { get; set; }
         public string WhatsappNumber { get; set; }
         public string CoverImage { get; set; }
-        public DateTime StartDate { get; set; }
-        public DateTime EndDate { get; set; }
+        public DateTime? StartDate { get; set; }
+        public DateTime? EndDate { get; set; }
         public string Status { get; set; }
         public bool IsFeatured { get; set; }
         public bool IsPromoted { get; set; }
