@@ -4520,12 +4520,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 IClassifiedService service,
                 CancellationToken token) =>
                     {
-                        var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                        if (string.IsNullOrEmpty(userClaim))
-                            return Results.Unauthorized();
-
-                        var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                        var uid = userData.GetProperty("uid").GetString();
+                       var uid = context.User.FindFirst("sub")?.Value ?? "unknown";
+                        var userName = context.User.FindFirst("preferred_username")?.Value ?? "unknown";
 
                         if (uid == null)
                         {
