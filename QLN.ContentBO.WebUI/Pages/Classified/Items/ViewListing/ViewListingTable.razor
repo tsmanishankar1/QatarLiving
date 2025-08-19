@@ -31,15 +31,22 @@ else
         @if (SelectedListings.Count > 0)
         {
             <div class="action-buttons">
+                 @if (selectedTab == "all")
+                {
                 <MudButton Class="capitalize-button" Color="Color.Error" Variant="Variant.Filled" StartIcon="@Icons.Material.Rounded.Close"
                                OnClick='() => ShowConfirmation("Remove Items", "Are you sure you want to remove selected Items?", "Remove", RemoveSelected)'>
                         Remove
                     </MudButton>
-                @if (selectedTab == "pendingApproval")
+                    }
+                else if (selectedTab == "pendingApproval")
                 {
                     <MudButton Class="capitalize-button" Color="Color.Success" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Check"
                                OnClick='() => ShowConfirmation("Approve Items", "Are you sure you want to approve selected Items?", "Approve", ApproveSelected)'>
                         Approve
+                    </MudButton>
+                     <MudButton Class="capitalize-button" Color="Color.Error" Variant="Variant.Filled" 
+                               OnClick="@(() => OpenNeedChangeDialog())">
+                        Need Changes
                     </MudButton>
                 }
                 else if (selectedTab == "published")
