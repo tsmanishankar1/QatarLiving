@@ -110,11 +110,6 @@ namespace QLN.DataMigration.Services
             throw new NotImplementedException();
         }
 
-        public Task<SubscriptionBudgetDto> GetSubscriptionBudgetsAsync(Guid subscriptionId, CancellationToken cancellationToken = default)
-        {
-            throw new NotImplementedException();
-        }
-
         public Task<SubscriptionBudgetDto> GetSubscriptionBudgetsAsyncBySubVertical(Guid subscriptionIdFromToken, int verticalId, int? subVerticalId, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
