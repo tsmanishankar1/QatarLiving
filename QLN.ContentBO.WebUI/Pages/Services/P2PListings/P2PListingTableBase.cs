@@ -207,7 +207,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services
                     BulkModerationAction.Publish => ServiceStatus.Published,
                     BulkModerationAction.Unpublish => ServiceStatus.Unpublished,
                     BulkModerationAction.Remove => ServiceStatus.Rejected,
-                    BulkModerationAction.NeedChanges => ServiceStatus.NeedChanges,
+                    BulkModerationAction.NeedChanges => ServiceStatus.NeedsModification,
                     _ => ServiceStatus.Draft
                 };
 

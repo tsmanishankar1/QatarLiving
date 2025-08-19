@@ -123,13 +123,13 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
                         BulkModerationAction.Publish => ServiceStatus.Published,
                         BulkModerationAction.Unpublish => ServiceStatus.Unpublished,
                         BulkModerationAction.Remove => ServiceStatus.Rejected,
-                        BulkModerationAction.NeedChanges => ServiceStatus.NeedChanges,
+                        BulkModerationAction.NeedChanges => ServiceStatus.NeedsModification,
                         _ => selectedService.Status
                     };
                     selectedService.Status = status;
                      var isFeatured = _selectedAction switch
                      {
-                         BulkModerationAction.feature => true,
+                         BulkModerationAction.Feature => true,
                          BulkModerationAction.UnFeature => false,
                          _ => selectedService.IsFeatured
                     };
@@ -150,7 +150,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
                     BulkModerationAction.Unpublish => "Service Ad Unpublished Successfully",
                     BulkModerationAction.Remove => "Service Ad Removed Successfully",
                     BulkModerationAction.UnPromote => "Service Ad Un promoted Successfully",
-                    BulkModerationAction.feature => "Service Ad Featured Successfully",
+                    BulkModerationAction.Feature => "Service Ad Featured Successfully",
                     BulkModerationAction.Promote => "Service Ad Un promoted Successfully",
                     BulkModerationAction.UnFeature => "Service Ad Un Featured Successfully",
                     BulkModerationAction.NeedChanges => "Requested for Change Successfully",
@@ -199,9 +199,9 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
             {
                 Reason = result.Data?.ToString() ?? "";
             }
-            if (status == BulkModerationAction.feature)
+            if (status == BulkModerationAction.Feature)
             {
-                await ShowConfirmation("Feature Ad", "Are you sure you want to Feature This Ad?", "Feature", BulkModerationAction.feature);
+                await ShowConfirmation("Feature Ad", "Are you sure you want to Feature This Ad?", "Feature", BulkModerationAction.Feature);
             }
             else if (status == BulkModerationAction.Promote)
             { 
