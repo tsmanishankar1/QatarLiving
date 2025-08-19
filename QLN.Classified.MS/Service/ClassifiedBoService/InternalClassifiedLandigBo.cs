@@ -21,9 +21,11 @@ using QLN.Common.Infrastructure.Utilities;
 using System;
 using System.ComponentModel.Design;
 using System.Linq.Expressions;
+using System.Net;
 using System.Reflection;
 using System.Reflection.Metadata.Ecma335;
 using System.Security.Cryptography.X509Certificates;
+using System.Text;
 using System.Text.Json;
 using System.Xml.Serialization;
 using static QLN.Common.Infrastructure.Constants.ConstantValues;
@@ -2359,6 +2361,8 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
 
                     try
                     {
+                        string CreatedbyuserId = ad.UserId;
+                        string CreatedbyuserName = ad.UserName;
                         switch (request.Action)
                         {
                             case BulkActionEnum.Approve:
@@ -2529,8 +2533,8 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                                     Vertical = Vertical.Classifieds, // Adjust to Preloved
                                     SubVertical = ad.SubVertical, // Adjust to Preloved
                                     CreatedAt = DateTime.UtcNow,
-                                    CreatedUserId = userId,
-                                    CreatedUserName = userName,
+                                    CreatedUserId = CreatedbyuserId,
+                                    CreatedUserName = CreatedbyuserName,
                                     UpdatedUserId = userId,
                                     UpdatedUserName = userName,
                                 };
@@ -3399,168 +3403,192 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
             }
         }
 
-        public async Task<string> BulkDealsAction(BulkActionRequest request, string userId, CancellationToken ct)
+        public async Task<BulkAdActionResponseitems> BulkDealsAction(BulkActionRequest request, string userId, string subscriptionId, DateTime? endDate, CancellationToken ct)
         {
             try
             {
                 var ads = await _context.Deal
-                    .Where(d => request.AdIds.Contains(d.Id))
-                    .ToListAsync(ct);
+                .Where(ad => request.AdIds.Contains(ad.Id) && ad.IsActive == true)
+                .ToListAsync(ct);
 
-                if (!ads.Any())
-                    throw new KeyNotFoundException("No matching ads found.");
+                var succeeded = new ResultGroup
+                {
+                    Count = 0,
+                    Ids = new List<long>(),
+                    Reason = string.Empty
+                };
 
-                var updated = new List<Deals>();
+                var failed = new ResultGroup
+                {
+                    Count = 0,
+                    Ids = new List<long>(),
+                    Reason = string.Empty
+                };
+
+                var updatedAds = new List<Deals>();
 
                 foreach (var ad in ads)
                 {
                     bool shouldUpdate = false;
+                    string failReason = string.Empty;
 
-                    switch (request.Action)
+                    try
                     {
-                        case BulkActionEnum.Approve:
-                            if (ad.Status == AdStatus.PendingApproval)
-                            {
-                                ad.Status = AdStatus.Published;
-                                shouldUpdate = true;
-                            }
-                            else
-                                throw new ConflictException($"Cannot approve ad with status '{ad.Status}'. Only 'PendingApproval' is allowed.");
-                            break;
-
-                        case BulkActionEnum.NeedChanges:
-                            if (ad.Status == AdStatus.PendingApproval)
-                            {
-                                ad.Status = AdStatus.NeedsModification;
-                                shouldUpdate = true;
-                            }
-                            else
-                                throw new ConflictException($"Cannot need changes ad with status '{ad.Status}'. Only 'PendingApproval' is allowed.");
-                            break;
-
-                        case BulkActionEnum.Publish:
-                            if (ad.Status == AdStatus.Unpublished)
-                            {
-                                ad.Status = AdStatus.Published;
-                                shouldUpdate = true;
-                            }
-                            else
-                                throw new ConflictException($"Cannot publish ad with status '{ad.Status}'. Only 'Unpublished' is allowed.");
-                            break;
-
-                        case BulkActionEnum.Unpublish:
-                            if (ad.Status == AdStatus.Published)
-                            {
-                                ad.Status = AdStatus.Unpublished;
-                                shouldUpdate = true;
-                            }
-                            else
-                                throw new ConflictException($"Cannot unpublish ad with status '{ad.Status}'. Only 'Published' is allowed.");
-                            break;
-
-                        case BulkActionEnum.UnPromote:
-                            if (ad.IsPromoted)
-                            {
-                                ad.IsPromoted = false;
-                                shouldUpdate = true;
-                            }
-                            else
-                                throw new ConflictException("Cannot unpromote an ad that is not promoted.");
-                            break;
-
-                        case BulkActionEnum.UnFeature:
-                            if (ad.IsFeatured)
-                            {
-                                ad.IsFeatured = false;
-                                shouldUpdate = true;
-                            }
-                            else
-                                throw new ConflictException("Cannot unfeature an ad that is not featured.");
-                            break;
-
-                        case BulkActionEnum.Promote:
-                            if (!ad.IsPromoted)
-                            {
-                                ad.IsPromoted = true;
-                                shouldUpdate = true;
-                            }
-                            else
-                                throw new ConflictException("Cannot promote an ad that is already promoted.");
-                            break;
-
-                        case BulkActionEnum.Feature:
-                            if (!ad.IsFeatured)
-                            {
-                                ad.IsFeatured = true;
-                                shouldUpdate = true;
-                            }
-                            else
-                                throw new ConflictException("Cannot feature an ad that is already featured.");
-                            break;
-
-                        case BulkActionEnum.Remove:
-                            ad.Status = AdStatus.Rejected;
-                            shouldUpdate = true;
-                            break;
-
-                        case BulkActionEnum.Hold:
-                            if (ad.Status == AdStatus.Draft)
-                            {
-                                throw new ConflictException("Cannot hold an ad that is in draft status.");
-                            }
-                            else if (ad.Status != AdStatus.Hold)
-                            {
-                                ad.Status = AdStatus.Hold;
-                                shouldUpdate = true;
-                            }
-                            else
-                            {
-                                throw new ConflictException("Ad is already on hold.");
-                            }
-                            break;
-
-                        case BulkActionEnum.Onhold:
-                            if (ad.Status != AdStatus.Onhold)
-                            {
-                                ad.Status = AdStatus.Unpublished;
-                                shouldUpdate = true;
-                            }
-                            else
-                                throw new ConflictException("Ad is not on hold.");
-                            break;
-
-                        default:
-                            throw new InvalidOperationException("Invalid action");
-                    }
-
-                    if (shouldUpdate)
-                    {
-                        ad.UpdatedAt = DateTime.UtcNow;
-                        ad.UpdatedBy = userId;
-                        updated.Add(ad);
-                    }
-
-                    if (updated.Any())
-                    {
-                        await _context.SaveChangesAsync(ct);
-
-                        foreach (var updatedAd in updated)
+                        switch (request.Action)
                         {
-                            await IndexDealsToAzureSearch(updatedAd, ct);
+                            case BulkActionEnum.Approve:
+                                if (ad.Status == AdStatus.PendingApproval)
+                                {
+                                    ad.Status = AdStatus.Published;
+                                    shouldUpdate = true;
+                                }
+                                else failReason = $"Cannot approve ad with status '{ad.Status}'.";
+                                break;
+
+                            case BulkActionEnum.NeedChanges:
+                                if (ad.Status == AdStatus.PendingApproval)
+                                {
+                                    ad.Status = AdStatus.NeedsModification;
+                                    shouldUpdate = true;
+                                }
+                                else failReason = $"Cannot need changes ad with status '{ad.Status}'.";
+                                break;
+
+                            case BulkActionEnum.Publish:
+                                if (ad.Status == AdStatus.Unpublished)
+                                {
+                                    ad.Status = AdStatus.Published;
+                                    shouldUpdate = true;
+                                }
+                                else failReason = $"Cannot publish ad with status '{ad.Status}'.";
+                                break;
+
+                            case BulkActionEnum.Unpublish:
+                                if (ad.Status == AdStatus.Published)
+                                {
+                                    ad.Status = AdStatus.Unpublished;
+                                    shouldUpdate = true;
+                                }
+                                else failReason = $"Cannot unpublish ad with status '{ad.Status}'.";
+                                break;
+
+                            case BulkActionEnum.UnPromote:
+                                if (ad.IsPromoted)
+                                {
+                                    ad.IsPromoted = false;
+                                    ad.PromotedExpiryDate = null;
+                                    shouldUpdate = true;
+                                }
+                                else failReason = "Cannot unpromote an ad that is not promoted.";
+                                break;
+
+                            case BulkActionEnum.UnFeature:
+                                if (ad.IsFeatured)
+                                {
+                                    ad.IsFeatured = false;
+                                    ad.FeaturedExpiryDate = null;
+                                    shouldUpdate = true;
+                                }
+                                else failReason = "Cannot unfeature an ad that is not featured.";
+                                break;
+
+                            case BulkActionEnum.Promote:
+                                if (!ad.IsPromoted)
+                                {
+                                    ad.IsPromoted = true;
+                                    ad.PromotedExpiryDate = endDate;
+                                    shouldUpdate = true;
+                                }
+                                else failReason = "Cannot promote an ad that is already promoted.";
+                                break;
+
+                            case BulkActionEnum.Feature:
+                                if (!ad.IsFeatured)
+                                {
+                                    ad.IsFeatured = true;
+                                    ad.FeaturedExpiryDate = endDate;
+                                    shouldUpdate = true;
+                                }
+                                else failReason = "Cannot feature an ad that is already featured.";
+                                break;
+
+                            case BulkActionEnum.Remove:
+                                ad.Status = AdStatus.Rejected;
+                                shouldUpdate = true;
+                                break;
+
+                            case BulkActionEnum.Hold:
+                                if (ad.Status == AdStatus.Draft)
+                                    failReason = "Cannot hold an ad that is in draft status.";
+                                else if (ad.Status != AdStatus.Hold)
+                                    shouldUpdate = true;
+                                else failReason = "Ad is already on hold.";
+                                break;
+
+                            case BulkActionEnum.Onhold:
+                                if (ad.Status != AdStatus.Onhold)
+                                {
+                                    ad.Status = AdStatus.Unpublished;
+                                    shouldUpdate = true;
+                                }
+                                else failReason = "Ad is not on hold.";
+                                break;
+
+                            default:
+                                failReason = "Invalid action.";
+                                break;
+                        }
+
+                        if (shouldUpdate)
+                        {
+                            ad.UpdatedAt = DateTime.UtcNow;
+                            ad.UpdatedBy = userId;
+                            updatedAds.Add(ad);
+                            _context.Deal.Update(ad);
+                            succeeded.Count++;
+                            succeeded.Ids.Add(ad.Id);
+                        }
+                        else
+                        {
+                            failed.Count++;
+                            failed.Ids.Add(ad.Id);
+                            failed.Reason += $"Ad {ad.Id}: {failReason} ";
                         }
                     }
+                    catch (Exception ex)
+                    {
+                        failed.Count++;
+                        failed.Ids.Add(ad.Id);
+                        failed.Reason += $"Ad {ad.Id}: {ex.Message} ";
+                    }
                 }
-                return "Action completed successfully";
+
+                if (updatedAds.Any())
+                {
+                    await _context.SaveChangesAsync(ct);
+
+                    foreach (var ad in updatedAds)
+                    {
+                        await IndexDealsToAzureSearch(ad, ct);
+                    }
+                }
+
+                return new BulkAdActionResponseitems
+                {
+                    Succeeded = succeeded,
+                    Failed = failed
+                };
             }
-            catch (DbUpdateConcurrencyException ex)
+            catch (ConflictException ex)
             {
                 throw new ConflictException(ex.Message);
             }
-            catch
+            catch (Exception)
             {
                 throw;
             }
         }
+
 
         //public async Task<List<SubscriptionTypes>> GetSubscriptionTypes(CancellationToken cancellationToken = default)
         //{

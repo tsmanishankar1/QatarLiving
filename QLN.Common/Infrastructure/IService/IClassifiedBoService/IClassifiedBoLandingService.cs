@@ -122,7 +122,7 @@ namespace QLN.Common.Infrastructure.IService.V2IClassifiedBoService
         Task<TransactionListResponseDto> GetTransactionsAsync(TransactionFilterRequestDto request, CancellationToken cancellationToken = default);
         Task<ClassifiedsBoItemsResponseDto> GetAllItems(GetAllSearch request, CancellationToken cancellation = default);
         Task<ClassifiedsBoCollectiblesResponseDto> GetAllCollectibles(GetAllSearch request, CancellationToken cancellation = default);
-        Task<string> BulkDealsAction(BulkActionRequest request, string userId, CancellationToken ct);
+        Task<BulkAdActionResponseitems> BulkDealsAction(BulkActionRequest request, string userId, string subscriptionId, DateTime? endDate, CancellationToken ct);
 
     }
 }
