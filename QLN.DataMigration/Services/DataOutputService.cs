@@ -3,10 +3,12 @@
     using Azure.Search.Documents.Indexes.Models;
     using Dapr.Client;
     using Dapr.Client.Autogen.Grpc.v1;
+    using Google.Api;
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.EntityFrameworkCore.Metadata.Internal;
     using Microsoft.Extensions.Logging;
     using QLN.Common.DTO_s;
+    using QLN.Common.DTO_s.Payments;
     using QLN.Common.DTO_s.Subscription;
     using QLN.Common.DTOs;
     using QLN.Common.Infrastructure.Constants;
@@ -111,7 +113,8 @@
                                 IsActive = !item.Sold,
                                 Images = item.Images?.Select(img => new ImageInfo
                                 {
-                                    Url = img
+                                    Url = img,
+                                    Order = item.Images.IndexOf(img) + 1 // assuming the order is based on the index in the list
                                 }).ToList() ?? new List<ImageInfo>(),
                                 IsRefreshed = lastRefreshed > createdAt,
                                 Latitude = item.GeoLocation?.Lat,
@@ -127,11 +130,13 @@
 
                             if (categoryMapper != null)
                             {
-                                entity.CategoryId = item.CategoryParent.Tid; // may need to look this up
+                                entity.CategoryId = categoryMapper.CategoryId;
                                 entity.Category = categoryMapper.Category;
+                                entity.L1CategoryId = categoryMapper.L1CategoryId;
                                 entity.L1Category = categoryMapper.L1Category;
+                                entity.L2CategoryId = categoryMapper.L2CategoryId;
                                 entity.L2Category = categoryMapper.L2Category;
-                                entity.AdType = AdTypeEnum.Subscription; // need to see if I can know this
+                                entity.AdType = AdTypeEnum.P2P; // Items are only P2P
                                 //entity.SubscriptionId = categoryMapper.SubscriptionId;
                             }
 
@@ -146,7 +151,6 @@
                                 Title = item.Title,
                                 Description = item.Desc,
                                 Price = item.Price,
-                                AdType = AdTypeEnum.P2P, // collectables are only P2P
                                 SubVertical = SubVertical.Collectibles,
                                 UserName = item.Author.Username,
                                 CreatedAt = DateTime.TryParse(item.CreatedDate, out var createdAt) ? createdAt : DateTime.UtcNow,
@@ -167,7 +171,8 @@
                                 IsActive = true,
                                 Images = item.Images?.Select(img => new ImageInfo
                                 {
-                                    Url = img
+                                    Url = img,
+                                    Order = item.Images.IndexOf(img) + 1 // assuming the order is based on the index in the list
                                 }).ToList() ?? new List<ImageInfo>(),
                                 Latitude = item.GeoLocation?.Lat,
                                 Longitude = item.GeoLocation?.Lng,
@@ -175,8 +180,21 @@
                                 Status = item.Published ? AdStatus.Published : AdStatus.Unpublished,
                                 zone = item.Zone?.Name ?? string.Empty,
                                 PublishedDate = DateTime.TryParse(item.CreatedDate, out var publishedDate) ? publishedDate : DateTime.UtcNow, // not sure if this is required
-
+                                AdType = AdTypeEnum.P2P, // Collectibles are only P2P
                             };
+
+                            var categoryMapper = csvImport.FirstOrDefault(x => x.AdId == item.AdId);
+
+                            if (categoryMapper != null)
+                            {
+                                entity.CategoryId = categoryMapper.CategoryId;
+                                entity.Category = categoryMapper.Category;
+                                entity.L1CategoryId = categoryMapper.L1CategoryId;
+                                entity.L1Category = categoryMapper.L1Category;
+                                entity.L2CategoryId = categoryMapper.L2CategoryId;
+                                entity.L2Category = categoryMapper.L2Category;
+                                //entity.SubscriptionId = categoryMapper.SubscriptionId;
+                            }
 
                             await _classifiedsService.MigrateClassifiedCollectiblesAd(entity, cancellationToken);
                         }
@@ -194,6 +212,8 @@
 
         public async Task SaveMigrationServicesAsync(List<ServicesCategoryMapper> csvImport, List<DrupalItem> migrationItems, CancellationToken cancellationToken, bool isFreeAds = false)
         {
+            var subscriptions = new Dictionary<string, V2SubscriptionDto>();
+
             foreach (var item in migrationItems)
             {
                 if (long.TryParse(item.AdId, out var id))
@@ -223,7 +243,8 @@
                             IsActive = !item.Sold,
                             PhotoUpload = item.Images?.Select(img => new ImageDto
                             {
-                                Url = img
+                                Url = img,
+                                Order = item.Images.IndexOf(img) + 1 // assuming the order is based on the index in the list
                             }).ToList() ?? new List<ImageDto>(),
                             IsRefreshed = lastRefreshed > createdAt,
                             Lattitude = item.GeoLocation != null ? Convert.ToDecimal(item.GeoLocation.Lat) : 0,
@@ -239,18 +260,47 @@
 
                         if (categoryMapper != null)
                         {
-                            entity.CategoryId = item.CategoryParent.Tid; // may need to look this up
+                            entity.CategoryId = categoryMapper.CategoryId ?? 0;
                             entity.CategoryName = categoryMapper.Category;
+                            entity.L1CategoryId = categoryMapper.L1CategoryId ?? 0;
                             entity.L1CategoryName = categoryMapper.L1Category;
+                            entity.L2CategoryId = categoryMapper.L2CategoryId ?? 0;
                             entity.L2CategoryName = categoryMapper.L2Category;
-                            entity.AdType = ServiceAdType.Subscription; // need to see if I can know this
-                                                                        //entity.SubscriptionId = categoryMapper.SubscriptionId;
+                            entity.AdType = ServiceAdType.Subscription; // Services is only ever Subscription
+                            // need to associate a subscription from the CSV or if it is a free ad
+                            // create a subscription to be associated to the user account (below)
+                            //entity.SubscriptionId = categoryMapper.SubscriptionId;
                         }
 
                         if (isFreeAds)
                         {
                             // create a corresponding subscription for this ad and store it in a dictionary
                             // with an index based on username for additional lookups and reuse of the same subscription
+                            if (!subscriptions.ContainsKey(item.Author.Username))
+                            {
+                                var subscriptionId = ProcessingHelpers.StringToGuid(item.Uid.ToString()); // create a subscription ID based on the user ID
+
+                                var subscription = new V2SubscriptionDto
+                                {
+                                    Id = subscriptionId,
+                                    Quota = CreateServicesSubscriptionQuota(),
+                                    Currency = "QAR",
+                                    ProductName = "Services Auto-Generated Subscription",
+                                    StartDate = DateTime.UtcNow,
+                                    EndDate = DateTime.UtcNow.AddYears(1),
+                                    Price = 0,
+                                    StatusId = SubscriptionStatus.Active,
+                                    Vertical = Vertical.Services,
+                                    lastUpdated = DateTime.UtcNow,
+                                    UserId = item.Uid.ToString(),
+                                    SubVertical = SubVertical.Services,
+                                    Version = "V2",
+                                    ProductCode = "MIGRATED_ITEM_SUBSCRIPTION",
+                                };
+
+                               
+                                subscriptions[item.Author.Username] = subscription;
+                            }
                         }
 
                         await _servicesService.MigrateServiceAd(entity, cancellationToken);
@@ -261,6 +311,18 @@
                         _logger.LogError($"Failed to create articles - {ex.Message}");
                         throw new Exception("Unexpected error during article creation", ex);
                     }
+
+                    // iterate over the subscriptions dictionary and save each subscription
+
+                    if(isFreeAds)
+                    {
+                        foreach (var subscription in subscriptions)
+                        {
+                            _logger.LogInformation($"Saving subscription for user {subscription.Key} with ID {subscription.Value.Id}");
+                            await _subscriptionService.MigrateSubscriptionAsync(subscription.Value.Id, subscription.Value, cancellationToken);
+                        }
+                    }
+
                 }
             }
             _logger.LogInformation("Completed saving all items to state");
@@ -662,17 +724,12 @@
                         DateTime.TryParse(subscription.StartDate, out var startDate);
                         DateTime.TryParse(subscription.EndDate, out var endDate);
 
+                        var subscriptionId = ProcessingHelpers.StringToGuid(subscription.SubscriptionId.ToString());
+
                         var migratedSubscription = new V2SubscriptionDto
                         {
-                            Id = ProcessingHelpers.StringToGuid(subscription.SubscriptionId.ToString()), // deterministic GUID so should lways be the same
-                            Quota = new SubscriptionQuota
-                            {
-                                TotalAdsAllowed = subscription.AdsLimitDaily,
-                                TotalFeaturesAllowed = int.TryParse(subscription.FeatureLimit, out var featureLimit) ? featureLimit : 0,
-                                TotalPromotionsAllowed = 0,
-                                DailyRefreshesAllowed = int.TryParse(subscription.RefreshLimitDaily, out var refreshLimitDaily) ? refreshLimitDaily : 0,
-                            },
-                            //CategoryId = SubscriptionCategory.Services,
+                            Id = subscriptionId, // deterministic GUID so should lways be the same
+                            Quota = BuildSubscriptionQuota(Vertical.Services.ToString(), subscription),
                             Currency = "QAR",
                             ProductName = subscription.Product,
                             StartDate = startDate,
@@ -682,10 +739,12 @@
                             Vertical = Vertical.Services,
                             lastUpdated = DateTime.UtcNow,
                             UserId = subscription.UserId,
-                            SubVertical = SubVertical.Services
+                            SubVertical = SubVertical.Services,
+                            Version = "V2",
+                            ProductCode = "MIGRATED_SERVICES_SUBSCRIPTION",
                         };
 
-                        //await _subscriptionService.CreateSubscriptionAsync(migratedSubscription);
+                        await _subscriptionService.MigrateSubscriptionAsync(subscriptionId, migratedSubscription, cancellationToken);
                     }
                 }
                 catch (Exception ex)
@@ -708,36 +767,28 @@
                     {
                         DateTime.TryParse(subscription.StartDate, out var startDate);
                         DateTime.TryParse(subscription.EndDate, out var endDate);
-                        TimeSpan duration = endDate - startDate;
-                        if (duration.TotalDays < 0)
-                        {
-                            duration = TimeSpan.FromDays(30); // Default to 30 days if the duration is negative
-                        }
+
+                        var subscriptionId = ProcessingHelpers.StringToGuid(subscription.SubscriptionId.ToString());
 
                         var migratedSubscription = new V2SubscriptionDto
                         {
-                            Id = ProcessingHelpers.StringToGuid(subscription.SubscriptionId.ToString()), // deterministic GUID so should lways be the same
-                            Quota = new SubscriptionQuota
-                            {
-                                TotalAdsAllowed = subscription.AdsLimitDaily,
-                                TotalFeaturesAllowed = int.TryParse(subscription.FeatureLimit, out var featureLimit) ? featureLimit : 0,
-                                TotalPromotionsAllowed = 0,
-                                DailyRefreshesAllowed = int.TryParse(subscription.RefreshLimitDaily, out var refreshLimitDaily) ? refreshLimitDaily : 0,
-                            },
-                            //CategoryId = SubscriptionCategory.Services,
+                            Id = subscriptionId, // deterministic GUID so should lways be the same
+                            Quota = BuildSubscriptionQuota(Vertical.Classifieds.ToString(), subscription),
                             Currency = "QAR",
                             ProductName = subscription.Product,
                             StartDate = startDate,
                             EndDate = endDate,
                             Price = 0,
                             StatusId = SubscriptionStatus.Active,
-                            Vertical = Vertical.Services,
+                            Vertical = Vertical.Classifieds,
                             lastUpdated = DateTime.UtcNow,
                             UserId = subscription.UserId,
-                            SubVertical = SubVertical.Services
+                            SubVertical = SubVertical.Items,
+                            Version = "V2",
+                            ProductCode = "MIGRATED_ITEM_P2P",
                         };
 
-                        //await _subscriptionService.CreateSubscriptionAsync(migratedSubscription);
+                        await _subscriptionService.MigrateSubscriptionAsync(subscriptionId, migratedSubscription, cancellationToken);
                     }
                 }
                 catch (Exception ex)
@@ -746,6 +797,52 @@
                     throw new Exception("Unexpected error during legacy subscription saving", ex);
                 }
             }
+        }
+
+        private SubscriptionQuota BuildSubscriptionQuota(string vertical, SubscriptionItem subscription)
+        {
+
+            return new SubscriptionQuota
+            {
+                Vertical = vertical,
+                TotalAdsAllowed = subscription.AdsLimitDaily,
+                CanPublishAds = subscription.AdsLimitDaily > 0,
+                TotalFeaturesAllowed = int.TryParse(subscription.FeatureLimit, out var featureLimit) ? featureLimit : 0,
+                CanFeatureAds = featureLimit > 0,
+                TotalPromotionsAllowed = int.TryParse(subscription.StickyLimit, out var stickyLimit) ? stickyLimit : 0,
+                CanPromoteAds = stickyLimit > 0,
+                DailyRefreshesAllowed = int.TryParse(subscription.RefreshLimitDaily, out var refreshLimitDaily) ? refreshLimitDaily : 0,
+                CanRefreshAds = refreshLimitDaily > 0,
+                RefreshesPerAdAllowed = int.TryParse(subscription.RefreshLimit, out var refreshLimit) ? refreshLimit : 0,
+                RefreshInterval = "Every 72 Hours",
+                RefreshIntervalHours = 72,
+                SocialMediaPostsAllowed = 0,
+                CanPostSocialMedia = false,
+                Scope = "All",
+            };
+        }
+
+        private SubscriptionQuota CreateServicesSubscriptionQuota()
+        {
+
+            return new SubscriptionQuota
+            {
+                Vertical = Vertical.Services.ToString(),
+                TotalAdsAllowed = 100,
+                CanPublishAds = true,
+                TotalFeaturesAllowed = 0,
+                CanFeatureAds = false,
+                TotalPromotionsAllowed = 0,
+                CanPromoteAds = false,
+                DailyRefreshesAllowed = 0,
+                CanRefreshAds = true,
+                RefreshesPerAdAllowed = 0,
+                RefreshInterval = "Every 72 Hours",
+                RefreshIntervalHours = 72,
+                SocialMediaPostsAllowed = 0,
+                CanPostSocialMedia = false,
+                Scope = "All",
+            };
         }
     }
 }

@@ -35,18 +35,26 @@ namespace QLN.DataMigration.Services
                 new ActorId(id.ToString()),
                 "V2SubscriptionActor");
         }
-
-        private IV2UserAddonActor GetV2AddonActorProxy(Guid id)
-        {
-            if (id == Guid.Empty)
-                throw new ArgumentException("V2 Addon Actor ID cannot be empty", nameof(id));
-
-            return _actorProxyFactory.CreateActorProxy<IV2UserAddonActor>(
-                new ActorId(id.ToString()),
-                "V2UserAddonActor");
-        }
-
         #endregion
+
+        public async Task<Guid> MigrateSubscriptionAsync(Guid subscriptionId, V2SubscriptionDto request, CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(request);
+
+            _logger.LogInformation("Purchasing V2 subscription for user {UserId} with product {ProductCode}", request.UserId, request.ProductCode);
+
+            var actor = GetV2SubscriptionActorProxy(subscriptionId);
+
+            // Actor handles all DB operations, transactions, and event publishing
+            var success = await actor.MigrateSubscriptionAsync(request, cancellationToken);
+            if (!success)
+            {
+                throw new InvalidOperationException("Failed to create subscription via actor");
+            }
+
+            _logger.LogInformation("V2 Subscription created successfully: {SubscriptionId}", subscriptionId);
+            return subscriptionId;
+        }
 
         public Task<bool> AdminCancelAddonAsync(Guid addonId, CancellationToken cancellationToken = default)
         {
