@@ -1983,14 +1983,14 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
         }
 
         public async Task<PaginatedResult<DealsAdSummaryDto>> GetAllDeals(
-            int? pageNumber = 1,
-            int? pageSize = 12,
-            string? subscriptionType = null,
-            DateOnly? startDate = null,
-            DateOnly? endDate = null,
-            string? search = null,
-            string? sortBy = null,
-            CancellationToken cancellationToken = default)
+     int? pageNumber = 1,
+     int? pageSize = 12,
+     string? subscriptionType = null,
+     DateOnly? startDate = null,
+     DateOnly? endDate = null,
+     string? search = null,
+     string? sortBy = null,
+     CancellationToken cancellationToken = default)
         {
             try
             {
@@ -2015,35 +2015,29 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                               from u in userJoin.DefaultIfEmpty()
                               join d in deals on p.AdId equals d.Id into dealJoin
                               from d in dealJoin.DefaultIfEmpty()
+                              where d != null && d.IsActive
                               select new DealsAdSummaryDto
                               {
-                                  AdId = d?.Id ?? 0,
-                                  ContactNumber = d?.ContactNumber,
-                                  WhatsappNumber = d?.WhatsappNumber,
-                                  createdby = d?.CreatedBy,
-                                  status = d?.IsActive.ToString(),
-                                  StartDate = d?.StartDate,
-                                  EndDate = d?.EndDate,
-                                  subscriptiontype = s.ProductCode switch
-                                  {
-                                      "QLC-SUB-1WE-001" => "1 Week",
-                                      "QLC-SUB-1MO-005" => "1 Month",
-                                      "QLC-SUB-3MO-005" => "3 Months",
-                                      "QLC-SUB-6MO-005" => "6 Months",
-                                      _ => ""
-                                  },
+                                  AdId = d.Id,
+                                  ContactNumber = d.ContactNumber,
+                                  WhatsappNumber = d.WhatsappNumber,
+                                  createdby = d.CreatedBy,
+                                  status = d.IsActive.ToString(),
+                                  StartDate = d.StartDate,
+                                  EndDate = d.EndDate,
+                                  subscriptiontype = s.ProductName,
                                   orderid = p.PaymentId,
                                   WhatsAppLeads = "0",
                                   PhoneLeads = "0",
                                   price = p.Fee.ToString("F2"),
                                   UserName = u?.UserName,
                                   email = u?.Email
-                              }).AsQueryable();
+                              })
+                              .AsQueryable();
 
                 if (!string.IsNullOrWhiteSpace(subscriptionType))
                 {
                     joined = joined.Where(x => x.subscriptiontype == subscriptionType);
-                    _logger.LogInformation("Filtered by subscriptionType: {SubType}", subscriptionType);
                 }
 
                 if (startDate.HasValue)
@@ -2071,6 +2065,27 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                     );
                 }
 
+                joined = joined
+                    .GroupBy(x => x.AdId)
+                    .Select(g => new DealsAdSummaryDto
+                    {
+                        AdId = g.Key,
+                        ContactNumber = g.First().ContactNumber,
+                        WhatsappNumber = g.First().WhatsappNumber,
+                        createdby = g.First().createdby,
+                        status = g.First().status,
+                        StartDate = g.First().StartDate,
+                        EndDate = g.First().EndDate,
+                        subscriptiontype = string.Join(", ", g.Select(x => x.subscriptiontype).Distinct()),
+                        orderid = g.First().orderid,
+                        WhatsAppLeads = "0",
+                        PhoneLeads = "0",
+                        price = g.First().price,
+                        UserName = g.First().UserName,
+                        email = g.First().email
+                    })
+                    .AsQueryable();
+
                 joined = sortBy?.ToLower() switch
                 {
                     "startdate" => joined.OrderBy(x => x.StartDate),
@@ -2081,7 +2096,6 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                 var totalRecords = joined.Count();
                 var currentPage = pageNumber ?? 1;
                 var currentSize = pageSize ?? 12;
-                var totalPages = (int)Math.Ceiling((double)totalRecords / currentSize);
 
                 var paged = joined
                     .Skip((currentPage - 1) * currentSize)
@@ -2099,22 +2113,23 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error fetching deals in GetAllDeals");
-                throw;
+                throw new InvalidOperationException("Failed to fetch deals.", ex);
             }
         }
 
 
+
         public async Task<PaginatedResult<DealsViewSummaryDto>> DealsViewSummary(
-            int? pageNumber = 1,
-            int? pageSize = 12,
-            DateOnly? startDate = null,
-            DateOnly? endDate = null,
-            string? search = null,
-            string? sortBy = null,
-            string? status = null,
-            bool? isPromoted = null,
-            bool? isFeatured = null,
-            CancellationToken cancellationToken = default)
+    int? pageNumber = 1,
+    int? pageSize = 12,
+    DateOnly? startDate = null,
+    DateOnly? endDate = null,
+    string? search = null,
+    string? sortBy = null,
+    string? status = null,
+    bool? isPromoted = null,
+    bool? isFeatured = null,
+    CancellationToken cancellationToken = default)
         {
             try
             {
@@ -2144,20 +2159,13 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                               {
                                   AdId = d.Id,
                                   Dealtitle = d.Offertitle,
-                                  subscriptiontype = s.ProductCode switch
-                                  {
-                                      "QLC-SUB-1WE-001" => "1 Week",
-                                      "QLC-SUB-1MO-005" => "1 Month",
-                                      "QLC-SUB-3MO-005" => "3 Months",
-                                      "QLC-SUB-6MO-005" => "6 Months",
-                                      _ => ""
-                                  },
+                                  subscriptiontype = s.ProductName,
                                   DateCreated = d.CreatedAt,
                                   createdby = d.CreatedBy,
                                   ContactNumber = d.ContactNumber,
-                                  WhatsappNumber = d.WhatsappNumber,                                  
-                                  StartDate = d.StartDate ?? DateTime.UtcNow,
-                                  EndDate = d.EndDate ?? DateTime.UtcNow,
+                                  WhatsappNumber = d.WhatsappNumber,
+                                  StartDate = d.StartDate,
+                                  EndDate = d.EndDate,
                                   CompanyId = s.CompanyId.ToString(),
                                   WebClick = 0,
                                   Weburl = d.WebsiteUrl,
@@ -2165,10 +2173,14 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                                   Views = 0,
                                   Impression = 0,
                                   Phonelead = 0,
+                                  email = u?.Email,
                                   Status = d.Status.ToString(),
                                   IsPromoted = d.IsPromoted,
                                   IsFeatured = d.IsFeatured
-                              }).AsQueryable();
+                              })
+                              .GroupBy(x => x.AdId)
+                              .Select(g => g.First())
+                              .AsQueryable();
 
                 if (isPromoted.HasValue)
                 {
@@ -2192,13 +2204,13 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                 if (startDate.HasValue)
                 {
                     joined = joined.Where(x =>
-                        DateOnly.FromDateTime(x.StartDate) >= startDate.Value);
+                        x.StartDate.HasValue && DateOnly.FromDateTime(x.StartDate.Value) >= startDate.Value);
                 }
 
                 if (endDate.HasValue)
                 {
                     joined = joined.Where(x =>
-                        DateOnly.FromDateTime(x.EndDate) <= endDate.Value);
+                        x.EndDate.HasValue && DateOnly.FromDateTime(x.EndDate.Value) <= endDate.Value);
                 }
 
                 if (!string.IsNullOrWhiteSpace(search))
@@ -2240,6 +2252,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                 throw new InvalidOperationException("Failed to fetch deals view summary.", ex);
             }
         }
+
 
 
         public async Task<string> SoftDeleteDeals(DealsBulkDelete dto, string userId, CancellationToken cancellationToken = default)

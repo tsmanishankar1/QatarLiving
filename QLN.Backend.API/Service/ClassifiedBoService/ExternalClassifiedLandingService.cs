@@ -1738,6 +1738,7 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
             }
 
         }
+
         public async Task<BulkAdActionResponseitems> BulkPrelovedAction(
 BulkActionRequest request,
 string userId,string userName,
@@ -1754,12 +1755,10 @@ CancellationToken cancellationToken = default)
 
             try
             {
-                // 1. Fetch all preloved ads by IDs
                 var ads = await Task.WhenAll(
                     request.AdIds.Select(id => _classifiedService.GetPrelovedAdById(id, cancellationToken))
                 );
 
-                // 2. Validate subscription existence
                 var invalidAds = ads
                     .Where(a => a == null || !a.SubscriptionId.HasValue || a.SubscriptionId.Value == Guid.Empty)
                     .ToList();
@@ -1769,7 +1768,6 @@ CancellationToken cancellationToken = default)
                     failedIds.AddRange(invalidAds.Where(x => x != null).Select(x => x.Id));
                 }
 
-                // 3. Group valid ads by SubscriptionId + Action
                 var groupedActions = ads
                     .Where(a => a != null && a.SubscriptionId.HasValue && a.SubscriptionId.Value != Guid.Empty)
                     .GroupBy(a => new
@@ -1783,7 +1781,6 @@ CancellationToken cancellationToken = default)
                 {
                     var subscriptionId = group.Key.SubscriptionId!.Value;
 
-                    // 4. Map BulkActionEnum to actionName string
                     var actionName = group.Key.ActionType switch
                     {
                         BulkActionEnum.Promote => "promote",
@@ -1792,7 +1789,7 @@ CancellationToken cancellationToken = default)
                         BulkActionEnum.UnFeature => "unfeature",
                         BulkActionEnum.Unpublish => "unpublish",
                         BulkActionEnum.Publish => "publish",
-                        BulkActionEnum.Approve => "publish", // same mapping as Items
+                        BulkActionEnum.Approve => "publish", 
                         BulkActionEnum.Hold => "hold",
                         BulkActionEnum.Onhold => "onhold",
                         BulkActionEnum.NeedChanges => "needchanges",
@@ -1802,7 +1799,6 @@ CancellationToken cancellationToken = default)
 
                     var usageCount = group.Count();
 
-                    // 5. Check if action requires quota
                     var requiresQuota = group.Key.ActionType is BulkActionEnum.Promote
                         or BulkActionEnum.Feature
                         or BulkActionEnum.UnPromote
@@ -1909,6 +1905,7 @@ CancellationToken cancellationToken = default)
                 throw;
             }
         }
+
         public async Task<string> SoftDeleteDeals(DealsBulkDelete dto, string userId, CancellationToken cancellationToken = default)
         {
             if (dto.AdId == null || dto.AdId.Count == 0)

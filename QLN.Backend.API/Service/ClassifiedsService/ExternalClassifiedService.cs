@@ -1477,16 +1477,13 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
 
             try
-            {
-                subscriptionId = Guid.Parse("5a024f96-7414-4473-80b8-f5d70297e262");
-
-                //Only validate quota when publishing (not for unpublish)
+            {                
                 if (subscriptionId != Guid.Empty && isPublished)
                 {
                     var canUse = await _subscriptionContext.ValidateSubscriptionUsageAsync(
                         subscriptionId,
                         "publish",
-                        adIds.Count, // number of ads
+                        adIds.Count,
                         cancellationToken
                     );
 
@@ -1497,7 +1494,6 @@ namespace QLN.Backend.API.Service.ClassifiedService
                     }
                 }
 
-                // Call internal service
                 var subVerticalStr = subVertical.ToString();
                 var route =
                     $"api/classifieds/user-dashboard/bulk-action-by-id" +
@@ -1513,7 +1509,6 @@ namespace QLN.Backend.API.Service.ClassifiedService
                     adIds,
                     cancellationToken);
 
-                //Record usage depending on publish/unpublish
                 if (subscriptionId != Guid.Empty)
                 {
                     if (isPublished)
