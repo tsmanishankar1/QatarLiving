@@ -120,12 +120,12 @@ namespace QLN.Common.Infrastructure.QLDbContext
             comp.""CompanyName"",
             COUNT(prod.""StoreProductId"") as ""ProductCount""
         FROM public.""Subscriptions"" AS subs
-        LEFT JOIN public.""Companies"" AS comp
+        INNER JOIN public.""Companies"" AS comp
             ON subs.""CompanyId"" = comp.""Id""
-        LEFT JOIN public.""StoreFlyer"" AS fly
+        INNER JOIN public.""StoreFlyer"" AS fly
             ON subs.""SubscriptionId"" = fly.""SubscriptionId""
             AND subs.""CompanyId"" = fly.""CompanyId""
-        LEFT JOIN public.""StoreProduct"" AS prod
+        INNER JOIN public.""StoreProduct"" AS prod
             ON fly.""StoreFlyersId"" = prod.""FlyerId""
         WHERE subs.""Vertical"" = 3
           AND subs.""SubVertical"" = 3
