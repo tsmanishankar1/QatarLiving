@@ -275,7 +275,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
                     cancellationToken);
 
                 var activeSubscriptions = existingSubscriptions
-                    .Where(s => s.IsActive && s.EndDate > DateTime.UtcNow)
+                    .Where(s => s.IsActive && s.EndDate > DateTime.UtcNow && s.ProductType == request.ProductType)
                     .ToList();
 
                 _logger.LogDebug("Found {Count} active subscriptions for user {UserId}",

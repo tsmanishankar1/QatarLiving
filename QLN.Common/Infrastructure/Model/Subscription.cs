@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using QLN.Common.DTO_s;
+using QLN.Common.DTO_s.Payments;
 using QLN.Common.DTO_s.Subscription;
 using QLN.Common.Infrastructure.Subscriptions;
 using System.ComponentModel.DataAnnotations;
@@ -23,6 +24,7 @@ namespace QLN.Common.Infrastructure.Model
         [Required]
         [MaxLength(100)]
         public string ProductName { get; set; } = string.Empty;
+        public ProductType? ProductType { get; set; }
 
         [MaxLength(30)]
         public string? UserId { get; set; }
