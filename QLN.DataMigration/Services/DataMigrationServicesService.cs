@@ -6,6 +6,7 @@ using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.CustomException;
 using QLN.Common.Infrastructure.IService.IService;
 using QLN.Common.Infrastructure.Model;
+using QLN.Common.Infrastructure.Subscriptions;
 using System.Net;
 using System.Text;
 using System.Text.Json;
@@ -89,6 +90,11 @@ namespace QLN.DataMigration.Services
             throw new NotImplementedException();
         }
 
+        public Task<List<CategoryAdCountDto>> GetCategoryAdCount(CancellationToken ct = default)
+        {
+            throw new NotImplementedException();
+        }
+
         public Task<CategoryDto?> GetCategoryById(long id, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
@@ -110,6 +116,11 @@ namespace QLN.DataMigration.Services
         }
 
         public Task<SubscriptionBudgetDto> GetSubscriptionBudgetsAsyncBySubVertical(Guid subscriptionIdFromToken, int verticalId, int? subVerticalId, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<SubscriptionBudgetDto> GetSubscriptionBudgetsAsyncBySubVertical(Guid subscriptionIdFromToken, Vertical verticalId, SubVertical? subVerticalId, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }

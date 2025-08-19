@@ -66,11 +66,11 @@ namespace QLN.Common.Infrastructure.IService.V2IClassifiedBoService
 
         Task<BulkAdActionResponseitems> BulkItemsAction(
      BulkActionRequest request,
-     string userId,
+     string userId,string username,
      CancellationToken cancellationToken = default);
         Task<BulkAdActionResponseitems> BulkCollectiblesAction(
     BulkActionRequest request,
-    string userId,
+    string userId, string userName,
     CancellationToken cancellationToken = default);
         Task<PaginatedResult<PrelovedAdPaymentSummaryDto>> GetAllPrelovedAdPaymentSummaries(int? pageNumber = 1, int? pageSize = 12, string? search = null,
             string? sortBy = null, CancellationToken cancellationToken = default);
@@ -103,7 +103,9 @@ namespace QLN.Common.Infrastructure.IService.V2IClassifiedBoService
 
         Task<string> SoftDeleteDeals(DealsBulkDelete dto, string userId, CancellationToken cancellationToken = default);
 
-        Task<string> BulkPrelovedAction(BulkActionRequest request, string userId, CancellationToken ct);
+        Task<BulkAdActionResponseitems> BulkPrelovedAction(
+    BulkActionRequest request, string userId, string userName,
+    CancellationToken cancellationToken = default);
 
         Task<PrelovedTransactionListResponseDto> GetPrelovedTransactionsAsync(
                  int pageNumber,
@@ -120,7 +122,7 @@ namespace QLN.Common.Infrastructure.IService.V2IClassifiedBoService
         Task<TransactionListResponseDto> GetTransactionsAsync(TransactionFilterRequestDto request, CancellationToken cancellationToken = default);
         Task<ClassifiedsBoItemsResponseDto> GetAllItems(GetAllSearch request, CancellationToken cancellation = default);
         Task<ClassifiedsBoCollectiblesResponseDto> GetAllCollectibles(GetAllSearch request, CancellationToken cancellation = default);
-        Task<string> BulkDealsAction(BulkActionRequest request, string userId, CancellationToken ct);
+        Task<BulkAdActionResponseitems> BulkDealsAction(BulkActionRequest request, string userId, string subscriptionId, DateTime? endDate, CancellationToken ct);
 
     }
 }

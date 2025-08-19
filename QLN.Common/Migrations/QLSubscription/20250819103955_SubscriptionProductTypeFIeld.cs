@@ -2,27 +2,27 @@
 
 #nullable disable
 
-namespace QLN.Common.Migrations.ClassifiedDev
+namespace QLN.Common.Migrations.QLSubscription
 {
     /// <inheritdoc />
-    public partial class classifiedqamigrationv2 : Migration
+    public partial class SubscriptionProductTypeFIeld : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddColumn<string>(
-               name: "PageCoordinates",
-               table: "StoreProduct",
-               type: "text",
-               nullable: true);
+            migrationBuilder.AddColumn<int>(
+                name: "ProductType",
+                table: "Subscriptions",
+                type: "integer",
+                nullable: true);
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropColumn(
-           name: "PageCoordinates",
-           table: "StoreProduct");
+                name: "ProductType",
+                table: "Subscriptions");
         }
     }
 }

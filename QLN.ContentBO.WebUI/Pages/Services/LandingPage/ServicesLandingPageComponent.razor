@@ -24,7 +24,7 @@ else
         <thead>
             <tr>
                 <th >Slot</th>
-                <th>Category</th>
+                <th>Title</th>
                 <th>End Date</th>
                 <th >Actions</th>
             </tr>
@@ -71,9 +71,8 @@ else
                         }
                         else
                         {
-                             <span 
-                                  @onclick="@(() => ReplaceItem.InvokeAsync(context.Item))">
-                                @context.Item.Category
+                             <span >
+                                @context.Item.Title
                             </span>
                         }
                     </td>

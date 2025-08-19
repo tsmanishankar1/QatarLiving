@@ -37,7 +37,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
                 try
                 {
                     var (extractedUid, extractedUserName, subscriptionId, expiryDate) =
-                        await UserTokenHelper.ExtractUserAndSubscriptionDetailsAsync(httpContext, vertical: 4);
+                        await UserTokenHelper.ExtractUserAndSubscriptionDetailsAsync(httpContext, vertical: (int)dto.Vertical);
 
                     uid = extractedUid;
                     userName = extractedUserName;

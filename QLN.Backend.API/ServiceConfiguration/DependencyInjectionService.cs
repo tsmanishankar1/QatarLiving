@@ -50,6 +50,15 @@ namespace QLN.Backend.API.ServiceConfiguration
         public static IServiceCollection AnalyticsServicesConfiguration(this IServiceCollection services, IConfiguration configuration)
         {
             services.AddTransient<IAnalyticsService, ExternalAnalyticsService>();
+            var drupalUrl = configuration.GetSection("BaseUrl")["LegacyDrupalUser"] ?? throw new ArgumentNullException("LegacyDrupalUser");
+
+            if (Uri.TryCreate(drupalUrl, UriKind.Absolute, out var drupalBaseUrl))
+            {
+                services.AddHttpClient<IAnalyticsService, ExternalAnalyticsService>(option =>
+                {
+                    option.BaseAddress = drupalBaseUrl;
+                });
+            }
 
             return services;
         }

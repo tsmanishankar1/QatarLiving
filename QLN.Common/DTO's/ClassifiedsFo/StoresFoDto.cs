@@ -12,14 +12,15 @@ namespace QLN.Common.DTO_s.ClassifiedsFo
 
     public class StoresDashboardHeader
     {
-        public Guid SubscriptionId { get; set; }
+        public Guid? SubscriptionId { get; set; }
         public string? UserId { get; set; } = null;
         public string? UserName { get; set; } = null;
-        public Guid CompanyId { get; set; }
+        public Guid? CompanyId { get; set; }
         public string? CompanyName { get; set; } = null;
         public string? SubscriptionType { get; set; } = null;
         public string? CompanyLogo { get; set; } = null;
         public int Status { get; set; }
+        public int CompanyVerificationStatus { get; set; }
         public string? XMLFeed { get; set; } = null;
         public string? UploadFeed { get; set; } = null;
         public DateTime StartDate { get; set; } = default;
@@ -39,6 +40,7 @@ namespace QLN.Common.DTO_s.ClassifiedsFo
         public string? SubscriptionType { get; set; } = null;
         public string? CompanyLogo { get; set; } = null;
         public string? Status { get; set; } = null;
+        public string? CompanyVerificationStatus { get; set; } = null;
         public string? XMLFeed { get; set; } = null;
         public string? UploadFeed { get; set; } = null;
         public DateTime StartDate { get; set; }=default;
@@ -50,9 +52,9 @@ namespace QLN.Common.DTO_s.ClassifiedsFo
     }
     public class StoresDashboardSummary
     {
-        public Guid SubscriptionId { get; set; }
+        public Guid? SubscriptionId { get; set; }
         public string? CompanyName { get; set; } = null;
-        public Guid CompanyId { get; set; }
+        public Guid? CompanyId { get; set; }
         public string? SubscriptionType { get; set; } = null;
         public int ProductCount { get; set; } = 0;
      

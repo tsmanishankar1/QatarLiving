@@ -61,6 +61,11 @@ namespace QLN.ContentBO.WebUI.Pages.Services
             rejectReason = string.IsNullOrWhiteSpace(reason) ? null : reason;
             await TriggerUpdate(BulkModerationAction.Remove);
         }
+        private async Task HandleNeedChnage(string reason)
+        {
+            rejectReason = string.IsNullOrWhiteSpace(reason) ? null : reason;
+            await TriggerUpdate(BulkModerationAction.NeedChanges);
+        }
         protected Task RequestChanges(ServiceAdSummaryDto item)
         {
             OpenRejectDialog();
@@ -83,6 +88,23 @@ namespace QLN.ContentBO.WebUI.Pages.Services
             };
             var dialog = DialogService.Show<RejectVerificationDialog>("", parameters, options);
         }
+        protected void OpenNeedChangeDialog()
+        {
+            var parameters = new DialogParameters
+            {
+                { "Title", "Need Change Request" },
+                { "Description", "Please enter a reason before requesting Change" },
+                { "ButtonTitle", "Need Change" },
+                { "OnRejected", EventCallback.Factory.Create<string>(this, HandleNeedChnage) }
+            };
+            var options = new DialogOptions
+            {
+                CloseButton = false,
+                MaxWidth = MaxWidth.Small,
+                FullWidth = true
+            };
+            var dialog = DialogService.Show<RejectVerificationDialog>("", parameters, options);
+        }
         protected async Task TriggerUpdate(BulkModerationAction status)
         {
             var request = new BulkModerationRequest
@@ -90,7 +112,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services
                 Action = status,
                 AdIds = SelectedListings.Select(x => x.Id).ToList(),
             };
-            if (status == BulkModerationAction.Remove && !string.IsNullOrWhiteSpace(rejectReason))
+            if (status == BulkModerationAction.Remove || status == BulkModerationAction.NeedChanges && !string.IsNullOrWhiteSpace(rejectReason))
             {
                 request.Reason = rejectReason;
             }
@@ -185,6 +207,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services
                     BulkModerationAction.Publish => ServiceStatus.Published,
                     BulkModerationAction.Unpublish => ServiceStatus.Unpublished,
                     BulkModerationAction.Remove => ServiceStatus.Rejected,
+                    BulkModerationAction.NeedChanges => ServiceStatus.NeedsModification,
                     _ => ServiceStatus.Draft
                 };
 
@@ -194,7 +217,8 @@ namespace QLN.ContentBO.WebUI.Pages.Services
                     BulkModerationAction.Approve => "Service Ad Approved Successfully",
                     BulkModerationAction.Publish => "Service Ad Published Successfully",
                     BulkModerationAction.Unpublish => "Service Ad Unpublished Successfully",
-                    BulkModerationAction.Remove => "Service Ad Rejected Successfully",
+                    BulkModerationAction.Remove => "Service Ad Removed Successfully",
+                    BulkModerationAction.NeedChanges => "Requested for Need Change Successfully",
                     _ => "Service Ad Updated Successfully"
                 },
                     Severity.Success
