@@ -19,6 +19,7 @@ using QLN.Common.Infrastructure.IService.IService;
 using QLN.Common.Infrastructure.IService.V2IClassifiedBoService;
 using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.Subscriptions;
+using QLN.Common.Infrastructure.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -2367,7 +2368,7 @@ CancellationToken ct
 
 
 
-            group.MapPost("/bulk-collectibles-action-userid/{userId}", async Task<Results<
+            group.MapPost("/bulk-collectibles-action-userid/{userId}/{userName}", async Task<Results<
                 Ok<BulkAdActionResponseitems>,
                 BadRequest<ProblemDetails>,
                 Conflict<ProblemDetails>,
@@ -2829,7 +2830,7 @@ ProblemHttpResult
 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
 
-            group.MapPost("/bulk-preloved-action-userid/{userId}", async Task<Results<
+            group.MapPost("/bulk-preloved-action-userid/{userId}/{userName}", async Task<Results<
                 Ok<BulkAdActionResponseitems>,
                 BadRequest<ProblemDetails>,
                 Conflict<ProblemDetails>,
@@ -3236,38 +3237,29 @@ ProblemHttpResult
 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-            
+
 
 
             group.MapPost("/bulk-deals-action", async Task<Results<
-               Ok<string>,
-               BadRequest<ProblemDetails>,
-               NotFound<ProblemDetails>,
-               Conflict<ProblemDetails>,
-               ProblemHttpResult
-               >> (
-               BulkActionRequest deleteRequest,
-               HttpContext httpContext,
-               IClassifiedBoLandingService service,
-               CancellationToken cancellationToken
-           ) =>
+                  Ok<BulkAdActionResponseitems>,
+                  BadRequest<ProblemDetails>,
+                  NotFound<ProblemDetails>,
+                  Conflict<ProblemDetails>,
+                  ProblemHttpResult
+                  >> (
+                  BulkActionRequest deleteRequest,
+                  HttpContext httpContext,
+                  IClassifiedBoLandingService service,
+                  CancellationToken cancellationToken
+              ) =>
             {
-                var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                if (string.IsNullOrEmpty(userClaim))
-                {
-                    return TypedResults.Problem(new ProblemDetails
-                    {
-                        Title = "Unauthorized Access",
-                        Detail = "User information is missing or invalid in the token.",
-                        Status = StatusCodes.Status403Forbidden
-                    });
-                }
-
-                var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                var userId = userData.GetProperty("uid").GetString();
-                var userName = userData.GetProperty("name").GetString();
-
-                if (string.IsNullOrWhiteSpace(userId) && string.IsNullOrWhiteSpace(userName))
+                string? uid = "unknown";
+                string? userName = null;
+                var (extractedUid, extractedUserName, subscriptionId, expiryDate) =
+                        await UserTokenHelper.ExtractUserAndSubscriptionDetailsAsync(httpContext, vertical: 3, subVertical: 2);
+                uid = extractedUid;
+                subscriptionId = "ece72a90-e464-4c25-a18c-6514aba0d84d";
+                if (string.IsNullOrEmpty(uid))
                 {
                     return TypedResults.Problem(new ProblemDetails
                     {
@@ -3299,7 +3291,7 @@ ProblemHttpResult
 
                 try
                 {
-                    var result = await service.BulkDealsAction(deleteRequest, userId!, cancellationToken);
+                    var result = await service.BulkDealsAction(deleteRequest, uid, subscriptionId, expiryDate, cancellationToken);
                     return TypedResults.Ok(result);
                 }
                 catch (ConflictException ex)
@@ -3325,21 +3317,21 @@ ProblemHttpResult
                     return TypedResults.Problem(ex.Message);
                 }
             })
-           .WithName("BulkDealsAction")
-           .WithTags("ClassifiedBo")
-           .WithSummary("Bulk deals action classifieds")
-           .WithDescription("Performs bulk deals actions (approve, publish, unpublish, promote, feature, remove) on selected classified ads. " +
-                            "Requires a list of ad IDs and the action to perform. " +
-                            "If removing, a reason must be provided.")
-           .Produces<string>(StatusCodes.Status200OK)
-           .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-           .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
-           .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
-           .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
-           .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+              .WithName("BulkDealsAction")
+              .WithTags("ClassifiedBo")
+              .WithSummary("Bulk deals action classifieds")
+              .WithDescription("Performs bulk deals actions (approve, publish, unpublish, promote, feature, remove) on selected classified ads. " +
+                               "Requires a list of ad IDs and the action to perform. " +
+                               "If removing, a reason must be provided.")
+              .Produces<string>(StatusCodes.Status200OK)
+              .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+              .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
+              .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+              .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
+              .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             group.MapPost("/bulk-deals-action-userid", async Task<Results<
-     Ok<string>,
+     Ok<BulkAdActionResponseitems>,
      BadRequest<ProblemDetails>,
      Conflict<ProblemDetails>,
      NotFound<ProblemDetails>,
@@ -3347,6 +3339,8 @@ ProblemHttpResult
  >> (
      BulkActionRequest deleteRequest,
      string userId,
+     string subscriptionId,
+     DateTime? endDate,
      IClassifiedBoLandingService service,
      CancellationToken cancellationToken
  ) =>
@@ -3383,7 +3377,7 @@ ProblemHttpResult
 
                 try
                 {
-                    var result = await service.BulkDealsAction(deleteRequest, userId, cancellationToken);
+                    var result = await service.BulkDealsAction(deleteRequest, userId, subscriptionId, endDate, cancellationToken);
                     return TypedResults.Ok(result);
                 }
                 catch (ConflictException ex)
