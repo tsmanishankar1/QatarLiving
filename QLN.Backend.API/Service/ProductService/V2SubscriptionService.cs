@@ -595,6 +595,7 @@ namespace QLN.Backend.API.Service.ProductService
                 Id = v2Data.Id,
                 ProductCode = v2Data.ProductCode,
                 ProductName = v2Data.ProductName,
+                ProductType = v2Data.ProductType,
                 UserId = v2Data.UserId,
                 VerticalName = v2Data.Vertical.ToString(),
                 Vertical = v2Data.Vertical,

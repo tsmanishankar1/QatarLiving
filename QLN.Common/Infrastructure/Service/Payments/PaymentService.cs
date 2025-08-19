@@ -29,6 +29,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
         private readonly ID365Service _d365Service;
         private readonly QLPaymentsContext _dbContext;
         private readonly QLSubscriptionContext _subscriptionContext;
+        private readonly QLApplicationContext _applicationDbContext;
         private readonly IV2SubscriptionService _subscriptionService;
 
         public PaymentService(
@@ -38,7 +39,8 @@ namespace QLN.Common.Infrastructure.Service.Payments
             QLPaymentsContext dbContext,
             IConfiguration configuration,
             IV2SubscriptionService subscriptionService,
-            QLSubscriptionContext subscriptionContext
+            QLSubscriptionContext subscriptionContext,
+            QLApplicationContext applicationDbContext
             )
         {
             _logger = logger;
@@ -48,18 +50,16 @@ namespace QLN.Common.Infrastructure.Service.Payments
             _configuration = configuration;
             _subscriptionService = subscriptionService;
             _subscriptionContext = subscriptionContext;
-
+            _applicationDbContext = applicationDbContext;
         }
 
         public async Task<PaymentResponse> PayAsync(ExternalPaymentRequest request, CancellationToken cancellationToken = default)
         {
-
             var platform = "web";
 
             if (string.IsNullOrEmpty(request.User.UserName) || string.IsNullOrEmpty(request.User.UserId))
             {
                 _logger.LogError("Username is null or empty");
-                // Return a failure response
                 return new PaymentResponse
                 {
                     Status = "failure",
@@ -74,7 +74,6 @@ namespace QLN.Common.Infrastructure.Service.Payments
             if (string.IsNullOrEmpty(request.User.Email) && string.IsNullOrEmpty(request.User.Mobile))
             {
                 _logger.LogError("Both Email and Mobile are null or empty");
-                // Return a failure response
                 return new PaymentResponse
                 {
                     Status = "failure",
@@ -103,7 +102,24 @@ namespace QLN.Common.Infrastructure.Service.Payments
             switch (request.ProductType)
             {
                 case ProductType.SUBSCRIPTION:
-                    _logger.LogInformation("Processing Order payment for Order ID: {OrderId}", request.OrderId);
+                    _logger.LogInformation("Processing subscription payment for User ID: {UserId}", request.User.UserId);
+
+                    var validationResult = await ValidateSubscriptionConstraintsAsync(request, cancellationToken);
+                    if (!validationResult.IsValid)
+                    {
+                        _logger.LogWarning("Subscription validation failed for user {UserId}: {ErrorMessage}",
+                            request.User.UserId, validationResult.ErrorMessage);
+                        return new PaymentResponse
+                        {
+                            Status = "failure",
+                            Error = new FaturaPaymentError
+                            {
+                                ErrorCode = "409", 
+                                Description = validationResult.ErrorMessage
+                            }
+                        };
+                    }
+
                     var dbResult = _dbContext.Payments.Add(new PaymentEntity
                     {
                         ProductType = request.ProductType ?? ProductType.FREE,
@@ -134,9 +150,9 @@ namespace QLN.Common.Infrastructure.Service.Payments
 
                     dbResult.Entity.UserSubscriptionId = subscriptionId;
 
-                    _dbContext.SaveChanges(); 
+                    _dbContext.SaveChanges();
 
-                    return await _fatoraService.CreatePaymentAsync(request, request.User.UserName,request.ProductCode, request.Vertical, request.SubVertical, request.User.Email, request.User.Mobile, platform, cancellationToken);
+                    return await _fatoraService.CreatePaymentAsync(request, request.User.UserName, request.ProductCode, request.Vertical, request.SubVertical, request.User.Email, request.User.Mobile, platform, cancellationToken);
 
                 case ProductType.PUBLISH:
                     _logger.LogInformation("Processing Pay to Publish payment for Order ID: {OrderId}", request.OrderId);
@@ -174,13 +190,14 @@ namespace QLN.Common.Infrastructure.Service.Payments
 
                     publishDbResult.Entity.UserSubscriptionId = pubsubscriptionId;
 
-                    _dbContext.SaveChanges(); 
+                    _dbContext.SaveChanges();
 
-                    return await _fatoraService.CreatePaymentAsync(request, request.User.UserName,request.ProductCode, request.Vertical, request.SubVertical, request.User.Email, request.User.Mobile, platform, cancellationToken);
+                    return await _fatoraService.CreatePaymentAsync(request, request.User.UserName, request.ProductCode, request.Vertical, request.SubVertical, request.User.Email, request.User.Mobile, platform, cancellationToken);
 
                 case ProductType.ADDON_COMBO:
                 case ProductType.ADDON_FEATURE:
                 case ProductType.ADDON_REFRESH:
+                case ProductType.ADDON_PROMOTE:
                     _logger.LogInformation("Processing Addon payment for Order ID: {OrderId}", request.OrderId);
                     var addonDbResult = _dbContext.Payments.Add(new PaymentEntity
                     {
@@ -216,9 +233,9 @@ namespace QLN.Common.Infrastructure.Service.Payments
 
                     addonDbResult.Entity.UserAddonId = addonId;
 
-                    _dbContext.SaveChanges(); 
+                    _dbContext.SaveChanges();
 
-                    return await _fatoraService.CreatePaymentAsync(request, request.User.UserName,request.ProductCode, request.Vertical, request.SubVertical, request.User.Email, request.User.Mobile, platform, cancellationToken);
+                    return await _fatoraService.CreatePaymentAsync(request, request.User.UserName, request.ProductCode, request.Vertical, request.SubVertical, request.User.Email, request.User.Mobile, platform, cancellationToken);
 
                 default:
                     _logger.LogError("Unsupported ProductType: {ProductType}", request.ProductType);
@@ -236,9 +253,113 @@ namespace QLN.Common.Infrastructure.Service.Payments
             };
         }
 
+        /// <summary>
+        /// Validates subscription constraints before allowing payment creation
+        /// </summary>
+        /// <param name="request">The payment request containing subscription details</param>
+        /// <param name="cancellationToken">Cancellation token</param>
+        /// <returns>Validation result indicating if the subscription can be created</returns>
+        private async Task<SubscriptionValidationResult> ValidateSubscriptionConstraintsAsync(
+            ExternalPaymentRequest request,
+            CancellationToken cancellationToken)
+        {
+            try
+            {
+                _logger.LogInformation("Validating subscription constraints for user {UserId}, vertical {Vertical}, subVertical {SubVertical}",
+                    request.User.UserId, request.Vertical, request.SubVertical);
+
+                var existingSubscriptions = await _subscriptionService.GetUserSubscriptionsAsync(
+                    request.Vertical,
+                    request.SubVertical,
+                    request.User.UserId,
+                    cancellationToken);
+
+                var activeSubscriptions = existingSubscriptions
+                    .Where(s => s.IsActive && s.EndDate > DateTime.UtcNow && s.ProductType == request.ProductType)
+                    .ToList();
+
+                _logger.LogDebug("Found {Count} active subscriptions for user {UserId}",
+                    activeSubscriptions.Count, request.User.UserId);
+
+                switch (request.Vertical)
+                {
+                    case Vertical.Classifieds:
+                        return ValidateClassifiedsSubscription(activeSubscriptions, request.SubVertical);
+
+                    case Vertical.Services:
+                        return ValidateServicesSubscription(activeSubscriptions);
+
+
+                    default:
+                        _logger.LogWarning("Unknown vertical type: {Vertical}", request.Vertical);
+                        return SubscriptionValidationResult.Success();
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error validating subscription constraints for user {UserId}", request.User.UserId);
+                return SubscriptionValidationResult.Failure("Unable to validate subscription constraints. Please try again.");
+            }
+        }
+
+        /// <summary>
+        /// Validates Classifieds subscription - one active subscription per SubVertical
+        /// </summary>
+        private SubscriptionValidationResult ValidateClassifiedsSubscription(
+            List<V2SubscriptionResponseDto> activeSubscriptions,
+            SubVertical? requestedSubVertical)
+        {
+            if (!requestedSubVertical.HasValue)
+            {
+                return SubscriptionValidationResult.Failure("SubVertical is required for Classifieds subscriptions.");
+            }
+
+            // Check if user already has an active subscription for the same SubVertical
+            var existingForSubVertical = activeSubscriptions
+                .Where(s => s.SubVertical == requestedSubVertical.Value)
+                .ToList();
+
+            if (existingForSubVertical.Any())
+            {
+                var existingSub = existingForSubVertical.First();
+                var daysRemaining = (int)(existingSub.EndDate - DateTime.UtcNow).TotalDays;
+
+                _logger.LogWarning("User already has active Classifieds subscription for SubVertical {SubVertical}. " +
+                    "Subscription ID: {SubscriptionId}, Days remaining: {DaysRemaining}",
+                    requestedSubVertical, existingSub.Id, daysRemaining);
+
+                return SubscriptionValidationResult.Failure(
+                    $"You already have an active {requestedSubVertical} subscription with {daysRemaining} days remaining. " +
+                    "Please wait for it to expire or cancel it before purchasing a new one.");
+            }
+
+            return SubscriptionValidationResult.Success();
+        }
+
+        /// <summary>
+        /// Validates Services subscription - only one active subscription allowed
+        /// </summary>
+        private SubscriptionValidationResult ValidateServicesSubscription(List<V2SubscriptionResponseDto> activeSubscriptions)
+        {
+            if (activeSubscriptions.Any())
+            {
+                var existingSub = activeSubscriptions.First();
+                var daysRemaining = (int)(existingSub.EndDate - DateTime.UtcNow).TotalDays;
+
+                _logger.LogWarning("User already has active Services subscription. " +
+                    "Subscription ID: {SubscriptionId}, Days remaining: {DaysRemaining}",
+                    existingSub.Id, daysRemaining);
+
+                return SubscriptionValidationResult.Failure(
+                    $"You already have an active Services subscription with {daysRemaining} days remaining. " +
+                    "Please wait for it to expire or cancel it before purchasing a new one.");
+            }
+
+            return SubscriptionValidationResult.Success();
+        }
+
         public async Task<string> PaymentFailureAsync(PaymentTransactionRequest request, CancellationToken cancellationToken = default)
         {
-
             string baseRedirectUrl = GenerateRedirectURLBase(request.Vertical, request.SubVertical);
 
             if (!int.TryParse(request.OrderId, out var orderId))
@@ -269,9 +390,9 @@ namespace QLN.Common.Infrastructure.Service.Payments
 
                 if (subscription != null)
                 {
-                    subscription.Status = SubscriptionStatus.PaymentFailed; 
-                    subscription.StartDate = DateTime.MinValue; 
-                    subscription.EndDate = DateTime.MinValue;  
+                    subscription.Status = SubscriptionStatus.PaymentFailed;
+                    subscription.StartDate = DateTime.MinValue;
+                    subscription.EndDate = DateTime.MinValue;
 
                     _logger.LogDebug("Subscription status updated to Failed for Order ID: {OrderId}", orderId);
 
@@ -301,12 +422,10 @@ namespace QLN.Common.Infrastructure.Service.Payments
                     }
                 };
 
-                // Send the payment information to D365
                 await _d365Service.SendPaymentInfoD365Async(d365Data, cancellationToken);
 
                 _logger.LogDebug("Payment failure information sent to D365 for Order ID: {OrderId}", orderId);
 
-                // Return failure URL with additional context
                 return $"{baseRedirectUrl}?paymentSuccess=false&productType={payment.ProductType}&orderId={orderId}&error=payment_failed";
             }
             catch (Exception ex)
@@ -316,17 +435,8 @@ namespace QLN.Common.Infrastructure.Service.Payments
             }
         }
 
-
         public async Task<string> PaymentSuccessAsync(PaymentTransactionRequest request, CancellationToken cancellationToken = default)
         {
-            // Steps followed in this method:
-            // 1. Verify the payment using the Fatora service.
-            // 2. If the payment verification fails, return a failure URL.
-            // 3. If the payment verification is successful, update the payment status in the database.
-            // 4. Update subscription status to Active and set expiry date based on product duration.
-            // 5. Send the payment information to D365.
-            // 6. Return a success URL with the payment status and product type.
-
             string baseRedirectUrl = GenerateRedirectURLBase(request.Vertical, request.SubVertical);
 
             if (!int.TryParse(request.OrderId, out var orderId))
@@ -345,11 +455,10 @@ namespace QLN.Common.Infrastructure.Service.Payments
             if (paymentConfirmation.Status != "SUCCESS")
             {
                 _logger.LogError("Payment verification failed for Order ID: {OrderId}. Status: {Status}",
-                    request.OrderId, paymentConfirmation.Status);
+                request.OrderId, paymentConfirmation.Status);
                 return $"{baseRedirectUrl}?paymentSuccess=false";
             }
 
-            // Retrieve payment, subscription, and product information
             var payment = await _dbContext.Payments
                 .FirstOrDefaultAsync(p => p.PaymentId == orderId || p.AttachedPaymentId == orderId, cancellationToken);
 
@@ -360,7 +469,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
                 .FirstOrDefaultAsync(p => p.ProductCode == request.ProductCode, cancellationToken);
 
             _logger.LogDebug("Retrieved payment: {PaymentId}, subscription: {SubscriptionId}, product: {ProductCode}",
-                payment?.PaymentId, subscription?.SubscriptionId, product?.ProductCode);
+            payment?.PaymentId, subscription?.SubscriptionId, product?.ProductCode);
 
             if (payment == null)
             {
@@ -382,33 +491,21 @@ namespace QLN.Common.Infrastructure.Service.Payments
 
             try
             {
-                // Update payment status
                 payment.Status = PaymentStatus.Success;
                 payment.TransactionId = paymentConfirmation.Result.TransactionId;
                 payment.TriggeredSource = TriggeredSource.Web;
-
-                // Update subscription status and dates
-                var currentTime = DateTime.UtcNow;
-                subscription.Status = SubscriptionStatus.Active; // Set status to Active
-                subscription.StartDate = currentTime;
-
-                // Calculate expiry date based on product duration
-                subscription.EndDate = CalculateExpiryDate(currentTime, product);
-
-                _logger.LogDebug("Subscription activated: StartDate: {StartDate}, EndDate: {EndDate}",
-                    subscription.StartDate, subscription.EndDate);
-
-                // Save payment changes
                 _dbContext.Update(payment);
                 await _dbContext.SaveChangesAsync(cancellationToken);
 
-                // Save subscription changes
-                _subscriptionContext.Update(subscription);
+                // Use the IV2SubscriptionService to update the subscription status and dates
+                await _subscriptionService.UpdateSubscriptionStatusAsync(subscription.SubscriptionId, SubscriptionStatus.Active, cancellationToken);
+
+                // Update user subscription with retry logic for concurrency handling
+                await UpdateUserSubscriptionAsync(subscription, orderId, cancellationToken);
+
+                // Save subscription context changes
                 await _subscriptionContext.SaveChangesAsync(cancellationToken);
 
-                _logger.LogDebug("Payment and subscription updated successfully for Order ID: {OrderId}", orderId);
-
-                // Prepare D365 data
                 var d365Data = new D365Data
                 {
                     PaymentInfo = payment,
@@ -422,12 +519,10 @@ namespace QLN.Common.Infrastructure.Service.Payments
                     }
                 };
 
-                // Send payment information to D365
                 await _d365Service.SendPaymentInfoD365Async(d365Data, cancellationToken);
 
                 _logger.LogDebug("Payment information sent to D365 for Order ID: {OrderId}", orderId);
 
-                // Return success URL
                 return baseRedirectUrl;
             }
             catch (Exception ex)
@@ -436,16 +531,60 @@ namespace QLN.Common.Infrastructure.Service.Payments
                 return baseRedirectUrl;
             }
         }
-        private DateTime CalculateExpiryDate(DateTime startDate, Product product)
-        {
-            if (product?.Constraints?.Duration == null)
-            {
-                _logger.LogWarning("Product duration is null, defaulting to 1 month");
-                return startDate.AddMonths(1);
-            }
 
-            // Simply add the TimeSpan to the start date
-            return startDate.Add(product.Constraints.Duration.Value);
+        private async Task UpdateUserSubscriptionAsync(Subscription subscription, int orderId, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var userId = Guid.Parse(subscription.UserId);
+
+                var existingUserSubscription = await _applicationDbContext.UserSubscriptions
+                    .FirstOrDefaultAsync(us => us.Id == subscription.SubscriptionId, cancellationToken);
+
+                if (existingUserSubscription != null)
+                {
+                    existingUserSubscription.DisplayName = subscription.ProductName;
+                    existingUserSubscription.ProductCode = subscription.ProductCode;
+                    existingUserSubscription.ProductName = subscription.ProductName;
+                    existingUserSubscription.Vertical = subscription.Vertical;
+                    existingUserSubscription.SubVertical = subscription.SubVertical;
+                    existingUserSubscription.StartDate = subscription.StartDate;
+                    existingUserSubscription.EndDate = subscription.EndDate;
+
+                    _applicationDbContext.UserSubscriptions.Update(existingUserSubscription);
+
+                    _logger.LogDebug("Updated existing user subscription {SubscriptionId} for user {UserId}",
+                        subscription.SubscriptionId, subscription.UserId);
+                }
+                else
+                {
+                    var userSubscription = new UserSubscription
+                    {
+                        UserId = userId,
+                        Id = subscription.SubscriptionId,
+                        DisplayName = subscription.ProductName,
+                        ProductCode = subscription.ProductCode,
+                        ProductName = subscription.ProductName,
+                        Vertical = subscription.Vertical,
+                        SubVertical = subscription.SubVertical,
+                        StartDate = subscription.StartDate,
+                        EndDate = subscription.EndDate
+                    };
+
+                    _applicationDbContext.UserSubscriptions.Add(userSubscription);
+
+                    _logger.LogDebug("Added new user subscription {SubscriptionId} for user {UserId}",
+                        subscription.SubscriptionId, subscription.UserId);
+                }
+
+                await _applicationDbContext.SaveChangesAsync(cancellationToken);
+                _logger.LogDebug("User subscription updated successfully for Order ID: {OrderId}", orderId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating user subscription for Order ID: {OrderId}", orderId);
+                throw;
+            }
         }
         private string GenerateRedirectURLBase(Vertical vertical, SubVertical? subVertical)
         {
@@ -470,7 +609,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
                         baseRedirectUrl = classifiedBaseUrls.GetValueOrDefault("Default", verticalBaseUrl);
                     }
                 }
-                else if(vertical == Vertical.Services)
+                else if (vertical == Vertical.Services)
                 {
                     var servicesBaseUrls = _configuration.GetSection("BaseUrl:Services").Value;
                     baseRedirectUrl = servicesBaseUrls;
@@ -483,5 +622,22 @@ namespace QLN.Common.Infrastructure.Service.Payments
 
             return baseRedirectUrl;
         }
+    }
+
+    /// <summary>
+    /// Result of subscription validation
+    /// </summary>
+    public class SubscriptionValidationResult
+    {
+        public bool IsValid { get; set; }
+        public string ErrorMessage { get; set; } = string.Empty;
+
+        public static SubscriptionValidationResult Success() => new() { IsValid = true };
+
+        public static SubscriptionValidationResult Failure(string errorMessage) => new()
+        {
+            IsValid = false,
+            ErrorMessage = errorMessage
+        };
     }
 }

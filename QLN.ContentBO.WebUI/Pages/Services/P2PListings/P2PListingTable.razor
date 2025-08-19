@@ -19,7 +19,7 @@
                                OnClick='() => ShowConfirmation("Approve Items", "Are you sure you want to approve selected Items?", "Approve", () => TriggerUpdate(BulkModerationAction.Approve))'>
                         Approve
                     </MudButton>
-                     <MudButton Class="capitalize-button" Color="Color.Error" Variant="Variant.Filled" 
+                    <MudButton Class="capitalize-button" Color="Color.Error" Variant="Variant.Filled"
                                OnClick="OpenNeedChangeDialog">
                         Need Changes
                     </MudButton>
@@ -30,7 +30,7 @@
                                OnClick='() => ShowConfirmation("Unpublish Items", "Are you sure you want to unpublish selected Items?", "Unpublish", () => TriggerUpdate(BulkModerationAction.Unpublish))'>
                         Unpublish
                     </MudButton>
-                    <MudButton Class="capitalize-button" Color="Color.Error" Variant="Variant.Filled" 
+                    <MudButton Class="capitalize-button" Color="Color.Error" Variant="Variant.Filled"
                                OnClick="OpenNeedChangeDialog">
                         Need Changes
                     </MudButton>
@@ -45,7 +45,7 @@
                                OnClick='() => ShowConfirmation("Publish Items", "Are you sure you want to publish selected Items?", "Publish", () => TriggerUpdate(BulkModerationAction.Publish))'>
                         Publish
                     </MudButton>
-                    <MudButton Class="capitalize-button" Color="Color.Error" Variant="Variant.Filled" 
+                    <MudButton Class="capitalize-button" Color="Color.Error" Variant="Variant.Filled"
                                OnClick="OpenNeedChangeDialog">
                         Need Changes
                     </MudButton>
@@ -86,90 +86,106 @@
             </div>
         }
     </div>
-    @if(Listings == null || !Listings.Any()){
-
-<EmptyCard Title="No P2P Listings Available" Subtitle="Please check back later or explore other categories." />
-
-        
-    }
-    else{
-        <MudTable Items="Listings"
-          Hover="true"
-          Bordered="true"
-          Elevation="0"
-          MultiSelection="true"
-          RowCheckBoxVisible="true"
-          @bind-SelectedItems="SelectedListings"
-          Style="border-radius: 8px; border: 1px solid var(--color-background-secondary-grey-medium);
-            font-family: 'Public Sans', sans-serif;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);"
-          Class="mud-table event-custom-table">
-
-    <HeaderContent>
-        <MudTh class="header-cell">Item Image</MudTh>
-        <MudTh class="header-cell">Ad ID</MudTh>
-        <MudTh class="header-cell" >User ID</MudTh>
-        <MudTh class="header-cell">Ad Title</MudTh>
-        <MudTh class="header-cell">User Name</MudTh>
-        <MudTh class="header-cell">Category</MudTh>
-        <MudTh class="header-cell">Sub Category</MudTh>
-        <MudTh class="header-cell">Certification</MudTh>
-        <MudTh class="header-cell">Creation Date</MudTh>
-        <MudTh class="header-cell">Date Published</MudTh>
-        <MudTh class="header-cell">Date Expiry</MudTh>
-        <MudTh class="header-cell">Actions</MudTh>
-    </HeaderContent>
-
-    <RowTemplate>
-        <MudTd>
-            @if (context.ImageUpload?.FirstOrDefault()?.Url is string imageUrl)
-            {
-                <img src="@imageUrl" style="width: 136px; height: 61px; object-fit: cover; border-radius: 4px;" />
-            }
-            else
-            {
-                <div style="width: 136px; height: 61px; background-color: #f0f0f0; border-radius: 4px; display: flex; align-items: center; justify-content: center;">
-                    No Image
-                </div>
-            }
-        </MudTd>
-        <MudTd title="@(string.IsNullOrWhiteSpace(context.Id.ToString()) ? "-" : context.Id)"Class="truncate-text hover-title">@context.Id</MudTd>
-        <MudTd title="@(string.IsNullOrWhiteSpace(context.UserId) ? "-" : context.UserId)" Class="truncate-text">@context.UserId</MudTd>
-        <MudTd title="@(string.IsNullOrWhiteSpace(context.AdTitle) ? "-" : context.AdTitle)" Class="truncate-text hover-title">@context.AdTitle</MudTd>
-        <MudTd title="@(string.IsNullOrWhiteSpace(context.UserName) ? "-" : context.UserName)" Class="truncate-text hover-title">@context.UserName</MudTd>
-        <MudTd title="@(string.IsNullOrWhiteSpace(context.Category) ? "-" : context.Category)" Class="truncate-text hover-title">@context.Category</MudTd>
-        <MudTd title="@(string.IsNullOrWhiteSpace(context.SubCategory) ? "-" : context.SubCategory)" Class="truncate-text hover-title">@context.SubCategory</MudTd>
-        <MudTd>@if (!string.IsNullOrEmpty(context.Certificate))
+    @if (Listings == null || !Listings.Any())
     {
-        var displayText = context.Certificate;
-        var link = context.Certificate;
-        if (Uri.TryCreate(context.Certificate, UriKind.Absolute, out var uri))
-        {
-            displayText = Path.GetFileName(uri.LocalPath);
-            link = uri.ToString();
-        }
-        <MudLink Href="@link" Target="_blank">@displayText</MudLink>
-    }</MudTd>
-        <MudTd>@context.CreationDate.ToString("dd-MM-yyyy hh:mm tt")</MudTd>
-        <MudTd>@context.DatePublished?.ToString("dd-MM-yyyy hh:mm tt")</MudTd>
-        <MudTd>@context.DateExpiry?.ToString("dd-MM-yyyy hh:mm tt")</MudTd>
-        <MudTd>
-            <MudMenu Icon="@Icons.Material.Filled.MoreVert">
-                <MudMenuItem OnClick="() => OnEdit(context)">
-                    <MudIcon Icon="@Icons.Material.Filled.Edit" /> Edit
-                </MudMenuItem>
-                <MudMenuItem OnClick="() => OpenPreviewDialog(context)">
-                    <MudIcon Icon="@Icons.Material.Filled.Visibility" /> Preview
-                </MudMenuItem>
-                <MudMenuItem @onclick="() => OpenRejectDialog(context.Id)" Class="mud-text-error">
-                    <MudIcon Icon="@Icons.Material.Filled.Delete" /> Remove
-                </MudMenuItem> 
-            </MudMenu>
-        </MudTd>
-    </RowTemplate>
-</MudTable>
+
+        <EmptyCard Title="No P2P Listings Available" Subtitle="Please check back later or explore other categories." />
+
 
     }
-     <PaginationFooter TotalItems="@TotalCount" CurrentPage="@currentPage" PageSize="@pageSize"
-                OnPageChange="@HandlePageChange" OnPageSizeChange="@HandlePageSizeChange" />
+    else
+    {
+        <MudTable Items="Listings"
+                  Hover="true"
+                  Bordered="true"
+                  Elevation="0"
+                  MultiSelection="true"
+                  RowCheckBoxVisible="true"
+                  @bind-SelectedItems="SelectedListings"
+                  Style="border-radius: 8px; border: 1px solid var(--color-background-secondary-grey-medium);
+                font-family: 'Public Sans', sans-serif;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);"
+                  Class="mud-table event-custom-table">
+
+            <HeaderContent>
+                <MudTh class="header-cell">Image</MudTh>
+                <MudTh class="header-cell">Ad ID</MudTh>
+                <MudTh class="header-cell">User ID</MudTh>
+                <MudTh class="header-cell">Ad Title</MudTh>
+                <MudTh class="header-cell">User Name</MudTh>
+                <MudTh class="header-cell">Category</MudTh>
+                <MudTh class="header-cell">Sub Category</MudTh>
+                <MudTh class="header-cell">Certification</MudTh>
+                <MudTh class="header-cell">Creation Date</MudTh>
+                <MudTh class="header-cell">Date Published</MudTh>
+                <MudTh class="header-cell">Date Expiry</MudTh>
+                <MudTh class="header-cell">Views</MudTh>
+                <MudTh class="header-cell">Impression</MudTh>
+                <MudTh class="header-cell">WhatsApp</MudTh>
+                <MudTh class="header-cell">Phones</MudTh>
+                <MudTh class="header-cell">Share</MudTh>
+                <MudTh class="header-cell">Favorites</MudTh>
+                <MudTh class="header-cell">Actions</MudTh>
+            </HeaderContent>
+
+            <RowTemplate>
+                <MudTd>
+                    @if (context.ImageUpload?.FirstOrDefault()?.Url is string imageUrl)
+                    {
+                        <img src="@imageUrl" style="width: 136px; height: 61px; object-fit: cover; border-radius: 4px;" />
+                    }
+                    else
+                    {
+                        <div style="width: 136px; height: 61px; background-color: #f0f0f0; border-radius: 4px; display: flex; align-items: center; justify-content: center;">
+                            No Image
+                        </div>
+                    }
+                </MudTd>
+                <MudTd title="@(string.IsNullOrWhiteSpace(context.Id.ToString()) ? "-" : context.Id)" Class="truncate-text hover-title">@context.Id</MudTd>
+                <MudTd title="@(string.IsNullOrWhiteSpace(context.UserId) ? "-" : context.UserId)" Class="truncate-text">@context.UserId</MudTd>
+                <MudTd title="@(string.IsNullOrWhiteSpace(context.AdTitle) ? "-" : context.AdTitle)" Class="truncate-text hover-title">@context.AdTitle</MudTd>
+                <MudTd title="@(string.IsNullOrWhiteSpace(context.UserName) ? "-" : context.UserName)" Class="truncate-text hover-title">@context.UserName</MudTd>
+                <MudTd title="@(string.IsNullOrWhiteSpace(context.Category) ? "-" : context.Category)" Class="truncate-text hover-title">@context.Category</MudTd>
+                <MudTd title="@(string.IsNullOrWhiteSpace(context.SubCategory) ? "-" : context.SubCategory)" Class="truncate-text hover-title">@context.SubCategory</MudTd>
+                <MudTd>
+                    @if (!string.IsNullOrEmpty(context.Certificate))
+                    {
+                        var displayText = context.Certificate;
+                        var link = context.Certificate;
+                        if (Uri.TryCreate(context.Certificate, UriKind.Absolute, out var uri))
+                        {
+                            displayText = Path.GetFileName(uri.LocalPath);
+                            link = uri.ToString();
+                        }
+                        <MudLink Href="@link" Target="_blank">@displayText</MudLink>
+                    }
+                </MudTd>
+                <MudTd>@context.CreationDate.ToString("dd-MM-yyyy hh:mm tt")</MudTd>
+                <MudTd>@context.DatePublished?.ToString("dd-MM-yyyy hh:mm tt")</MudTd>
+                <MudTd>@context.DateExpiry?.ToString("dd-MM-yyyy hh:mm tt")</MudTd>
+                <MudTd>@("-")</MudTd>
+                <MudTd>@("-")</MudTd>
+                <MudTd>@("-")</MudTd>
+                <MudTd>@("-")</MudTd>
+                <MudTd>@("-")</MudTd>
+                <MudTd>@("-")</MudTd>
+                <MudTd>
+                    <MudMenu Icon="@Icons.Material.Filled.MoreVert">
+                        <MudMenuItem OnClick="() => OnEdit(context)">
+                            <MudIcon Icon="@Icons.Material.Filled.Edit" /> Edit
+                        </MudMenuItem>
+                        <MudMenuItem OnClick="() => OpenPreviewDialog(context)">
+                            <MudIcon Icon="@Icons.Material.Filled.Visibility" /> Preview
+                        </MudMenuItem>
+                        <MudMenuItem @onclick="() => OpenRejectDialog(context.Id)" Class="mud-text-error">
+                            <MudIcon Icon="@Icons.Material.Filled.Delete" /> Remove
+                        </MudMenuItem>
+                    </MudMenu>
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
+
+    }
+    <PaginationFooter TotalItems="@TotalCount" CurrentPage="@currentPage" PageSize="@pageSize"
+                      OnPageChange="@HandlePageChange" OnPageSizeChange="@HandlePageSizeChange" />
 </MudPaper>
