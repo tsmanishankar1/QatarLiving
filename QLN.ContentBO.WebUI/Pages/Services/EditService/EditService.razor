@@ -79,36 +79,6 @@
             Remove
         </MudButton>
     }
-     @if (selectedService.IsFeatured)
-    {
-         <MudButton Color="Color.Error" Variant="Variant.Filled" Class="action-btn"
-                   OnClick='@(() => ShowConfirmation("Un Feature Ad", "Are you sure you want to Unfeature this ad?", "Un Feature",BulkModerationAction.UnFeature))'>
-            Un Feature
-        </MudButton>
-    }
-    else{
-         <MudButton Color="Color.Primary" Variant="Variant.Filled" Class="action-btn"
-                   OnClick='@(() => OpenFeatureUnfeatureDialog(BulkModerationAction.Feature))'>
-            Feature
-        </MudButton>
-    }
-     @if (selectedService.IsPromoted)
-    {
-         <MudButton Color="Color.Error" Variant="Variant.Filled" Class="action-btn"
-                   OnClick='@(() => ShowConfirmation("Un Promote Ad", "Are you sure you want to Unpromote this ad?", "Un Promote",BulkModerationAction.UnPromote))'>
-            Un Promote
-        </MudButton>
-    }
-    else{
-         <MudButton Color="Color.Primary" Variant="Variant.Filled" Class="action-btn"
-                   OnClick='@(() => OpenFeatureUnfeatureDialog(BulkModerationAction.Promote))'>
-            Promote
-        </MudButton>
-    }
-
-
-
-
     @if (selectedService.Status == ServiceStatus.Published)
     {
         @if (selectedService.IsFeatured)
@@ -121,7 +91,7 @@
         else
         {
             <MudButton Color="Color.Primary" Variant="Variant.Filled" Class="action-btn"
-                       OnClick='@(() => OpenFeatureUnfeatureDialog(BulkModerationAction.feature))'>
+                       OnClick='@(() => OpenFeatureUnfeatureDialog(BulkModerationAction.Feature))'>
                 Feature
             </MudButton>
         }
