@@ -83,11 +83,12 @@ namespace QLN.DataMigration.Services
             });
         }
 
-        public async Task<IResult> MigrateItems(List<ItemsCategoryMapper> csvImport, bool importImages, CancellationToken cancellationToken)
+        public async Task<IResult> MigrateItems(List<ItemsCategoryMapper> csvImport, bool importImages, bool isFreeAds, CancellationToken cancellationToken)
         {
             int pageSize = 30;
             int page = 1;
             string type = "classifieds";
+            var adType = isFreeAds ? "Free" : "Paid";
 
             var environment = _config["LegacyMigrations:Environment"];
 
@@ -120,11 +121,11 @@ namespace QLN.DataMigration.Services
                 totalCount += 1;
             }
 
-            await _dataOutputService.SaveMigrationItemsAsync(csvImport, migrationItems, cancellationToken); 
+            await _dataOutputService.SaveMigrationItemsAsync(csvImport, migrationItems, cancellationToken, isFreeAds); 
             
             var totalItemCount = drupalItems.Total;
 
-            _logger.LogInformation($"Migrated {totalCount} out of {totalItemCount} Items");
+            _logger.LogInformation($"Migrated {totalCount} out of {totalItemCount} {adType} Items");
 
             while (totalItemCount > totalCount)
             {
@@ -142,9 +143,9 @@ namespace QLN.DataMigration.Services
                         totalCount += 1;
                     }
 
-                    await _dataOutputService.SaveMigrationItemsAsync(csvImport, migrationItems, cancellationToken);
+                    await _dataOutputService.SaveMigrationItemsAsync(csvImport, migrationItems, cancellationToken, isFreeAds);
 
-                    _logger.LogInformation($"Migrated {totalCount} out of {totalItemCount} Items");
+                    _logger.LogInformation($"Migrated {totalCount} out of {totalItemCount} {adType} Items");
                 }
             }
 
@@ -152,7 +153,7 @@ namespace QLN.DataMigration.Services
 
             return Results.Ok(new
             {
-                Message = $"Migrated {totalCount} out of {totalItemCount} Items - Started @ {startTime} - Completed @ {DateTime.UtcNow}.",
+                Message = $"Migrated {totalCount} out of {totalItemCount} {adType} Items - Started @ {startTime} - Completed @ {DateTime.UtcNow}.",
             });
         }
 

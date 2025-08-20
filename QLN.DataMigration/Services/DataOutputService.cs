@@ -73,7 +73,7 @@
             _logger.LogInformation("Completed saving all state");
         }
 
-        public async Task SaveMigrationItemsAsync(List<ItemsCategoryMapper> csvImport, List<DrupalItem> migrationItems, CancellationToken cancellationToken)
+        public async Task SaveMigrationItemsAsync(List<ItemsCategoryMapper> csvImport, List<DrupalItem> migrationItems, CancellationToken cancellationToken, bool isFreeAds = false)
         {
             const int CollectablesCategory = 7311;
 
@@ -110,7 +110,7 @@
                                 IsFeatured = item.Feature,
                                 IsPromoted = item.Promote,
                                 UpdatedAt = DateTime.UtcNow,
-                                IsActive = !item.Sold,
+                                IsActive = !item.IsDeleted,
                                 Images = item.Images?.Select(img => new ImageInfo
                                 {
                                     Url = img,
@@ -123,7 +123,7 @@
                                 Status = item.Published ? AdStatus.Published : AdStatus.Unpublished,
                                 zone = item.Zone?.Name ?? string.Empty,
                                 PublishedDate = DateTime.TryParse(item.CreatedDate, out var publishedDate) ? publishedDate : DateTime.UtcNow, // not sure if this is required
-
+                                Condition = item.BrandNew ? "Brand New" : "Used"
                             };
 
                             var categoryMapper = csvImport.FirstOrDefault(x => x.AdId == item.AdId);
@@ -168,7 +168,7 @@
                                 IsFeatured = item.Feature,
                                 IsPromoted = item.Promote,
                                 UpdatedAt = DateTime.UtcNow,
-                                IsActive = true,
+                                IsActive = !item.IsDeleted,
                                 Images = item.Images?.Select(img => new ImageInfo
                                 {
                                     Url = img,
@@ -181,6 +181,7 @@
                                 zone = item.Zone?.Name ?? string.Empty,
                                 PublishedDate = DateTime.TryParse(item.CreatedDate, out var publishedDate) ? publishedDate : DateTime.UtcNow, // not sure if this is required
                                 AdType = AdTypeEnum.P2P, // Collectibles are only P2P
+                                Condition = item.BrandNew ? "Brand New" : "Used"
                             };
 
                             var categoryMapper = csvImport.FirstOrDefault(x => x.AdId == item.AdId);
@@ -240,7 +241,7 @@
                             IsFeatured = item.Feature,
                             IsPromoted = item.Promote,
                             UpdatedAt = DateTime.UtcNow,
-                            IsActive = !item.Sold,
+                            IsActive = !item.IsDeleted,
                             PhotoUpload = item.Images?.Select(img => new ImageDto
                             {
                                 Url = img,
