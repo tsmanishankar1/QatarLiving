@@ -1395,5 +1395,57 @@ namespace QLN.Classified.MS.Service.Services
                 })
                 .ToListAsync(ct);
         }
+
+        public async Task<string> MigrateServiceAd(Common.Infrastructure.Model.Services dto, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                if (dto.Id == 0)
+                    throw new ArgumentException("Service Ad ID is required for update.");
+
+                var existing = await _dbContext.Services.FirstOrDefaultAsync(s => s.Id == dto.Id, cancellationToken);
+
+                var slug = SlugHelper.GenerateSlug(dto.Title, dto.CategoryName, "Services", Guid.NewGuid()); // leave this here for now - not sure if required ?
+                
+                dto.Slug = slug;
+
+                if (existing != null)
+                {
+                    existing = dto;
+                    _dbContext.Services.Update(existing);
+                }
+                else
+                {
+                    _dbContext.Services.Add(dto);
+                }
+                
+                await _dbContext.SaveChangesAsync(cancellationToken);
+
+                var upsertRequest = await IndexServiceToAzureSearch(existing, cancellationToken);
+
+                if (upsertRequest != null)
+                {
+                    var message = new IndexMessage
+                    {
+                        Action = "Upsert",
+                        Vertical = ConstantValues.IndexNames.ServicesIndex,
+                        UpsertRequest = upsertRequest
+                    };
+
+                    await _dapr.PublishEventAsync(
+                        pubsubName: ConstantValues.PubSubName,
+                        topicName: ConstantValues.PubSubTopics.IndexUpdates,
+                        data: message,
+                        cancellationToken: cancellationToken
+                    );
+                }
+
+                return "Service Ad updated successfully.";
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error updating service ad", ex);
+            }
+        }
     }
 }

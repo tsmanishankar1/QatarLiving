@@ -10,14 +10,14 @@ using System.Text.Json;
 
 namespace QLN.DataMigration.Services
 {
-    public class NewsService : IV2NewsService
+    public class DataMigrationNewsService : IV2NewsService
     {
         private readonly DaprClient _dapr;
-        private readonly ILogger<NewsService> _logger;
+        private readonly ILogger<DataMigrationNewsService> _logger;
 
-        public NewsService(
+        public DataMigrationNewsService(
             DaprClient dapr,
-            ILogger<NewsService> logger
+            ILogger<DataMigrationNewsService> logger
             )
         {
             _dapr = dapr;

@@ -1,16 +1,25 @@
 ﻿namespace QLN.DataMigration.Services
 {
+    using Azure.Search.Documents.Indexes.Models;
     using Dapr.Client;
     using Dapr.Client.Autogen.Grpc.v1;
+    using Google.Api;
     using Microsoft.AspNetCore.Mvc;
+    using Microsoft.EntityFrameworkCore.Metadata.Internal;
     using Microsoft.Extensions.Logging;
     using QLN.Common.DTO_s;
+    using QLN.Common.DTO_s.Payments;
+    using QLN.Common.DTO_s.Subscription;
+    using QLN.Common.DTOs;
     using QLN.Common.Infrastructure.Constants;
     using QLN.Common.Infrastructure.DTO_s;
     using QLN.Common.Infrastructure.IService;
     using QLN.Common.Infrastructure.IService.IContentService;
+    using QLN.Common.Infrastructure.IService.IProductService;
+    using QLN.Common.Infrastructure.IService.IService;
     using QLN.Common.Infrastructure.IService.V2IContent;
     using QLN.Common.Infrastructure.Model;
+    using QLN.Common.Infrastructure.Subscriptions;
     using QLN.Common.Infrastructure.Utilities;
     using QLN.DataMigration.Models;
     using System.Text;
@@ -18,7 +27,6 @@
     using System.Text.RegularExpressions;
     using System.Threading;
     using System.Threading.Tasks;
-    using static QLN.Common.Infrastructure.Constants.ConstantValues;
 
     public class DataOutputService : IDataOutputService
     {
@@ -27,6 +35,8 @@
         private readonly IV2NewsService _newsService;
         private readonly IV2CommunityPostService _communityPostService;
         private readonly IClassifiedService _classifiedsService;
+        private readonly IV2SubscriptionService _subscriptionService;
+        private readonly IServices _servicesService;
         private readonly DaprClient _daprClient;
 
         public DataOutputService(
@@ -34,6 +44,9 @@
             IV2EventService eventService,
             IV2NewsService newsService,
             IV2CommunityPostService communityPostService,
+            IClassifiedService classifiedService,
+            IV2SubscriptionService subscriptionService,
+            IServices servicesService,
             DaprClient daprClient
             )
         {
@@ -41,6 +54,9 @@
             _eventService = eventService;
             _newsService = newsService;
             _communityPostService = communityPostService;
+            _classifiedsService = classifiedService;
+            _subscriptionService = subscriptionService;
+            _servicesService = servicesService;
             _daprClient = daprClient;
         }
 
@@ -57,107 +73,257 @@
             _logger.LogInformation("Completed saving all state");
         }
 
-        public async Task SaveMigrationItemsAsync(List<DrupalItem> migrationItems, CancellationToken cancellationToken)
+        public async Task SaveMigrationItemsAsync(List<ItemsCategoryMapper> csvImport, List<DrupalItem> migrationItems, CancellationToken cancellationToken, bool isFreeAds = false)
         {
             const int CollectablesCategory = 7311;
 
             // needs to be modified to call a Classifieds MS
             foreach (var item in migrationItems)
             {
-                try
+                if (long.TryParse(item.AdId, out var id))
                 {
-                    if (item.CategoryParent.Tid != CollectablesCategory)
+                    try
                     {
-                        var entity = new Items
+                        if (item.CategoryParent.Tid != CollectablesCategory)
                         {
-                            //Id = item.Nid, // dont have an ID so cant make this repeatable
+                            var entity = new Items
+                            {
+                                Id = id,
+                                Title = item.Title,
+                                Description = item.Desc,
+                                Price = item.Price,
+                                SubVertical = SubVertical.Items,
+                                UserName = item.Author.Username,
+                                CreatedAt = DateTime.TryParse(item.CreatedDate, out var createdAt) ? createdAt : DateTime.UtcNow,
+                                LastRefreshedOn = DateTime.TryParse(item.RefreshedDate, out var lastRefreshed) ? lastRefreshed : DateTime.UtcNow,
+                                BuildingNumber = item.BuildingNo,
+                                StreetNumber = item.StreetNo,
+                                Brand = item.Make?.Name,
+                                Model = item.Model?.Name,
+                                UserId = item.Author.Uid.ToString(),
+                                ContactEmail = item.Email,
+                                ContactNumberCountryCode = "+974",// assuming Qatar country code
+                                ContactNumber = item.Phone ?? string.Empty,
+                                WhatsappNumberCountryCode = "+974",// assuming Qatar country code
+                                WhatsAppNumber = item.Whatsapp ?? item.Phone ?? string.Empty,
+                                CreatedBy = item.Author.Username,
+                                IsFeatured = item.Feature,
+                                IsPromoted = item.Promote,
+                                UpdatedAt = DateTime.UtcNow,
+                                IsActive = !item.IsDeleted,
+                                Images = item.Images?.Select(img => new ImageInfo
+                                {
+                                    Url = img,
+                                    Order = item.Images.IndexOf(img) + 1 // assuming the order is based on the index in the list
+                                }).ToList() ?? new List<ImageInfo>(),
+                                IsRefreshed = lastRefreshed > createdAt,
+                                Latitude = item.GeoLocation?.Lat,
+                                Longitude = item.GeoLocation?.Lng,
+                                Location = item.Location?.Name,
+                                Status = item.Published ? AdStatus.Published : AdStatus.Unpublished,
+                                zone = item.Zone?.Name ?? string.Empty,
+                                PublishedDate = DateTime.TryParse(item.CreatedDate, out var publishedDate) ? publishedDate : DateTime.UtcNow, // not sure if this is required
+                                Condition = item.BrandNew ? "Brand New" : "Used"
+                            };
+
+                            var categoryMapper = csvImport.FirstOrDefault(x => x.AdId == item.AdId);
+
+                            if (categoryMapper != null)
+                            {
+                                entity.CategoryId = categoryMapper.CategoryId;
+                                entity.Category = categoryMapper.Category;
+                                entity.L1CategoryId = categoryMapper.L1CategoryId;
+                                entity.L1Category = categoryMapper.L1Category;
+                                entity.L2CategoryId = categoryMapper.L2CategoryId;
+                                entity.L2Category = categoryMapper.L2Category;
+                                entity.AdType = AdTypeEnum.P2P; // Items are only P2P
+                                //entity.SubscriptionId = categoryMapper.SubscriptionId;
+                            }
+
+                            await _classifiedsService.MigrateClassifiedItemsAd(entity, cancellationToken);
+
+                        }
+                        else
+                        {
+                            var entity = new Collectibles
+                            {
+                                Id = id,
+                                Title = item.Title,
+                                Description = item.Desc,
+                                Price = item.Price,
+                                SubVertical = SubVertical.Collectibles,
+                                UserName = item.Author.Username,
+                                CreatedAt = DateTime.TryParse(item.CreatedDate, out var createdAt) ? createdAt : DateTime.UtcNow,
+                                BuildingNumber = item.BuildingNo,
+                                StreetNumber = item.StreetNo,
+                                Brand = item.Make?.Name,
+                                Model = item.Model?.Name,
+                                UserId = item.Author.Uid.ToString(),
+                                ContactEmail = item.Email,
+                                ContactNumberCountryCode = "+974",// assuming Qatar country code
+                                ContactNumber = item.Phone ?? string.Empty,
+                                WhatsappNumberCountryCode = "+974",// assuming Qatar country code
+                                WhatsAppNumber = item.Whatsapp ?? item.Phone ?? string.Empty,
+                                CreatedBy = item.Author.Username,
+                                IsFeatured = item.Feature,
+                                IsPromoted = item.Promote,
+                                UpdatedAt = DateTime.UtcNow,
+                                IsActive = !item.IsDeleted,
+                                Images = item.Images?.Select(img => new ImageInfo
+                                {
+                                    Url = img,
+                                    Order = item.Images.IndexOf(img) + 1 // assuming the order is based on the index in the list
+                                }).ToList() ?? new List<ImageInfo>(),
+                                Latitude = item.GeoLocation?.Lat,
+                                Longitude = item.GeoLocation?.Lng,
+                                Location = item.Location?.Name,
+                                Status = item.Published ? AdStatus.Published : AdStatus.Unpublished,
+                                zone = item.Zone?.Name ?? string.Empty,
+                                PublishedDate = DateTime.TryParse(item.CreatedDate, out var publishedDate) ? publishedDate : DateTime.UtcNow, // not sure if this is required
+                                AdType = AdTypeEnum.P2P, // Collectibles are only P2P
+                                Condition = item.BrandNew ? "Brand New" : "Used"
+                            };
+
+                            var categoryMapper = csvImport.FirstOrDefault(x => x.AdId == item.AdId);
+
+                            if (categoryMapper != null)
+                            {
+                                entity.CategoryId = categoryMapper.CategoryId;
+                                entity.Category = categoryMapper.Category;
+                                entity.L1CategoryId = categoryMapper.L1CategoryId;
+                                entity.L1Category = categoryMapper.L1Category;
+                                entity.L2CategoryId = categoryMapper.L2CategoryId;
+                                entity.L2Category = categoryMapper.L2Category;
+                                //entity.SubscriptionId = categoryMapper.SubscriptionId;
+                            }
+
+                            await _classifiedsService.MigrateClassifiedCollectiblesAd(entity, cancellationToken);
+                        }
+
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError($"Failed to create articles - {ex.Message}");
+                        throw new Exception("Unexpected error during article creation", ex);
+                    }
+                }
+            }
+            _logger.LogInformation("Completed saving all items to state");
+        }
+
+        public async Task SaveMigrationServicesAsync(List<ServicesCategoryMapper> csvImport, List<DrupalItem> migrationItems, CancellationToken cancellationToken, bool isFreeAds = false)
+        {
+            var subscriptions = new Dictionary<string, V2SubscriptionDto>();
+
+            foreach (var item in migrationItems)
+            {
+                if (long.TryParse(item.AdId, out var id))
+                {
+                    try
+                    {
+                        var entity = new Services
+                        {
+                            Id = id,
                             Title = item.Title,
                             Description = item.Desc,
-                            Price = item.Price,
-                            CategoryId = item.CategoryParent.Tid, // may need to look this up
-                            AdType = AdTypeEnum.Subscription,
-                            SubVertical = SubVertical.Items,
+                            Price = Convert.ToDecimal(item.Price),
                             UserName = item.Author.Username,
                             CreatedAt = DateTime.TryParse(item.CreatedDate, out var createdAt) ? createdAt : DateTime.UtcNow,
                             LastRefreshedOn = DateTime.TryParse(item.RefreshedDate, out var lastRefreshed) ? lastRefreshed : DateTime.UtcNow,
                             BuildingNumber = item.BuildingNo,
                             StreetNumber = item.StreetNo,
-                            Brand = item.Make?.Name,
-                            Model = item.Model?.Name,
-                            UserId = item.Author.Uid.ToString(),
-                            ContactEmail = item.Email,
-                            ContactNumberCountryCode = "+974",// assuming Qatar country code
-                            ContactNumber = item.Phone,
+                            EmailAddress = item.Email,
+                            PhoneNumberCountryCode = "+974",// assuming Qatar country code
+                            PhoneNumber = item.Phone ?? string.Empty,
                             WhatsappNumberCountryCode = "+974",// assuming Qatar country code
-                            WhatsAppNumber = item.Whatsapp ?? item.Phone ?? string.Empty,
+                            WhatsappNumber = item.Whatsapp ?? item.Phone ?? string.Empty,
                             CreatedBy = item.Author.Username,
                             IsFeatured = item.Feature,
                             IsPromoted = item.Promote,
                             UpdatedAt = DateTime.UtcNow,
-                            IsActive = true,
-                            Images = item.Images?.Select(img => new ImageInfo
+                            IsActive = !item.IsDeleted,
+                            PhotoUpload = item.Images?.Select(img => new ImageDto
                             {
-                                Url = img
-                            }).ToList() ?? new List<ImageInfo>(),
+                                Url = img,
+                                Order = item.Images.IndexOf(img) + 1 // assuming the order is based on the index in the list
+                            }).ToList() ?? new List<ImageDto>(),
                             IsRefreshed = lastRefreshed > createdAt,
-                            Latitude = item.GeoLocation?.Lat,
-                            Longitude = item.GeoLocation?.Lng,
-                            Location = item.Location?.Name,
-                            Status = item.Published ? AdStatus.Published : AdStatus.Unpublished,
-                            zone = item.Zone?.Name ?? string.Empty,
+                            Lattitude = item.GeoLocation != null ? Convert.ToDecimal(item.GeoLocation.Lat) : 0,
+                            Longitude = item.GeoLocation != null ? Convert.ToDecimal(item.GeoLocation.Lng) : 0,
+                            Location = item.Location?.Name ?? string.Empty,
+                            Status = item.Published ? ServiceStatus.Published : ServiceStatus.Unpublished,
+                            ZoneId = item.Zone?.Tid.ToString() ?? string.Empty, // NOTE: not sure if this works
                             PublishedDate = DateTime.TryParse(item.CreatedDate, out var publishedDate) ? publishedDate : DateTime.UtcNow, // not sure if this is required
+
                         };
 
-                        await _classifiedsService.MigrateClassifiedItemsAd(entity, cancellationToken);
+                        var categoryMapper = csvImport.FirstOrDefault(x => x.AdId == item.AdId);
 
-                    } else
-                    {
-                        var entity = new Collectibles
+                        if (categoryMapper != null)
                         {
-                            //Id = item.Nid, // dont have an ID so cant make this repeatable
-                            Title = item.Title,
-                            Description = item.Desc,
-                            Price = item.Price,
-                            CategoryId = item.CategoryParent.Tid, // may need to look this up
-                            AdType = AdTypeEnum.Subscription,
-                            SubVertical = SubVertical.Collectibles,
-                            UserName = item.Author.Username,
-                            CreatedAt = DateTime.TryParse(item.CreatedDate, out var createdAt) ? createdAt : DateTime.UtcNow,
-                            BuildingNumber = item.BuildingNo,
-                            StreetNumber = item.StreetNo,
-                            Brand = item.Make?.Name,
-                            Model = item.Model?.Name,
-                            UserId = item.Author.Uid.ToString(),
-                            ContactEmail = item.Email,
-                            ContactNumberCountryCode = "+974",// assuming Qatar country code
-                            ContactNumber = item.Phone,
-                            WhatsappNumberCountryCode = "+974",// assuming Qatar country code
-                            WhatsAppNumber = item.Whatsapp ?? item.Phone ?? string.Empty,
-                            CreatedBy = item.Author.Username,
-                            IsFeatured = item.Feature,
-                            IsPromoted = item.Promote,
-                            UpdatedAt = DateTime.UtcNow,
-                            IsActive = true,
-                            Images = item.Images?.Select(img => new ImageInfo
-                            {
-                                Url = img
-                            }).ToList() ?? new List<ImageInfo>(),
-                            Latitude = item.GeoLocation?.Lat,
-                            Longitude = item.GeoLocation?.Lng,
-                            Location = item.Location?.Name,
-                            Status = item.Published ? AdStatus.Published : AdStatus.Unpublished,
-                            zone = item.Zone?.Name ?? string.Empty,
-                            PublishedDate = DateTime.TryParse(item.CreatedDate, out var publishedDate) ? publishedDate : DateTime.UtcNow, // not sure if this is required
-                            
-                        };
+                            entity.CategoryId = categoryMapper.CategoryId ?? 0;
+                            entity.CategoryName = categoryMapper.Category;
+                            entity.L1CategoryId = categoryMapper.L1CategoryId ?? 0;
+                            entity.L1CategoryName = categoryMapper.L1Category;
+                            entity.L2CategoryId = categoryMapper.L2CategoryId ?? 0;
+                            entity.L2CategoryName = categoryMapper.L2Category;
+                            entity.AdType = ServiceAdType.Subscription; // Services is only ever Subscription
+                            // need to associate a subscription from the CSV or if it is a free ad
+                            // create a subscription to be associated to the user account (below)
+                            //entity.SubscriptionId = categoryMapper.SubscriptionId;
+                        }
 
-                        await _classifiedsService.MigrateClassifiedCollectiblesAd(entity, cancellationToken);
+                        if (isFreeAds)
+                        {
+                            // create a corresponding subscription for this ad and store it in a dictionary
+                            // with an index based on username for additional lookups and reuse of the same subscription
+                            if (!subscriptions.ContainsKey(item.Author.Username))
+                            {
+                                var subscriptionId = ProcessingHelpers.StringToGuid(item.Uid.ToString()); // create a subscription ID based on the user ID
+
+                                var subscription = new V2SubscriptionDto
+                                {
+                                    Id = subscriptionId,
+                                    Quota = CreateServicesSubscriptionQuota(),
+                                    Currency = "QAR",
+                                    ProductName = "Services Auto-Generated Subscription",
+                                    StartDate = DateTime.UtcNow,
+                                    EndDate = DateTime.UtcNow.AddYears(1),
+                                    Price = 0,
+                                    StatusId = SubscriptionStatus.Active,
+                                    Vertical = Vertical.Services,
+                                    lastUpdated = DateTime.UtcNow,
+                                    UserId = item.Uid.ToString(),
+                                    SubVertical = SubVertical.Services,
+                                    Version = "V2",
+                                    ProductCode = "MIGRATED_ITEM_SUBSCRIPTION",
+                                };
+
+                               
+                                subscriptions[item.Author.Username] = subscription;
+                            }
+                        }
+
+                        await _servicesService.MigrateServiceAd(entity, cancellationToken);
+
                     }
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError($"Failed to create articles - {ex.Message}");
-                    throw new Exception("Unexpected error during article creation", ex);
+                    catch (Exception ex)
+                    {
+                        _logger.LogError($"Failed to create articles - {ex.Message}");
+                        throw new Exception("Unexpected error during article creation", ex);
+                    }
+
+                    // iterate over the subscriptions dictionary and save each subscription
+
+                    if(isFreeAds)
+                    {
+                        foreach (var subscription in subscriptions)
+                        {
+                            _logger.LogInformation($"Saving subscription for user {subscription.Key} with ID {subscription.Value.Id}");
+                            await _subscriptionService.MigrateSubscriptionAsync(subscription.Value.Id, subscription.Value, cancellationToken);
+                        }
+                    }
+
                 }
             }
             _logger.LogInformation("Completed saving all items to state");
@@ -206,7 +372,7 @@
                 }
                 //articles.Add(article);
             }
-                
+
         }
 
         public async Task SaveContentEventsAsync(List<ContentEvent> items, CancellationToken cancellationToken)
@@ -311,7 +477,7 @@
                     throw new Exception("Unexpected error during events creation", ex);
                 }
 
-                
+
 
             }
 
@@ -468,7 +634,7 @@
             foreach (var primaryCategory in items)
             {
                 var subCategories = new List<V2NewsSubCategory>();
-                
+
                 foreach (var subCategory in primaryCategory.SubCategories)
                 {
                     subCategories.Add(new V2NewsSubCategory
@@ -507,7 +673,7 @@
             {
                 var areas = new List<Common.DTO_s.LocationDto.AreaDto>();
 
-                if(location.Areas != null && location.Areas.Count > 0)
+                if (location.Areas != null && location.Areas.Count > 0)
                 {
                     foreach (var area in location.Areas)
                     {
@@ -544,6 +710,140 @@
                     throw new Exception("Unexpected error during article creation", ex);
                 }
             }
+        }
+
+        public async Task SaveLegacyServicesSubscriptionsAsync(List<SubscriptionItem> subscriptions, CancellationToken cancellationToken)
+        {
+            // this one needs some review in terms of business logic
+
+            foreach (var subscription in subscriptions)
+            {
+                try
+                {
+                    if (subscription != null && subscription.Status == "success")
+                    {
+                        DateTime.TryParse(subscription.StartDate, out var startDate);
+                        DateTime.TryParse(subscription.EndDate, out var endDate);
+
+                        var subscriptionId = ProcessingHelpers.StringToGuid(subscription.SubscriptionId.ToString());
+
+                        var migratedSubscription = new V2SubscriptionDto
+                        {
+                            Id = subscriptionId, // deterministic GUID so should lways be the same
+                            Quota = BuildSubscriptionQuota(Vertical.Services.ToString(), subscription),
+                            Currency = "QAR",
+                            ProductName = subscription.Product,
+                            StartDate = startDate,
+                            EndDate = endDate,
+                            Price = 0,
+                            StatusId = SubscriptionStatus.Active,
+                            Vertical = Vertical.Services,
+                            lastUpdated = DateTime.UtcNow,
+                            UserId = subscription.UserId,
+                            SubVertical = SubVertical.Services,
+                            Version = "V2",
+                            ProductCode = "MIGRATED_SERVICES_SUBSCRIPTION",
+                        };
+
+                        await _subscriptionService.MigrateSubscriptionAsync(subscriptionId, migratedSubscription, cancellationToken);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError($"Failed to save legacy services subscription - {ex.Message}");
+                    throw new Exception("Unexpected error during legacy subscription saving", ex);
+                }
+            }
+        }
+
+        public async Task SaveLegacyItemsSubscriptionsAsync(List<SubscriptionItem> subscriptions, CancellationToken cancellationToken)
+        {
+            // this one needs some review in terms of business logic
+
+            foreach (var subscription in subscriptions)
+            {
+                try
+                {
+                    if (subscription != null && subscription.Status == "success")
+                    {
+                        DateTime.TryParse(subscription.StartDate, out var startDate);
+                        DateTime.TryParse(subscription.EndDate, out var endDate);
+
+                        var subscriptionId = ProcessingHelpers.StringToGuid(subscription.SubscriptionId.ToString());
+
+                        var migratedSubscription = new V2SubscriptionDto
+                        {
+                            Id = subscriptionId, // deterministic GUID so should lways be the same
+                            Quota = BuildSubscriptionQuota(Vertical.Classifieds.ToString(), subscription),
+                            Currency = "QAR",
+                            ProductName = subscription.Product,
+                            StartDate = startDate,
+                            EndDate = endDate,
+                            Price = 0,
+                            StatusId = SubscriptionStatus.Active,
+                            Vertical = Vertical.Classifieds,
+                            lastUpdated = DateTime.UtcNow,
+                            UserId = subscription.UserId,
+                            SubVertical = SubVertical.Items,
+                            Version = "V2",
+                            ProductCode = "MIGRATED_ITEM_P2P",
+                        };
+
+                        await _subscriptionService.MigrateSubscriptionAsync(subscriptionId, migratedSubscription, cancellationToken);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError($"Failed to save legacy item subscription - {ex.Message}");
+                    throw new Exception("Unexpected error during legacy subscription saving", ex);
+                }
+            }
+        }
+
+        private SubscriptionQuota BuildSubscriptionQuota(string vertical, SubscriptionItem subscription)
+        {
+
+            return new SubscriptionQuota
+            {
+                Vertical = vertical,
+                TotalAdsAllowed = subscription.AdsLimitDaily,
+                CanPublishAds = subscription.AdsLimitDaily > 0,
+                TotalFeaturesAllowed = int.TryParse(subscription.FeatureLimit, out var featureLimit) ? featureLimit : 0,
+                CanFeatureAds = featureLimit > 0,
+                TotalPromotionsAllowed = int.TryParse(subscription.StickyLimit, out var stickyLimit) ? stickyLimit : 0,
+                CanPromoteAds = stickyLimit > 0,
+                DailyRefreshesAllowed = int.TryParse(subscription.RefreshLimitDaily, out var refreshLimitDaily) ? refreshLimitDaily : 0,
+                CanRefreshAds = refreshLimitDaily > 0,
+                RefreshesPerAdAllowed = int.TryParse(subscription.RefreshLimit, out var refreshLimit) ? refreshLimit : 0,
+                RefreshInterval = "Every 72 Hours",
+                RefreshIntervalHours = 72,
+                SocialMediaPostsAllowed = 0,
+                CanPostSocialMedia = false,
+                Scope = "All",
+            };
+        }
+
+        private SubscriptionQuota CreateServicesSubscriptionQuota()
+        {
+
+            return new SubscriptionQuota
+            {
+                Vertical = Vertical.Services.ToString(),
+                TotalAdsAllowed = 100,
+                CanPublishAds = true,
+                TotalFeaturesAllowed = 0,
+                CanFeatureAds = false,
+                TotalPromotionsAllowed = 0,
+                CanPromoteAds = false,
+                DailyRefreshesAllowed = 0,
+                CanRefreshAds = true,
+                RefreshesPerAdAllowed = 0,
+                RefreshInterval = "Every 72 Hours",
+                RefreshIntervalHours = 72,
+                SocialMediaPostsAllowed = 0,
+                CanPostSocialMedia = false,
+                Scope = "All",
+            };
         }
     }
 }

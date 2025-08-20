@@ -1192,7 +1192,13 @@ namespace QLN.Common.Infrastructure.Service.AuthService
 
                         if(environment != null && type != null && uid != null)
                         {
-                            var subscriptioninfo = await GetLegacySubscription(type, uid, environment);
+
+                            var subscriptioninfo = type switch
+                            {
+                                "item" => await GetLegacySubscription<LegacyItemSubscriptionDrupal>(type, uid, environment), // if Item then fetch Item Subscription
+                                "service" => await GetLegacySubscription<LegacyItemSubscriptionDrupal>(type, uid, environment), // if Service then fetch Service Subscription
+                                _ => await GetLegacySubscription<LegacyItemSubscriptionDrupal>(type, uid, environment)
+                            };
 
                             if(subscriptioninfo != null && subscriptioninfo.Drupal.Item.Status == "success")
                             {
@@ -1296,7 +1302,7 @@ namespace QLN.Common.Infrastructure.Service.AuthService
                 .Select(s => s[random.Next(s.Length)]).ToArray());
         }
 
-        private async Task<LegacySubscriptionDto?> GetLegacySubscription(string type, string uid, string environment, CancellationToken cancellationToken = default)
+        private async Task<LegacyItemSubscriptionDto<T>?> GetLegacySubscription<T>(string type, string uid, string environment, CancellationToken cancellationToken = default) where T : ILegacySubscriptionDrupal
         {
 
             var formData = new List<KeyValuePair<string, string>>
@@ -1337,7 +1343,7 @@ namespace QLN.Common.Infrastructure.Service.AuthService
 
                 var levelDown = JsonSerializer.Serialize(jsonDeserialized.GetValueOrDefault(key: uid)); // serialize it to a string
 
-                var subscription = JsonSerializer.Deserialize<LegacySubscriptionDto>(levelDown, new JsonSerializerOptions
+                var subscription = JsonSerializer.Deserialize<LegacyItemSubscriptionDto<T>>(levelDown, new JsonSerializerOptions
                 {
                     PropertyNameCaseInsensitive = true
                 }); // deserialize into the object we want
