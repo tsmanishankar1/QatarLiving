@@ -38,6 +38,10 @@
                                    OnClick='() => ShowConfirmation("Approve Items", "Are you sure you want to approve selected Items?", "Approve", ApproveSelected)'>
                             Approve
                         </MudButton>
+                         <MudButton Class="capitalize-button" Color="Color.Error" Variant="Variant.Filled" StartIcon="@Icons.Material.Rounded.Close"
+                                   OnClick='() => ShowConfirmation("Remove Items", "Are you sure you want to remove selected Items?", "Remove", RemoveSelected)'>
+                            Remove
+                        </MudButton>
                     }
                     @if (SelectedTab == ((int)AdStatusEnum.Published).ToString())
                     {

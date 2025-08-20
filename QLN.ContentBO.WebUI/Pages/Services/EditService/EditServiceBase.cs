@@ -177,7 +177,11 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
                 MaxWidth = MaxWidth.Small,
                 FullWidth = true
             };
-            var dialog = DialogService.Show<CommentDialog>("", options: options);
+            var parameters = new DialogParameters
+            {
+                { "ActionType", BulkModerationAction.NeedChanges } 
+            };
+            var dialog = DialogService.Show<CommentDialog>("", parameters, options);
             var result = await dialog.Result;
             if (!result.Canceled)
             {
@@ -193,7 +197,11 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
                 MaxWidth = MaxWidth.Small,
                 FullWidth = true
             };
-            var dialog = DialogService.Show<CommentDialog>("", options: options);
+            var parameters = new DialogParameters
+            {
+                { "ActionType", status } 
+            };
+            var dialog = DialogService.Show<CommentDialog>("", parameters, options);
             var result = await dialog.Result;
             if (!result.Canceled)
             {

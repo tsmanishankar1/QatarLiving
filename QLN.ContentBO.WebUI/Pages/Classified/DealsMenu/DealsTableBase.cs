@@ -160,7 +160,26 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu
                 { "Title", "Remove Listing" },
                 { "Description", "Please enter a reason before removing." },
                 { "ButtonTitle", "Remove" },
-                { "OnRejected", EventCallback.Factory.Create<string>(this, HandleRemoveWithReason) }
+                { "OnRejected", EventCallback.Factory.Create<string>(this, HandleNeedChangeWithReason) }
+            };
+
+            var options = new DialogOptions
+            {
+                CloseButton = false,
+                MaxWidth = MaxWidth.Small,
+                FullWidth = true
+            };
+
+            await DialogService.ShowAsync<RejectVerificationDialog>("", parameters, options);
+        }
+        protected async void OpenNeedChangeReasonDialog()
+        {
+            var parameters = new DialogParameters
+            {
+                { "Title", "Request Need Change" },
+                { "Description", "Please enter a reason before for requesting Need change." },
+                { "ButtonTitle", "Need Change" },
+                { "OnRejected", EventCallback.Factory.Create<string>(this, HandleNeedChangeWithReason) }
             };
 
             var options = new DialogOptions
@@ -204,6 +223,13 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu
             }
 
             isBulkRemove = false;
+        }
+        private async Task HandleNeedChangeWithReason(string reason)
+        {
+            if (string.IsNullOrWhiteSpace(reason))
+                return;
+
+            await PerformBulkAction(BulkActionEnum.NeedChanges, reason);
         }
 
         protected Task RequestChanges(DealsListingModal item)
