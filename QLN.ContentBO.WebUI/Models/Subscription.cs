@@ -11,8 +11,8 @@
         public string Currency { get; set; } = string.Empty;
         public SubscriptionConstraint Constraints { get; set; } = new();
         public bool IsActive { get; set; }
-        public DateTime CreatedAt { get; set; }
-        public DateTime UpdatedAt { get; set; }
+        public DateTime? CreatedAt { get; set; }
+        public DateTime? UpdatedAt { get; set; }
     }
 
     public class SubscriptionConstraint
