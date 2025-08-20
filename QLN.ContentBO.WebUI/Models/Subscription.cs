@@ -1,6 +1,4 @@
-﻿using QLN.Common.DTO_s.Subscription;
-
-namespace QLN.ContentBO.WebUI.Models
+﻿namespace QLN.ContentBO.WebUI.Models
 {
     public class Subscription
     {

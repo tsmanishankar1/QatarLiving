@@ -17,7 +17,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.P2p
         [Inject] protected ILogger<P2pTransactionBase> Logger { get; set; } = default!;
         [Parameter] public EventCallback<(string from, string to)> OnDateChanged { get; set; }
         [Inject] protected IJSRuntime JS { get; set; } = default!;
-         [Inject] protected IDialogService DialogService { get; set; } = default!;
+        [Inject] protected IDialogService DialogService { get; set; } = default!;
         protected string SearchText { get; set; } = string.Empty;
 
         protected string SortIcon { get; set; } = Icons.Material.Filled.Sort;
@@ -83,13 +83,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.P2p
 
         protected List<PrelovedP2PTransactionItem> Listings { get; set; } = [];
 
-        protected List<string> SubscriptionTypes =
-        [
-            "Free",
-            "Basic",
-            "Pro",
-            "Enterprise"
-        ];
+        protected List<string> SubscriptionTypes = [];
 
         protected string SelectedSubscriptionType { get; set; } = null;
         // Date range logic
@@ -99,9 +93,19 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.P2p
 
         public bool IsSorted { get; set; } = false;
 
-        protected override async Task OnInitializedAsync()
+        protected override async Task OnAfterRenderAsync(bool firstRender)
         {
-            await LoadPrelovedListingsAsync();
+            if (firstRender)
+            {
+                IsLoading = true;
+                await LoadPrelovedListingsAsync();
+                var tListOfSubsctiptions = await GetSubscriptionProductsAsync((int)VerticalTypeEnum.Classifieds, (int)SubVerticalTypeEnum.Preloved);
+                if (tListOfSubsctiptions != null && tListOfSubsctiptions.Count != 0)
+                {
+                    SubscriptionTypes = [.. tListOfSubsctiptions.Select(x => x.ProductName)];
+                }
+                IsLoading = false;
+            }
         }
 
         private async Task LoadPrelovedListingsAsync()

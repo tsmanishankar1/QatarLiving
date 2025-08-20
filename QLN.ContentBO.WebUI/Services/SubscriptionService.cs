@@ -15,7 +15,7 @@ namespace QLN.ContentBO.WebUI.Services
             _logger = Logger;
         }
 
-        public async Task<HttpResponseMessage?> GetAllSubscriptionProductsAsync(int? vertical = null,
+        public async Task<HttpResponseMessage?> GetAllSubscriptionProducts(int? vertical = null,
             int? subvertical = null,
             int? productType = null)
         {

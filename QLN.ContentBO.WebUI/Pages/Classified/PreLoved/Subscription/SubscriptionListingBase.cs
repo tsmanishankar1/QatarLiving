@@ -15,11 +15,11 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.Subscription
         [Parameter] public EventCallback<(string from, string to)> OnDateChanged { get; set; }
 
         [Inject] protected IPrelovedService PrelovedService { get; set; } = default!;
-                [Inject] protected IJSRuntime JS { get; set; } = default!;
+        [Inject] protected IJSRuntime JS { get; set; } = default!;
 
 
         [Inject] protected ILogger<SubscriptionListingBase> _logger { get; set; } = default!;
-         [Inject] protected IDialogService DialogService { get; set; } = default!;
+        [Inject] protected IDialogService DialogService { get; set; } = default!;
 
         protected string SearchText { get; set; } = string.Empty;
 
@@ -55,7 +55,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.Subscription
         protected DateRange _confirmedDateRange = new();
         protected string SelectedDateLabel;
         protected string SelectedCategory { get; set; } = string.Empty;
-        protected bool IsLoading { get; set; } = true;
+        protected bool IsLoading { get; set; } = false;
         protected bool IsEmpty => !IsLoading && Listings.Count == 0;
         protected int TotalCount { get; set; }
         protected int CurrentPage { get; set; } = 1;
@@ -86,28 +86,32 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.Subscription
         protected List<PrelovedSubscriptionItem> Listings { get; set; } = [];
 
         public bool IsSorted { get; set; } = false;
-        protected List<string> SubscriptionTypes = new()
-        {
-            "Free",
-            "Basic",
-            "Pro",
-            "Enterprise"
-        };
+        protected List<string> SubscriptionTypes = [];
         protected string SelectedSubscriptionType { get; set; } = null;
         // Date range logic
         protected DateRange _dateRange = new();
         protected DateRange _tempDateRange = new();
         protected bool showDatePopover = false;
 
-        protected override async Task OnInitializedAsync()
+        protected override async Task OnAfterRenderAsync(bool firstRender)
         {
             try
             {
-                await LoadPrelovedListingsAsync();
+                if (firstRender)
+                {
+                    IsLoading = true;
+                    await LoadPrelovedListingsAsync();
+                    var tListOfSubsctiptions = await GetSubscriptionProductsAsync((int)VerticalTypeEnum.Classifieds, (int)SubVerticalTypeEnum.Preloved);
+                    if (tListOfSubsctiptions != null && tListOfSubsctiptions.Count != 0)
+                    {
+                        SubscriptionTypes = [.. tListOfSubsctiptions.Select(x => x.ProductName)];
+                    }
+                    IsLoading = false;
+                }
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "OnInitializedAsync");
+                Logger.LogError(ex, "OnAfterRenderAsync");
             }
         }
 
@@ -330,7 +334,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.Subscription
             showDatePopover = false;
             StateHasChanged();
         }
-         protected async Task ShowConfirmationExport()
+        protected async Task ShowConfirmationExport()
         {
             var parameters = new DialogParameters
             {

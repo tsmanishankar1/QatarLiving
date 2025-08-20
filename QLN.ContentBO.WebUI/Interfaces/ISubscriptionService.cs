@@ -2,7 +2,7 @@
 {
     public interface ISubscriptionService
     {
-        Task<HttpResponseMessage?> GetAllSubscriptionProductsAsync(int? vertical = null,
+        Task<HttpResponseMessage?> GetAllSubscriptionProducts(int? vertical = null,
             int? subvertical = null,
             int? productType = null);
     }
