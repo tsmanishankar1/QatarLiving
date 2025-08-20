@@ -64,7 +64,7 @@ public static class FatoraEndpoints
 
             if (!isOk || string.IsNullOrWhiteSpace(redirectUrl))
             {
-                return Results.BadRequest(new
+                var errorResponse = new
                 {
                     message = "Failed to initialize checkout.",
                     error = new
@@ -72,7 +72,16 @@ public static class FatoraEndpoints
                         code = res?.Error?.ErrorCode,
                         description = res?.Error?.Description ?? res?.Error?.Message
                     }
-                });
+                };
+
+                return res?.Error?.ErrorCode switch
+                {
+                    "409" => Results.Conflict(errorResponse),
+                    "401" => Results.Unauthorized(),
+                    "403" => Results.Forbid(),
+                    "404" => Results.NotFound(errorResponse),
+                    _ => Results.BadRequest(errorResponse) 
+                };
             }
 
             return Results.Ok(new { paymentId = request.OrderId, redirectUrl });

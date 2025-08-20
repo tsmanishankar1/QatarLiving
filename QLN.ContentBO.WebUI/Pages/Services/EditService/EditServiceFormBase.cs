@@ -188,16 +188,18 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
                 return string.Empty;
             }
         }
-        protected async Task PreviewFile(string fileUrl)
+        protected async Task PreviewFile(string url)
         {
-            var parameters = new DialogParameters
+            if (!string.IsNullOrWhiteSpace(url)
+        && Uri.TryCreate(url, UriKind.Absolute, out var uriResult)
+        && (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps))
             {
-                ["PdfUrl"] = fileUrl
-            };
-
-            var options = new DialogOptions { MaxWidth = MaxWidth.ExtraLarge, FullWidth = true };
-
-            await DialogService.ShowAsync<FilePreviewDialog>("File Preview", parameters, options);
+                Navigation.NavigateTo(url, true); 
+            }
+            else
+            {
+                Snackbar.Add("Invalid File URL", Severity.Error);
+            }
         }
 
 

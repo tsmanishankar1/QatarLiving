@@ -163,7 +163,7 @@ namespace QLN.Backend.API.Service.Services
                     if (subscription == null)
                         throw new InvalidDataException("Subscription not found.");
 
-                    if (subscription.StatusId != Common.Infrastructure.Subscriptions.SubscriptionStatus.Active || subscription.EndDate <= DateTime.UtcNow)
+                    if (subscription.StatusId != SubscriptionStatus.Active || subscription.EndDate <= DateTime.UtcNow)
                         throw new InvalidDataException("Subscription is inactive or expired.");
 
                     var canUse = await _v2SubscriptionService.ValidateSubscriptionUsageAsync(
@@ -200,7 +200,11 @@ namespace QLN.Backend.API.Service.Services
                     {
                         throw new ConflictException(errorMessage);
                     }
-                    throw new InvalidDataException(errorMessage);
+                    if (response.StatusCode == HttpStatusCode.BadRequest)
+                    {
+                        throw new InvalidDataException(errorMessage); 
+                    }
+                    throw new Exception(errorMessage);
                 }
                 if (Guid.Parse(subscriptionId) != Guid.Empty)
                 {
@@ -722,7 +726,27 @@ namespace QLN.Backend.API.Service.Services
                 throw;
             }
         }
-        public async Task<BulkAdActionResponseitems> ModerateBulkService(BulkModerationRequest request, string userId, string subscriptionGuid, DateTime? expiryDate, CancellationToken cancellationToken = default)
+        private static IEnumerable<string> GetQuotaActions(BulkModerationAction action)
+        {
+            return action switch
+            {
+                BulkModerationAction.Promote => new[] { ActionTypes.Promote },
+                BulkModerationAction.UnPromote => new[] { ActionTypes.UnPromote },
+                BulkModerationAction.Feature => new[] { ActionTypes.Feature },
+                BulkModerationAction.UnFeature => new[] { ActionTypes.UnFeature },
+
+                BulkModerationAction.Publish or BulkModerationAction.Approve
+                    => new[] { ActionTypes.Publish, ActionTypes.Promote, ActionTypes.Feature },
+
+                BulkModerationAction.Unpublish
+                    => new[] { ActionTypes.UnPublish, ActionTypes.UnPromote, ActionTypes.UnFeature },
+
+                _ => Array.Empty<string>()
+            };
+        }
+
+        public async Task<BulkAdActionResponseitems> ModerateBulkService(BulkModerationRequest request, string? userId, string subscriptionGuid, DateTime? expiryDate,
+            CancellationToken cancellationToken = default)
         {
             try
             {
@@ -737,68 +761,55 @@ namespace QLN.Backend.API.Service.Services
 
                 var groupedActions = ads
                     .Where(a => a != null && a.SubscriptionId.HasValue && a.SubscriptionId.Value != Guid.Empty)
-                    .GroupBy(a => new
-                    {
-                        ActionType = request.Action
-                    })
+                    .GroupBy(a => new { ActionType = request.Action })
                     .ToList();
 
                 foreach (var group in groupedActions)
                 {
-                    var actionName = group.Key.ActionType switch
-                    {
-                        BulkModerationAction.Promote => "promote",
-                        BulkModerationAction.Feature => "feature",
-                        BulkModerationAction.UnPromote => "unpromote",
-                        BulkModerationAction.UnFeature => "unfeature",
-                        BulkModerationAction.Unpublish => "unpublish",
-                        BulkModerationAction.Publish => "publish",
-                        BulkModerationAction.Approve => "publish",      
-                        BulkModerationAction.Remove => "reject",        
-                        BulkModerationAction.NeedChanges => "need changes", 
-                        BulkModerationAction.Hold => "hold",
-                        BulkModerationAction.Onhold => "on hold",
-                        BulkModerationAction.IsRefreshed => "isrefreshed",
-                        _ => throw new InvalidOperationException("Invalid bulk action.")
-                    };
-
+                    var quotaActions = GetQuotaActions(group.Key.ActionType);
                     var usageCount = group.Count();
-
-                    var requiresQuota = group.Key.ActionType is
-                        BulkModerationAction.Promote or
-                        BulkModerationAction.Feature or
-                        BulkModerationAction.UnPromote or
-                        BulkModerationAction.UnFeature or
-                        BulkModerationAction.Unpublish or
-                        BulkModerationAction.Publish or
-                        BulkModerationAction.Approve;
+                    var requiresQuota = quotaActions.Any();
 
                     if (requiresQuota)
                     {
-                        var canUse = await _v2SubscriptionService.ValidateSubscriptionUsageAsync(
-                            subscriptionId,
-                            actionName,
-                            usageCount,
-                            cancellationToken
-                        );
+                        var canUseAll = true;
 
-                        if (!canUse)
+                        foreach (var quotaAction in quotaActions)
+                        {
+                            var canUse = await _v2SubscriptionService.ValidateSubscriptionUsageAsync(
+                                subscriptionId,
+                                quotaAction,
+                                usageCount,
+                                cancellationToken
+                            );
+
+                            if (!canUse)
+                            {
+                                canUseAll = false;
+                                break;
+                            }
+                        }
+
+                        if (!canUseAll)
                         {
                             failedIds.AddRange(group.Select(x => x.Id));
                             continue;
                         }
 
-                        var reserved = await _v2SubscriptionService.RecordSubscriptionUsageAsync(
-                            subscriptionId,
-                            actionName,
-                            usageCount,
-                            cancellationToken
-                        );
-
-                        if (!reserved)
+                        foreach (var quotaAction in quotaActions)
                         {
-                            failedIds.AddRange(group.Select(x => x.Id));
-                            continue;
+                            var reserved = await _v2SubscriptionService.RecordSubscriptionUsageAsync(
+                                subscriptionId,
+                                quotaAction,
+                                usageCount,
+                                cancellationToken
+                            );
+
+                            if (!reserved)
+                            {
+                                failedIds.AddRange(group.Select(x => x.Id));
+                                continue;
+                            }
                         }
                     }
 
@@ -819,19 +830,17 @@ namespace QLN.Backend.API.Service.Services
 
                         if (!response.IsSuccessStatusCode)
                         {
-                            var failReason = ExtractErrorMessage(responseContent);
-
-                            if (requiresQuota)
+                            foreach (var quotaAction in quotaActions)
                             {
                                 await _v2SubscriptionService.RecordSubscriptionUsageAsync(
                                     subscriptionId,
-                                    actionName,
+                                    quotaAction,
                                     -usageCount,
                                     cancellationToken
                                 );
                             }
 
-                            throw new InvalidOperationException($"Bulk action failed for {actionName}. Reason: {failReason}");
+                            throw new InvalidOperationException($"Bulk action failed for {group.Key.ActionType}. Reason: {responseContent}");
                         }
 
                         succeededIds.AddRange(group.Select(x => x.Id));
@@ -840,12 +849,15 @@ namespace QLN.Backend.API.Service.Services
                     {
                         if (requiresQuota)
                         {
-                            await _v2SubscriptionService.RecordSubscriptionUsageAsync(
-                                subscriptionId,
-                                actionName,
-                                -usageCount,
-                                cancellationToken
-                            );
+                            foreach (var quotaAction in quotaActions)
+                            {
+                                await _v2SubscriptionService.RecordSubscriptionUsageAsync(
+                                    subscriptionId,
+                                    quotaAction,
+                                    -usageCount,
+                                    cancellationToken
+                                );
+                            }
                         }
 
                         failedIds.AddRange(group.Select(x => x.Id));
@@ -873,33 +885,6 @@ namespace QLN.Backend.API.Service.Services
             {
                 _logger.LogError(ex, "Error moderating bulk services");
                 throw;
-            }
-        }
-
-        private string ExtractErrorMessage(string errorContent)
-        {
-            if (string.IsNullOrWhiteSpace(errorContent))
-                return "Unknown error occurred";
-
-            try
-            {
-                using var jsonDoc = JsonDocument.Parse(errorContent);
-                var root = jsonDoc.RootElement;
-
-                if (root.TryGetProperty("message", out var message))
-                    return message.GetString() ?? errorContent;
-
-                if (root.TryGetProperty("error", out var error))
-                    return error.GetString() ?? errorContent;
-
-                if (root.TryGetProperty("detail", out var detail))
-                    return detail.GetString() ?? errorContent;
-
-                return errorContent;
-            }
-            catch (JsonException)
-            {
-                return errorContent;
             }
         }
         public async Task<SubscriptionBudgetDto> GetSubscriptionBudgetsAsyncBySubVertical(Guid subscriptionIdFromToken, Vertical verticalId, SubVertical? subverticalId, CancellationToken cancellationToken = default)

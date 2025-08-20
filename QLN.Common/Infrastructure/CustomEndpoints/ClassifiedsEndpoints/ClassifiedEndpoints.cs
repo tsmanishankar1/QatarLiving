@@ -4584,12 +4584,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 IClassifiedService service,
                 CancellationToken token) =>
                     {
-                        var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                        if (string.IsNullOrEmpty(userClaim))
-                            return Results.Unauthorized();
-
-                        var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                        var uid = userData.GetProperty("uid").GetString();
+                       var uid = context.User.FindFirst("sub")?.Value ?? "unknown";
+                        var userName = context.User.FindFirst("preferred_username")?.Value ?? "unknown";
 
                         if (uid == null)
                         {
@@ -5704,7 +5700,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 {
                     Text = req.Text,
                     Filters = req.Filters,
-                    OrderBy = req.OrderBy,
+                    OrderBy = req.OrderBy
+                    ,
                     PageNumber = req.PageNumber,
                     PageSize = req.PageSize
                 };
@@ -5728,71 +5725,66 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                     {
                         var response = new ClassifiedStoreResponse
                         {
-                             Stores = results.ClassifiedStores
-        .GroupBy(store => new {
+                            Stores = results.ClassifiedStores
+        .GroupBy(store => new
+        {
             store.CompanyId,
-            //store.SubscriptionId,
+            store.SubscriptionId,
             store.CompanyName,
             store.ContactNumber,
             store.Email,
             store.ImageUrl,
             store.BannerUrl,
             store.WebsiteUrl,
-            store.Locations,
+            //store.Locations,
             store.StoreSlug
         })
-        .Select(group => new StoresGroup
+        .Select(group =>
         {
-            CompanyId = Guid.Parse(group.Key.CompanyId),
-            //SubscriptionId = Guid.Parse(group.Key.SubscriptionId),
-            CompanyName = group.Key.CompanyName,
-            ContactNumber = group.Key.ContactNumber,
-            Email = group.Key.Email,
-            ImageUrl = group.Key.ImageUrl,
-            BannerUrl = group.Key.BannerUrl,
-            WebsiteUrl = group.Key.WebsiteUrl,
-            Locations = group.Key.Locations,
-            ProductCount = group.Count(),
-             StoreSlug=group.Key.StoreSlug,
-            Products = group.Select(g => new ProductInfo
+            var firstStore = group.First();
+            return new StoresGroup()
             {
-                ProductId = Guid.Parse(g.ProductId),
-                ProductName = g.ProductName,
-                ProductLogo = g.ProductLogo,
-                ProductPrice = g.ProductPrice,
-                Currency = g.Currency,
-                ProductSummary = g.ProductSummary,
-                ProductDescription = g.ProductDescription,
-                Features = g.Features,
-                Images = g.Images,
-                ProductSlug=g.ProductSlug
-            }).ToList()
+                CompanyId = Guid.Parse(group.Key.CompanyId),
+                SubscriptionId = Guid.Parse(group.Key.SubscriptionId),
+                CompanyName = group.Key.CompanyName,
+                ContactNumber = group.Key.ContactNumber,
+                Email = group.Key.Email,
+                ImageUrl = group.Key.ImageUrl,
+                BannerUrl = group.Key.BannerUrl,
+                WebsiteUrl = group.Key.WebsiteUrl,
+                Locations = firstStore.Locations,
+                ProductCount = group.Count(),
+                StoreSlug = group.Key.StoreSlug,
+                Products = group.Select(g => new ProductInfo
+                {
+                    ProductId = Guid.Parse(g.ProductId),
+                    ProductName = g.ProductName,
+                    ProductLogo = g.ProductLogo,
+                    ProductPrice = g.ProductPrice,
+                    Currency = g.Currency,
+                    ProductSummary = g.ProductSummary,
+                    ProductDescription = g.ProductDescription,
+                    Features = g.Features,
+                    Images = g.Images,
+                    ProductSlug = g.ProductSlug
+                }).ToList()
+            };
         })
         .ToList()
                         };
 
-                        
 
-                        int currentPage = Math.Max(1, req.PageNumber);
-                        int itemsPerPage = Math.Max(1, Math.Min(100, req.PageSize));
-                        int totalCount = response.Stores.Count;
-                        int totalPages = (int)Math.Ceiling((double)totalCount / itemsPerPage);
 
-                        if (currentPage > totalPages && totalPages > 0)
-                            currentPage = totalPages;
 
-                        var paginated = response.Stores
-                            .Skip((currentPage - 1) * itemsPerPage)
-                            .Take(itemsPerPage)
-                            .ToList();
+
 
 
                         return Results.Ok(new ClassifiedBOPageResponse<StoresGroup>
                         {
-                            Page = currentPage,
-                            PerPage = itemsPerPage,
-                            TotalCount = totalCount,
-                            Items = paginated
+                            Page = req.PageNumber,
+                            PerPage = req.PageSize,
+                            TotalCount = results.TotalCount??0,
+                            Items = response.Stores
                         });
                     }
                     else
@@ -6048,26 +6040,12 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                             _ => response.Products.OrderBy(t => t.ProductPrice).ToList()
                         };
 
-                        int currentPage = Math.Max(1, req.PageNumber);
-                        int itemsPerPage = Math.Max(1, Math.Min(100, req.PageSize));
-                        int totalCount = response.Products.Count;
-                        int totalPages = (int)Math.Ceiling((double)totalCount / itemsPerPage);
-
-                        if (currentPage > totalPages && totalPages > 0)
-                            currentPage = totalPages;
-
-                        var paginated = response.Products
-                            .Skip((currentPage - 1) * itemsPerPage)
-                            .Take(itemsPerPage)
-                            .ToList();
-
-
                         return Results.Ok(new ClassifiedBOPageResponse<ClassifiedStoresIndex>
                         {
-                            Page = currentPage,
-                            PerPage = itemsPerPage,
-                            TotalCount = totalCount,
-                            Items = paginated
+                            Page = req.PageNumber,
+                            PerPage = req.PageSize,
+                            TotalCount = response.Products.Count,
+                            Items = response.Products
                         });
                     }
                     else
@@ -6192,26 +6170,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                             _ => response.Products.OrderBy(t => t.ProductPrice).ToList()
                         };
 
-                        int currentPage = Math.Max(1, req.PageNumber);
-                        int itemsPerPage = Math.Max(1, Math.Min(100, req.PageSize));
-                        int totalCount = response.Products.Count;
-                        int totalPages = (int)Math.Ceiling((double)totalCount / itemsPerPage);
-
-                        if (currentPage > totalPages && totalPages > 0)
-                            currentPage = totalPages;
-
-                        var paginated = response.Products
-                            .Skip((currentPage - 1) * itemsPerPage)
-                            .Take(itemsPerPage)
-                            .ToList();
-
-
+                        
                         return Results.Ok(new ClassifiedBOPageResponse<ClassifiedStoresIndex>
                         {
-                            Page = currentPage,
-                            PerPage = itemsPerPage,
-                            TotalCount = totalCount,
-                            Items = paginated
+                            Page = req.PageNumber,
+                            PerPage = req.PageSize,
+                            TotalCount = response.Products.Count,
+                            Items = response.Products
                         });
                     }
                     else

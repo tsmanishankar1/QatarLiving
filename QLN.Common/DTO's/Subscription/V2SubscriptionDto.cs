@@ -1,4 +1,5 @@
-﻿using QLN.Common.Infrastructure.Subscriptions;
+﻿using QLN.Common.DTO_s.Payments;
+using QLN.Common.Infrastructure.Subscriptions;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -18,6 +19,7 @@ namespace QLN.Common.DTO_s.Subscription
         public Guid Id { get; set; }
         public string ProductCode { get; set; } = string.Empty;
         public string ProductName { get; set; } = string.Empty;
+        public ProductType? ProductType { get; set; }
         public string? UserId { get; set; }
         public Guid? CompanyId { get; set; }
         public int? PaymentId { get; set; }
@@ -170,6 +172,7 @@ namespace QLN.Common.DTO_s.Subscription
         public Guid Id { get; set; }
         public string ProductCode { get; set; } = string.Empty;
         public string ProductName { get; set; } = string.Empty;
+        public ProductType? ProductType { get; set; }
         public string? UserId { get; set; }
         public string VerticalName { get; set; } = string.Empty;
         public Vertical Vertical { get; set; }

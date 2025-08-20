@@ -1336,7 +1336,7 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
                     try
                     {
                         
-                        var url = $"api/v2/classifiedbo/bulk-collectibles-action-userid/{userId}&subscriptionId={subscriptionId}";
+                        var url = $"api/v2/classifiedbo/bulk-collectibles-action-userid/{userId}/{userName}&subscriptionId={subscriptionId}";
                         var serviceRequest = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, SERVICE_APP_ID, url);
                         serviceRequest.Content = new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json");
 
@@ -1839,7 +1839,7 @@ CancellationToken cancellationToken = default)
                     try
                     {
 
-                        var url = $"api/v2/classifiedbo/bulk-preloved-action-userid/{userId}&subscriptionId={subscriptionId}";
+                        var url = $"api/v2/classifiedbo/bulk-preloved-action-userid/{userId}/{userName}&subscriptionId={subscriptionId}";
                         var serviceRequest = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, SERVICE_APP_ID, url);
                         serviceRequest.Content = new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json");
 

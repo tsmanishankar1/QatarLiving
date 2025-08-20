@@ -19,6 +19,7 @@ using QLN.Common.Infrastructure.IService.IService;
 using QLN.Common.Infrastructure.IService.V2IClassifiedBoService;
 using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.Subscriptions;
+using QLN.Common.Infrastructure.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -2367,7 +2368,7 @@ CancellationToken ct
 
 
 
-            group.MapPost("/bulk-collectibles-action-userid/{userId}", async Task<Results<
+            group.MapPost("/bulk-collectibles-action-userid/{userId}/{userName}", async Task<Results<
                 Ok<BulkAdActionResponseitems>,
                 BadRequest<ProblemDetails>,
                 Conflict<ProblemDetails>,
@@ -2829,7 +2830,7 @@ ProblemHttpResult
 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
 
-            group.MapPost("/bulk-preloved-action-userid/{userId}", async Task<Results<
+            group.MapPost("/bulk-preloved-action-userid/{userId}/{userName}", async Task<Results<
                 Ok<BulkAdActionResponseitems>,
                 BadRequest<ProblemDetails>,
                 Conflict<ProblemDetails>,
