@@ -65,10 +65,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu
         protected List<ToggleTabs.TabOption> tabOptions =
         [
           new() { Label = "Published", Value = "published" },
-          new() { Label = "Unpublished", Value = "unPublished" },
-           new() { Label = "P2p", Value = "p2p" },
-           new() { Label = "Promoted", Value = "promoted" },
-           new() { Label = "Featured", Value = "featured"  }
+          new() { Label = "Unpublished", Value = "unPublished" }
         ];
 
         protected async Task HandlePageChange(int newPage)

@@ -45,11 +45,7 @@ namespace QLN.ContentBO.WebUI.Services
 {
     try
     {
-        // Print the query params object (serialize for readability)
         var queryJson = JsonSerializer.Serialize(query, new JsonSerializerOptions { WriteIndented = true });
-        Console.WriteLine("Query object received:");
-        Console.WriteLine(queryJson);
-
         var queryParams = new Dictionary<string, string?>
         {
             { "pageNumber", query.PageNumber.ToString() },
@@ -62,18 +58,10 @@ namespace QLN.ContentBO.WebUI.Services
             { "isPromoted", query.IsPromoted?.ToString() },
             { "isFeatured", query.IsFeatured?.ToString() }
         };
-
-        // Build query string by skipping null or empty values
         var queryString = string.Join("&", queryParams
             .Where(kv => !string.IsNullOrWhiteSpace(kv.Value))
             .Select(kv => $"{kv.Key}={Uri.EscapeDataString(kv.Value!)}"));
-
         var requestUrl = $"/api/v2/classifiedbo/DealsViewSummary{(string.IsNullOrEmpty(queryString) ? "" : "?" + queryString)}";
-
-        // Print final request URL
-        Console.WriteLine("Request URL:");
-        Console.WriteLine(requestUrl);
-
         var request = new HttpRequestMessage(HttpMethod.Get, requestUrl);
         return await _httpClient.SendAsync(request);
     }
