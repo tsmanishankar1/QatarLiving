@@ -95,16 +95,23 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.P2p
 
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
-            if (firstRender)
+            try
             {
-                IsLoading = true;
-                await LoadPrelovedListingsAsync();
-                var tListOfSubsctiptions = await GetSubscriptionProductsAsync((int)VerticalTypeEnum.Classifieds, (int)SubVerticalTypeEnum.Preloved);
-                if (tListOfSubsctiptions != null && tListOfSubsctiptions.Count != 0)
+                if (firstRender)
                 {
-                    SubscriptionTypes = [.. tListOfSubsctiptions.Select(x => x.ProductName)];
+                    IsLoading = true;
+                    await LoadPrelovedListingsAsync();
+                    var tListOfSubsctiptions = await GetSubscriptionProductsAsync((int)VerticalTypeEnum.Classifieds, (int)SubVerticalTypeEnum.Preloved);
+                    if (tListOfSubsctiptions != null && tListOfSubsctiptions.Count != 0)
+                    {
+                        SubscriptionTypes = [.. tListOfSubsctiptions.Select(x => x.ProductName)];
+                    }
+                    IsLoading = false;
                 }
-                IsLoading = false;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "OnAfterRenderAsync");
             }
         }
 
