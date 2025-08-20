@@ -2973,6 +2973,7 @@ ProblemHttpResult
 
             group.MapPost("preloved/admin/post-by-id", async Task<IResult> (
               Preloveds dto,
+              SaveIntent indent,
               IClassifiedService service,
               CancellationToken token) =>
             {
@@ -2988,7 +2989,7 @@ ProblemHttpResult
                         });
                     }
 
-                    var result = await service.CreateClassifiedPrelovedAd(dto, token);
+                    var result = await service.CreateClassifiedPrelovedAd(dto, indent, token);
 
                     return TypedResults.Created($"/api/classifieds/preloved/admin/post-by-id/{result.AdId}", result);
                 }
@@ -3049,6 +3050,7 @@ ProblemHttpResult
            
             group.MapPost("collectibles/admin/post-by-id", async Task<IResult> (
                 Collectibles dto,
+                SaveIntent indent,
                 IClassifiedService service,
                 CancellationToken token) =>
             {
@@ -3064,7 +3066,7 @@ ProblemHttpResult
                         });
                     }
 
-                    var result = await service.CreateClassifiedCollectiblesAd(dto, token);
+                    var result = await service.CreateClassifiedCollectiblesAd(dto, indent, token);
 
                     return TypedResults.Created(
                         $"/api/classifieds/collectibles/admin/post-by-id/{result.AdId}", result);
@@ -3105,6 +3107,7 @@ ProblemHttpResult
 
             group.MapPost("deals/post-by-id", async Task<IResult> (
                Deals dto,
+               SaveIntent indent,
                IClassifiedService service,
                CancellationToken token) =>
             {
@@ -3120,7 +3123,7 @@ ProblemHttpResult
                         });
                     }
 
-                    var result = await service.CreateClassifiedDealsAd(dto, token);
+                    var result = await service.CreateClassifiedDealsAd(dto,indent, token);
 
                     return TypedResults.Created($"/api/classifieds/deals/user-ads-by-id/{result.AdId}", result);
 
