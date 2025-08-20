@@ -35,7 +35,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.UserVerificationProf
         }
         protected void ShowPreview(Guid id)
         {
-            Navigation.NavigateTo($"/manage/classified/items/verification/preview/{id}");
+            Navigation.NavigateTo($"/manage/classified/collectibles/verification/preview/{id}");
         }
     
     }
