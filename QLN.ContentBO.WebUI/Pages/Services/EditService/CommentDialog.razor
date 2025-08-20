@@ -4,9 +4,9 @@
 
 <MudDialog>
     <DialogContent>
-        <h3 class="form-heading">Add Comments</h3>
+        <h3 class="form-heading">@GetDialogTitle()</h3>
         <MudTextField @bind-Value="Comments"
-                      Label="Your comments"
+                      Placeholder="@GetPlaceholder()"
                       Variant="Variant.Outlined"
                       Lines="4"
                       FullWidth="true"
