@@ -141,7 +141,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewListing
                 ["Expiry Date"] = x.ExpiryDate?.ToString("yyyy/MM/dd") ?? "-"
             }).ToList();
 
-            await JS.InvokeVoidAsync("exportToExcel", exportData, "Classified_Items_ViewListing.xlsx", "Classified Items");
+            await JS.InvokeVoidAsync("exportToExcel", exportData, "Classified_Items_Listing.xlsx", "Classified Items");
 
             Snackbar.Add("Export successful!", Severity.Success);
         }

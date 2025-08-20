@@ -89,12 +89,20 @@
 
                 <TemplateColumn Title="Start Date">
                     <CellTemplate>
-                        @(context.Item.StartDate is not null ? context.Item.StartDate : "-")
+                        @(
+                        context.Item.StartDate is not null
+                        ? DateTime.Parse(context.Item.StartDate.ToString()).ToString("dd-MMM-yyyy hh:mm tt")
+                        : "-"
+                    )
                     </CellTemplate>
                 </TemplateColumn>
                 <TemplateColumn Title="End Date">
-                    <CellTemplate>
-                        @(context.Item.EndDate is not null ? context.Item.EndDate : "-")
+                   <CellTemplate>
+                    @(
+                        context.Item.EndDate is not null
+                        ? DateTime.Parse(context.Item.EndDate.ToString()).ToString("dd-MMM-yyyy hh:mm tt")
+                        : "-"
+                    )
                     </CellTemplate>
                 </TemplateColumn>
                 <TemplateColumn Title="Whatsapp Leads">

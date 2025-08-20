@@ -183,7 +183,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.Subscription
                     ["Web Clicks"] = x.WhatsAppLeads,
                     ["Views"] = x.PhoneLeads,
                 }).ToList();
-                await JS.InvokeVoidAsync("exportToExcel", exportData, "Deals_Listings.xlsx", "Deals Listings");
+                await JS.InvokeVoidAsync("exportToExcel", exportData, "Deals_SubscriptionListings.xlsx", "Deals Subscription Listings");
 
                 Snackbar.Add("Export successful!", Severity.Success);
             }

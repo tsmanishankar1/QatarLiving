@@ -191,7 +191,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewTransactions
                     ["Description"] = x.Description
                 }).ToList();
 
-                await JS.InvokeVoidAsync("exportToExcel", exportData, "Classified_Items_ViewTransactions.xlsx", "Transactions");
+                await JS.InvokeVoidAsync("exportToExcel", exportData, "Classified_Items_Transactions.xlsx", "Transactions");
 
                 Snackbar.Add("Export successful!", Severity.Success);
             }
