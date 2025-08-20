@@ -43,7 +43,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved
         }
         protected void ShowPreview(Guid id)
         {
-            Navigation.NavigateTo($"/manage/classified/items/verification/preview/{id}");
+            Navigation.NavigateTo($"/manage/classified/preloved/verification/preview/{id}");
         }
     }
 }
