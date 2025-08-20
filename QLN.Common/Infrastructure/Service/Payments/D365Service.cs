@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using Google.Api;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Identity.Client;
@@ -11,6 +12,7 @@ using QLN.Common.Infrastructure.IService.IPayments;
 using QLN.Common.Infrastructure.IService.IProductService;
 using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.QLDbContext;
+using QLN.Common.Infrastructure.Subscriptions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,6 +21,7 @@ using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using static QLN.Common.Infrastructure.Constants.ConstantValues;
 
 namespace QLN.Common.Infrastructure.Service.Payments
 {
@@ -264,42 +267,64 @@ namespace QLN.Common.Infrastructure.Service.Payments
                 throw new InvalidOperationException("D365 QLUserId is 0");
             }
 
-            var orderPrefix = order.D365Itemid.Substring(0, 2); // get the Order Prefix
-            var orderSuffix = order.D365Itemid.Substring(4, order.D365Itemid.Length - 1); // get the Order Suffix
+            var orderStrings = order.D365Itemid.Split('-');
 
-            switch (orderPrefix)
+            if (orderStrings.Length < 3)
+            {
+                throw new InvalidOperationException($"Invalid D365 ItemID format: {order.D365Itemid}");
+            }
+
+            var verticalCheck = orderStrings[0];
+            var productCheck = orderStrings[1];
+            var subProductCheck = orderStrings[2];
+
+            switch (verticalCheck)
             {
                 // check if this is for Classifieds
                 case "QLC":
-                    switch (orderSuffix)
+                    switch (productCheck)
                     {
                         // Always order these based on which ones are more likely to happen often
-                        case "PUB":
-                            return await ProcessPayToPublish(order, cancellationToken);
+                        case "P2P":
+                            switch (subProductCheck)
+                            {
+                                case "ADD":
+                                    return await ProcessAddonFeature(order, Vertical.Classifieds, cancellationToken);
+                                case "REF":
+                                    return await ProcessAddonRefresh(order, Vertical.Classifieds, cancellationToken);
+                                default:
+                                    return await ProcessPayToPublish(order, Vertical.Classifieds, cancellationToken);
+                            }
                         case "SUB":
-                            return await ProcessSubscription(order, cancellationToken);
-                        case "ADD-FEA":
-                            return await ProcessAddonFeature(order, cancellationToken);
-                        case "ADD-PRO":
-                            return await ProcessAddonPromote(order, cancellationToken);
+                            return await ProcessSubscription(order, Vertical.Classifieds, cancellationToken);
+                        case "ADD":
+                            return await ProcessAddonFeature(order, Vertical.Classifieds, cancellationToken);
                         default:
-                            throw new InvalidOperationException($"Unknown QLC D365 ItemID : {order.D365Itemid}");
+                            throw new InvalidOperationException($"Unknown QLS D365 ItemID : {order.D365Itemid}");
                     }
                 // check if this is for Services
                 case "QLS":
-                    switch (orderSuffix)
+                    switch (productCheck)
                     {
                         // Always order these based on which ones are more likely to happen often
+                        case "P2P":
+                            switch (subProductCheck)
+                            {
+                                case "ADD":
+                                    return await ProcessAddonFeature(order, Vertical.Services, cancellationToken);
+                                case "PRO":
+                                    return await ProcessAddonPromote(order, Vertical.Services, cancellationToken);
+                                default:
+                                    return await ProcessPayToPublish(order, Vertical.Services, cancellationToken);
+                            }
                         case "SUB":
-                            return await ProcessSubscription(order, cancellationToken);
-                        case "ADD-FEA":
-                            return await ProcessAddonFeature(order, cancellationToken);
-                        case "ADD-PRO":
-                            return await ProcessAddonPromote(order, cancellationToken);
-                        case "PUB":
-                            throw new InvalidOperationException($"QLS has no P2P Prodcut Code for D365 ItemID : {order.D365Itemid}");
+                            return await ProcessSubscription(order, Vertical.Services, cancellationToken);
                         default:
-                            throw new InvalidOperationException($"Unknown QLS D365 ItemID : {order.D365Itemid}");
+                            switch (subProductCheck)
+                            {
+                                default:
+                                    throw new InvalidOperationException($"Unknown QLS D365 ItemID : {order.D365Itemid}");
+                            }
                     }
                 default:
                     break;
@@ -308,12 +333,12 @@ namespace QLN.Common.Infrastructure.Service.Payments
             return "No order item matched";
         }
 
-        private async Task<string> ProcessSubscription(D365Order order, CancellationToken cancellationToken)
+        private async Task<string> ProcessSubscription(D365Order order, Vertical vertical, CancellationToken cancellationToken)
         {
             try
             {
                 // Simulate ProcessSubscriptions (replace with actual implementation)
-                await ProcessSubscriptionsAsync(order);
+                await ProcessSubscriptionsAsync(order, vertical, cancellationToken);
 
                 await SaveD365RequestLogsAsync(
                     DateTime.UtcNow,
@@ -338,12 +363,12 @@ namespace QLN.Common.Infrastructure.Service.Payments
             }
         }
 
-        private async Task<string> ProcessAddonFeature(D365Order order, CancellationToken cancellationToken)
+        private async Task<string> ProcessAddonFeature(D365Order order, Vertical vertical, CancellationToken cancellationToken)
         {
             try
             {
                 // Simulate ProcessPaytoFeature (replace with actual implementation)
-                await ProcessPaytoFeatureAsync(order.AdId, order.D365Itemid);
+                await ProcessPaytoFeatureAsync(order.AdId, order.D365Itemid, vertical, cancellationToken);
 
                 await SaveD365RequestLogsAsync(
                     DateTime.UtcNow,
@@ -368,12 +393,12 @@ namespace QLN.Common.Infrastructure.Service.Payments
             }
         }
 
-        private async Task<string> ProcessAddonPromote(D365Order order, CancellationToken cancellationToken)
+        private async Task<string> ProcessAddonPromote(D365Order order, Vertical vertical, CancellationToken cancellationToken)
         {
             try
             {
                 // Simulate ProcessPaytoPromote (replace with actual implementation)
-                await ProcessPaytoPromoteAsync(order.AdId, order.D365Itemid);
+                await ProcessPaytoPromoteAsync(order.AdId, order.D365Itemid, vertical, cancellationToken);
 
                 await SaveD365RequestLogsAsync(
                     DateTime.UtcNow,
@@ -398,12 +423,42 @@ namespace QLN.Common.Infrastructure.Service.Payments
             }
         }
 
-        private async Task<string> ProcessPayToPublish(D365Order order, CancellationToken cancellationToken)
+        private async Task<string> ProcessAddonRefresh(D365Order order, Vertical vertical, CancellationToken cancellationToken)
+        {
+            try
+            {
+                // Simulate ProcessPaytoPromote (replace with actual implementation)
+                await ProcessAddonRefreshAsync(order.AdId, order.D365Itemid, vertical, cancellationToken);
+
+                await SaveD365RequestLogsAsync(
+                    DateTime.UtcNow,
+                    order,
+                    1,
+                    new { message = "Add feature processed successfully" },
+                    cancellationToken
+                );
+
+                return "Ad Promote processed successfully";
+            }
+            catch (Exception ex)
+            {
+                await SaveD365RequestLogsAsync(
+                    DateTime.UtcNow,
+                    order,
+                    0,
+                    new { message = ex.Message },
+                    cancellationToken
+                );
+                throw new InvalidOperationException($"Error processing feature: {ex.Message}", ex);
+            }
+        }
+
+        private async Task<string> ProcessPayToPublish(D365Order order, Vertical vertical, CancellationToken cancellationToken)
         {
             try
             {
                 // Simulate ProcessPayToPublish (replace with actual implementation)
-                await ProcessPayToPublishAsync(order);
+                await ProcessPayToPublishAsync(order, vertical, cancellationToken);
 
                 await SaveD365RequestLogsAsync(
                     DateTime.UtcNow,
@@ -429,7 +484,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
         }
 
         // Placeholder for actual feature processing logic
-        private async Task ProcessPaytoFeatureAsync(int adId, string d365ItemId)
+        private async Task ProcessPaytoFeatureAsync(int adId, string d365ItemId, Vertical vertical, CancellationToken cancellationToken)
         {
             // this flow assumes a user definitely exists and has created an ad,
             // but that the ad must be associated to the pay to feature process
@@ -445,7 +500,23 @@ namespace QLN.Common.Infrastructure.Service.Payments
         }
 
         // Placeholder for actual promote processing logic
-        private async Task ProcessPaytoPromoteAsync(int adId, string d365ItemId)
+        private async Task ProcessPaytoPromoteAsync(int adId, string d365ItemId, Vertical vertical, CancellationToken cancellationToken)
+        {
+            // this flow assumes a user definitely exists and has created an ad,
+            // but that the ad must be associated to the pay to feature process
+            // 1) Get the advert from the Classifieds service
+            // 2) find the username of the ad
+            // 3) Lookup the user from userManager
+            // 4) Create an order in the payments table
+            // 5) Create a pay to promote
+            // 6) Update the user object with the purchase of a pay to promote
+            // 7) Save all changes
+            // Implement actual logic here
+            await Task.CompletedTask;
+        }
+
+        // Placeholder for actual promote processing logic
+        private async Task ProcessAddonRefreshAsync(int adId, string d365ItemId, Vertical vertical, CancellationToken cancellationToken)
         {
             // this flow assumes a user definitely exists and has created an ad,
             // but that the ad must be associated to the pay to feature process
@@ -461,7 +532,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
         }
 
         // Placeholder for actual subscription processing logic
-        private async Task ProcessSubscriptionsAsync(D365Order order)
+        private async Task ProcessSubscriptionsAsync(D365Order order, Vertical vertical, CancellationToken cancellationToken)
         {
             // this process assumes that a user may exist, but if they do not then proceed
             // to create a user based on the provided information being an email address
@@ -472,7 +543,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
             // 4) Update the user with the subscription ID
             // 5) Save all changes
             // Implement actual logic here
-            var user = await FindOrCreateUser(order.QLUserId, order.QLUsername, order.Email, order.Mobile);
+            var user = await FindOrCreateUser(order.QLUserId, order.QLUsername, order.Email, order.Mobile, cancellationToken);
 
             var paymentEntity = new PaymentEntity
             {
@@ -482,11 +553,10 @@ namespace QLN.Common.Infrastructure.Service.Payments
                 PaidByUid = user.Id.ToString(), // using the userId of our system not the legacy one
                 PaymentMethod = PaymentMethod.Cash, // need to check this ?
                 ProductType = ProductType.SUBSCRIPTION,
-                Source = Source.Web,
+                Source = Source.D365,
                 Status = PaymentStatus.Success,
-                Vertical = order.D365Itemid.StartsWith("QLC") ? Subscriptions.Vertical.Classifieds : Subscriptions.Vertical.Services,
-                SubVertical = order.D365Itemid.StartsWith("QLC") ? SubVertical.Items : SubVertical.Services, // this isnt right - likely need to hand this into this method
-                TriggeredSource = TriggeredSource.Web
+                Vertical = vertical,
+                TriggeredSource = TriggeredSource.D365
             };
 
             var payment = _dbContext.Payments.Add(paymentEntity);
@@ -501,36 +571,36 @@ namespace QLN.Common.Infrastructure.Service.Payments
                 PaymentId = paymentEntity.PaymentId,
             });
 
-            var subscription = new UserSubscription {
-                DisplayName = order.D365Itemid,
-                Id = subscriptionId,
-                UserId = user.Id,
-                ProductCode = order.D365Itemid,
-                StartDate = order.StartDate ?? DateTime.UtcNow,
-                EndDate = order.EndDate ?? DateTime.UtcNow.AddYears(1), // Assuming a default duration of 1 year
-                ProductName = order.SalesType ?? "Default Subscription",
-                Vertical = order.D365Itemid.StartsWith("QLC") ? Subscriptions.Vertical.Classifieds : Subscriptions.Vertical.Services,
-                SubVertical = order.D365Itemid.StartsWith("QLC") ? SubVertical.Services : SubVertical.Items, // this isnt right - likely need to hand this into this method
-            };
+            // Not sure if we should do this here or rather as a pub/sub from the subscription actor itself (preferred)
+            //var subscription = new UserSubscription {
+            //    DisplayName = order.D365Itemid,
+            //    Id = subscriptionId,
+            //    UserId = user.Id,
+            //    ProductCode = order.D365Itemid,
+            //    StartDate = order.StartDate ?? DateTime.UtcNow,
+            //    EndDate = order.EndDate ?? DateTime.UtcNow.AddYears(1), // Assuming a default duration of 1 year
+            //    ProductName = order.SalesType ?? "Default Subscription",
+            //    Vertical = vertical,
+            //};
 
-            if (user.Subscriptions != null)
-            {
-                user.Subscriptions.Add(subscription);
-            } else
-            {
-                user.Subscriptions = new List<UserSubscription>
-                {
-                    subscription
-                };
-            }
+            //if (user.Subscriptions != null)
+            //{
+            //    user.Subscriptions.Add(subscription);
+            //} else
+            //{
+            //    user.Subscriptions = new List<UserSubscription>
+            //    {
+            //        subscription
+            //    };
+            //}
 
-            await _userManager.UpdateAsync(user);
+            //await _userManager.UpdateAsync(user);
 
             return;
         }
 
         // Placeholder for actual pay to publish processing logic
-        private async Task ProcessPayToPublishAsync(D365Order order)
+        private async Task ProcessPayToPublishAsync(D365Order order, Vertical vertical, CancellationToken cancellationToken)
         {
             // this process assumes that a user may exist, but if they do not then proceed
             // to create a user based on the provided information being an email address
@@ -541,7 +611,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
             // 4) Update the user with the subscription ID
             // 5) Save all changes
             // Implement actual logic here
-            var user = await FindOrCreateUser(order.QLUserId, order.QLUsername, order.Email, order.Mobile);
+            var user = await FindOrCreateUser(order.QLUserId, order.QLUsername, order.Email, order.Mobile, cancellationToken);
 
             var paymentEntity = new PaymentEntity
             {
@@ -551,61 +621,58 @@ namespace QLN.Common.Infrastructure.Service.Payments
                 PaidByUid = user.Id.ToString(), // using the userId of our system not the legacy one
                 PaymentMethod = PaymentMethod.Cash, // need to check this ?
                 ProductType = ProductType.PUBLISH,
-                Source = Source.Web,
+                Source = Source.D365,
                 Status = PaymentStatus.Success,
-                Vertical = Subscriptions.Vertical.Classifieds,
-                SubVertical = SubVertical.Items, // this isnt right - likely need to hand this into this method
-                TriggeredSource = TriggeredSource.Web
+                Vertical = vertical,
+                TriggeredSource = TriggeredSource.D365
             };
 
-            var payment = _dbContext.Payments.Add(paymentEntity);
+            var payment = _dbContext.Payments.AddAsync(paymentEntity, cancellationToken);
             _dbContext.SaveChanges();
 
             // create the pay to publish and reference the payment Id
 
-            var subscriptionId = await _subscriptionService.PurchaseSubscriptionAsync( new V2SubscriptionPurchaseRequestDto
+            var subscriptionId = await _subscriptionService.PurchaseSubscriptionAsync(new V2SubscriptionPurchaseRequestDto
             {
                 UserId = user.Id.ToString(),
                 ProductCode = order.D365Itemid,
                 PaymentId = paymentEntity.PaymentId,
             });
 
-            // temporary example
-            // TODO: Is Pay to publish different from a subscription and if so how
-            var subscription = new UserSubscription
-            {
-                DisplayName = order.D365Itemid,
-                Id = subscriptionId,
-                UserId = user.Id,
-                ProductCode = order.D365Itemid,
-                StartDate = order.StartDate ?? DateTime.UtcNow,
-                EndDate = order.EndDate ?? DateTime.UtcNow.AddYears(1), // Assuming a default duration of 1 year
-                ProductName = order.SalesType ?? "Default Subscription",
-                Vertical = order.D365Itemid.StartsWith("QLC") ? Subscriptions.Vertical.Classifieds : Subscriptions.Vertical.Services,
-                SubVertical = order.D365Itemid.StartsWith("QLC") ? SubVertical.Services : SubVertical.Items, // this isnt right - likely need to hand this into this method
-            };
+            // Not sure if we should do this here or rather as a pub/sub from the subscription actor itself (preferred)
+            //var subscription = new UserSubscription
+            //{
+            //    DisplayName = order.D365Itemid,
+            //    Id = subscriptionId,
+            //    UserId = user.Id,
+            //    ProductCode = order.D365Itemid,
+            //    StartDate = order.StartDate ?? DateTime.UtcNow,
+            //    EndDate = order.EndDate ?? DateTime.UtcNow.AddYears(1), // Assuming a default duration of 1 year
+            //    ProductName = order.SalesType ?? "Default Subscription",
+            //    Vertical = vertical,
+            //};
 
-            if (user.Subscriptions != null)
-            {
-                user.Subscriptions.Add(subscription);
-            }
-            else
-            {
-                user.Subscriptions = new List<UserSubscription>
-                {
-                    subscription
-                };
-            }
+            //if (user.Subscriptions != null)
+            //{
+            //    user.Subscriptions.Add(subscription);
+            //}
+            //else
+            //{
+            //    user.Subscriptions = new List<UserSubscription>
+            //    {
+            //        subscription
+            //    };
+            //}
 
-            await _userManager.UpdateAsync(user);
+            //await _userManager.UpdateAsync(user);
 
             return;
         }
 
-        private async Task<ApplicationUser> FindOrCreateUser(long userId, string userName, string email, string mobile)
+        private async Task<ApplicationUser> FindOrCreateUser(long userId, string userName, string email, string mobile, CancellationToken cancellationToken)
         {
             // look for the user using their legacy user ID
-            var user = await _userManager.Users.FirstOrDefaultAsync(u => u.LegacyUid == userId);
+            var user = await _userManager.Users.FirstOrDefaultAsync(u => u.LegacyUid == userId, cancellationToken);
 
             if(user == null)
             {
