@@ -1,0 +1,42 @@
+﻿@page "/auth/login"
+
+@using Microsoft.Extensions.Options
+@using QLN.ContentBO.WebUI.Interfaces
+@using QLN.ContentBO.WebUI.Models
+@inject NavigationManager Nav
+@inject IOptions<NavigationPath> NavigationPath
+@inject ITokenService TokenService
+@code {
+    [Parameter] public string? ReturnUrl { get; set; }
+
+    protected override void OnInitialized()
+    {
+        var authUrl = $"{NavigationPath.Value.Login}?destination=/auth/callback";
+        Nav.NavigateTo(authUrl, forceLoad: true);
+    }
+
+    protected string SetDestination()
+    {
+        var destination = new Uri(Nav.Uri).AbsolutePath.Substring(1);
+
+        return destination;
+    }
+
+    protected async Task GetUserAsync()
+    {
+
+        var response = await TokenService.GetUserSync();
+        if (response.IsSuccessStatusCode)
+        {
+            var user = await response.Content.ReadFromJsonAsync<UserSyncResponse>();
+            if (user != null)
+            {
+                Nav.NavigateTo(NavigationPath.Value.BORedirectPrefix + SetDestination());
+            }
+        }
+        else
+        {
+            Nav.NavigateTo(NavigationPath.Value.Login);
+        }
+    }
+}
