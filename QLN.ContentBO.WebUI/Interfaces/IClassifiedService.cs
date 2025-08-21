@@ -68,7 +68,7 @@ namespace QLN.ContentBO.WebUI.Interfaces
         Task<HttpResponseMessage?> GetDealsSubscription(FilterRequest request);
         Task<HttpResponseMessage?> GetDealsListing(FilterRequest request);
         Task<HttpResponseMessage?> PerformDealsBulkActionAsync(object payload);
-        Task<HttpResponseMessage?> GetDealsByIdAsync(string vertical, long? adId);
+        Task<HttpResponseMessage?> GetDealsByIdAsync(long? adId);
         Task<HttpResponseMessage?> UpdateDealsAsync(object payload);
         Task<HttpResponseMessage> GetFeaturedCategoryById(string id);
         Task<HttpResponseMessage> GetFeaturedStoreById(string id);
