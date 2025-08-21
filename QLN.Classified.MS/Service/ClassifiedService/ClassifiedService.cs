@@ -228,8 +228,8 @@ namespace QLN.Classified.MS.Service
         }
 
         public async Task<AdCreatedResponseDto> CreateClassifiedItemsAd(
-Items dto, SaveIntent intent,
-CancellationToken cancellationToken = default)
+    Items dto, SaveIntent intent,
+    CancellationToken cancellationToken = default)
         {
             if (dto == null)
             {
@@ -320,10 +320,21 @@ CancellationToken cancellationToken = default)
 
             try
             {
+                var existing = await _context.Item.FirstOrDefaultAsync(x => x.Id == dto.Id, cancellationToken);
+
                 _logger.LogInformation("Starting MigrateClassifiedItemsAd for UserId={UserId}, Title='{Title}'", dto.UserId, dto.Title);
 
-                _logger.LogDebug("Adding Items ad to EF context...");
-                _context.Item.Add(dto);
+                if(existing != null)
+                {
+                    _logger.LogDebug("Udateing Items ad to EF context...");
+                    existing = dto;
+                    _context.Item.Update(existing);
+                }
+                else
+                {
+                    _logger.LogDebug("Adding Items ad to EF context...");
+                    _context.Item.Add(dto);
+                }
 
                 await _context.SaveChangesAsync(cancellationToken);
                 _logger.LogInformation("Database save completed. New AdId={AdId}", dto.Id);
@@ -516,10 +527,10 @@ CancellationToken cancellationToken = default)
                     dto.AuthenticityCertificateUrl = null;
                     dto.AuthenticityCertificateName = null;
                     _logger.LogInformation("No authenticity certificate provided. Fields set to null.");
-                }
-
-                dto.Status = AdStatus.Draft;
+                }               
+                dto.Status = AdStatus.PendingApproval;
                 dto.CreatedAt = DateTime.UtcNow;
+                dto.UpdatedAt = DateTime.UtcNow;
 
                 _logger.LogInformation("Adding Preloved ad to the database.");
                 _context.Preloved.Add(dto);
@@ -561,7 +572,7 @@ CancellationToken cancellationToken = default)
         }
 
 
-        public async Task<AdCreatedResponseDto> CreateClassifiedCollectiblesAd(Collectibles dto, CancellationToken cancellationToken = default)
+        public async Task<AdCreatedResponseDto> CreateClassifiedCollectiblesAd(Collectibles dto, SaveIntent intent, CancellationToken cancellationToken = default)
         {
             if (dto == null) throw new ArgumentNullException(nameof(dto));
             if (dto.UserId == null) throw new ArgumentException("UserId is required.");
@@ -570,9 +581,18 @@ CancellationToken cancellationToken = default)
 
             try
             {
-              
-                dto.Status = AdStatus.Draft;
+
+                if (intent == SaveIntent.SaveAndSubmitForApproval)
+                {
+                    dto.Status = AdStatus.PendingApproval;
+                }
+                else
+                {
+                    dto.Status = AdStatus.Draft;
+                }
+
                 dto.CreatedAt = DateTime.UtcNow;
+                dto.UpdatedAt = DateTime.UtcNow;
 
                 _context.Collectible.Add(dto);
                 await _context.SaveChangesAsync(cancellationToken);
@@ -613,10 +633,20 @@ CancellationToken cancellationToken = default)
         {
             try
             {
+                var existing = await _context.Collectible.FirstOrDefaultAsync(x => x.Id == dto.Id);
                 _logger.LogInformation("Starting MigrateClassifiedItemsAd for UserId={UserId}, Title='{Title}'", dto.UserId, dto.Title);
 
-                _logger.LogDebug("Adding Items ad to EF context...");
-                _context.Collectible.Add(dto);
+                if(existing != null)
+                {
+                    existing = dto;
+                    _logger.LogDebug("Updating Collectables ad to EF context...");
+                    _context.Collectible.Update(existing);
+                }
+                else
+                {
+                    _logger.LogDebug("Adding Collectables ad to EF context...");
+                    _context.Collectible.Add(dto);
+                }
 
                 await _context.SaveChangesAsync(cancellationToken);
                 _logger.LogInformation("Database save completed. New AdId={AdId}", dto.Id);
@@ -642,9 +672,7 @@ CancellationToken cancellationToken = default)
             if (string.IsNullOrWhiteSpace(dto.UserId)) throw new ArgumentException("UserId is required.");
             if (string.IsNullOrWhiteSpace(dto.Offertitle)) throw new ArgumentException("Title is required.");
             if (string.IsNullOrWhiteSpace(dto.FlyerFileUrl)) throw new ArgumentException("Flyer URL must be provided.");
-            if (dto.CoverImage == null || !dto.CoverImage.Any()) throw new ArgumentException("At least one image is required.");
-
-          
+            if (dto.CoverImage == null || !dto.CoverImage.Any()) throw new ArgumentException("At least one image is required.");          
             try
             {
                 var company = await _companyContext.Companies
@@ -668,9 +696,11 @@ CancellationToken cancellationToken = default)
                 if (!string.IsNullOrWhiteSpace(company.InstagramUrl))
                     socialLinks.Add(company.InstagramUrl);
 
-                dto.SocialMediaLinks = socialLinks.Any() ? string.Join(", ", socialLinks) : null;
-                dto.Status = AdStatus.Draft; 
-                dto.CreatedAt = dto.CreatedAt == default ? DateTime.UtcNow : dto.CreatedAt;
+                dto.SocialMediaLinks = socialLinks.Any() ? string.Join(", ", socialLinks) : null;               
+                dto.Status = AdStatus.PendingApproval;
+
+                dto.CreatedAt = DateTime.UtcNow;
+                dto.UpdatedAt = DateTime.UtcNow;
                 dto.CompanyLogo = company.CompanyLogo;
 
 
@@ -709,7 +739,7 @@ CancellationToken cancellationToken = default)
                 throw new InvalidOperationException("An unexpected error occurred while creating the Deals ad. Please try again later.", ex);
             }
         }
-      
+       
         public async Task<DeleteAdResponseDto> DeleteClassifiedAd(SubVertical subVertical, long adId, string userId, CancellationToken cancellationToken = default)
         {
             if (adId <= 0)
@@ -1576,6 +1606,7 @@ CancellationToken cancellationToken = default)
                 existingAd.UpdatedAt = DateTime.UtcNow;
                 existingAd.SubscriptionId = existingAd.SubscriptionId;
                 existingAd.ExpiryDate = existingAd.ExpiryDate;
+                existingAd.IsSold = existingAd.IsSold;
 
                 _context.Preloved.Update(existingAd);
                 await _context.SaveChangesAsync(cancellationToken);
@@ -1652,6 +1683,7 @@ CancellationToken cancellationToken = default)
                 existingAd.CreatedBy = existingAd.CreatedBy;
                 existingAd.SubscriptionId = existingAd.SubscriptionId;
                 existingAd.ExpiryDate = existingAd.ExpiryDate;
+                existingAd.IsSold = existingAd.IsSold;
 
                 existingAd.UpdatedAt = DateTime.UtcNow;
 
@@ -1857,7 +1889,7 @@ CancellationToken cancellationToken = default)
                             pageItems = list.Cast<object>().ToList();
                             break;
                         }
-                    case SubVertical.Deals:
+                    case SubVertical.Deals: 
                         {
                             var baseQ = DealsFilter(_context.Deal.AsNoTracking());
                             total = await baseQ.CountAsync(cancellationToken);
@@ -1869,10 +1901,38 @@ CancellationToken cancellationToken = default)
                         throw new ArgumentException($"Unsupported subVertical: {subVertical}", nameof(subVertical));
                 }
 
+                var counts = new UserAdCountsDto
+                {
+                    ItemsPublished = await _context.Item.CountAsync(i => i.UserId == userId && i.IsActive &&
+                    (i.Status == AdStatus.Published || i.Status == AdStatus.Approved), cancellationToken),
+
+                    ItemsUnpublished = await _context.Item.CountAsync(i => i.UserId == userId && i.IsActive &&
+                    (i.Status != AdStatus.Published && i.Status != AdStatus.Approved), cancellationToken),
+
+                    PrelovedPublished = await _context.Preloved.CountAsync(p => p.UserId == userId && p.IsActive &&
+                    (p.Status == AdStatus.Published || p.Status == AdStatus.Approved), cancellationToken),
+
+                    PrelovedUnpublished = await _context.Preloved.CountAsync(p => p.UserId == userId && p.IsActive &&
+                    (p.Status != AdStatus.Published && p.Status != AdStatus.Approved), cancellationToken),
+
+                    CollectiblesPublished = await _context.Collectible.CountAsync(c => c.UserId == userId && c.IsActive &&
+                    (c.Status == AdStatus.Published || c.Status == AdStatus.Approved), cancellationToken),
+
+                    CollectiblesUnpublished = await _context.Collectible.CountAsync(c => c.UserId == userId && c.IsActive &&
+                    (c.Status != AdStatus.Published && c.Status != AdStatus.Approved), cancellationToken),
+
+                    DealsPublished = await _context.Deal.CountAsync(d => d.UserId == userId && d.IsActive &&
+                    (d.Status == AdStatus.Published || d.Status == AdStatus.Approved), cancellationToken),
+
+                    DealsUnpublished = await _context.Deal.CountAsync(d => d.UserId == userId && d.IsActive &&
+                    (d.Status != AdStatus.Published && d.Status != AdStatus.Approved), cancellationToken)
+                };
+
                 return new PaginatedAdResponseDto
                 {
                     Total = total,
-                    Items = pageItems
+                    Items = pageItems,
+                    Counts = counts
                 };
             }
             catch (Exception ex)
@@ -2638,7 +2698,7 @@ CancellationToken cancellationToken = default)
                 _logger.LogError(ex, "Bulk publish/unpublish failed.");
                 throw new InvalidOperationException("An error occurred while removing the wishlist item", ex);
             }
-        }
+        }       
 
         #endregion
 

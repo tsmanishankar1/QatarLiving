@@ -135,6 +135,7 @@ namespace QLN.Subscriptions.Actor.ActorClass
                     SubscriptionId = subscriptionId,
                     ProductCode = product.ProductCode,
                     ProductName = product.ProductName,
+                    ProductType = product.ProductType,
                     UserId = request.UserId,
                     AdId = request.AdId,
                     CompanyId = request.CompanyId,
@@ -158,6 +159,7 @@ namespace QLN.Subscriptions.Actor.ActorClass
                     Id = subscriptionId,
                     ProductCode = product.ProductCode,
                     ProductName = product.ProductName,
+                    ProductType = product.ProductType,
                     UserId = request.UserId,
                     CompanyId = request.CompanyId,
                     PaymentId = request.PaymentId,
@@ -174,6 +176,75 @@ namespace QLN.Subscriptions.Actor.ActorClass
                 };
 
                 await FastSetDataAsync(v2Dto, cancellationToken);
+
+                // Commit transaction before publishing events
+                await transaction.CommitAsync(cancellationToken);
+
+                // Clear cache to ensure fresh reads
+                ClearCache();
+
+                _logger.LogInformation("V2 Subscription created successfully: {Id} for user: {UserId}",
+                    subscriptionId, request.UserId);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                _logger.LogError(ex, "Failed to create V2 subscription for user {UserId}", request.UserId);
+                throw;
+            }
+        }
+
+        public async Task<bool> MigrateSubscriptionAsync(V2SubscriptionDto request, CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(request);
+
+            _logger.LogInformation("Creating subscription for user {UserId} with product {ProductCode}",
+                request.UserId, request.ProductCode);
+
+            using var scope = _scopeFactory.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<QLSubscriptionContext>();
+            var daprClient = scope.ServiceProvider.GetRequiredService<DaprClient>();
+
+            using var transaction = await context.Database.BeginTransactionAsync(cancellationToken);
+            try
+            {
+                var subscriptionId = Guid.Parse(this.Id.GetId());
+
+                // Validate product
+                var product = await context.Products
+                    .FirstOrDefaultAsync(p => p.ProductCode == request.ProductCode && p.IsActive, cancellationToken);
+
+                if (product == null)
+                    throw new InvalidOperationException($"Product with code {request.ProductCode} not found or inactive");
+
+                if (product.ProductType != ProductType.SUBSCRIPTION && product.ProductType != ProductType.PUBLISH)
+                    throw new InvalidOperationException($"Product {request.ProductCode} is not a subscription or P2P product");
+
+                // Create database subscription
+                var dbSubscription = new Subscription
+                {
+                    SubscriptionId = subscriptionId,
+                    ProductCode = product.ProductCode,
+                    ProductName = product.ProductName,
+                    UserId = request.UserId,
+                    CompanyId = request.CompanyId,
+                    PaymentId = request.PaymentId,
+                    Vertical = product.Vertical,
+                    SubVertical = product.SubVertical,
+                    //Quota = BuildSubscriptionQuotaFromProduct(product),
+                    Quota = request.Quota,
+                    StartDate = request.StartDate,
+                    EndDate = request.EndDate,
+                    Status = request.StatusId,
+                    CreatedAt = request.StartDate, // default to the Start Date
+                    UpdatedAt = DateTime.UtcNow
+                };
+
+                context.Subscriptions.Add(dbSubscription);
+                await context.SaveChangesAsync(cancellationToken);
+
+                await FastSetDataAsync(request, cancellationToken);
 
                 // Commit transaction before publishing events
                 await transaction.CommitAsync(cancellationToken);

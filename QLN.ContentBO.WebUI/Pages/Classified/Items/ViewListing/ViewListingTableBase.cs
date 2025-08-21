@@ -141,10 +141,29 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewListing
 
             await DialogService.ShowAsync<RejectVerificationDialog>("", parameters, options);
         }
+        protected async void OpenNeedChangeDialog()
+        {
+            var parameters = new DialogParameters
+            {
+                { "Title", "Request Change" },
+                { "Description", "Please enter a reason for requesting a Change." },
+                { "ButtonTitle", "Need Change" },
+                { "OnRejected", EventCallback.Factory.Create<string>(this, HandleNeedChange) }
+            };
+
+            var options = new DialogOptions
+            {
+                CloseButton = false,
+                MaxWidth = MaxWidth.Small,
+                FullWidth = true
+            };
+
+            await DialogService.ShowAsync<RejectVerificationDialog>("", parameters, options);
+        }
 
         protected void OnEdit(ClassifiedItemViewListing item)
         {
-            if (item?.Id is long id) 
+            if (item?.Id is long id)
             {
                 NavManager.NavigateTo($"/manage/classified/items/edit/ad/{id}");
             }
@@ -223,6 +242,14 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewListing
 
             isBulkRemove = false;
         }
+         private async Task HandleNeedChange(string reason)
+        {
+            if (string.IsNullOrWhiteSpace(reason))
+                return;
+
+          
+            await PerformBulkAction(AdBulkActionType.NeedChanges, reason);
+        }
 
         protected Task RequestChanges(ClassifiedItemViewListing item)
         {
@@ -247,7 +274,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewListing
 
         private async Task PerformBulkAction(AdBulkActionType action, string reason = "", List<long?> adIds = null)
         {
-            isBulkActionLoading = adIds == null; // only bulk shows spinner
+            isBulkActionLoading = adIds == null; 
 
             adIds ??= [.. SelectedListings.Select(x => x.Id)];
 

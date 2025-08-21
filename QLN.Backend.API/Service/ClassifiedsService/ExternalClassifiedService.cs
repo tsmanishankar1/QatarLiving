@@ -178,21 +178,10 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
 
             try
-            {
-                if (intent == SaveIntent.SaveAndSubmitForApproval)
-                {
-                    dto.Status = AdStatus.PendingApproval;
-                }
-                else
-                {
-                    dto.Status = AdStatus.Draft;
-                }
-
-                dto.CreatedAt = DateTime.UtcNow;
-                dto.UpdatedAt = DateTime.UtcNow;
-
-                //_log.LogTrace($"Calling internal service with {dto.Images.Count} images");
-                var requestUrl = $"/api/classifieds/items/post-by-id?intent={intent}";
+            {               
+                _log.LogTrace($"Calling internal service with {dto.Images.Count} images");
+                var requestUrl = $"/api/classifieds/items/post-by-id?intent={(int)intent}";
+                Console.WriteLine($"Received SaveIntent value: {(int)intent}");
                 var payload = JsonSerializer.Serialize(dto);
                 var req = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, SERVICE_APP_ID, requestUrl);
                 req.Content = new StringContent(payload, Encoding.UTF8, "application/json");
@@ -409,7 +398,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-        public async Task<AdCreatedResponseDto> CreateClassifiedCollectiblesAd(Collectibles dto, CancellationToken cancellationToken = default)
+        public async Task<AdCreatedResponseDto> CreateClassifiedCollectiblesAd(Collectibles dto, SaveIntent intent, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(dto);
             if (dto.UserId == null) throw new ArgumentException("UserId is required.");
@@ -423,7 +412,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
             try
             {             
                 _log.LogTrace($"Calling internal collectibles service with {dto.Images.Count} images and cert: {dto.AuthenticityCertificateUrl}");
-                var requestUrl = $"api/classifieds/collectibles/post-by-id";
+                var requestUrl = $"api/classifieds/collectibles/post-by-id?intent={(int)intent}";
                 var payload = JsonSerializer.Serialize(dto);
                 var req = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, SERVICE_APP_ID, requestUrl);
                 req.Content = new StringContent(payload, Encoding.UTF8, "application/json");

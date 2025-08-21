@@ -30,13 +30,28 @@ namespace QLN.ContentBO.WebUI.Pages.Services.ViewSubscriptionListing
         protected DateRange? _dateRange = new();
         protected List<string> SubscriptionTypes = new()
         {
-            "1 Months",
-            "2 Months",
-            "3 Months",
-            "4 Months",
-            "5 Months",
-            "6 Months"
+             "1 Month Pay2 Publish",
+            "Services - 1 Month Pay2 Publish",
+            "Services - Pay2 Promote 1 Month",
+            "Services - Pay2 Feature 1 Month",
+            "Services - Hero Banner",
+            "Services - Mid Page Banner",
+            "Services - Hero Banner -Search Page",
+            "Services - Search results Card",
+            "Services - Hero banner - Detailed Page",
+            "Services - Details page Card",
+            "Services - Details Page Side Banner",
+            "Services 1 month",
+            "Services 1 month Plus",
+            "Services 3 month",
+            "Services 3 month Plus",
+            "Services 6 month",
+            "Services 6 month Plus",
+            "Services 12 month",
+            "Services 12 month Plus"
         };
+
+
         protected string SelectedSubscriptionType { get; set; } = null;
         protected bool showDatePopover = false;
         protected DateRange? _tempDateRange = new();
@@ -129,7 +144,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services.ViewSubscriptionListing
                     ["End Date"] = x.EndDate,
                 }).ToList();
 
-                await JS.InvokeVoidAsync("exportToExcel", exportData, "Services_VerifiedSellerRequests.xlsx", "Transactions");
+                await JS.InvokeVoidAsync("exportToExcel", exportData, "Services_SubscriptionListings.xlsx", "Subscription");
 
                 Snackbar.Add("Export successful!", Severity.Success);
             }

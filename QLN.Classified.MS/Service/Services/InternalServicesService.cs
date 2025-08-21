@@ -11,6 +11,7 @@ using QLN.Common.Infrastructure.Subscriptions;
 using QLN.Common.Infrastructure.Utilities;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using System.Threading;
 
 namespace QLN.Classified.MS.Service.Services
 {
@@ -515,22 +516,6 @@ namespace QLN.Classified.MS.Service.Services
                         cancellationToken: cancellationToken
                     );
                 }
-
-                await _dapr.PublishEventAsync("pubsub", "notifications-email", new NotificationEntity
-                {
-                    Destinations = new List<string> { "email" },
-                    Recipients = new List<RecipientDto>
-                    {
-                        new RecipientDto
-                        {
-                            Name = dto.UserName,
-                            Email = dto.EmailAddress
-                        }
-                    },
-                    Subject = $"Service Ad '{dto.Title}' was updated",
-                    Plaintext = $"Hello,\n\nYour ad titled '{dto.Title}' has been updated.\n\nStatus: {dto.Status}\n\nThanks,\nQL Team",
-                    Html = $"{dto.Title} has been updated."
-                }, cancellationToken);
 
                 return "Service Ad updated successfully.";
             }
@@ -1064,7 +1049,7 @@ namespace QLN.Classified.MS.Service.Services
 
             return serviceAd;
         }
-        public async Task<BulkAdActionResponseitems> ModerateBulkService(BulkModerationRequest request, string userId, string subscriptionId, DateTime? expiryDate, CancellationToken ct)
+        public async Task<BulkAdActionResponseitems> ModerateBulkService(BulkModerationRequest request, string? userId, string subscriptionId, DateTime? expiryDate, CancellationToken ct)
         {
             var ads = await _dbContext.Services
                 .Where(s => request.AdIds.Contains(s.Id))
@@ -1091,7 +1076,7 @@ namespace QLN.Classified.MS.Service.Services
                 throw new InvalidOperationException("Active subscription not found for this service.");
             var effectiveExpiryDate = subscription.EndDate;
 
-            var updatedAds = new List<QLN.Common.Infrastructure.Model.Services>();
+            var updatedAds = new List<Common.Infrastructure.Model.Services>();
 
             foreach (var ad in ads)
             {
@@ -1100,6 +1085,11 @@ namespace QLN.Classified.MS.Service.Services
 
                 try
                 {
+                    string actionReason = string.Empty;
+                    string actionComment = request.Comments ?? string.Empty;
+                    string reason = request.Reason ?? string.Empty;
+                    string userid = ad.CreatedBy;
+                    string username = ad.UserName;
                     switch (request.Action)
                     {
                         case BulkModerationAction.Approve:
@@ -1191,17 +1181,40 @@ namespace QLN.Classified.MS.Service.Services
                         case BulkModerationAction.Remove:
                             ad.Status = ServiceStatus.Rejected;
                             ad.IsActive = false;
+                            actionReason = "Ad Removed (Rejected)";
+                            reason = "Ad rejected by admin.";
                             shouldUpdate = true;
                             break;
 
                         case BulkModerationAction.NeedChanges:
-                            ad.Status = ServiceStatus.NeedsModification;
-                            shouldUpdate = true;
+                            if (ad.Status == ServiceStatus.PendingApproval)
+                            {
+                                ad.Status = ServiceStatus.NeedsModification;
+                                shouldUpdate = true;
+                                ad.UpdatedAt = DateTime.UtcNow;
+                                actionReason = "Ad Needs Changes";
+                            }
+                            else
+                            {
+                                failReason = $"Cannot mark ad as NeedsModification with status '{ad.Status}'.";
+                            }
                             break;
 
                         case BulkModerationAction.Hold:
-                            ad.Status = ServiceStatus.Hold;
-                            shouldUpdate = true;
+                            if (ad.Status == ServiceStatus.Draft)
+                                failReason = "Cannot hold an ad that is in draft status.";
+                            else if (ad.Status != ServiceStatus.Hold)
+                            {
+                                ad.Status = ServiceStatus.Hold;
+                                shouldUpdate = true;
+                                ad.UpdatedAt = DateTime.UtcNow;
+                                actionReason = "Ad On Hold";
+                                reason = "Ad placed on hold by admin.";
+                            }
+                            else
+                            {
+                                failReason = "Ad is already on hold.";
+                            }
                             break;
 
                         case BulkModerationAction.Onhold:
@@ -1213,15 +1226,55 @@ namespace QLN.Classified.MS.Service.Services
                             failReason = "Invalid action.";
                             break;
                     }
-
                     if (shouldUpdate)
                     {
                         ad.UpdatedAt = DateTime.UtcNow;
                         ad.UpdatedBy = userId;
                         updatedAds.Add(ad);
-                        _dbContext.Services.Update(ad);
-                        succeeded.Count++;
-                        succeeded.Ids.Add(ad.Id);
+
+                        if (request.Action == BulkModerationAction.Hold || request.Action == BulkModerationAction.Remove || request.Action == BulkModerationAction.NeedChanges)
+                        {
+                            var actionCommentEntity = new Comment
+                            {
+                                AdId = ad.Id,
+                                Action = actionReason,
+                                Reason = reason ?? string.Empty,
+                                Comments = actionComment,
+                                Vertical = Vertical.Services,
+                                SubVertical = 0,
+                                CreatedAt = DateTime.UtcNow,
+                                CreatedUserId = userid,
+                                CreatedUserName = username,
+                                UpdatedUserId = userId,
+                                UpdatedUserName = username,
+                            };
+
+                            await _dbContext.Comments.AddAsync(actionCommentEntity, ct);
+                            _dbContext.Services.Update(ad);
+
+                            await _dapr.PublishEventAsync("pubsub", "notifications-email", new NotificationEntity
+                            {
+                                Destinations = new List<string> { "email" },
+                                Recipients = new List<RecipientDto>
+                                {
+                                    new RecipientDto
+                                    {
+                                        Name = username,
+                                        Email = ad.EmailAddress
+                                    }
+                                },
+                                Subject = $"Service '{ad.Title} was updated",
+                                Plaintext = $"Hello,\n\nYour ad titled '{ad.Title}' has been updated.\n\nStatus: {ad.Status}\n\nThanks,\nQL Team",
+                                Html = $@"
+                                <p>Hi,</p>
+                                <p>Your ad titled '<b>{ad.Title}</b>' has been updated.</p>
+                                <p>Status: <b>{ad.Status}</b></p>
+                                <p>Thanks,<br/>QL Team</p>"
+                            }, ct);
+
+                            succeeded.Count++;
+                            succeeded.Ids.Add(ad.Id);
+                        }
                     }
                     else
                     {
@@ -1341,6 +1394,58 @@ namespace QLN.Classified.MS.Service.Services
                     Count = g.Count()
                 })
                 .ToListAsync(ct);
+        }
+
+        public async Task<string> MigrateServiceAd(Common.Infrastructure.Model.Services dto, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                if (dto.Id == 0)
+                    throw new ArgumentException("Service Ad ID is required for update.");
+
+                var existing = await _dbContext.Services.FirstOrDefaultAsync(s => s.Id == dto.Id, cancellationToken);
+
+                var slug = SlugHelper.GenerateSlug(dto.Title, dto.CategoryName, "Services", Guid.NewGuid()); // leave this here for now - not sure if required ?
+                
+                dto.Slug = slug;
+
+                if (existing != null)
+                {
+                    existing = dto;
+                    _dbContext.Services.Update(existing);
+                }
+                else
+                {
+                    _dbContext.Services.Add(dto);
+                }
+                
+                await _dbContext.SaveChangesAsync(cancellationToken);
+
+                var upsertRequest = await IndexServiceToAzureSearch(existing, cancellationToken);
+
+                if (upsertRequest != null)
+                {
+                    var message = new IndexMessage
+                    {
+                        Action = "Upsert",
+                        Vertical = ConstantValues.IndexNames.ServicesIndex,
+                        UpsertRequest = upsertRequest
+                    };
+
+                    await _dapr.PublishEventAsync(
+                        pubsubName: ConstantValues.PubSubName,
+                        topicName: ConstantValues.PubSubTopics.IndexUpdates,
+                        data: message,
+                        cancellationToken: cancellationToken
+                    );
+                }
+
+                return "Service Ad updated successfully.";
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error updating service ad", ex);
+            }
         }
     }
 }

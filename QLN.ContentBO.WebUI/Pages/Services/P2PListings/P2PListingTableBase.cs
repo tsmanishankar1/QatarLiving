@@ -44,7 +44,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services
         protected async Task OnTabChanged(string newTab)
         {
             selectedTab = newTab;
-
+            SelectedListings.Clear();
             int? status = newTab switch
             {
                 "pendingApproval" => 2,
@@ -207,7 +207,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services
                     BulkModerationAction.Publish => ServiceStatus.Published,
                     BulkModerationAction.Unpublish => ServiceStatus.Unpublished,
                     BulkModerationAction.Remove => ServiceStatus.Rejected,
-                    BulkModerationAction.NeedChanges => ServiceStatus.NeedChanges,
+                    BulkModerationAction.NeedChanges => ServiceStatus.NeedsModification,
                     _ => ServiceStatus.Draft
                 };
 

@@ -2100,34 +2100,51 @@ CancellationToken cancellationToken = default)
             }
         }
 
-        public async Task<BulkAdActionResponseitems> BulkDealsAction(BulkActionRequest request, string userId, string subscriptionGuid, DateTime? endDate, CancellationToken cancellationToken = default)
+        public async Task<BulkAdActionResponseitems> BulkDealsAction(
+       BulkActionRequest request,
+       string userId, string userName,
+       CancellationToken cancellationToken = default)
         {
-            ArgumentNullException.ThrowIfNull(request);
+            if (request == null)
+                throw new ArgumentNullException(nameof(request));
 
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentException("UserId is required.", nameof(userId));
 
-            HttpStatusCode? failedStatusCode = null;
-            string failedErrorMessage = null;
             var failedIds = new List<long>();
             var succeededIds = new List<long>();
 
+            _logger.LogInformation("Started Bulk Deals Action. Request: {Action} for {Count} Ads.", request.Action, request.AdIds?.Count);
+
             try
             {
-                var ads = await Task.WhenAll(
-                                   request.AdIds.Select(id => _classifiedService.GetDealsAdById(id, cancellationToken))
-                               );
+                var ads = await Task.WhenAll(request.AdIds.Select(id => _classifiedService.GetDealsAdById(id, cancellationToken)));
+                _logger.LogInformation("{Count} Ads retrieved.", ads.Length);
+
+                var invalidAds = ads
+                    .Where(a => a == null || !a.SubscriptionId.HasValue || a.SubscriptionId.Value == Guid.Empty)
+                    .ToList();
+
+                if (invalidAds.Any())
+                {
+                    failedIds.AddRange(invalidAds.Where(x => x != null).Select(x => x.Id));
+                    _logger.LogWarning("{Count} Invalid Ads found.", invalidAds.Count);
+                }
 
                 var groupedActions = ads
                     .Where(a => a != null && a.SubscriptionId.HasValue && a.SubscriptionId.Value != Guid.Empty)
                     .GroupBy(a => new
                     {
+                        a.SubscriptionId,
                         ActionType = request.Action
                     })
                     .ToList();
-                var subscriptionId = Guid.Parse(subscriptionGuid);
+
+                _logger.LogInformation("{Count} Actions grouped for processing.", groupedActions.Count);
+
                 foreach (var group in groupedActions)
                 {
+                    var subscriptionId = group.Key.SubscriptionId!.Value;
                     var actionName = group.Key.ActionType switch
                     {
                         BulkActionEnum.Promote => "promote",
@@ -2136,81 +2153,101 @@ CancellationToken cancellationToken = default)
                         BulkActionEnum.UnFeature => "unfeature",
                         BulkActionEnum.Unpublish => "unpublish",
                         BulkActionEnum.Publish => "publish",
-                        BulkActionEnum.Approve => "publish",
+                        BulkActionEnum.Approve => "approve",
+                        BulkActionEnum.Hold => "hold",
+                        BulkActionEnum.Onhold => "onhold",
+                        BulkActionEnum.NeedChanges => "needchanges",
+                        BulkActionEnum.Remove => "remove",
                         _ => throw new InvalidOperationException("Invalid bulk action.")
                     };
 
                     var usageCount = group.Count();
+                    _logger.LogInformation("Action: {ActionName} for SubscriptionId: {SubscriptionId} with {UsageCount} Ads.", actionName, subscriptionId, usageCount);
 
+                    var requiresQuota = group.Key.ActionType is BulkActionEnum.Promote
+                        or BulkActionEnum.Feature
+                        or BulkActionEnum.UnPromote
+                        or BulkActionEnum.UnFeature
+                        or BulkActionEnum.Unpublish
+                        or BulkActionEnum.Publish
+                        or BulkActionEnum.Approve;
 
-                    var canUse = await _subscriptionContext.ValidateSubscriptionUsageAsync(
-                        subscriptionId,
-                        actionName,
-                        usageCount,
-                        cancellationToken
-                    );
-
-                    if (!canUse)
+                    if (requiresQuota)
                     {
-                        failedIds.AddRange(group.Select(x => x.Id));
-                        continue;
-                    }
+                        _logger.LogInformation("Checking subscription usage for {ActionName} action.", actionName);
+                        var canUse = await _subscriptionContext.ValidateSubscriptionUsageAsync(
+                            subscriptionId,
+                            actionName,
+                            usageCount,
+                            cancellationToken
+                        );
 
+                        if (!canUse)
+                        {
+                            _logger.LogWarning("Subscription {SubscriptionId} cannot perform {ActionName}. Insufficient quota.", subscriptionId, actionName);
+                            failedIds.AddRange(group.Select(x => x.Id));
+                            continue;
+                        }
 
-                    var reserved = await _subscriptionContext.RecordSubscriptionUsageAsync(
-                        subscriptionId,
-                        actionName,
-                        usageCount,
-                        cancellationToken
-                    );
+                        var reserved = await _subscriptionContext.RecordSubscriptionUsageAsync(
+                            subscriptionId,
+                            actionName,
+                            usageCount,
+                            cancellationToken
+                        );
 
-                    if (!reserved)
-                    {
-                        failedIds.AddRange(group.Select(x => x.Id));
-                        continue;
+                        if (!reserved)
+                        {
+                            _logger.LogWarning("Failed to reserve quota for {SubscriptionId} and action {ActionName}.", subscriptionId, actionName);
+                            failedIds.AddRange(group.Select(x => x.Id));
+                            continue;
+                        }
                     }
 
                     try
                     {
-                        var endDateParam = endDate?.ToString("yyyy-MM-ddTHH:mm:ssZ") ?? "";
-                        var url = $"api/v2/classifiedbo/bulk-deals-action-userid?userId={userId}&subscriptionId={subscriptionId}";
+                        _logger.LogInformation("Invoking external service for {ActionName} with SubscriptionId: {SubscriptionId}.", actionName, subscriptionId);
 
-                        var serviceRequest = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, ConstantValues.Services.ServiceAppId, url);
+                        var url = $"api/v2/classifiedbo/bulk-deals-action-userid/{userId}/{userName}?subscriptionId={subscriptionId}";
+                        var serviceRequest = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, SERVICE_APP_ID, url);
                         serviceRequest.Content = new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json");
 
-                        _logger.LogInformation($"Calling internal service: {url} with payload: {JsonSerializer.Serialize(request)}");
-
                         var response = await _dapr.InvokeMethodWithResponseAsync(serviceRequest, cancellationToken);
-                        var responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
 
-                        _logger.LogInformation($"Response from internal service - Status: {response.StatusCode}, Content: {responseContent}");
                         if (!response.IsSuccessStatusCode)
                         {
                             var errorJson = await response.Content.ReadAsStringAsync(cancellationToken);
                             var failReason = ExtractErrorMessage(errorJson);
+                            _logger.LogError("External service failed for action {ActionName}. Reason: {FailReason}", actionName, failReason);
 
-                            await _subscriptionContext.RecordSubscriptionUsageAsync(
-                                subscriptionId,
-                                actionName,
-                                -usageCount,
-                                cancellationToken
-                            );
-                            Console.WriteLine("RecordUsage2:");
+                            if (requiresQuota)
+                            {
+                                await _subscriptionContext.RecordSubscriptionUsageAsync(
+                                    subscriptionId,
+                                    actionName,
+                                    usageCount,
+                                    cancellationToken
+                                );
+                            }
+
                             throw new InvalidOperationException($"Bulk action failed for {actionName}. Reason: {failReason}");
                         }
 
+                        _logger.LogInformation("External service completed successfully for {ActionName}.", actionName);
                         succeededIds.AddRange(group.Select(x => x.Id));
                     }
-                    catch
+                    catch (Exception ex)
                     {
-                        await _subscriptionContext.RecordSubscriptionUsageAsync(
-                            subscriptionId,
-                            actionName,
-                            -usageCount,
-                            cancellationToken
-                        );
-
-
+                        _logger.LogError(ex, "Error invoking external service for {ActionName}. SubscriptionId: {SubscriptionId}", actionName, subscriptionId);
+                        if (requiresQuota)
+                        {
+                            await _subscriptionContext.RecordSubscriptionUsageAsync(
+                                subscriptionId,
+                                actionName,
+                                usageCount,
+                                cancellationToken
+                            );
+                        }
                         failedIds.AddRange(group.Select(x => x.Id));
                         continue;
                     }
@@ -2234,17 +2271,7 @@ CancellationToken cancellationToken = default)
             }
             catch (Exception ex)
             {
-                if (failedStatusCode == HttpStatusCode.Conflict)
-                {
-                    _logger.LogWarning(ex, "Conflict detected while bulk deals action.");
-                    throw new ConflictException(ex.Message);
-                }
-                else if (failedStatusCode == HttpStatusCode.NotFound)
-                {
-                    throw new KeyNotFoundException(ex.Message);
-                }
-
-                _logger.LogError(ex, "Error during bulk deals action.");
+                _logger.LogError(ex, "Bulk action failed unexpectedly.");
                 throw;
             }
         }
