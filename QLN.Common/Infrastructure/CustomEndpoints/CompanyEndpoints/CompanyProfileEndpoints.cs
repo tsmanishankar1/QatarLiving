@@ -5,11 +5,10 @@ using Microsoft.AspNetCore.Routing;
 using QLN.Common.Infrastructure.IService.ICompanyService;
 using Microsoft.AspNetCore.Builder;
 using QLN.Common.DTO_s.Company;
-using System.Text.Json;
 using QLN.Common.Infrastructure.CustomException;
-using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.Auditlog;
 using QLN.Common.Infrastructure.Utilities;
+using Company = QLN.Common.Infrastructure.Model.Company;
 
 namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
 {
@@ -36,11 +35,11 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
 
                 try
                 {
-                    var (extractedUid, extractedUserName, subscriptionId, expiryDate) =
-                        await UserTokenHelper.ExtractUserAndSubscriptionDetailsAsync(httpContext, vertical: (int)dto.Vertical);
+                    var (extractedUid, extractedUsername, subscriptions, roles) = await UserTokenHelper.ExtractUserAndSubscriptionDetailsAsync(httpContext);
 
                     uid = extractedUid;
-                    userName = extractedUserName;
+                    userName = extractedUsername;
+
                     if (string.IsNullOrEmpty(uid))
                     {
                         return TypedResults.Problem(new ProblemDetails
@@ -50,8 +49,23 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
                             Status = StatusCodes.Status403Forbidden
                         });
                     }
-                    //var isSubcriber = userData.GetProperty("roles").EnumerateArray()
-                    //    .Any(r => r.GetString() == "subscription");
+
+                    var now = DateTime.UtcNow;
+                    var hasValidSubscription = subscriptions.Any(s =>
+                        s.Vertical == (int)dto.Vertical &&
+                        (!dto.SubVertical.HasValue || (int)s.SubVertical ==(int) dto.SubVertical) &&
+                        s.StartDate <= now && s.EndDate >= now
+                    );
+
+                    if (!hasValidSubscription)
+                    {
+                        return TypedResults.Problem(new ProblemDetails
+                        {
+                            Title = "Subscription Required",
+                            Detail = $"No active subscription found for Vertical {dto.Vertical} and SubVertical {dto.SubVertical}.",
+                            Status = StatusCodes.Status403Forbidden
+                        });
+                    }
                     var result = await service.CreateCompany(uid, userName, dto, cancellationToken);
                     await auditLogger.LogAuditAsync(
                     module: ModuleName,
@@ -334,10 +348,11 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
                 string? userName = null;
                 try
                 {
-                    var (extractedUid, extractedUserName, subscriptionId, expiryDate) =
-                        await UserTokenHelper.ExtractUserAndSubscriptionDetailsAsync(httpContext, vertical: 4);
+                    var (extractedUid, extractedUsername, subscriptions, roles) = await UserTokenHelper.ExtractUserAndSubscriptionDetailsAsync(httpContext);
 
                     uid = extractedUid;
+                    userName = extractedUsername;
+
                     if (string.IsNullOrEmpty(uid))
                     {
                         return TypedResults.Problem(new ProblemDetails
@@ -348,8 +363,22 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
                         });
                     }
 
-                    //var isSubcriber = userData.GetProperty("roles").EnumerateArray()
-                    //    .Any(r => r.GetString() == "subscription");
+                    var now = DateTime.UtcNow;
+                    var hasValidSubscription = subscriptions.Any(s =>
+                        s.Vertical == (int)dto.Vertical &&
+                        (!dto.SubVertical.HasValue || (int)s.SubVertical == (int)dto.SubVertical) &&
+                        s.StartDate <= now && s.EndDate >= now
+                    );
+
+                    if (!hasValidSubscription)
+                    {
+                        return TypedResults.Problem(new ProblemDetails
+                        {
+                            Title = "Subscription Required",
+                            Detail = $"No active subscription found for Vertical {dto.Vertical} and SubVertical {dto.SubVertical}.",
+                            Status = StatusCodes.Status403Forbidden
+                        });
+                    }
 
                     var existingCompany = await service.GetCompanyById(dto.Id, cancellationToken);
                     if (existingCompany == null)
@@ -362,11 +391,11 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
                         });
                     }
 
-                    //if (existingCompany.UserId != uid)
-                    //    return TypedResults.Forbid();
+                    if (existingCompany.UserId != uid)
+                        return TypedResults.Forbid();
 
-                    dto.UserId = extractedUid;
-                    dto.UserName = extractedUserName;
+                    dto.UserId = uid;
+                    dto.UserName = userName;
                     var updated = await service.UpdateCompany(dto, cancellationToken);
                     await auditLogger.LogAuditAsync(
                        module: ModuleName,
@@ -502,19 +531,26 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
 
                 try
                 {
-                    var (extractedUid, extractedUserName, subscriptionId, expiryDate) =
-                        await UserTokenHelper.ExtractUserAndSubscriptionDetailsAsync(httpContext, vertical: 4);
+                    var (extractedUid, extractedUsername, subscriptions, roles) = await UserTokenHelper.ExtractUserAndSubscriptionDetailsAsync(httpContext);
 
-                    uid = extractedUid;
-                    if (string.IsNullOrEmpty(uid))
+                    if (roles.Contains("Admin"))
+                    {
+                        
+                    }
+                    var now = DateTime.UtcNow;
+                    var hasValidSubscription = subscriptions.Any(s =>
+                        s.StartDate <= now && s.EndDate >= now);
+
+                    if (!hasValidSubscription)
                     {
                         return TypedResults.Problem(new ProblemDetails
                         {
-                            Title = "Unauthorized Access",
-                            Detail = "User ID or username could not be extracted from token.",
+                            Title = "Unauthorized",
+                            Detail = "You must be an active subscriber to delete a company profile.",
                             Status = StatusCodes.Status403Forbidden
                         });
                     }
+
                     var result = await service.GetCompanyById(id, cancellationToken);
                     if (result == null)
                         throw new KeyNotFoundException($"Company with ID '{id}' not found.");
@@ -639,8 +675,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
 
                 try
                 {
-                    var (extractedUid, extractedUserName, subscriptionId, expiryDate) =
-                        await UserTokenHelper.ExtractUserAndSubscriptionDetailsAsync(httpContext, vertical: 4);
+                    var (extractedUid, extractedUsername, subscriptions, roles) = await UserTokenHelper.ExtractUserAndSubscriptionDetailsAsync(httpContext);
 
                     uid = extractedUid;
                     if (string.IsNullOrEmpty(uid))
@@ -779,8 +814,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
                 string? userName = null;
                 try
                 {
-                    var (extractedUid, extractedUserName, subscriptionId, expiryDate) =
-                        await UserTokenHelper.ExtractUserAndSubscriptionDetailsAsync(httpContext, vertical: 4);
+                    var (extractedUid, extractedUsername, subscriptions, roles) = await UserTokenHelper.ExtractUserAndSubscriptionDetailsAsync(httpContext);
 
                     uid = extractedUid;
                     if (string.IsNullOrEmpty(uid))

@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Http;
+using QLN.Common.DTO_s.Company;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -85,6 +86,54 @@ namespace QLN.Common.Infrastructure.Utilities
             {
                 return (uid, username, subscriptionId, expiryDate);
             }
+        }
+        public static async Task<(string uid, string username, List<UserSubscription> subscriptions, List<string> roles)>
+            ExtractUserAndSubscriptionDetailsAsync(HttpContext httpContext)
+        {
+            string uid = "";
+            string username = "unknown";
+            var subscriptions = new List<UserSubscription>();
+            var roles = new List<string>();
+
+            try
+            {
+                uid = httpContext.User.FindFirst("sub")?.Value ?? string.Empty;
+                username = httpContext.User.FindFirst("preferred_username")?.Value ?? "unknown";
+
+                var subscriptionClaims = httpContext.User.FindAll("subscriptions").ToList();
+                foreach (var claim in subscriptionClaims)
+                {
+                    try
+                    {
+                        using var doc = JsonDocument.Parse(claim.Value);
+                        var sub = doc.RootElement;
+
+                        subscriptions.Add(new UserSubscription
+                        {
+                            Id = sub.GetProperty("Id").GetString(),
+                            Vertical = sub.GetProperty("Vertical").GetInt32(),
+                            SubVertical = sub.TryGetProperty("SubVertical", out var subV) && subV.ValueKind != JsonValueKind.Null
+                                ? subV.GetInt32()
+                                : (int?)null,
+                            StartDate = DateTime.Parse(sub.GetProperty("StartDate").GetString()),
+                            EndDate = DateTime.Parse(sub.GetProperty("EndDate").GetString())
+                        });
+                    }
+                    catch
+                    {
+                        continue;
+                    }
+                }
+
+                var roleClaims = httpContext.User.FindAll("roles").ToList();
+                foreach (var role in roleClaims)
+                {
+                    roles.Add(role.Value);
+                }
+            }
+            catch { }
+
+            return (uid, username, subscriptions, roles);
         }
     }
 }
