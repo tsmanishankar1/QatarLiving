@@ -822,7 +822,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             // itemsAd post
             group.MapPost("items", async Task<IResult> (
                 HttpContext httpContext,
-                ClassifiedsItemsDTO dto,
+                [FromBody] ClassifiedsItemsDTO dto,
+                [FromQuery] SaveIntent intent,
                 IClassifiedService service,
                 AuditLogger auditLogger,
                 CancellationToken token) =>
@@ -854,7 +855,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                                     subscription.TryGetProperty("SubVertical", out var subVerticalProp) &&
                                     subVerticalProp.GetInt32() == 1)
                                 {
-                                    
+
                                     if (subscription.TryGetProperty("EndDate", out var endDateProp) &&
                                     endDateProp.ValueKind == JsonValueKind.String)
                                     {
@@ -877,7 +878,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         return TypedResults.BadRequest(new ProblemDetails
                         {
                             Title = "Subscription Required",
-                            Detail = "No Preloved subscription found for this user.",
+                            Detail = "No items subscription found for this user.",
                             Status = StatusCodes.Status400BadRequest
                         });
                     }
@@ -931,7 +932,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                             Url = i.Url,
                             Order = i.Order
                         }).ToList(),
-                        Attributes = dto.Attributes                        
+                        Attributes = dto.Attributes
 
                     };
 
@@ -944,7 +945,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                             Status = StatusCodes.Status400BadRequest
                         });
                     }
-                    var response = await service.CreateClassifiedItemsAd(request, token);
+                    var response = await service.CreateClassifiedItemsAd(request, intent, token);
 
                     await auditLogger.LogAuditAsync(
                         module: "Classified",
@@ -998,18 +999,19 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                     );
                 }
             })
-                .WithName("PostItemsAd")
-                .WithTags("Classified")
-                .WithSummary("Post classified items ad using authenticated user")
-                .WithDescription("Takes user ID from JWT token and creates the ad.")
-                .Produces<AdCreatedResponseDto>(StatusCodes.Status201Created)
-                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-                .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
-                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
-                .RequireAuthorization();
+    .WithName("PostItemsAdsaveintent")
+    .WithTags("Classified")
+    .WithSummary("Post classified items ad using authenticated user")
+    .WithDescription("Takes user ID from JWT token and creates the ad.")
+    .Produces<AdCreatedResponseDto>(StatusCodes.Status201Created)
+    .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+    .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
+    .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
+    .RequireAuthorization();
 
             group.MapPost("items/post-by-id", async Task<IResult> (
                 Items dto,
+                [FromQuery] SaveIntent intent,
                 IClassifiedService service,
                 CancellationToken token) =>
             {
@@ -1025,7 +1027,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         });
                     }
 
-                    var response = await service.CreateClassifiedItemsAd(dto, token);
+                    var response = await service.CreateClassifiedItemsAd(dto, intent, token);
                     return TypedResults.Created($"/api/classifieds/items/user-ads-by-id/{response.AdId}", response);
 
                 }
@@ -1227,7 +1229,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
             group.MapPost("preloved", async Task<IResult> (
      HttpContext httpContext,
-     ClassifiedsPrelovedDTO dto,
+     [FromBody]ClassifiedsPrelovedDTO dto,
      IClassifiedService service,
      AuditLogger auditLogger,
      CancellationToken token) =>
@@ -1879,24 +1881,52 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 string uid = "unknown";
                 try
                 {
-                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                    if (string.IsNullOrEmpty(userClaim))
+                    uid = httpContext.User.FindFirst("sub")?.Value ?? "unknown";
+                    var userName = httpContext.User.FindFirst("preferred_username")?.Value ?? "unknown";
+
+                    var subscriptionClaims = httpContext.User.FindAll("subscriptions").ToList();
+                    Guid? subscriptionId = null;
+                    DateTime? expiryDate = null;
+
+                    foreach (var claim in subscriptionClaims)
                     {
-                        return Results.Unauthorized();
+                        try
+                        {
+                            using (var doc = JsonDocument.Parse(claim.Value))
+                            {
+                                var subscription = doc.RootElement;
+
+                                if (subscription.TryGetProperty("Vertical", out var verticalProp) &&
+                                    verticalProp.GetInt32() == 3 &&
+                                    subscription.TryGetProperty("SubVertical", out var subVerticalProp) &&
+                                    subVerticalProp.GetInt32() == 1)
+                                {
+                                    if (subscription.TryGetProperty("EndDate", out var endDateProp) &&
+                                    endDateProp.ValueKind == JsonValueKind.String)
+                                    {
+                                        expiryDate = DateTime.Parse(endDateProp.GetString()).ToUniversalTime();
+                                        subscriptionId = Guid.Parse(subscription.GetProperty("Id").GetString());
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        catch
+                        {
+                            continue;
+                        }
                     }
 
-                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                    uid = userData.GetProperty("uid").GetString();
-
-                    if (string.IsNullOrEmpty(uid))
+                    if (subscriptionId == null)
                     {
                         return TypedResults.BadRequest(new ProblemDetails
                         {
-                            Title = "Validation Error",
-                            Detail = "Authenticated user ID is missing or invalid.",
+                            Title = "Subscription Required",
+                            Detail = "No Preloved subscription found for this user.",
                             Status = StatusCodes.Status400BadRequest
                         });
                     }
+
                     var slug = SlugHelper.GenerateSlug(dto.Title, dto.Category, "Classifieds", Guid.NewGuid());
                     dto.Slug = slug;
                     dto.UpdatedBy = uid;
@@ -2069,27 +2099,55 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 string uid = "unknown";
                 try
                 {
-                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                    if (string.IsNullOrEmpty(userClaim))
+                    uid = httpContext.User.FindFirst("sub")?.Value ?? "unknown";
+                    var userName = httpContext.User.FindFirst("preferred_username")?.Value ?? "unknown";
+
+                    var subscriptionClaims = httpContext.User.FindAll("subscriptions").ToList();
+                    Guid? subscriptionId = null;
+                    DateTime? expiryDate = null;
+
+                    foreach (var claim in subscriptionClaims)
                     {
-                        return Results.Unauthorized();
+                        try
+                        {
+                            using (var doc = JsonDocument.Parse(claim.Value))
+                            {
+                                var subscription = doc.RootElement;
+
+                                if (subscription.TryGetProperty("Vertical", out var verticalProp) &&
+                                    verticalProp.GetInt32() == 3 &&
+                                    subscription.TryGetProperty("SubVertical", out var subVerticalProp) &&
+                                    subVerticalProp.GetInt32() == 2)
+                                {
+                                    if (subscription.TryGetProperty("EndDate", out var endDateProp) &&
+                                    endDateProp.ValueKind == JsonValueKind.String)
+                                    {
+                                        expiryDate = DateTime.Parse(endDateProp.GetString()).ToUniversalTime();
+                                        subscriptionId = Guid.Parse(subscription.GetProperty("Id").GetString());
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        catch
+                        {
+                            continue;
+                        }
                     }
 
-                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                    uid = userData.GetProperty("uid").GetString();
-
-                    if (uid == null)
+                    if (subscriptionId == null)
                     {
                         return TypedResults.BadRequest(new ProblemDetails
                         {
-                            Title = "Validation Error",
-                            Detail = "Authenticated user ID is missing or invalid.",
+                            Title = "Subscription Required",
+                            Detail = "No Preloved subscription found for this user.",
                             Status = StatusCodes.Status400BadRequest
                         });
                     }
+
                     var slug = SlugHelper.GenerateSlug(dto.Offertitle, dto.BusinessName, "Classifieds", Guid.NewGuid());
                     dto.Slug = slug;
-                    dto.CreatedBy = userData.GetProperty("name").GetString();
+                    dto.CreatedBy = userName;
                     dto.UpdatedBy = uid;
 
                     var result = await service.UpdateClassifiedDealsAd(dto, token);
@@ -2252,7 +2310,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
             group.MapPost("collectibles", async Task<IResult> (
                 HttpContext httpContext,
-                ClassifiedsCollectablesDTO dto,
+                [FromBody]ClassifiedsCollectablesDTO dto,
+                [FromQuery] SaveIntent intent,
                 IClassifiedService service,
                 AuditLogger auditLogger,
                 CancellationToken token) =>
@@ -2371,7 +2430,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
                     };
                    
-                    var result = await service.CreateClassifiedCollectiblesAd(request, token);
+                    var result = await service.CreateClassifiedCollectiblesAd(request, intent, token);
 
                     await auditLogger.LogAuditAsync(
                         module: "Classified",
@@ -2426,6 +2485,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             group.MapPost("collectibles/post-by-id", async Task<IResult> (
                 Collectibles dto,
                 IClassifiedService service,
+                [FromQuery] SaveIntent intent,
                 CancellationToken token) =>
             {
                 try
@@ -2440,7 +2500,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         });
                     }
 
-                    var result = await service.CreateClassifiedCollectiblesAd(dto, token);
+                    var result = await service.CreateClassifiedCollectiblesAd(dto, intent, token);
 
                     return TypedResults.Created(
                         $"/api/classifieds/collectibles/user-ads-by-id/{result.AdId}", result);
@@ -2484,7 +2544,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
             group.MapPost("deals", async Task<IResult> (
                 HttpContext httpContext,
-                ClassifiedsDealsDTO dto,
+                [FromBody] ClassifiedsDealsDTO dto,
                 IClassifiedService service,
                 AuditLogger auditLogger,
                 CancellationToken token) =>
@@ -2514,7 +2574,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                                 if (subscription.TryGetProperty("Vertical", out var verticalProp) &&
                                     verticalProp.GetInt32() == 3 &&
                                     subscription.TryGetProperty("SubVertical", out var subVerticalProp) &&
-                                    subVerticalProp.GetInt32() == 4)
+                                    subVerticalProp.GetInt32() == 2)
                                 {
 
                                     if (subscription.TryGetProperty("EndDate", out var endDateProp) &&

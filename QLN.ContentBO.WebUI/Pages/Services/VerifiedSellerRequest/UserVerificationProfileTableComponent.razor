@@ -1,10 +1,17 @@
 @inherits UserVerificationProfileTableBase
 @using QLN.ContentBO.WebUI.Components.ToggleTabs
 @using MudBlazor
+@using QLN.ContentBO.WebUI.Components.EmptyCard
 @using QLN.ContentBO.WebUI.Components.PaginationFooter
 
 <MudPaper Class="pa-4">
-  
+    @if(Listings == null || !Listings.Any()){
+
+<EmptyCard Title="No User Profiles Available" Subtitle="Please check back later" />
+
+        
+    }
+  else{
     <MudTable Items="@Listings"
               Hover="true"
               Elevation="0"
@@ -50,4 +57,5 @@
                       PageSize="@pageSize"
                       OnPageChange="@HandlePageChange"
                       OnPageSizeChange="@HandlePageSizeChange" />
+                      }
 </MudPaper>

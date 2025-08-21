@@ -10,14 +10,14 @@ using QLN.Common.Infrastructure.Subscriptions;
 
 namespace QLN.DataMigration.Services
 {
-    public class ClassifiedsService : IClassifiedService
+    public class DataMigrationClassifiedsService : IClassifiedService
     {
         private readonly DaprClient _dapr;
-        private readonly ILogger<ClassifiedsService> _logger;
+        private readonly ILogger<DataMigrationClassifiedsService> _logger;
 
-        public ClassifiedsService(
+        public DataMigrationClassifiedsService(
             DaprClient dapr,
-            ILogger<ClassifiedsService> logger
+            ILogger<DataMigrationClassifiedsService> logger
             )
         {
             _dapr = dapr;
@@ -58,7 +58,7 @@ namespace QLN.DataMigration.Services
             throw new NotImplementedException();
         }
 
-        public Task<AdCreatedResponseDto> CreateClassifiedItemsAd(Items dto, CancellationToken cancellationToken = default)
+        public Task<AdCreatedResponseDto> CreateClassifiedItemsAd(Items dto, SaveIntent intent, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }
@@ -203,7 +203,7 @@ namespace QLN.DataMigration.Services
             return $"Published article {dto.Title} to {ConstantValues.PubSubTopics.ItemsMigration} topic";
         }
 
-        public Task<AdCreatedResponseDto> CreateClassifiedCollectiblesAd(Collectibles dto, CancellationToken cancellationToken = default)
+        public Task<AdCreatedResponseDto> CreateClassifiedCollectiblesAd(Collectibles dto, SaveIntent intent, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }
@@ -274,6 +274,21 @@ namespace QLN.DataMigration.Services
         }
 
         public Task<BulkAdActionResponse> BulkUpdateAdPublishStatusAsync(int subVertical, string userId, List<long> adIds, bool isPublished, Guid subscriptionId, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+
+        //public Task<AdCreatedResponseDto> CreateClassifiedItemsAd(Items dto, SaveIntent intent, CancellationToken cancellationToken = default)
+        //{
+        //    throw new NotImplementedException();
+        //}
+
+        public Task<AdCreatedResponseDto> CreateClassifiedPrelovedAd(Preloveds dto, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<AdCreatedResponseDto> CreateClassifiedDealsAd(Deals dto, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }

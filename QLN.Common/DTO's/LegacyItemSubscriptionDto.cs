@@ -7,10 +7,20 @@ using System.Threading.Tasks;
 
 namespace QLN.Common.DTO_s
 {
+    public interface ILegacySubscriptionDrupal
+    {
+        SubscriptionItem Item { get; set; }
+    }
 
-    public class LegacySubscriptionDrupal
+    public class LegacyItemSubscriptionDrupal : ILegacySubscriptionDrupal
     {
         [JsonPropertyName("item")]
+        public SubscriptionItem Item { get; set; }
+    }
+
+    public class LegacyServicesSubscriptionDrupal : ILegacySubscriptionDrupal
+    {
+        [JsonPropertyName("service")]
         public SubscriptionItem Item { get; set; }
     }
 
@@ -66,11 +76,15 @@ namespace QLN.Common.DTO_s
 
         [JsonPropertyName("status")]
         public string Status { get; set; }
+
+        [JsonPropertyName("user_id")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string? UserId { get; set; }
     }
 
-    public class LegacySubscriptionDto
+    public class LegacyItemSubscriptionDto<T> where T : ILegacySubscriptionDrupal
     {
         [JsonPropertyName("drupal")]
-        public LegacySubscriptionDrupal Drupal { get; set; }
+        public T Drupal { get; set; }
     }
 }

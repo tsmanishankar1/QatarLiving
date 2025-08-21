@@ -2,12 +2,17 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Hosting;
 using QLN.Common.DTO_s;
+using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService.IFileStorage;
 using QLN.Common.Infrastructure.Utilities;
+using QLN.Common.Migrations.QLLog;
 using QLN.DataMigration.Models;
 using System;
 using System.Diagnostics;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 
 namespace QLN.DataMigration.Services
@@ -18,22 +23,35 @@ namespace QLN.DataMigration.Services
         private readonly IDataOutputService _dataOutputService;
         private readonly IDrupalSourceService _drupalSourceService;
         private readonly IFileStorageBlobService _fileStorageBlobService;
+        private readonly HttpClient _httpClient;
+        private readonly IConfiguration _config;
 
         public MigrationService(
             ILogger<MigrationService> logger,
             IDataOutputService dataOutputService,
             IDrupalSourceService drupalSourceService,
-            IFileStorageBlobService fileStorageBlobService
+            IFileStorageBlobService fileStorageBlobService,
+            IHttpClientFactory httpClientFactory,
+            IConfiguration config
             )
         {
             _logger = logger;
             _dataOutputService = dataOutputService;
             _drupalSourceService = drupalSourceService;
             _fileStorageBlobService = fileStorageBlobService;
+            _httpClient = httpClientFactory.CreateClient();
+            _config = config;
         }
 
-        public async Task<IResult> MigrateMobileDevices(string environment, CancellationToken cancellationToken)
+        public async Task<IResult> MigrateMobileDevices(CancellationToken cancellationToken)
         {
+            var environment = _config["LegacyMigrations:Environment"];
+
+            if (string.IsNullOrEmpty(environment))
+            {
+                return Results.Problem("Environment is not configured for legacy migrations.");
+            }
+
             _logger.LogInformation($"Starting Migrations @ {DateTime.UtcNow}");
 
             // first fetch all results from source
@@ -65,16 +83,25 @@ namespace QLN.DataMigration.Services
             });
         }
 
-        public async Task<IResult> MigrateItems(string environment, bool importImages, CancellationToken cancellationToken)
+        public async Task<IResult> MigrateItems(List<ItemsCategoryMapper> csvImport, bool importImages, bool isFreeAds, CancellationToken cancellationToken)
         {
             int pageSize = 30;
             int page = 1;
+            string type = "classifieds";
+            var adType = isFreeAds ? "Free" : "Paid";
+
+            var environment = _config["LegacyMigrations:Environment"];
+
+            if (string.IsNullOrEmpty(environment))
+            {
+                return Results.Problem("Environment is not configured for legacy migrations.");
+            }
 
             var startTime = DateTime.Now;
 
             _logger.LogInformation($"Starting Items Migration @ {startTime}");
 
-            var drupalItems = await _drupalSourceService.GetItemsAsync(environment, pageSize, page, cancellationToken);
+            var drupalItems = await _drupalSourceService.GetItemsAsync(environment, pageSize, page, type, cancellationToken);
 
             if (drupalItems == null || drupalItems.Items == null || !drupalItems.Items.Any())
             {
@@ -94,17 +121,17 @@ namespace QLN.DataMigration.Services
                 totalCount += 1;
             }
 
-            await _dataOutputService.SaveMigrationItemsAsync(migrationItems, cancellationToken); 
+            await _dataOutputService.SaveMigrationItemsAsync(csvImport, migrationItems, cancellationToken, isFreeAds); 
             
             var totalItemCount = drupalItems.Total;
 
-            _logger.LogInformation($"Migrated {totalCount} out of {totalItemCount} Items");
+            _logger.LogInformation($"Migrated {totalCount} out of {totalItemCount} {adType} Items");
 
             while (totalItemCount > totalCount)
             {
                 page += 1;
                 _logger.LogInformation($"Fetching data for page {page}");
-                drupalItems = await _drupalSourceService.GetItemsAsync(environment, pageSize, page, cancellationToken);
+                drupalItems = await _drupalSourceService.GetItemsAsync(environment, pageSize, page, type, cancellationToken);
                 migrationItems = new List<DrupalItem>();
                 if (drupalItems != null && drupalItems.Items.Count > 0)
                 {
@@ -116,9 +143,9 @@ namespace QLN.DataMigration.Services
                         totalCount += 1;
                     }
 
-                    await _dataOutputService.SaveMigrationItemsAsync(migrationItems, cancellationToken);
+                    await _dataOutputService.SaveMigrationItemsAsync(csvImport, migrationItems, cancellationToken, isFreeAds);
 
-                    _logger.LogInformation($"Migrated {totalCount} out of {totalItemCount} Items");
+                    _logger.LogInformation($"Migrated {totalCount} out of {totalItemCount} {adType} Items");
                 }
             }
 
@@ -126,11 +153,84 @@ namespace QLN.DataMigration.Services
 
             return Results.Ok(new
             {
-                Message = $"Migrated {totalCount} out of {totalItemCount} Items - Started @ {startTime} - Completed @ {DateTime.UtcNow}.",
+                Message = $"Migrated {totalCount} out of {totalItemCount} {adType} Items - Started @ {startTime} - Completed @ {DateTime.UtcNow}.",
             });
         }
 
-        
+        public async Task<IResult> MigrateServices(List<ServicesCategoryMapper> csvImport, bool importImages, bool isFreeAds, CancellationToken cancellationToken)
+        {
+            int pageSize = 30;
+            int page = 1;
+            string type = "services";
+            var adType = isFreeAds ? "Free" : "Paid";
+
+            var environment = _config["LegacyMigrations:Environment"];
+
+            if (string.IsNullOrEmpty(environment))
+            {
+                return Results.Problem("Environment is not configured for legacy migrations.");
+            }
+
+            var startTime = DateTime.Now;
+
+            _logger.LogInformation($"Starting Services Migration @ {startTime}");
+
+            var drupalItems = await _drupalSourceService.GetServicesAsync(environment, pageSize, page, type, cancellationToken);
+
+            if (drupalItems == null || drupalItems.Items == null || !drupalItems.Items.Any())
+            {
+                return Results.Problem("No items found or deserialized data is invalid.");
+            }
+
+            var migrationItems = new List<DrupalItem>();
+            int totalCount = 0;
+
+            // iterate over each drupal item and fetch its data from current storage
+            // and upload it into Azure Blob
+            foreach (var drupalItem in drupalItems.Items)
+            {
+                await ProcessMigrationItem(drupalItem, importImages: importImages);
+
+                migrationItems.Add(drupalItem);
+                totalCount += 1;
+            }
+
+            await _dataOutputService.SaveMigrationServicesAsync(csvImport, migrationItems, cancellationToken, isFreeAds);
+
+            var totalItemCount = drupalItems.Total;
+
+            
+            _logger.LogInformation($"Migrated {totalCount} out of {totalItemCount} {adType} Services");
+
+            while (totalItemCount > totalCount)
+            {
+                page += 1;
+                _logger.LogInformation($"Fetching data for page {page}");
+                drupalItems = await _drupalSourceService.GetServicesAsync(environment, pageSize, page, type, cancellationToken);
+                migrationItems = new List<DrupalItem>();
+                if (drupalItems != null && drupalItems.Items.Count > 0)
+                {
+                    foreach (var drupalItem in drupalItems.Items)
+                    {
+                        await ProcessMigrationItem(drupalItem, importImages: importImages);
+
+                        migrationItems.Add(drupalItem);
+                        totalCount += 1;
+                    }
+
+                    await _dataOutputService.SaveMigrationServicesAsync(csvImport, migrationItems, cancellationToken, isFreeAds);
+
+                    _logger.LogInformation($"Migrated {totalCount} out of {totalItemCount} {adType} Services");
+                }
+            }
+
+            _logger.LogInformation($"Completed Services Migration @ {DateTime.UtcNow}");
+
+            return Results.Ok(new
+            {
+                Message = $"Migrated {totalCount} out of {totalItemCount} {adType} Services - Started @ {startTime} - Completed @ {DateTime.UtcNow}.",
+            });
+        }
 
         public async Task<IResult> MigrateArticles(bool importImages, CancellationToken cancellationToken)
         {
@@ -661,6 +761,114 @@ namespace QLN.DataMigration.Services
             {
                 Message = $"Migrated {categories.Locations.Count} Locations & {categories.Locations.SelectMany(x => x.Areas ?? new List<Area>()).ToList().Count} Areas - Completed @ {DateTime.UtcNow}."
             });
+        }
+
+        public async Task<IResult> MigrateLegacyServicesSubscriptions(CancellationToken cancellationToken = default)
+        {
+            string type = "service"; // default to service
+
+            var environment = _config["LegacySubscriptions:Environment"];
+
+            if (string.IsNullOrEmpty(environment))
+            {
+                return Results.Problem("Environment is not configured for legacy subscriptions.");
+            }
+
+            _logger.LogInformation($"Starting Legacy Subscription Migration @ {DateTime.UtcNow}");
+            var subscriptions = await GetLegacySubscriptions<LegacyServicesSubscriptionDrupal>(type, environment, cancellationToken);
+            if (subscriptions == null)
+            {
+                return Results.Problem("No legacy subscription found or deserialized data is invalid.");
+            }
+            _logger.LogInformation($"Completed Legacy Subscription Migration @ {DateTime.UtcNow}");
+
+            await _dataOutputService.SaveLegacyServicesSubscriptionsAsync(subscriptions, cancellationToken);
+            return Results.Ok(new
+            {
+                Message = $"Migrated {subscriptions.Count} Services Subscriptions - Completed @ {DateTime.UtcNow}."
+            });
+        }
+
+        public async Task<IResult> MigrateLegacyItemsSubscriptions(CancellationToken cancellationToken = default)
+        {
+            string type = "item"; // default to items
+
+            var environment = _config["LegacySubscriptions:Environment"];
+
+            if (string.IsNullOrEmpty(environment))
+            {
+                return Results.Problem("Environment is not configured for legacy subscriptions.");
+            }
+
+            _logger.LogInformation($"Starting Legacy Subscription Migration @ {DateTime.UtcNow}");
+            var subscriptions = await GetLegacySubscriptions<LegacyItemSubscriptionDrupal>(type, environment, cancellationToken);
+            if (subscriptions == null)
+            {
+                return Results.Problem("No legacy subscription found or deserialized data is invalid.");
+            }
+            _logger.LogInformation($"Completed Legacy Subscription Migration @ {DateTime.UtcNow}");
+
+            await _dataOutputService.SaveLegacyItemsSubscriptionsAsync(subscriptions, cancellationToken);
+            return Results.Ok(new
+            {
+                Message = $"Migrated {subscriptions.Count} Item Subscriptions - Completed @ {DateTime.UtcNow}."
+            });
+        }
+
+        private async Task<List<SubscriptionItem>?> GetLegacySubscriptions<T>(string type, string environment, CancellationToken cancellationToken = default) where T : ILegacySubscriptionDrupal
+        {
+
+            var formData = new List<KeyValuePair<string, string>>
+            {
+                new KeyValuePair<string, string>("env", environment),
+                new KeyValuePair<string, string>("type", type)
+            };
+            var content = new FormUrlEncodedContent(formData);
+
+            content.Headers.ContentType = new MediaTypeHeaderValue("application/x-www-form-urlencoded");
+
+            _httpClient.DefaultRequestHeaders.Add("x-api-key", _config["LegacySubscriptions:ApiKey"]);
+
+            var response = await _httpClient.PostAsync(ConstantValues.Subscriptions.SubscriptionsEndpoint, content);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogError($"Failed to migrate categories. Status: {response.StatusCode}");
+                return null;
+            }
+
+            _logger.LogInformation($"Got Response from migration endpoint {ConstantValues.Subscriptions.SubscriptionsEndpoint}");
+
+            var json = await response.Content.ReadAsStringAsync();
+
+            try
+            {
+                var jsonDeserialized = JsonSerializer.Deserialize<Dictionary<string, LegacyItemSubscriptionDto<T>>>(json, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+
+                if (jsonDeserialized == null)
+                {
+                    return null;
+                }
+
+                var subscriptions = new List<SubscriptionItem>();
+
+                foreach (var item in jsonDeserialized)
+                {
+                    SubscriptionItem subscription = item.Value.Drupal.Item;
+                    subscription.UserId = item.Key;
+                    subscriptions.Add(subscription);
+                }
+
+                return subscriptions;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Deserialization error: {ex.Message}");
+                return null;
+            }
         }
     }
 }

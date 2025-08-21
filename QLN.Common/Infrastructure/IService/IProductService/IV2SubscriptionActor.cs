@@ -120,5 +120,6 @@ namespace QLN.Common.Infrastructure.IService.IProductService
         Task<bool> UpdateStatusAsync(SubscriptionStatus newStatus, CancellationToken cancellationToken = default);
         Task<bool> UpdateEndDateAsync(DateTime newEndDate, CancellationToken cancellationToken = default);
         Task<bool> AdminCancelSubscriptionAsync(CancellationToken cancellationToken = default);
+        Task<bool> MigrateSubscriptionAsync(V2SubscriptionDto request, CancellationToken cancellationToken = default);
     }
 }

@@ -164,7 +164,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
             throw new NotImplementedException();
         }
 
-        public async Task<AdCreatedResponseDto> CreateClassifiedItemsAd(Items dto, CancellationToken cancellationToken = default)
+        public async Task<AdCreatedResponseDto> CreateClassifiedItemsAd(Items dto, SaveIntent intent, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(dto);
 
@@ -175,12 +175,13 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
             if (dto.SubVertical != SubVertical.Items)
                 throw new InvalidOperationException("This endpoint only supports posting ads under the 'Items' subvertical.");
-           
+
 
             try
-            {
+            {               
                 _log.LogTrace($"Calling internal service with {dto.Images.Count} images");
-                var requestUrl = $"/api/classifieds/items/post-by-id";
+                var requestUrl = $"/api/classifieds/items/post-by-id?intent={(int)intent}";
+                Console.WriteLine($"Received SaveIntent value: {(int)intent}");
                 var payload = JsonSerializer.Serialize(dto);
                 var req = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, SERVICE_APP_ID, requestUrl);
                 req.Content = new StringContent(payload, Encoding.UTF8, "application/json");
@@ -198,9 +199,9 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 if (createdDto == null)
                     throw new InvalidOperationException("Failed to deserialize ad creation response.");
 
-                return createdDto;              
+                return createdDto;
             }
-            catch(DaprServiceException)
+            catch (DaprServiceException)
             {
                 throw;
             }
@@ -397,7 +398,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-        public async Task<AdCreatedResponseDto> CreateClassifiedCollectiblesAd(Collectibles dto, CancellationToken cancellationToken = default)
+        public async Task<AdCreatedResponseDto> CreateClassifiedCollectiblesAd(Collectibles dto, SaveIntent intent, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(dto);
             if (dto.UserId == null) throw new ArgumentException("UserId is required.");
@@ -411,7 +412,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
             try
             {             
                 _log.LogTrace($"Calling internal collectibles service with {dto.Images.Count} images and cert: {dto.AuthenticityCertificateUrl}");
-                var requestUrl = $"api/classifieds/collectibles/post-by-id";
+                var requestUrl = $"api/classifieds/collectibles/post-by-id?intent={(int)intent}";
                 var payload = JsonSerializer.Serialize(dto);
                 var req = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, SERVICE_APP_ID, requestUrl);
                 req.Content = new StringContent(payload, Encoding.UTF8, "application/json");

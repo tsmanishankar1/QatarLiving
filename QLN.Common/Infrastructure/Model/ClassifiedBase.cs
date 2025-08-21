@@ -82,5 +82,6 @@ namespace QLN.Common.Infrastructure.Model
         public string? UpdatedBy { get; set; }
         public DateTime? UpdatedAt { get; set; }
         public Guid? SubscriptionId { get; set; }
+        public bool? IsSold { get; set; } = false;
     }
 }

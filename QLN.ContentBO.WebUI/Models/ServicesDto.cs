@@ -114,17 +114,16 @@ public class ImageDto
 
     public enum ServiceStatus
     {
-        Draft = 1,
-        PendingApproval = 2,
+        Draft = 0,
+        PendingApproval = 1,
+        Approved = 2,
         Published = 3,
         Unpublished = 4,
         Rejected = 5,
         Expired = 6,
-        Promote = 7,
-        UnPromote = 8,
-        Feature = 9,
-        UnFeature = 10,
-        NeedChanges = 11
+        NeedsModification = 7,
+        Hold = 8,
+        Onhold = 9
     }
     public enum ServiceAdType
     {

@@ -600,12 +600,17 @@ namespace QLN.Common.Infrastructure.Service.AuthService
             }
         }
 
-        public async Task<Results<Ok<RefreshTokenResponse>, BadRequest<ProblemDetails>, ProblemHttpResult, UnauthorizedHttpResult>> RefreshToken(Guid userId,RefreshTokenRequest request)
+        public async Task<Results<Ok<RefreshTokenResponse>, BadRequest<ProblemDetails>, ProblemHttpResult, UnauthorizedHttpResult>> RefreshToken(Guid userId,DrupalUser drupalUser, string refreshToken)
         {
             try
             {
                 var user = await _userManager.Users.FirstOrDefaultAsync(u => u.Id == userId);
+                // requires: using Microsoft.Extensions.Configuration;
+                var accessTs = _config.GetValue<TimeSpan>("TokenLifetimes:AccessToken");
+                var refreshTs = _config.GetValue<TimeSpan>("TokenLifetimes:RefreshToken");
 
+                var accessExpiry = DateTime.UtcNow.Add(accessTs);
+                var refreshExpiry = DateTime.UtcNow.Add(refreshTs);
                 if (user == null)
                 {
                     return TypedResults.BadRequest(new ProblemDetails
@@ -625,7 +630,7 @@ namespace QLN.Common.Infrastructure.Service.AuthService
                     Constants.ConstantValues.QLNProvider,
                     Constants.ConstantValues.RefreshTokenExpiry);
 
-                if (storedToken == request.RefreshToken)
+                if (storedToken == refreshToken)
                 {
                     if (!DateTime.TryParse(expiryStr, out var expiry))
                     {
@@ -641,8 +646,8 @@ namespace QLN.Common.Infrastructure.Service.AuthService
                     {
                         return TypedResults.Unauthorized();
                     }
-
-                    var newAccessToken = await _tokenService.GenerateAccessToken(user);
+                    var assignedRoles = await _userManager.GetRolesAsync(user);
+                    var newAccessToken = await _tokenService.GenerateEnrichedAccessToken(user, drupalUser, accessExpiry, assignedRoles);
                     var newRefreshToken = _tokenService.GenerateRefreshToken();
 
                     await _userManager.SetAuthenticationTokenAsync(user,
@@ -1192,7 +1197,13 @@ namespace QLN.Common.Infrastructure.Service.AuthService
 
                         if(environment != null && type != null && uid != null)
                         {
-                            var subscriptioninfo = await GetLegacySubscription(type, uid, environment);
+
+                            var subscriptioninfo = type switch
+                            {
+                                "item" => await GetLegacySubscription<LegacyItemSubscriptionDrupal>(type, uid, environment), // if Item then fetch Item Subscription
+                                "service" => await GetLegacySubscription<LegacyItemSubscriptionDrupal>(type, uid, environment), // if Service then fetch Service Subscription
+                                _ => await GetLegacySubscription<LegacyItemSubscriptionDrupal>(type, uid, environment)
+                            };
 
                             if(subscriptioninfo != null && subscriptioninfo.Drupal.Item.Status == "success")
                             {
@@ -1255,18 +1266,23 @@ namespace QLN.Common.Infrastructure.Service.AuthService
 
                     }
                 }
+                var accessTs = _config.GetValue<TimeSpan>("TokenLifetimes:AccessToken");
+                var refreshTs = _config.GetValue<TimeSpan>("TokenLifetimes:RefreshToken");
 
+                var accessExpiry = DateTime.UtcNow.Add(accessTs);
+                var refreshExpiry = DateTime.UtcNow.Add(refreshTs);
                 var assignedRoles = await _userManager.GetRolesAsync(user);
 
                 // Generate tokens for existing or newly created user
-                var accessToken = await _tokenService.GenerateEnrichedAccessToken(user, drupalUser, expiry, assignedRoles);
+                var accessToken = await _tokenService.GenerateEnrichedAccessToken(user, drupalUser, accessExpiry, assignedRoles);
 
                 // RefreshToken not required yet
 
-                //var refreshToken = _tokenService.GenerateRefreshToken(); 
+                var refreshToken = _tokenService.GenerateRefreshToken();
 
-                //await _userManager.SetAuthenticationTokenAsync(user, Constants.ConstantValues.QLNProvider, Constants.ConstantValues.RefreshToken, refreshToken);
-                //await _userManager.SetAuthenticationTokenAsync(user, Constants.ConstantValues.QLNProvider, Constants.ConstantValues.RefreshTokenExpiry, DateTime.UtcNow.AddDays(7).ToString("o"));
+                await _userManager.SetAuthenticationTokenAsync(user, Constants.ConstantValues.QLNProvider, Constants.ConstantValues.RefreshToken, refreshToken);
+                await _userManager.SetAuthenticationTokenAsync(user, Constants.ConstantValues.QLNProvider, Constants.ConstantValues.RefreshTokenExpiry, refreshExpiry.ToString());
+
 
                 return TypedResults.Ok(new LoginResponse
                 {
@@ -1274,7 +1290,7 @@ namespace QLN.Common.Infrastructure.Service.AuthService
                     Emailaddress = user.Email,
                     Mobilenumber = user.PhoneNumber,
                     AccessToken = accessToken,
-                    RefreshToken = string.Empty,
+                    RefreshToken = refreshToken,
                     IsTwoFactorEnabled = false // Assuming 2FA is not enabled for Drupal users
                 });
             }
@@ -1296,7 +1312,7 @@ namespace QLN.Common.Infrastructure.Service.AuthService
                 .Select(s => s[random.Next(s.Length)]).ToArray());
         }
 
-        private async Task<LegacySubscriptionDto?> GetLegacySubscription(string type, string uid, string environment, CancellationToken cancellationToken = default)
+        private async Task<LegacyItemSubscriptionDto<T>?> GetLegacySubscription<T>(string type, string uid, string environment, CancellationToken cancellationToken = default) where T : ILegacySubscriptionDrupal
         {
 
             var formData = new List<KeyValuePair<string, string>>
@@ -1337,7 +1353,7 @@ namespace QLN.Common.Infrastructure.Service.AuthService
 
                 var levelDown = JsonSerializer.Serialize(jsonDeserialized.GetValueOrDefault(key: uid)); // serialize it to a string
 
-                var subscription = JsonSerializer.Deserialize<LegacySubscriptionDto>(levelDown, new JsonSerializerOptions
+                var subscription = JsonSerializer.Deserialize<LegacyItemSubscriptionDto<T>>(levelDown, new JsonSerializerOptions
                 {
                     PropertyNameCaseInsensitive = true
                 }); // deserialize into the object we want

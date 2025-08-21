@@ -64,7 +64,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
             try
             {
                 IsLoading = true;
-                var response = await ClassifiedService.GetDealsByIdAsync("classifieds", adId);
+                var response = await ClassifiedService.GetDealsByIdAsync(adId);
 
                 if (response != null)
                 {

@@ -1437,6 +1437,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                 uid = extractedUid;
                 subscriptionId = subscriptionId;
                 expiryDate = expiryDate;
+                userName = extractedUserName;
                 if (string.IsNullOrEmpty(uid))
                 {
                     return TypedResults.Problem(new ProblemDetails
@@ -1505,7 +1506,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                ProblemHttpResult
            >> (
                BulkModerationRequest req,
-               string userId,
+               string? userId,
                string subscriptionId,
                DateTime? expiryDate,
                HttpContext httpContext,
