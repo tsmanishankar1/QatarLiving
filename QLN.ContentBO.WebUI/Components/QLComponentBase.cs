@@ -29,6 +29,7 @@ namespace QLN.ContentBO.WebUI.Components
 
         public string ClassifiedsBlobContainerName => NavigationPath.Value.ClassifiedsBlobContainerName;
 
+        [Obsolete("We have Token based Admin Policy in place.")]
         protected async Task AuthorizedPage()
         {
             try

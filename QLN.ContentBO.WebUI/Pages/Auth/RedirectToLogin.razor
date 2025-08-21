@@ -1,10 +1,20 @@
-﻿@inject NavigationManager NavigationManager
+﻿@using Microsoft.Extensions.Options
+@using QLN.ContentBO.WebUI.Models
+@inject NavigationManager NavManager
+@inject IOptions<NavigationPath> NavigationPath
 
 <p>You are not authorized. Redirecting to login…</p>
 
 @code {
     protected override void OnInitialized()
     {
-        NavigationManager.NavigateTo($"auth/login?returnUrl={Uri.EscapeDataString(NavigationManager.Uri)}", forceLoad: true);
+        if (NavigationPath.Value.IsLocal)
+        {
+            NavManager.NavigateTo($"{NavigationPath.Value.Login}?destination={new Uri(NavManager.Uri).AbsolutePath.Substring(1)}", forceLoad: true);
+        }
+        else
+        {
+            NavManager.NavigateTo($"{NavigationPath.Value.Login}?destination={NavigationPath.Value.BORedirectPrefix}{new Uri(NavManager.Uri).AbsolutePath.Substring(1)}", forceLoad: true);
+        }
     }
 }
