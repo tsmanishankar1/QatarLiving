@@ -8,13 +8,14 @@
 @code {
     protected override void OnInitialized()
     {
+        var destination = new Uri(NavManager.Uri).AbsolutePath.Substring(1);
         if (NavigationPath.Value.IsLocal)
         {
-            NavManager.NavigateTo($"{NavigationPath.Value.Login}?destination={new Uri(NavManager.Uri).AbsolutePath.Substring(1)}", forceLoad: true);
+            NavManager.NavigateTo($"{NavigationPath.Value.Login}?destination={destination}", forceLoad: true);
         }
         else
         {
-            NavManager.NavigateTo($"{NavigationPath.Value.Login}?destination={NavigationPath.Value.BORedirectPrefix}{new Uri(NavManager.Uri).AbsolutePath.Substring(1)}", forceLoad: true);
+            NavManager.NavigateTo($"{NavigationPath.Value.Login}?destination={NavigationPath.Value.BORedirectPrefix}{destination}", forceLoad: true);
         }
     }
 }

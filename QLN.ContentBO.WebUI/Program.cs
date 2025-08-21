@@ -44,7 +44,7 @@ try
 
     builder.Services.AddAuthorizationCore(options =>
     {
-        options.AddPolicy("AdminOnly", policy => policy.RequireRole("administrato"));
+        options.AddPolicy("AdminOnly", policy => policy.RequireRole("administrator"));
     });
 
     builder.Services.AddTransient<CustomHttpMessageHandler>();
