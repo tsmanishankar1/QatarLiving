@@ -61,6 +61,8 @@ namespace QLN.Common.DTO_s.Company
         public string CRDocument { get; set; } = string.Empty;
         public string UploadFeed { get; set; } = string.Empty;
         public string XMLFeed { get; set; } = string.Empty;
+        public string? StoresURL { get; set; }
+        public string? ImportType { get; set; }
         public VerifiedStatus? Status { get; set; }
         [Required]
         public VerticalType Vertical { get; set; }
