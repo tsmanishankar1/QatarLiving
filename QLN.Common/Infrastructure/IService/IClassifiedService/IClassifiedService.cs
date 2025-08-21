@@ -26,10 +26,10 @@ namespace QLN.Common.Infrastructure.IService
       string userId,
       Guid subscriptionId,
       CancellationToken cancellationToken);
-        Task<AdCreatedResponseDto> CreateClassifiedPrelovedAd(Preloveds dto, SaveIntent intent, CancellationToken cancellationToken = default);
+        Task<AdCreatedResponseDto> CreateClassifiedPrelovedAd(Preloveds dto, CancellationToken cancellationToken = default);
         Task<AdCreatedResponseDto> CreateClassifiedCollectiblesAd(Collectibles dto, SaveIntent intent, CancellationToken cancellationToken = default);
         Task<string> MigrateClassifiedCollectiblesAd(Collectibles dto, CancellationToken cancellationToken = default);
-        Task<AdCreatedResponseDto> CreateClassifiedDealsAd(Deals dto, SaveIntent intent, CancellationToken cancellationToken = default);       
+        Task<AdCreatedResponseDto> CreateClassifiedDealsAd(Deals dto, CancellationToken cancellationToken = default);       
         Task<DeleteAdResponseDto> DeleteClassifiedAd(SubVertical subVertical, long adId, string userId, CancellationToken cancellationToken = default);
         Task<Items> GetItemAdById(long adId, CancellationToken cancellationToken = default);
         Task<Items> GetItemAdBySlug(string slug, CancellationToken cancellationToken = default);

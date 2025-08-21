@@ -471,7 +471,7 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-        public async Task<AdCreatedResponseDto> CreateClassifiedPrelovedAd(Preloveds dto, SaveIntent intent, CancellationToken cancellationToken = default)
+        public async Task<AdCreatedResponseDto> CreateClassifiedPrelovedAd(Preloveds dto, CancellationToken cancellationToken = default)
         {
             _logger.LogInformation("Starting ad creation for Preloved item with UserId: {UserId}, Title: {Title}", dto.UserId, dto.Title);
 
@@ -516,16 +516,8 @@ namespace QLN.Classified.MS.Service
                     dto.AuthenticityCertificateUrl = null;
                     dto.AuthenticityCertificateName = null;
                     _logger.LogInformation("No authenticity certificate provided. Fields set to null.");
-                }
-                if (intent == SaveIntent.SaveAndSubmitForApproval)
-                {
-                    dto.Status = AdStatus.PendingApproval;
-                }
-                else
-                {
-                    dto.Status = AdStatus.Draft;
-                }
-
+                }               
+                dto.Status = AdStatus.PendingApproval;
                 dto.CreatedAt = DateTime.UtcNow;
                 dto.UpdatedAt = DateTime.UtcNow;
 
@@ -653,15 +645,13 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-        public async Task<AdCreatedResponseDto> CreateClassifiedDealsAd(Deals dto, SaveIntent intent, CancellationToken cancellationToken = default)
+        public async Task<AdCreatedResponseDto> CreateClassifiedDealsAd(Deals dto, CancellationToken cancellationToken = default)
         {
             if (dto == null) throw new ArgumentNullException(nameof(dto));
             if (string.IsNullOrWhiteSpace(dto.UserId)) throw new ArgumentException("UserId is required.");
             if (string.IsNullOrWhiteSpace(dto.Offertitle)) throw new ArgumentException("Title is required.");
             if (string.IsNullOrWhiteSpace(dto.FlyerFileUrl)) throw new ArgumentException("Flyer URL must be provided.");
-            if (dto.CoverImage == null || !dto.CoverImage.Any()) throw new ArgumentException("At least one image is required.");
-
-          
+            if (dto.CoverImage == null || !dto.CoverImage.Any()) throw new ArgumentException("At least one image is required.");          
             try
             {
                 var company = await _companyContext.Companies
@@ -685,15 +675,8 @@ namespace QLN.Classified.MS.Service
                 if (!string.IsNullOrWhiteSpace(company.InstagramUrl))
                     socialLinks.Add(company.InstagramUrl);
 
-                dto.SocialMediaLinks = socialLinks.Any() ? string.Join(", ", socialLinks) : null;
-                if (intent == SaveIntent.SaveAndSubmitForApproval)
-                {
-                    dto.Status = AdStatus.PendingApproval;
-                }
-                else
-                {
-                    dto.Status = AdStatus.Draft;
-                }
+                dto.SocialMediaLinks = socialLinks.Any() ? string.Join(", ", socialLinks) : null;               
+                dto.Status = AdStatus.PendingApproval;
 
                 dto.CreatedAt = DateTime.UtcNow;
                 dto.UpdatedAt = DateTime.UtcNow;
@@ -735,7 +718,7 @@ namespace QLN.Classified.MS.Service
                 throw new InvalidOperationException("An unexpected error occurred while creating the Deals ad. Please try again later.", ex);
             }
         }
-      
+       
         public async Task<DeleteAdResponseDto> DeleteClassifiedAd(SubVertical subVertical, long adId, string userId, CancellationToken cancellationToken = default)
         {
             if (adId <= 0)
@@ -1602,6 +1585,7 @@ namespace QLN.Classified.MS.Service
                 existingAd.UpdatedAt = DateTime.UtcNow;
                 existingAd.SubscriptionId = existingAd.SubscriptionId;
                 existingAd.ExpiryDate = existingAd.ExpiryDate;
+                existingAd.IsSold = existingAd.IsSold;
 
                 _context.Preloved.Update(existingAd);
                 await _context.SaveChangesAsync(cancellationToken);
@@ -1678,6 +1662,7 @@ namespace QLN.Classified.MS.Service
                 existingAd.CreatedBy = existingAd.CreatedBy;
                 existingAd.SubscriptionId = existingAd.SubscriptionId;
                 existingAd.ExpiryDate = existingAd.ExpiryDate;
+                existingAd.IsSold = existingAd.IsSold;
 
                 existingAd.UpdatedAt = DateTime.UtcNow;
 
@@ -1883,7 +1868,7 @@ namespace QLN.Classified.MS.Service
                             pageItems = list.Cast<object>().ToList();
                             break;
                         }
-                    case SubVertical.Deals:
+                    case SubVertical.Deals: 
                         {
                             var baseQ = DealsFilter(_context.Deal.AsNoTracking());
                             total = await baseQ.CountAsync(cancellationToken);
@@ -1895,10 +1880,38 @@ namespace QLN.Classified.MS.Service
                         throw new ArgumentException($"Unsupported subVertical: {subVertical}", nameof(subVertical));
                 }
 
+                var counts = new UserAdCountsDto
+                {
+                    ItemsPublished = await _context.Item.CountAsync(i => i.UserId == userId && i.IsActive &&
+                    (i.Status == AdStatus.Published || i.Status == AdStatus.Approved), cancellationToken),
+
+                    ItemsUnpublished = await _context.Item.CountAsync(i => i.UserId == userId && i.IsActive &&
+                    (i.Status != AdStatus.Published && i.Status != AdStatus.Approved), cancellationToken),
+
+                    PrelovedPublished = await _context.Preloved.CountAsync(p => p.UserId == userId && p.IsActive &&
+                    (p.Status == AdStatus.Published || p.Status == AdStatus.Approved), cancellationToken),
+
+                    PrelovedUnpublished = await _context.Preloved.CountAsync(p => p.UserId == userId && p.IsActive &&
+                    (p.Status != AdStatus.Published && p.Status != AdStatus.Approved), cancellationToken),
+
+                    CollectiblesPublished = await _context.Collectible.CountAsync(c => c.UserId == userId && c.IsActive &&
+                    (c.Status == AdStatus.Published || c.Status == AdStatus.Approved), cancellationToken),
+
+                    CollectiblesUnpublished = await _context.Collectible.CountAsync(c => c.UserId == userId && c.IsActive &&
+                    (c.Status != AdStatus.Published && c.Status != AdStatus.Approved), cancellationToken),
+
+                    DealsPublished = await _context.Deal.CountAsync(d => d.UserId == userId && d.IsActive &&
+                    (d.Status == AdStatus.Published || d.Status == AdStatus.Approved), cancellationToken),
+
+                    DealsUnpublished = await _context.Deal.CountAsync(d => d.UserId == userId && d.IsActive &&
+                    (d.Status != AdStatus.Published && d.Status != AdStatus.Approved), cancellationToken)
+                };
+
                 return new PaginatedAdResponseDto
                 {
                     Total = total,
-                    Items = pageItems
+                    Items = pageItems,
+                    Counts = counts
                 };
             }
             catch (Exception ex)
