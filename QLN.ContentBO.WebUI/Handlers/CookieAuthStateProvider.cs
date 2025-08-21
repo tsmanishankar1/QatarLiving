@@ -8,6 +8,7 @@ using System.Text.Json;
 
 namespace QLN.ContentBO.WebUI.Handlers
 {
+    [Obsolete("This provider is deprecated and will be removed in future versions. Use the new CustomAuthStateProvider instead.")]
     public class CookieAuthStateProvider : AuthenticationStateProvider
     {
         private readonly IHttpContextAccessor _httpContextAccessor;
