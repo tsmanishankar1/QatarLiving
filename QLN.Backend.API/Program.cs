@@ -127,7 +127,8 @@ builder.Services.Configure<DataProtectionTokenProviderOptions>(opt =>
 {
     opt.TokenLifespan = TimeSpan.FromDays(1);
 });
-
+builder.Services.Configure<TokenLifetimeOptions>(
+    builder.Configuration.GetSection("TokenLifetimes"));
 #region Identity password options
 builder.Services.Configure<IdentityOptions>(options =>
 {
