@@ -164,7 +164,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.P2p
                     ["Date Expiry"] = x.ExpiryDate.ToString("dd-MM-yyyy") ?? "-"
                 }).ToList();
 
-                await JS.InvokeVoidAsync("exportToExcel", exportData, "P2P_Listings.xlsx", "P2P Listings");
+                await JS.InvokeVoidAsync("exportToExcel", exportData, "Preloved_P2P_Listings.xlsx", "P2P Listings");
 
                 Snackbar.Add("Export successful!", Severity.Success);
             }
