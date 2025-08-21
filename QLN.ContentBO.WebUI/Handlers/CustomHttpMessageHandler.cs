@@ -23,7 +23,7 @@ namespace QLN.ContentBO.WebUI.Handlers
             var httpContext = _httpContextAccessor.HttpContext;
             if (httpContext != null)
             {
-                if (httpContext.Request.Cookies.TryGetValue("qat", out var qatJWT) && !string.IsNullOrEmpty(qatJWT))
+                if (httpContext.Request.Cookies.TryGetValue("qat_v2", out var qatJWT) && !string.IsNullOrEmpty(qatJWT))
                 {
                     var configuration = httpContext.RequestServices.GetService<IConfiguration>();
                     var baseAddress = configuration?["ServiceUrlPaths:BOAPIBaseUrl"] ?? "https://qlc-bo-dev.qatarliving.com";
@@ -44,38 +44,6 @@ namespace QLN.ContentBO.WebUI.Handlers
                         });
 
                         request.Headers.Authorization = new AuthenticationHeaderValue(JwtBearerDefaults.AuthenticationScheme, result?.AccessToken ?? qatJWT);
-
-                        /* COOKIE HANDLING 
-                        // Get the Set-Cookie headers from the refresh response
-                        if (refreshResponse.Headers.TryGetValues("Set-Cookie", out var setCookieHeaders))
-                        {
-                            foreach (var setCookie in setCookieHeaders)
-                            {
-                                // Parse cookie name and value
-                                var cookieParts = setCookie.Split(';')[0].Split('=', 2);
-                                if (cookieParts.Length == 2)
-                                {
-                                    var cookieName = cookieParts[0].Trim();
-                                    var cookieValue = cookieParts[1].Trim();
-
-                                    // Set the cookie in the response (assume HttpOnly, Secure, Strict)
-                                    httpContext.Response.Cookies.Append(cookieName, cookieValue, new CookieOptions
-                                    {
-                                        HttpOnly = true,
-                                        Secure = true,
-                                        SameSite = SameSiteMode.Strict
-                                    });
-
-                                    // Get the new JWT from the cookie
-                                    if (cookieName == "QATV2_Access")
-                                    {
-                                        var qatV2JWT = cookieValue;
-                                        request.Headers.Authorization = new AuthenticationHeaderValue(JwtBearerDefaults.AuthenticationScheme, qatV2JWT);
-                                    }
-                                }
-                            }
-                        }
-                        */
 
                     }
                 }
