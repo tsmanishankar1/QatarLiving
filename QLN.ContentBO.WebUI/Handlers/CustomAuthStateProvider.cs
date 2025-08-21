@@ -68,7 +68,7 @@ namespace QLN.ContentBO.WebUI.Handlers
                 return Task.FromResult(new AuthenticationState(principal));
             }
 
-            if (httpContext.Request.Cookies.TryGetValue("QATV2_Access", out var jwt) && !string.IsNullOrEmpty(jwt))
+            if (httpContext.Request.Cookies.TryGetValue("qat_v2", out var jwt) && !string.IsNullOrEmpty(jwt))
             {
                 var tokenHandler = new JwtSecurityTokenHandler();
                 var validationParameters = new TokenValidationParameters
