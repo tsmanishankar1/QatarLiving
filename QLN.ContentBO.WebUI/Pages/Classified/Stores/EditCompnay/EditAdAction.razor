@@ -19,7 +19,7 @@
         @if (CurrentStatus == VerifiedStatus.Pending || CurrentStatus == VerifiedStatus.NotVerified || CurrentStatus == VerifiedStatus.Removed ){
             <div class="button-row">
                 <MudButton Color="Color.Primary" Variant="Variant.Filled" Class="action-btn"
-                       OnClick='@(() => ShowConfirmation("Hold Ad", "Are you sure you want to hold this ad?", "Hold",VerifiedStatus.OnHold))'>
+                       OnClick='@(() => ShowConfirmation("Hold Store", "Are you sure you want to hold this Store?", "Hold",VerifiedStatus.OnHold))'>
                     <img src="/qln-images/hold.svg" alt="Pause" class="btn-icon" />
                     Hold
                 </MudButton>
@@ -27,7 +27,7 @@
                     Need Changes
                 </MudButton>
                  <MudButton Color="Color.Error" Variant="Variant.Filled" Class="action-btn"
-                       OnClick='@(() => ShowConfirmation("Remove Ad", "Do you really want to delete this ad?", "Remove",VerifiedStatus.Removed))'>
+                       OnClick='@(() => ShowConfirmation("Remove Store", "Do you really want to Remove this Store?", "Remove",VerifiedStatus.Removed))'>
                     <img src="/qln-images/delete_icon.svg" class="btn-icon" />
                     Remove
                 </MudButton>
@@ -36,12 +36,12 @@
         else if(CurrentStatus == VerifiedStatus.Approved){
             <div class="button-row">
                 <MudButton Color="Color.Primary" Variant="Variant.Filled" Class="action-btn"
-                       OnClick='@(() => ShowConfirmation("Hold Ad", "Are you sure you want to hold this ad?", "Hold",VerifiedStatus.Approved))'>
+                       OnClick='@(() => ShowConfirmation("Hold Store", "Are you sure you want to hold this Store?", "Hold",VerifiedStatus.Approved))'>
                     <img src="/qln-images/hold.svg" alt="Pause" class="btn-icon" />
                     Hold
                 </MudButton>
                  <MudButton Color="Color.Error" Variant="Variant.Filled" Class="action-btn"
-                       OnClick='@(() => ShowConfirmation("Remove Ad", "Do you really want to delete this ad?", "Remove",VerifiedStatus.Removed))'>
+                       OnClick='@(() => ShowConfirmation("Remove Store", "Do you really want to Remove this Store?", "Remove",VerifiedStatus.Removed))'>
                     <img src="/qln-images/delete_icon.svg" class="btn-icon" />
                     Remove
                 </MudButton>
@@ -50,11 +50,11 @@
         else if(CurrentStatus == VerifiedStatus.OnHold){
             <div class="button-row">
                 <MudButton Color="Color.Primary" Variant="Variant.Filled" Class="action-btn"
-                       OnClick='@(() => ShowConfirmation("Hold Ad", "Are you sure you want to hold this ad?", "Hold",VerifiedStatus.Approved))'>
+                       OnClick='@(() => ShowConfirmation("Approve Store", "Are you sure you want to Approve this Store?", "Approve",VerifiedStatus.Approved))'>
                     Approve
                 </MudButton>
                  <MudButton Color="Color.Error" Variant="Variant.Filled" Class="action-btn"
-                       OnClick='@(() => ShowConfirmation("Remove Ad", "Do you really want to delete this ad?", "Remove",VerifiedStatus.Removed))'>
+                       OnClick='@(() => ShowConfirmation("Remove Store", "Do you really want to Remove this Store?", "Remove",VerifiedStatus.Removed))'>
                     <img src="/qln-images/delete_icon.svg" class="btn-icon" />
                     Remove
                 </MudButton>
@@ -66,16 +66,16 @@
         else if (CurrentStatus == VerifiedStatus.NeedChanges){
             <div class="button-row">
                 <MudButton Color="Color.Primary" Variant="Variant.Filled" Class="action-btn"
-                       OnClick='@(() => ShowConfirmation("Hold Ad", "Are you sure you want to hold this ad?", "Hold",VerifiedStatus.OnHold))'>
+                       OnClick='@(() => ShowConfirmation("Hold Store", "Are you sure you want to hold this Store?", "Hold",VerifiedStatus.OnHold))'>
                     <img src="/qln-images/hold.svg" alt="Pause" class="btn-icon" />
                     Hold
                 </MudButton>
                 <MudButton Color="Color.Primary" Variant="Variant.Filled" Class="action-btn"
-                       OnClick='@(() => ShowConfirmation("Hold Ad", "Are you sure you want to hold this ad?", "Hold",VerifiedStatus.Approved))'>
+                       OnClick='@(() => ShowConfirmation("Approve Store", "Are you sure you want to Approve this Store?", "Approve",VerifiedStatus.Approved))'>
                     Approve
                 </MudButton>
                  <MudButton Color="Color.Error" Variant="Variant.Filled" Class="action-btn"
-                       OnClick='@(() => ShowConfirmation("Remove Ad", "Do you really want to delete this ad?", "Remove",VerifiedStatus.Removed))'>
+                       OnClick='@(() => ShowConfirmation("Remove Store", "Do you really want to Remove this Store?", "Remove",VerifiedStatus.Removed))'>
                     <img src="/qln-images/delete_icon.svg" class="btn-icon" />
                     Remove
                 </MudButton>
@@ -84,12 +84,12 @@
         else if (CurrentStatus == VerifiedStatus.Rejected){
             <div class="button-row">
                 <MudButton Color="Color.Primary" Variant="Variant.Filled" Class="action-btn"
-                       OnClick='@(() => ShowConfirmation("Hold Ad", "Are you sure you want to hold this ad?", "Hold",VerifiedStatus.OnHold))'>
+                       OnClick='@(() => ShowConfirmation("Hold Store", "Are you sure you want to hold this Store?", "Hold",VerifiedStatus.OnHold))'>
                     <img src="/qln-images/hold.svg" alt="Pause" class="btn-icon" />
                     Hold
                 </MudButton>
                 <MudButton Color="Color.Primary" Variant="Variant.Filled" Class="action-btn"
-                       OnClick='@(() => ShowConfirmation("Hold Ad", "Are you sure you want to hold this ad?", "Hold",VerifiedStatus.Approved))'>
+                       OnClick='@(() => ShowConfirmation("Approve Store", "Are you sure you want to Approve this Store?", "Hold",VerifiedStatus.Approved))'>
                     Approve
                 </MudButton>
                 <MudButton Color="Color.Primary" Variant="Variant.Filled" Class="action-btn" OnClick="@NeedChangesAsync">

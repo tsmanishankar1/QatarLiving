@@ -10,13 +10,13 @@ using System.Text.Json;
 
 namespace QLN.DataMigration.Services
 {
-    public class EventsService : IV2EventService
+    public class DataMigrationEventsService : IV2EventService
     {
         private readonly DaprClient _dapr;
-        private readonly ILogger<EventsService> _logger;
-        public EventsService(
+        private readonly ILogger<DataMigrationEventsService> _logger;
+        public DataMigrationEventsService(
             DaprClient dapr, 
-            ILogger<EventsService> logger
+            ILogger<DataMigrationEventsService> logger
             )
         {
             _dapr = dapr;

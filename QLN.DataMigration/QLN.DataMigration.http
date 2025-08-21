@@ -14,13 +14,21 @@ Content-Type: application/x-www-form-urlencoded
 
 env=dev
 
-### Migrate Ads
-POST http://ql-migrate.westeurope.cloudapp.azure.com/qlnext-v2/items.php
+### Migrate Subscriptions
+POST http://ql-migrate.westeurope.cloudapp.azure.com/subscriptions.php
 Content-Type: application/x-www-form-urlencoded
+X-Api-Key: abc123
 
-env=prod
-&page_size=30
-&page=1
+env=dev
+&type=service
+
+### Migrate Ads
+GET http://ql-migrate.westeurope.cloudapp.azure.com/qlnext-v2/items.php?env=prod&page_size=30&page=1&type=classifieds
+Accept: application/json
+
+### Migrate Services
+GET http://ql-migrate.westeurope.cloudapp.azure.com/qlnext-v2/items.php?env=prod&page_size=30&page=1&type=services
+Accept: application/json
 
 #########
 

@@ -171,7 +171,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.ViewSubscriptionListing
                     ["Phone Leads"] = x.PhoneLeads,
                 }).ToList();
 
-                await JS.InvokeVoidAsync("exportToExcel", exportData, "Classifieds_Subscriptions.xlsx", "Subscriptions");
+                await JS.InvokeVoidAsync("exportToExcel", exportData, "Classifieds_StoresSubscriptions.xlsx", "Subscriptions");
 
                 Snackbar.Add("Export successful!", Severity.Success);
             }

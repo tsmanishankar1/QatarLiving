@@ -89,12 +89,20 @@
 
                 <TemplateColumn Title="Start Date">
                     <CellTemplate>
-                        @(context.Item.StartDate is not null ? context.Item.StartDate : "-")
+                        @(
+                        context.Item.StartDate is not null
+                        ? DateTime.Parse(context.Item.StartDate.ToString()).ToString("dd-MMM-yyyy hh:mm tt")
+                        : "-"
+                    )
                     </CellTemplate>
                 </TemplateColumn>
                 <TemplateColumn Title="End Date">
-                    <CellTemplate>
-                        @(context.Item.EndDate is not null ? context.Item.EndDate : "-")
+                   <CellTemplate>
+                    @(
+                        context.Item.EndDate is not null
+                        ? DateTime.Parse(context.Item.EndDate.ToString()).ToString("dd-MMM-yyyy hh:mm tt")
+                        : "-"
+                    )
                     </CellTemplate>
                 </TemplateColumn>
                 <TemplateColumn Title="Whatsapp Leads">
@@ -118,7 +126,7 @@
                                 <img src="/qln-images/preview_icon.svg" class="menu-icon-style" alt="Preview" />
                                 <span class="menu-text">Preview</span>
                             </MudMenuItem>
-                            <MudMenuItem OnClick='() => ShowConfirmation("Remove Item", "Are you sure you want to remove this item?", "Remove", () => OnRemove(context.Item))'
+                            <MudMenuItem OnClick='() => ShowConfirmation("Remove Deal", "Are you sure you want to remove this Deal?", "Remove", () => OnRemove(context.Item))'
                                          Class="mud-text-error">
                                 <img src="/qln-images/remove_icon.svg" class="menu-icon-style" alt="Remove" />
                                 <span class="menu-text">Remove</span>

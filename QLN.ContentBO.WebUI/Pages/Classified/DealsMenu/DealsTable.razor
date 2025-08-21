@@ -33,9 +33,20 @@
             {
                 <div class="action-buttons">
 
-
+                    @if(SelectedTab == "published"){
+                        <MudButton Class="capitalize-button" Color="Color.Error" Variant="Variant.Filled" StartIcon="@Icons.Material.Rounded.Close"
+                               OnClick='() => ShowConfirmation("UnPublish Deal", "Are you sure you want to UnPublish selected Deals?", "UnPublish", UnpublishSelected)'>
+                        Un Publish
+                    </MudButton>
+                    }
+                    @if(SelectedTab == "unPublished"){
+                        <MudButton Class="capitalize-button" Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Rounded.Close"
+                               OnClick='() => ShowConfirmation("Publish Deal", "Are you sure you want to Publish selected Deal?", "Publish", PublishSelected)'>
+                        Publish
+                        </MudButton>
+                    }
                     <MudButton Class="capitalize-button" Color="Color.Error" Variant="Variant.Filled" StartIcon="@Icons.Material.Rounded.Close"
-                               OnClick='() => ShowConfirmation("Remove Items", "Are you sure you want to remove selected Items?", "Remove", RemoveSelected)'>
+                               OnClick='() => ShowConfirmation("Remove Deal", "Are you sure you want to remove selected Deal?", "Remove", RemoveSelected)'>
                         Remove
                     </MudButton>
 

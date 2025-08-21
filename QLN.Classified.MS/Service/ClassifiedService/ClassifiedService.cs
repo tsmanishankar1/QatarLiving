@@ -228,7 +228,7 @@ namespace QLN.Classified.MS.Service
         }
 
         public async Task<AdCreatedResponseDto> CreateClassifiedItemsAd(
-    Items dto,
+    Items dto, SaveIntent intent,
     CancellationToken cancellationToken = default)
         {
             if (dto == null)
@@ -259,9 +259,18 @@ namespace QLN.Classified.MS.Service
             {
                 _logger.LogInformation("Starting CreateClassifiedItemsAd for UserId={UserId}, Title='{Title}'", dto.UserId, dto.Title);
 
-                dto.Status = AdStatus.Draft;
+                if (intent == SaveIntent.SaveAndSubmitForApproval)
+                {
+                    dto.Status = AdStatus.PendingApproval;
+                }
+                else
+                {
+                    dto.Status = AdStatus.Draft;
+                }
+
                 dto.CreatedAt = DateTime.UtcNow;
-                
+                dto.UpdatedAt = DateTime.UtcNow;
+
                 _logger.LogDebug("Adding Items ad to EF context...");
                 _context.Item.Add(dto);
 
@@ -276,7 +285,7 @@ namespace QLN.Classified.MS.Service
                 return new AdCreatedResponseDto
                 {
                     AdId = dto.Id,
-                    Title = dto.Title,                    
+                    Title = dto.Title,
                     CreatedAt = DateTime.UtcNow,
                     Message = "Items Ad created successfully"
                 };
@@ -311,10 +320,21 @@ namespace QLN.Classified.MS.Service
 
             try
             {
+                var existing = await _context.Item.FirstOrDefaultAsync(x => x.Id == dto.Id, cancellationToken);
+
                 _logger.LogInformation("Starting MigrateClassifiedItemsAd for UserId={UserId}, Title='{Title}'", dto.UserId, dto.Title);
 
-                _logger.LogDebug("Adding Items ad to EF context...");
-                _context.Item.Add(dto);
+                if(existing != null)
+                {
+                    _logger.LogDebug("Udateing Items ad to EF context...");
+                    existing = dto;
+                    _context.Item.Update(existing);
+                }
+                else
+                {
+                    _logger.LogDebug("Adding Items ad to EF context...");
+                    _context.Item.Add(dto);
+                }
 
                 await _context.SaveChangesAsync(cancellationToken);
                 _logger.LogInformation("Database save completed. New AdId={AdId}", dto.Id);
@@ -462,7 +482,7 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-        public async Task<AdCreatedResponseDto> CreateClassifiedPrelovedAd(Preloveds dto, CancellationToken cancellationToken = default)
+        public async Task<AdCreatedResponseDto> CreateClassifiedPrelovedAd(Preloveds dto, SaveIntent intent, CancellationToken cancellationToken = default)
         {
             _logger.LogInformation("Starting ad creation for Preloved item with UserId: {UserId}, Title: {Title}", dto.UserId, dto.Title);
 
@@ -508,9 +528,17 @@ namespace QLN.Classified.MS.Service
                     dto.AuthenticityCertificateName = null;
                     _logger.LogInformation("No authenticity certificate provided. Fields set to null.");
                 }
+                if (intent == SaveIntent.SaveAndSubmitForApproval)
+                {
+                    dto.Status = AdStatus.PendingApproval;
+                }
+                else
+                {
+                    dto.Status = AdStatus.Draft;
+                }
 
-                dto.Status = AdStatus.Draft;
                 dto.CreatedAt = DateTime.UtcNow;
+                dto.UpdatedAt = DateTime.UtcNow;
 
                 _logger.LogInformation("Adding Preloved ad to the database.");
                 _context.Preloved.Add(dto);
@@ -552,7 +580,7 @@ namespace QLN.Classified.MS.Service
         }
 
 
-        public async Task<AdCreatedResponseDto> CreateClassifiedCollectiblesAd(Collectibles dto, CancellationToken cancellationToken = default)
+        public async Task<AdCreatedResponseDto> CreateClassifiedCollectiblesAd(Collectibles dto, SaveIntent intent, CancellationToken cancellationToken = default)
         {
             if (dto == null) throw new ArgumentNullException(nameof(dto));
             if (dto.UserId == null) throw new ArgumentException("UserId is required.");
@@ -561,9 +589,18 @@ namespace QLN.Classified.MS.Service
 
             try
             {
-              
-                dto.Status = AdStatus.Draft;
+
+                if (intent == SaveIntent.SaveAndSubmitForApproval)
+                {
+                    dto.Status = AdStatus.PendingApproval;
+                }
+                else
+                {
+                    dto.Status = AdStatus.Draft;
+                }
+
                 dto.CreatedAt = DateTime.UtcNow;
+                dto.UpdatedAt = DateTime.UtcNow;
 
                 _context.Collectible.Add(dto);
                 await _context.SaveChangesAsync(cancellationToken);
@@ -604,10 +641,20 @@ namespace QLN.Classified.MS.Service
         {
             try
             {
+                var existing = await _context.Collectible.FirstOrDefaultAsync(x => x.Id == dto.Id);
                 _logger.LogInformation("Starting MigrateClassifiedItemsAd for UserId={UserId}, Title='{Title}'", dto.UserId, dto.Title);
 
-                _logger.LogDebug("Adding Items ad to EF context...");
-                _context.Collectible.Add(dto);
+                if(existing != null)
+                {
+                    existing = dto;
+                    _logger.LogDebug("Updating Collectables ad to EF context...");
+                    _context.Collectible.Update(existing);
+                }
+                else
+                {
+                    _logger.LogDebug("Adding Collectables ad to EF context...");
+                    _context.Collectible.Add(dto);
+                }
 
                 await _context.SaveChangesAsync(cancellationToken);
                 _logger.LogInformation("Database save completed. New AdId={AdId}", dto.Id);
@@ -627,7 +674,7 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-        public async Task<AdCreatedResponseDto> CreateClassifiedDealsAd(Deals dto, CancellationToken cancellationToken = default)
+        public async Task<AdCreatedResponseDto> CreateClassifiedDealsAd(Deals dto, SaveIntent intent, CancellationToken cancellationToken = default)
         {
             if (dto == null) throw new ArgumentNullException(nameof(dto));
             if (string.IsNullOrWhiteSpace(dto.UserId)) throw new ArgumentException("UserId is required.");
@@ -660,8 +707,17 @@ namespace QLN.Classified.MS.Service
                     socialLinks.Add(company.InstagramUrl);
 
                 dto.SocialMediaLinks = socialLinks.Any() ? string.Join(", ", socialLinks) : null;
-                dto.Status = AdStatus.Draft; 
-                dto.CreatedAt = dto.CreatedAt == default ? DateTime.UtcNow : dto.CreatedAt;
+                if (intent == SaveIntent.SaveAndSubmitForApproval)
+                {
+                    dto.Status = AdStatus.PendingApproval;
+                }
+                else
+                {
+                    dto.Status = AdStatus.Draft;
+                }
+
+                dto.CreatedAt = DateTime.UtcNow;
+                dto.UpdatedAt = DateTime.UtcNow;
                 dto.CompanyLogo = company.CompanyLogo;
 
 
@@ -2629,7 +2685,7 @@ namespace QLN.Classified.MS.Service
                 _logger.LogError(ex, "Bulk publish/unpublish failed.");
                 throw new InvalidOperationException("An error occurred while removing the wishlist item", ex);
             }
-        }
+        }       
 
         #endregion
 

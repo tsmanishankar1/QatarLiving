@@ -13,14 +13,14 @@ using System.Threading;
 
 namespace QLN.DataMigration.Services
 {
-    public class CommunityPostService : IV2CommunityPostService
+    public class DataMigrationCommunityPostService : IV2CommunityPostService
     {
         private readonly DaprClient _dapr;
-        private readonly ILogger<CommunityPostService> _logger;
+        private readonly ILogger<DataMigrationCommunityPostService> _logger;
 
-        public CommunityPostService(
+        public DataMigrationCommunityPostService(
             DaprClient dapr,
-            ILogger<CommunityPostService> logger
+            ILogger<DataMigrationCommunityPostService> logger
             )
         {
             _dapr = dapr;

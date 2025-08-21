@@ -12,6 +12,7 @@ using QLN.Common.Infrastructure.CustomEndpoints.ServiceBOEndpoint;
 using QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints;
 using QLN.Common.Infrastructure.IService;
+using QLN.Common.Infrastructure.IService.IService;
 using QLN.Common.Infrastructure.IService.V2IContent;
 using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.QLDbContext;
@@ -162,6 +163,37 @@ async Task<Results<
 .WithTags("Classified")
 .WithSummary("Bulk Migrate Collectables")
 .WithDescription("Bulk Migrate Collectables")
+.Produces<string>(StatusCodes.Status200OK)
+.Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+.Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+app.MapPost("/api/services/bulkMigrate",
+    [Topic(PubSubName, PubSubTopics.ServicesMigration)]
+async Task<Results<
+                Ok<string>,
+                BadRequest<ProblemDetails>,
+                ProblemHttpResult>>
+            (
+                QLN.Common.Infrastructure.Model.Services service,
+                IServices servicesService,
+                CancellationToken ct
+            ) =>
+    {
+        try
+        {
+
+            var result = await servicesService.MigrateServiceAd(service, ct);
+            return TypedResults.Ok(result);
+        }
+        catch (Exception ex)
+        {
+            return TypedResults.Problem("Internal Server Error", ex.Message);
+        }
+    }).ExcludeFromDescription()
+.WithName("BulkMigrateServices")
+.WithTags("Services")
+.WithSummary("Bulk Migrate Services")
+.WithDescription("Bulk Migrate Services")
 .Produces<string>(StatusCodes.Status200OK)
 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);

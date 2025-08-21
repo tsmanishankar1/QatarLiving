@@ -121,6 +121,11 @@ namespace QLN.Backend.API.Service.ProductService
             return subscriptionId;
         }
 
+        public Task<Guid> MigrateSubscriptionAsync(Guid subscriptionId, V2SubscriptionDto request, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+
         public async Task<List<V2SubscriptionResponseDto>> GetUserSubscriptionsAsync(
             Vertical? vertical,
             SubVertical? subVertical,
@@ -595,6 +600,7 @@ namespace QLN.Backend.API.Service.ProductService
                 Id = v2Data.Id,
                 ProductCode = v2Data.ProductCode,
                 ProductName = v2Data.ProductName,
+                ProductType = v2Data.ProductType,
                 UserId = v2Data.UserId,
                 VerticalName = v2Data.Vertical.ToString(),
                 Vertical = v2Data.Vertical,

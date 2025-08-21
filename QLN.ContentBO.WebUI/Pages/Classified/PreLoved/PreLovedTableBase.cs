@@ -188,6 +188,26 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved
 
             await DialogService.ShowAsync<RejectVerificationDialog>("", parameters, options);
         }
+        protected async Task OpenNeedChangeReasonDialog()
+        {
+            var parameters = new DialogParameters
+            {
+                { "Title", "Need Change" },
+                { "Description", "Please enter a reason for requesting Need Change" },
+                { "ButtonTitle", "Need Change" },
+                { "OnRejected", EventCallback.Factory.Create<string>(this, HandleRemoveWithReason) }
+            };
+
+            var options = new DialogOptions
+            {
+                CloseButton = false,
+                MaxWidth = MaxWidth.Small,
+                FullWidth = true
+            };
+
+            await DialogService.ShowAsync<RejectVerificationDialog>("", parameters, options);
+        }
+
 
         private async Task HandleRejection(string reason)
         {
@@ -220,6 +240,13 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved
             }
 
             isBulkRemove = false;
+        }
+        private async Task HandleNeedChangeWithReason(string reason)
+        {
+            if (string.IsNullOrWhiteSpace(reason))
+                return;
+
+          await PerformBulkAction(BulkActionEnum.NeedChanges, reason);
         }
 
         protected async Task RequestChanges(PrelovedP2PSubscriptionItem item)

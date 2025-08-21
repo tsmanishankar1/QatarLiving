@@ -25,43 +25,59 @@
 
         public async Task<DrupalItems?> GetItemsAsync(
             string environment,
-            //int categoryId,
-            //string sortField,
-            //string sortOrder,
-            //string? keywords,
             int? page,
-            int? pageSize, 
+            int? page_size,
+            string? type,
             CancellationToken cancellationToken
             )
         {
-            var formData = new List<KeyValuePair<string, string>>
-            {
-                new KeyValuePair<string, string>("env", environment),
-                //new KeyValuePair<string, string>("category_id", categoryId.ToString()),
-                //new KeyValuePair<string, string>("sort_field", sortField),
-                //new KeyValuePair<string, string>("sort_order", sortOrder)
-            };
-
-            //if(!string.IsNullOrEmpty(keywords))
-            //{
-            //    formData.Add(new KeyValuePair<string, string>("keywords", keywords));
-            //}
+            page ??= 1;
+            page_size ??= 30;
+            type = "classifieds";
             
-            if (page != null)
+            var requestUri = $"{Constants.ItemsEndpoint}?env={environment}&page={page}&page_size={page_size}&type={type}";
+
+            var response = await _httpClient.GetAsync(requestUri, cancellationToken);
+
+            if (!response.IsSuccessStatusCode)
             {
-                formData.Add(new KeyValuePair<string, string>("page_size", pageSize.ToString()));
+                _logger.LogError($"Failed to migrate items. Status: {response.StatusCode}");
+                return null;
             }
-
-            if(pageSize != null)
+            _logger.LogInformation($"Got Response from migration endpoint {Constants.ItemsEndpoint}");
+            var json = await response.Content.ReadAsStringAsync();
+            try
             {
-                formData.Add(new KeyValuePair<string, string>("page", page.ToString()));
+                var items = JsonSerializer.Deserialize<DrupalItems>(json, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+                _logger.LogInformation("Completed Deserialization");
+                return items;
             }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Deserialization error: {ex.Message}");
+                return null;
+            }
+        }
 
-            var content = new FormUrlEncodedContent(formData);
+        public async Task<DrupalItems?> GetServicesAsync(
+            string environment,
+            int? page,
+            int? page_size,
+            string? type,
+            CancellationToken cancellationToken
+            )
+        {
+            page ??= 1;
+            page_size ??= 30;
+            type = "services";
 
-            content.Headers.ContentType = new MediaTypeHeaderValue("application/x-www-form-urlencoded");
+            var requestUri = $"{Constants.ItemsEndpoint}?env={environment}&page={page}&page_size={page_size}&type={type}";
 
-            var response = await _httpClient.PostAsync(Constants.ItemsEndpoint, content);
+            var response = await _httpClient.GetAsync(requestUri, cancellationToken);
+
             if (!response.IsSuccessStatusCode)
             {
                 _logger.LogError($"Failed to migrate items. Status: {response.StatusCode}");

@@ -275,7 +275,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
                     cancellationToken);
 
                 var activeSubscriptions = existingSubscriptions
-                    .Where(s => s.IsActive && s.EndDate > DateTime.UtcNow)
+                    .Where(s => s.IsActive && s.EndDate > DateTime.UtcNow && s.ProductType == request.ProductType)
                     .ToList();
 
                 _logger.LogDebug("Found {Count} active subscriptions for user {UserId}",
@@ -426,7 +426,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
 
                 _logger.LogDebug("Payment failure information sent to D365 for Order ID: {OrderId}", orderId);
 
-                return $"{baseRedirectUrl}?paymentSuccess=false&productType={payment.ProductType}&orderId={orderId}&error=payment_failed";
+                return $"{baseRedirectUrl}?paymentSuccess=false&error=payment_failed";
             }
             catch (Exception ex)
             {
@@ -523,12 +523,12 @@ namespace QLN.Common.Infrastructure.Service.Payments
 
                 _logger.LogDebug("Payment information sent to D365 for Order ID: {OrderId}", orderId);
 
-                return baseRedirectUrl;
+                return $"{baseRedirectUrl}?paymentSuccess=true";
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error updating payment and subscription for Order ID: {OrderId}", orderId);
-                return baseRedirectUrl;
+                return $"{baseRedirectUrl}?paymentSuccess=false";
             }
         }
 
