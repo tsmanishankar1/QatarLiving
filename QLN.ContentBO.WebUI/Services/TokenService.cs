@@ -1,5 +1,6 @@
 ﻿using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Services.Base;
+using System.Net;
 
 namespace QLN.ContentBO.WebUI.Services
 {
@@ -25,9 +26,19 @@ namespace QLN.ContentBO.WebUI.Services
             throw new NotImplementedException();
         }
 
-        public Task<HttpResponseMessage> UserSync()
+        public async Task<HttpResponseMessage> GetUserSync()
         {
-            throw new NotImplementedException();
+            try
+            {
+                var requestUrl = "/auth/sync";
+                var request = new HttpRequestMessage(HttpMethod.Get, requestUrl);
+                return await _httpClient.SendAsync(request);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "UserSync");
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
         }
     }
 }

@@ -2,7 +2,7 @@
 {
     public interface ITokenService
     {
-        Task<HttpResponseMessage> UserSync();
+        Task<HttpResponseMessage> GetUserSync();
         Task<HttpResponseMessage> GetRefreshToken();
         Task<HttpResponseMessage> IsValid();
     }
