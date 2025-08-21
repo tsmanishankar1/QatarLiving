@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Components;
 using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Models;
+using MudBlazor;
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
@@ -17,6 +18,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewTransactions
         protected string SearchTerm { get; set; } = string.Empty;
         protected bool Ascending = true;
         protected bool IsLoading = true;
+         [Inject] ISnackbar Snackbar { get; set; }
         protected DateTime? FilterCreated { get; set; }
         protected DateTime? FilterPublished { get; set; }
         protected DateTime? FilterStart { get; set; }
@@ -78,15 +80,15 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewTransactions
 
                 var request = new ItemTransactionRequest
                 {
-                    SubVertical = (int)SubVerticalTypeEnum.Items,                                           
-                    Status = "Active",                                           
-                    DateCreated = FilterCreated?.Date.ToString("yyyy-MM-dd") ?? string.Empty,    
-                    DatePublished = FilterPublished?.Date.ToString("yyyy-MM-dd") ?? string.Empty,                                        
+                    SubVertical = (int)SubVerticalTypeEnum.Items,
+                    Status = "Active",
+                    DateCreated = FilterCreated?.Date.ToString("yyyy-MM-dd") ?? string.Empty,
+                    DatePublished = FilterPublished?.Date.ToString("yyyy-MM-dd") ?? string.Empty,
                     DateStart = FilterStart?.Date.ToString("yyyy-MM-dd") ?? string.Empty,
                     DateEnd = FilterEnd?.Date.ToString("yyyy-MM-dd") ?? string.Empty,
-                    PageNumber = CurrentPage,                      
-                    PageSize = PageSize,                           
-                    SearchText = SearchTerm,                       
+                    PageNumber = CurrentPage,
+                    PageSize = PageSize,
+                    SearchText = SearchTerm,
                     ProductType = SelectedTab switch
                     {
                         "paytopublish" => "Pay To Publish",
@@ -94,15 +96,12 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewTransactions
                         "paytofeature" => "Pay To Feature",
                         "bulkrefresh" => "Bulk Refresh",
                         _ => ""
-                    },                       
-                    PaymentMethod = "",                  
-                    SortBy = "creationDate",                       
-                    SortOrder = Ascending ? "desc" : "asc"         
+                    },
+                    PaymentMethod = "",
+                    SortBy = "creationDate",
+                    SortOrder = Ascending ? "desc" : "asc"
                 };
-
-
                 var response = await ItemService.GetItemsTransactionListing(request);
-
                 if (response.IsSuccessStatusCode)
                 {
                     var json = await response.Content.ReadAsStringAsync();
@@ -110,10 +109,9 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewTransactions
                     {
                         PropertyNameCaseInsensitive = true
                     });
-
                     if (result != null)
                     {
-                        Transactions = result.Items;
+                        Transactions = result.Records;
                         TotalRecords = result.TotalRecords;
                     }
                 }
@@ -124,7 +122,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewTransactions
             }
             finally
             {
-              IsLoading = false;
+                IsLoading = false;
             }
         }
     }

@@ -1093,7 +1093,7 @@ namespace QLN.ContentBO.WebUI.Services
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
-        public async Task<HttpResponseMessage?> GetDealsByIdAsync(string vertical, long? adId)
+        public async Task<HttpResponseMessage?> GetDealsByIdAsync(long? adId)
         {
             try
             {
