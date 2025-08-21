@@ -14,8 +14,8 @@ using QLN.Common.Infrastructure.QLDbContext;
 namespace QLN.Common.Migrations.QLCompany
 {
     [DbContext(typeof(QLCompanyContext))]
-    [Migration("20250814115926_company")]
-    partial class company
+    [Migration("20250821111711_Company")]
+    partial class Company
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -119,6 +119,10 @@ namespace QLN.Common.Migrations.QLCompany
                         .HasMaxLength(150)
                         .HasColumnType("character varying(150)");
 
+                    b.Property<string>("ImportType")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
                     b.Property<string>("InstagramUrl")
                         .HasMaxLength(150)
                         .HasColumnType("character varying(150)");
@@ -165,6 +169,10 @@ namespace QLN.Common.Migrations.QLCompany
 
                     b.Property<int?>("Status")
                         .HasColumnType("integer");
+
+                    b.Property<string>("StoresURL")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
 
                     b.Property<int?>("SubVertical")
                         .HasColumnType("integer");

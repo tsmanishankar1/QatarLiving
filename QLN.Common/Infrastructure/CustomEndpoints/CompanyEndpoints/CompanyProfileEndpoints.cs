@@ -910,6 +910,114 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
 
             return group;
         }
+        public static RouteGroupBuilder MapGetCompanyProfilesByToken(this RouteGroupBuilder group)
+        {
+            group.MapGet("/getcompanies", async Task<IResult> (
+                HttpContext httpContext,
+                [FromServices] ICompanyProfileService service,
+                CancellationToken cancellationToken = default) =>
+            {
+                string uid = "unknown";
+                string? userName = null;
+                try
+                {
+                    var (extractedUid, extractedUsername, subscriptions, roles) = await UserTokenHelper.ExtractUserAndSubscriptionDetailsAsync(httpContext);
+
+                    uid = extractedUid;
+                    if (string.IsNullOrEmpty(uid))
+                    {
+                        return TypedResults.Problem(new ProblemDetails
+                        {
+                            Title = "Unauthorized Access",
+                            Detail = "User ID or username could not be extracted from token.",
+                            Status = StatusCodes.Status403Forbidden
+                        });
+                    }
+                    var allCompanies = await service.GetCompaniesByToken(uid, cancellationToken);
+                    var userCompanies = allCompanies
+                        .Where(c => c.UserId == uid)
+                        .ToList();
+                    if (userCompanies.Count == 0)
+                        throw new KeyNotFoundException("No company profiles found for the current user.");
+
+                    return TypedResults.Ok(userCompanies);
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    return TypedResults.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+            .WithName("GetCompanyProfilesByToken")
+            .WithTags("Company")
+            .WithSummary("Get company profiles for logged-in user")
+            .WithDescription("Fetches all companies owned by the current token user")
+            .Produces<List<Company>>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapGet("/getcompanieswithsubscription", async Task<IResult> (
+            [FromQuery] string userId,
+            ICompanyProfileService service,
+            CancellationToken cancellationToken) =>
+            {
+                try
+                {
+                    if (userId == string.Empty)
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "UserId is required.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    var companies = await service.GetCompaniesByToken(userId, cancellationToken);
+                    return TypedResults.Ok(companies);
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    return TypedResults.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+            .WithName("GetCompaniesUserId")
+            .WithTags("Company")
+            .WithSummary("Get companies by user ID")
+            .WithDescription("Used internally by Dapr or system components.")
+            .ExcludeFromDescription()
+            .Produces<List<Company>>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            return group;
+        }
+
         public static RouteGroupBuilder MapGetAllCompanyProfiles(this RouteGroupBuilder group)
         {
             group.MapPost("/getallcompanies", async Task<IResult> (

@@ -8,7 +8,7 @@ using QLN.Common.DTO_s;
 namespace QLN.Common.Migrations.QLCompany
 {
     /// <inheritdoc />
-    public partial class company : Migration
+    public partial class Company : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -59,6 +59,8 @@ namespace QLN.Common.Migrations.QLCompany
                     UserId = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
                     IsBasicProfile = table.Column<bool>(type: "boolean", nullable: true),
                     Slug = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true),
+                    StoresURL = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true),
+                    ImportType = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false, defaultValue: true),
                     CreatedBy = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     CreatedUtc = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "now() at time zone 'utc'"),
