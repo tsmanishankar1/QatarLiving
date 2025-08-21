@@ -278,6 +278,7 @@ namespace QLN.Common.Infrastructure.IService.IProductService
         Task<bool> RefillAddonQuotaAsync(Guid addonId, string quotaType, decimal amount, CancellationToken cancellationToken = default);
         Task<bool> CancelAddonAsync(Guid addonId, string userId, CancellationToken cancellationToken = default);
         Task<bool> AdminCancelAddonAsync(Guid addonId, CancellationToken cancellationToken = default);
+        Task<Guid> MigrateSubscriptionAsync(Guid subscriptionId, V2SubscriptionDto request, CancellationToken cancellationToken = default);
     }
     #endregion
 }

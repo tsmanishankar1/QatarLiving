@@ -37,6 +37,7 @@ namespace QLN.Company.MS.Service
                 {
                     duplicateByUserAndVertical = await _context.Companies.AnyAsync(
                         c => c.UserId == uid &&
+                             c.IsActive &&
                              c.Vertical == VerticalType.Services,
                         cancellationToken);
                 }
@@ -45,6 +46,7 @@ namespace QLN.Company.MS.Service
                     duplicateByUserAndVertical = await _context.Companies.AnyAsync(
                         c => c.UserId == uid &&
                              c.Vertical == dto.Vertical &&
+                             c.IsActive &&
                              c.SubVertical == dto.SubVertical,
                         cancellationToken);
                 }
@@ -391,6 +393,7 @@ namespace QLN.Company.MS.Service
                     .AnyAsync(c => c.Id != dto.Id &&
                                    c.UserId == dto.UserId &&
                                    c.Vertical == dto.Vertical &&
+                                   c.IsActive &&
                                    c.SubVertical == dto.SubVertical,
                               cancellationToken);
 
@@ -400,6 +403,7 @@ namespace QLN.Company.MS.Service
                 bool phoneEmailUsed = await _context.Companies
                     .AnyAsync(c => c.Id != dto.Id &&
                                    c.UserId != dto.UserId &&
+                                   c.IsActive &&
                                    (c.PhoneNumber == dto.PhoneNumber || c.Email == dto.Email),
                               cancellationToken);
 

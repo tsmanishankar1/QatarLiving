@@ -37,6 +37,10 @@ namespace QLN.DataMigration.Models
 
     public class DrupalItem
     {
+        [JsonPropertyName("ad_id")]
+
+        public string AdId { get; set; }
+
         [JsonPropertyName("uid")]
         public int Uid { get; set; }
 

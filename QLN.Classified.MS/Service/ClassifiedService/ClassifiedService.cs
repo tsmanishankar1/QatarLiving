@@ -320,10 +320,21 @@ namespace QLN.Classified.MS.Service
 
             try
             {
+                var existing = await _context.Item.FirstOrDefaultAsync(x => x.Id == dto.Id, cancellationToken);
+
                 _logger.LogInformation("Starting MigrateClassifiedItemsAd for UserId={UserId}, Title='{Title}'", dto.UserId, dto.Title);
 
-                _logger.LogDebug("Adding Items ad to EF context...");
-                _context.Item.Add(dto);
+                if(existing != null)
+                {
+                    _logger.LogDebug("Udateing Items ad to EF context...");
+                    existing = dto;
+                    _context.Item.Update(existing);
+                }
+                else
+                {
+                    _logger.LogDebug("Adding Items ad to EF context...");
+                    _context.Item.Add(dto);
+                }
 
                 await _context.SaveChangesAsync(cancellationToken);
                 _logger.LogInformation("Database save completed. New AdId={AdId}", dto.Id);
@@ -622,10 +633,20 @@ namespace QLN.Classified.MS.Service
         {
             try
             {
+                var existing = await _context.Collectible.FirstOrDefaultAsync(x => x.Id == dto.Id);
                 _logger.LogInformation("Starting MigrateClassifiedItemsAd for UserId={UserId}, Title='{Title}'", dto.UserId, dto.Title);
 
-                _logger.LogDebug("Adding Items ad to EF context...");
-                _context.Collectible.Add(dto);
+                if(existing != null)
+                {
+                    existing = dto;
+                    _logger.LogDebug("Updating Collectables ad to EF context...");
+                    _context.Collectible.Update(existing);
+                }
+                else
+                {
+                    _logger.LogDebug("Adding Collectables ad to EF context...");
+                    _context.Collectible.Add(dto);
+                }
 
                 await _context.SaveChangesAsync(cancellationToken);
                 _logger.LogInformation("Database save completed. New AdId={AdId}", dto.Id);
