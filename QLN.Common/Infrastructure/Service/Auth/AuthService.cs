@@ -1073,20 +1073,20 @@ namespace QLN.Common.Infrastructure.Service.AuthService
                             QlnextUserId = drupalUser.QlnextUserId,
                             Roles = drupalUser.Roles,
                         },
-                        LegacySubscription = drupalUser.Subscription != null ? new LegacySubscription
-                        {
-                            Uid = userId,
-                            ReferenceId = drupalUser.Subscription.ReferenceId ?? string.Empty,
-                            StartDate = drupalUser.Subscription.StartDate ?? string.Empty,
-                            ExpireDate = drupalUser.Subscription.ExpireDate ?? string.Empty,
-                            ProductType = drupalUser.Subscription.ProductType ?? string.Empty,
-                            AccessDashboard = drupalUser.Subscription.AccessDashboard,
-                            ProductClass = drupalUser.Subscription.ProductClass ?? string.Empty,
-                            Categories = drupalUser.Subscription.Categories,
-                            SubscriptionCategories = drupalUser.Subscription.SubscriptionCategories,
-                            Snid = drupalUser.Subscription.Snid ?? string.Empty,
-                            Status = drupalUser.Subscription.Status ?? string.Empty
-                        } : null
+                        //LegacySubscription = drupalUser.Subscription != null ? new LegacySubscription
+                        //{
+                        //    Uid = userId,
+                        //    ReferenceId = drupalUser.Subscription.ReferenceId ?? string.Empty,
+                        //    StartDate = drupalUser.Subscription.StartDate ?? string.Empty,
+                        //    ExpireDate = drupalUser.Subscription.ExpireDate ?? string.Empty,
+                        //    ProductType = drupalUser.Subscription.ProductType ?? string.Empty,
+                        //    AccessDashboard = drupalUser.Subscription.AccessDashboard,
+                        //    ProductClass = drupalUser.Subscription.ProductClass ?? string.Empty,
+                        //    Categories = drupalUser.Subscription.Categories,
+                        //    SubscriptionCategories = drupalUser.Subscription.SubscriptionCategories,
+                        //    Snid = drupalUser.Subscription.Snid ?? string.Empty,
+                        //    Status = drupalUser.Subscription.Status ?? string.Empty
+                        //} : null
                     };
 
                     var createResult = await _userManager.CreateAsync(user, randomPassword);
@@ -1099,7 +1099,7 @@ namespace QLN.Common.Infrastructure.Service.AuthService
                     }
 
                     bool isCompany = false;
-                    bool hasSubscription = false;
+                    //bool hasSubscription = false;
 
                     var roles = new List<string>
                     {
@@ -1110,21 +1110,21 @@ namespace QLN.Common.Infrastructure.Service.AuthService
                     {
                         // Check if this user has a subscription
                         isCompany = drupalUser.Roles.Contains("business_account");
-                        if(isCompany)
-                        {
-                            hasSubscription = drupalUser.Roles.Contains("subscription");
-                            if (hasSubscription)
-                            {
-                                if(drupalUser.Subscription != null && long.TryParse(drupalUser.Subscription.ExpireDate, out var subsExpiry))
-                                {
-                                    var expiryDate = EpochTime.DateTime(subsExpiry);
-                                    if (expiryDate < DateTime.UtcNow)
-                                    {
-                                        hasSubscription = false;
-                                    }
-                                }
-                            }
-                        }
+                        //if(isCompany)
+                        //{
+                        //    hasSubscription = drupalUser.Roles.Contains("subscription");
+                        //    if (hasSubscription)
+                        //    {
+                        //        if(drupalUser.Subscription != null && long.TryParse(drupalUser.Subscription.ExpireDate, out var subsExpiry))
+                        //        {
+                        //            var expiryDate = EpochTime.DateTime(subsExpiry);
+                        //            if (expiryDate < DateTime.UtcNow)
+                        //            {
+                        //                hasSubscription = false;
+                        //            }
+                        //        }
+                        //    }
+                        //}
                         roles.AddRange(drupalUser.Roles);
                     }
 
@@ -1188,83 +1188,83 @@ namespace QLN.Common.Infrastructure.Service.AuthService
                         
                     }
 
-                    if(hasSubscription)
-                    {
-                        // go off and create a subscription with the same information in it then save the subscription GUID to the user
-                        var environment = _config["LegacySubscriptions:Environment"];
-                        var type = drupalUser.Subscription?.ProductClass;
-                        var uid = drupalUser.Subscription?.Uid;
+                    //if(hasSubscription)
+                    //{
+                    //    // go off and create a subscription with the same information in it then save the subscription GUID to the user
+                    //    var environment = _config["LegacySubscriptions:Environment"];
+                    //    var type = drupalUser.Subscription?.ProductClass;
+                    //    var uid = drupalUser.Subscription?.Uid;
 
-                        if(environment != null && type != null && uid != null)
-                        {
+                    //    if(environment != null && type != null && uid != null)
+                    //    {
 
-                            var subscriptioninfo = type switch
-                            {
-                                "item" => await GetLegacySubscription<LegacyItemSubscriptionDrupal>(type, uid, environment), // if Item then fetch Item Subscription
-                                "service" => await GetLegacySubscription<LegacyItemSubscriptionDrupal>(type, uid, environment), // if Service then fetch Service Subscription
-                                _ => await GetLegacySubscription<LegacyItemSubscriptionDrupal>(type, uid, environment)
-                            };
+                    //        var subscriptioninfo = type switch
+                    //        {
+                    //            "item" => await GetLegacySubscription<LegacyItemSubscriptionDrupal>(type, uid, environment), // if Item then fetch Item Subscription
+                    //            "service" => await GetLegacySubscription<LegacyItemSubscriptionDrupal>(type, uid, environment), // if Service then fetch Service Subscription
+                    //            _ => await GetLegacySubscription<LegacyItemSubscriptionDrupal>(type, uid, environment)
+                    //        };
 
-                            if(subscriptioninfo != null && subscriptioninfo.Drupal.Item.Status == "success")
-                            {
-                                DateTime.TryParse(subscriptioninfo.Drupal.Item.StartDate, out var startDate);
-                                DateTime.TryParse(subscriptioninfo.Drupal.Item.EndDate, out var endDate);
-                                TimeSpan duration = endDate - startDate;
-                                if (duration.TotalDays < 0)
-                                {
-                                    duration = TimeSpan.FromDays(30); // Default to 30 days if the duration is negative
-                                }
+                    //        if(subscriptioninfo != null && subscriptioninfo.Drupal.Item.Status == "success")
+                    //        {
+                    //            DateTime.TryParse(subscriptioninfo.Drupal.Item.StartDate, out var startDate);
+                    //            DateTime.TryParse(subscriptioninfo.Drupal.Item.EndDate, out var endDate);
+                    //            TimeSpan duration = endDate - startDate;
+                    //            if (duration.TotalDays < 0)
+                    //            {
+                    //                duration = TimeSpan.FromDays(30); // Default to 30 days if the duration is negative
+                    //            }
 
-                                var migratedSubscription = new SubscriptionRequestDto
-                                {
-                                    adsbudget = subscriptioninfo.Drupal.Item.AdsLimitDaily,
-                                    CategoryId = Subscriptions.SubscriptionCategory.Items,
-                                    Currency = "QAR",
-                                    Description = subscriptioninfo.Drupal.Item.Product,
-                                    Duration = duration,
-                                    featurebudget = 0,
-                                    Price = 0,
-                                    promotebudget = 0,
-                                    refreshbudget = int.TryParse(subscriptioninfo.Drupal.Item.RefreshLimitDaily, out var refreshLimitDaily) ? refreshLimitDaily : 0,
-                                    StatusId = Subscriptions.Status.Active,
-                                    SubscriptionName = subscriptioninfo.Drupal.Item.Product,
-                                    VerticalTypeId = subscriptioninfo.Drupal.Item.ProductClass == "item" ? Subscriptions.Vertical.Classifieds : Subscriptions.Vertical.Services // who knows if this is correct ?
-                                };
+                    //            var migratedSubscription = new SubscriptionRequestDto
+                    //            {
+                    //                adsbudget = subscriptioninfo.Drupal.Item.AdsLimitDaily,
+                    //                CategoryId = Subscriptions.SubscriptionCategory.Items,
+                    //                Currency = "QAR",
+                    //                Description = subscriptioninfo.Drupal.Item.Product,
+                    //                Duration = duration,
+                    //                featurebudget = 0,
+                    //                Price = 0,
+                    //                promotebudget = 0,
+                    //                refreshbudget = int.TryParse(subscriptioninfo.Drupal.Item.RefreshLimitDaily, out var refreshLimitDaily) ? refreshLimitDaily : 0,
+                    //                StatusId = Subscriptions.Status.Active,
+                    //                SubscriptionName = subscriptioninfo.Drupal.Item.Product,
+                    //                VerticalTypeId = subscriptioninfo.Drupal.Item.ProductClass == "item" ? Subscriptions.Vertical.Classifieds : Subscriptions.Vertical.Services // who knows if this is correct ?
+                    //            };
 
-                                // this will work but wont have any idea what the subscription ID is
-                                await _subscriptionService.CreateSubscriptionAsync(migratedSubscription);
+                    //            // this will work but wont have any idea what the subscription ID is
+                    //            await _subscriptionService.CreateSubscriptionAsync(migratedSubscription);
 
-                                //user.Subscriptions = new List<UserSubscription>
-                                //{
-                                //    new UserSubscription
-                                //    {
-                                //        DisplayName = subscriptioninfo.Drupal.Item.Product,
-                                //        Id = subscriptionGuid
-                                //    }
-                                //};
+                    //            //user.Subscriptions = new List<UserSubscription>
+                    //            //{
+                    //            //    new UserSubscription
+                    //            //    {
+                    //            //        DisplayName = subscriptioninfo.Drupal.Item.Product,
+                    //            //        Id = subscriptionGuid
+                    //            //    }
+                    //            //};
 
-                                //var updateSubResult = await _userManager.UpdateAsync(user);
+                    //            //var updateSubResult = await _userManager.UpdateAsync(user);
 
-                                //if (!updateSubResult.Succeeded)
-                                //{
-                                //    var errors = updateSubResult.Errors
-                                //        .GroupBy(e => e.Code)
-                                //        .ToDictionary(g => g.Key, g => g.Select(e => e.Description).ToArray());
-                                //    throw new RegistrationValidationException(errors);
-                                //}
+                    //            //if (!updateSubResult.Succeeded)
+                    //            //{
+                    //            //    var errors = updateSubResult.Errors
+                    //            //        .GroupBy(e => e.Code)
+                    //            //        .ToDictionary(g => g.Key, g => g.Select(e => e.Description).ToArray());
+                    //            //    throw new RegistrationValidationException(errors);
+                    //            //}
 
-                                var subscriptionRole = "Subscriber";
+                    //            var subscriptionRole = "Subscriber";
 
-                                if (!await _roleManager.RoleExistsAsync(subscriptionRole))
-                                    await _roleManager.CreateAsync(new IdentityRole<Guid>(subscriptionRole));
+                    //            if (!await _roleManager.RoleExistsAsync(subscriptionRole))
+                    //                await _roleManager.CreateAsync(new IdentityRole<Guid>(subscriptionRole));
 
-                                // add the user to the Subscriber role
-                                await _userManager.AddToRoleAsync(user, subscriptionRole);
-                            }
+                    //            // add the user to the Subscriber role
+                    //            await _userManager.AddToRoleAsync(user, subscriptionRole);
+                    //        }
 
-                        }
+                    //    }
 
-                    }
+                    //}
                 }
                 var accessTs = _config.GetValue<TimeSpan>("TokenLifetimes:AccessToken");
                 var refreshTs = _config.GetValue<TimeSpan>("TokenLifetimes:RefreshToken");

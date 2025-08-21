@@ -39,6 +39,7 @@ using QLN.Common.Infrastructure.QLDbContext;
 using QLN.Common.Infrastructure.ServiceConfiguration;
 using QLN.Common.Infrastructure.TokenProvider;
 using System.IdentityModel.Tokens.Jwt;
+using System.Linq;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
@@ -321,6 +322,32 @@ builder.Services.AddAuthorization(options =>
                 return false;
             }
         }));
+
+    options.AddPolicy("administrator", policy =>
+        policy.RequireAssertion(context =>
+        {
+            var userClaim = context.User.Claims.Where(c => c.Type == "role").ToList();
+            if (userClaim == null) return false;
+
+            try
+            {
+                //var userJson = JsonDocument.Parse(userClaim);
+                //var root = userJson.RootElement;
+
+                //if (root.TryGetProperty("role", out var rolesProp) &&
+                //    rolesProp.EnumerateArray().Any(role => role.GetString() == "administrator"))
+                //{
+                //    return true;
+                //}
+                //return false;
+                return context.User.Claims
+                .Any(c => c.Type == "role" && c.Value == "administrator");
+            }
+            catch
+            {
+                return false;
+            }
+        }));
 });
 
 
@@ -482,7 +509,7 @@ var bannerPostGroup  = app.MapGroup("/api/v2/banner");
 bannerPostGroup.MapBannerPostEndpoints();
 var ClassifiedBo = app.MapGroup("/api/v2/classifiedbo");
 ClassifiedBo.MapClassifiedboEndpoints()
-    .RequireAuthorization();
+    .RequireAuthorization("administrator");
 
 var ServicesBo = app.MapGroup("/api/servicebo");
 ServicesBo.MapAllServiceBoConfiguration();
