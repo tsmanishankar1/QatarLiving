@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.IdentityModel.Tokens;
-using QLN.Common.Infrastructure.Model;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net.Http.Headers;
 using System.Security.Claims;
@@ -8,6 +7,44 @@ using System.Text.Json;
 
 namespace QLN.ContentBO.WebUI.Handlers
 {
+
+    // Helper classes for V2 token structure
+    public class V2User
+    {
+        public string? Status { get; set; }
+        public string? Language { get; set; }
+        public string? Created { get; set; }
+        public string? Access { get; set; }
+        public string? Login { get; set; }
+        public string? Init { get; set; }
+        public string? Timezone { get; set; }
+        public string? Uid { get; set; }
+        public string? QlnextUserId { get; set; }
+        public string? Name { get; set; }
+        public string? Alias { get; set; }
+        public string? Email { get; set; }
+        public string? Phone { get; set; }
+        public string? Path { get; set; }
+        public string? Image { get; set; }
+        public bool? IsAdmin { get; set; }
+        public List<string>? Permissions { get; set; }
+        public List<string>? Roles { get; set; }
+        public string? Subscription { get; set; }
+    }
+
+    public class V2Subscription
+    {
+        public string? UserId { get; set; }
+        public string? Id { get; set; }
+        public string? DisplayName { get; set; }
+        public string? ProductCode { get; set; }
+        public string? ProductName { get; set; }
+        public int Vertical { get; set; }
+        public int SubVertical { get; set; }
+        public string? StartDate { get; set; }
+        public string? EndDate { get; set; }
+    }
+
     public class CustomAuthStateProvider : AuthenticationStateProvider
     {
         private readonly IHttpContextAccessor _httpContextAccessor;
@@ -33,7 +70,6 @@ namespace QLN.ContentBO.WebUI.Handlers
 
             if (httpContext.Request.Cookies.TryGetValue("QATV2_Access", out var jwt) && !string.IsNullOrEmpty(jwt))
             {
-                //Console.WriteLine("Cookie found: {0}", jwt);
                 var tokenHandler = new JwtSecurityTokenHandler();
                 var validationParameters = new TokenValidationParameters
                 {
@@ -41,11 +77,7 @@ namespace QLN.ContentBO.WebUI.Handlers
                     ValidateAudience = true,
                     ValidateLifetime = false,
                     ValidateIssuerSigningKey = false,
-                    SignatureValidator = (token, parameters) =>
-                    {
-                        // Bypass signature validation for demo purposes
-                        return new JwtSecurityToken(token);
-                    },
+                    SignatureValidator = (token, parameters) => new JwtSecurityToken(token),
                     ValidIssuer = _configuration["Jwt:Issuer"],
                     ValidAudience = _configuration["Jwt:Audience"],
                     RoleClaimType = ClaimTypes.Role,
@@ -57,80 +89,105 @@ namespace QLN.ContentBO.WebUI.Handlers
                     SecurityToken validatedToken;
                     var validatedPrincipal = tokenHandler.ValidateToken(jwt, validationParameters, out validatedToken);
 
-                    //Console.WriteLine("JWT Validated: {0}", validatedPrincipal.Identity?.IsAuthenticated);
-
                     if (validatedToken.ValidTo > DateTime.UtcNow)
                     {
-                        var decodedTokenParts = tokenHandler.ReadJwtToken(jwt).ToString().Split('.');
-                        var decodedToken = decodedTokenParts.Length > 1
-                            ? string.Join(".", decodedTokenParts.Skip(1))
-                            : string.Empty;
+                        var jwtToken = tokenHandler.ReadJwtToken(jwt);
 
-                        //Console.WriteLine("Decoded Token {0}", decodedToken);
+                        var identity = (ClaimsIdentity)validatedPrincipal.Identity!;
+                        // Add standard claims
+                        identity.AddClaim(new Claim(ClaimTypes.NameIdentifier, jwtToken.Claims.FirstOrDefault(c => c.Type == "sub")?.Value ?? ""));
+                        identity.AddClaim(new Claim(ClaimTypes.Name, jwtToken.Claims.FirstOrDefault(c => c.Type == "name")?.Value ?? ""));
+                        identity.AddClaim(new Claim(ClaimTypes.Email, jwtToken.Claims.FirstOrDefault(c => c.Type == "email")?.Value ?? ""));
+                        identity.AddClaim(new Claim("preferred_username", jwtToken.Claims.FirstOrDefault(c => c.Type == "preferred_username")?.Value ?? ""));
+                        identity.AddClaim(new Claim("phone_number", jwtToken.Claims.FirstOrDefault(c => c.Type == "phone_number")?.Value ?? ""));
+                        identity.AddClaim(new Claim("picture", jwtToken.Claims.FirstOrDefault(c => c.Type == "picture")?.Value ?? ""));
+                        identity.AddClaim(new Claim("nickname", jwtToken.Claims.FirstOrDefault(c => c.Type == "nickname")?.Value ?? ""));
+                        identity.AddClaim(new Claim("legacy_uid", jwtToken.Claims.FirstOrDefault(c => c.Type == "legacy_uid")?.Value ?? ""));
+                        identity.AddClaim(new Claim("is_admin", jwtToken.Claims.FirstOrDefault(c => c.Type == "is_admin")?.Value ?? ""));
 
-                        if (!string.IsNullOrEmpty(decodedToken))
+                        // Deserialize "user" field for additional claims
+                        var userJson = jwtToken.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                        if (!string.IsNullOrEmpty(userJson))
                         {
-                            //Console.WriteLine("Attempting to deserialize token from cookie");
                             try
                             {
-                                var drupalToken = JsonSerializer.Deserialize<DrupalJWTToken>(decodedToken);
-                                var identity = (ClaimsIdentity)validatedPrincipal.Identity!;
-
-                                if (drupalToken != null)
+                                var userObj = JsonSerializer.Deserialize<V2User>(userJson);
+                                if (userObj != null)
                                 {
-                                    //Console.WriteLine("Token deserialized successfully");
-                                    // Custom user object
-                                    if (drupalToken.DrupalUser != null)
+                                    if (!string.IsNullOrEmpty(userObj.Uid))
+                                        identity.AddClaim(new Claim("uid", userObj.Uid));
+                                    if (!string.IsNullOrEmpty(userObj.QlnextUserId))
+                                        identity.AddClaim(new Claim("qlnext_user_id", userObj.QlnextUserId));
+                                    if (!string.IsNullOrEmpty(userObj.Name))
+                                        identity.AddClaim(new Claim("user_name", userObj.Name));
+                                    if (!string.IsNullOrEmpty(userObj.Alias))
+                                        identity.AddClaim(new Claim("alias", userObj.Alias));
+                                    if (!string.IsNullOrEmpty(userObj.Email))
+                                        identity.AddClaim(new Claim("user_email", userObj.Email));
+                                    if (!string.IsNullOrEmpty(userObj.Phone))
+                                        identity.AddClaim(new Claim("user_phone", userObj.Phone));
+                                    if (!string.IsNullOrEmpty(userObj.Image))
+                                        identity.AddClaim(new Claim("user_image", userObj.Image));
+                                    if (!string.IsNullOrEmpty(userObj.Status))
+                                        identity.AddClaim(new Claim("user_status", userObj.Status));
+                                    if (userObj.Permissions != null)
                                     {
-                                        var user = drupalToken.DrupalUser;
-                                        if (!string.IsNullOrEmpty(user.Uid))
-                                            identity.AddClaim(new Claim(ClaimTypes.NameIdentifier, user.Uid));
-                                        if (!string.IsNullOrEmpty(user.Name))
-                                            identity.AddClaim(new Claim(ClaimTypes.Name, user.Name));
-                                        if (!string.IsNullOrEmpty(user.Email))
-                                            identity.AddClaim(new Claim(ClaimTypes.Email, user.Email));
-                                        if (user.IsAdmin != null)
-                                            identity.AddClaim(new Claim("is_admin", user.IsAdmin.ToString()!));
-                                        /*   if (!string.IsNullOrEmpty(user.QlnextUserId))
-                                                 identity.AddClaim(new Claim("qlnext_user_id", user.QlnextUserId));  Commenting this now for future use as suggested by Grant  */
-                                        if (!string.IsNullOrEmpty(user.Alias))
-                                            identity.AddClaim(new Claim("alias", user.Alias));
-                                        if (!string.IsNullOrEmpty(user.Image))
-                                            identity.AddClaim(new Claim("image", user.Image));
-                                        if (!string.IsNullOrEmpty(user.Status))
-                                            identity.AddClaim(new Claim("status", user.Status));
-                                        if (user.Permissions != null && user.Permissions.Any())
-                                        {
-                                            foreach (var perm in user.Permissions)
-                                                identity.AddClaim(new Claim("permission", perm));
-                                        }
-                                        if (user.Roles != null && user.Roles.Any())
-                                        {
-                                            foreach (var role in user.Roles)
-                                                identity.AddClaim(new Claim(ClaimTypes.Role, role));
-                                        }
+                                        foreach (var perm in userObj.Permissions)
+                                            identity.AddClaim(new Claim("permission", perm));
                                     }
-
-                                    principal = new ClaimsPrincipal(identity);
+                                    if (userObj.Roles != null)
+                                    {
+                                        foreach (var role in userObj.Roles)
+                                            identity.AddClaim(new Claim(ClaimTypes.Role, role));
+                                    }
                                 }
                             }
                             catch (Exception ex)
                             {
-                                Console.WriteLine("Extracting token from cookie failed: {0}", ex.Message);
+                                Console.WriteLine("Failed to deserialize V2 user: {0}", ex.Message);
                             }
-
-                            // set the httpclient default headers to the value value of the jwt so we can pass it around -
-                            // this should only happen even if deserialization is successful, else anyone you pass this
-                            // to may also fail
-                            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", jwt);
-
-                            // this appears to only work if we have a common httpclient
                         }
-                        else
+
+                        // Add subscriptions as claims
+                        var subscriptionsJson = jwtToken.Claims.FirstOrDefault(c => c.Type == "subscriptions")?.Value;
+                        if (!string.IsNullOrEmpty(subscriptionsJson))
                         {
-                            // fallback to validatedPrincipal if deserialization fails
-                            principal = validatedPrincipal;
+                            try
+                            {
+                                var subscriptions = JsonSerializer.Deserialize<List<V2Subscription>>(subscriptionsJson);
+                                if (subscriptions != null)
+                                {
+                                    foreach (var sub in subscriptions)
+                                    {
+                                        identity.AddClaim(new Claim("subscription_id", sub.Id));
+                                        identity.AddClaim(new Claim("subscription_display_name", sub.DisplayName));
+                                        identity.AddClaim(new Claim("subscription_product_code", sub.ProductCode));
+                                        identity.AddClaim(new Claim("subscription_product_name", sub.ProductName));
+                                        identity.AddClaim(new Claim("subscription_vertical", sub.Vertical.ToString()));
+                                        identity.AddClaim(new Claim("subscription_subvertical", sub.SubVertical.ToString()));
+                                        identity.AddClaim(new Claim("subscription_start_date", sub.StartDate));
+                                        identity.AddClaim(new Claim("subscription_end_date", sub.EndDate));
+                                    }
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine("Failed to deserialize subscriptions: {0}", ex.Message);
+                            }
                         }
+
+                        // Add roles and permissions from top-level claims
+                        var roles = jwtToken.Claims.Where(c => c.Type == "role").Select(c => c.Value).ToList();
+                        foreach (var role in roles)
+                            identity.AddClaim(new Claim(ClaimTypes.Role, role));
+
+                        var permissions = jwtToken.Claims.Where(c => c.Type == "permission").Select(c => c.Value).ToList();
+                        foreach (var perm in permissions)
+                            identity.AddClaim(new Claim("permission", perm));
+
+                        principal = new ClaimsPrincipal(identity);
+
+                        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", jwt);
                     }
                 }
                 catch
@@ -138,9 +195,7 @@ namespace QLN.ContentBO.WebUI.Handlers
                     principal = new ClaimsPrincipal(new ClaimsIdentity());
                 }
             }
-
             return Task.FromResult(new AuthenticationState(principal));
         }
-
     }
 }
