@@ -2983,7 +2983,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                     );
                 }
             })
-                .WithName("PostItemsAdById")
+                .WithName("PostItemsAdByIdBo")
                 .WithTags("Classified")
                 .WithSummary("Post classified items ad using provided UserId")
                 .WithDescription("For admin/service scenarios where the UserId is passed explicitly.")
