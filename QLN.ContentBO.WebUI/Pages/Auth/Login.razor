@@ -11,7 +11,7 @@
 
     protected override void OnInitialized()
     {
-        var authUrl = $"{NavigationPath.Value.Login}?destination={NavigationPath.Value.BORedirectPrefix}{SetDestination()}";
+        var authUrl = $"{NavigationPath.Value.Login}?destination=/auth/callback";
         Nav.NavigateTo(authUrl, forceLoad: true);
     }
 
@@ -29,11 +29,6 @@
         if (response.IsSuccessStatusCode)
         {
             var user = await response.Content.ReadFromJsonAsync<UserSyncResponse>();
-            // Set Cookie   
-            TokenService.SetCookie(user?.Token);
-            // Set Refresh Token
-            TokenService.SetRefreshToken(user?.RefreshToken);
-
             if (user != null)
             {
                 Nav.NavigateTo(NavigationPath.Value.BORedirectPrefix + SetDestination());
