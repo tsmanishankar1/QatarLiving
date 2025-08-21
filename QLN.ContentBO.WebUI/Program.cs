@@ -14,7 +14,7 @@ logger.Debug("init main");
 try
 {
     var builder = WebApplication.CreateBuilder(args);
-    var BOAPIBaseUrl = builder.Configuration["ServiceUrlPaths:ContentBOAPI"];
+    var BOAPIBaseUrl = builder.Configuration["ServiceUrlPaths:BOAPIBaseUrl"];
     if (string.IsNullOrWhiteSpace(BOAPIBaseUrl))
     {
         throw new InvalidOperationException("Content Back Office API URL is missing in the configuration file.");
