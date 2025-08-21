@@ -1,0 +1,22 @@
+﻿@page "/auth/login"  
+
+@using Microsoft.Extensions.Options  
+@using QLN.ContentBO.WebUI.Models  
+@inject NavigationManager Nav  
+@inject IOptions<NavigationPath> NavigationPath  
+@code {  
+    [Parameter] public string? ReturnUrl { get; set; }  
+
+    protected override void OnInitialized()  
+    {  
+        var authUrl = $"{NavigationPath.Value.Login}?destination={NavigationPath.Value.BORedirectPrefix}{SetDestination()}";  
+        Nav.NavigateTo(authUrl, forceLoad: true);  
+    }  
+
+    protected string SetDestination()  
+    {  
+        var destination = new Uri(Nav.Uri).AbsolutePath.Substring(1);  
+
+        return destination;  
+    }  
+}
