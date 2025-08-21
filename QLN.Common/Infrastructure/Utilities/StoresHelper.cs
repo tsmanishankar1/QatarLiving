@@ -17,8 +17,7 @@ namespace QLN.Common.Infrastructure.Utilities
             string SlugId = productId.ToString().Substring(0, 8);
             return new StoreProducts
             {
-                StoreProductId = productId,
-                
+                StoreProductId = productId,             
                 ProductName = sp.Title ?? "Unnamed Product",
                 ProductLogo = sp.ImageSrc ?? sp.VariantImage ?? string.Empty,
                 ProductPrice = sp.VariantPrice ?? 0,
@@ -27,10 +26,10 @@ namespace QLN.Common.Infrastructure.Utilities
                 ProductDescription = sp.BodyHtml ?? sp.SEODescription ?? string.Empty,
                 PageNumber = 1,
                 PageCoordinates = null, 
-                Slug = "Stores-" + sp.Title ?? "Unnamed Product" + "-" + SlugId, 
-                Category = sp.ProductCategory ?? "Others",
+                Slug = "Stores-" + sp.Handle ?? "Unnamed Product" + "-" + SlugId, 
+                Category = sp.ProductCategory?.Split('>')?.FirstOrDefault()?.Trim() ?? "Others",
                 Qty = sp.VariantInventoryQty ?? 0,
-                ProductBarcode = sp.VariantBarcode,
+                ProductBarcode = sp.Handle??"",
                 FlyerId = flyerId,
                 Features = new List<ProductFeatures>(), 
                 Images = new List<ProductImages> 
