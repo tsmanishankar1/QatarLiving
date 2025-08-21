@@ -2,7 +2,7 @@
 {
     public class ItemTransactionResponse
     {
-        public List<ItemTransactionItem> Items { get; set; }
+        public List<ItemTransactionItem> Records { get; set; }
         public int TotalRecords { get; set; }
         public int CurrentPage { get; set; }
         public int PageSize { get; set; }

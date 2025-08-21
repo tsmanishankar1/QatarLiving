@@ -5696,8 +5696,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 {
                     Text = req.Text,
                     Filters = req.Filters,
-                    OrderBy = req.OrderBy
-                    ,
+                    OrderBy = "",
                     PageNumber = req.PageNumber,
                     PageSize = req.PageSize
                 };
@@ -5762,26 +5761,43 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                     ProductDescription = g.ProductDescription,
                     Features = g.Features,
                     Images = g.Images,
-                    ProductSlug = g.ProductSlug
+                    ProductSlug = g.ProductSlug,
+                    ProductCategory=g.ProductCategory,
+                    ProductUrl=g.ProductUrl
                 }).ToList()
             };
         })
         .ToList()
                         };
 
-
-
-
-
-
-
-                        return Results.Ok(new ClassifiedBOPageResponse<StoresGroup>
+                        if (req.OrderBy == "desc")
                         {
-                            Page = req.PageNumber,
-                            PerPage = req.PageSize,
-                            TotalCount = results.TotalCount??0,
-                            Items = response.Stores
-                        });
+                            foreach (var store in response.Stores)
+                            {
+                                store.Products = store.Products
+                                    .OrderByDescending(p => p.ProductPrice)
+                                    .ToList();
+                            }
+                        }
+                        else
+                        {
+                            foreach (var store in response.Stores)
+                            {
+                                store.Products = store.Products
+                                    .OrderBy(p => p.ProductPrice)
+                                    .ToList();
+                            }
+                        }
+
+
+
+                            return Results.Ok(new ClassifiedBOPageResponse<StoresGroup>
+                            {
+                                Page = req.PageNumber,
+                                PerPage = req.PageSize,
+                                TotalCount = response.Stores.Count,
+                                Items = response.Stores
+                            });
                     }
                     else
                     {
@@ -5852,7 +5868,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 {
                     Text = req.Text,
                     Filters = req.Filters,
-                    OrderBy = req.OrderBy,
+                    OrderBy = "",
                     PageNumber = req.PageNumber,
                     PageSize = req.PageSize
                 };
@@ -5951,15 +5967,53 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             .Produces(StatusCodes.Status404NotFound)
             .ProducesProblem(StatusCodes.Status500InternalServerError);
 
+            group.MapPost("/stores-search-category-list/{StoreSlug}", async Task<IResult> (
+    [FromRoute] string? StoreSlug,
+    [FromServices] ISearchService svc
+) =>
+            {
+                string indexName = ConstantValues.IndexNames.ClassifiedStoresIndex;
 
-            
+                var request = new CommonSearchRequest
+                {
+                    Text = "*",
+                    Filters =null,
+                    //  OrderBy = req.OrderBy,
+                    PageNumber =1,
+                    PageSize = 100,
+
+                };
+                var results = await svc.GetAllAsync(indexName, request); // You may need to pass indexName/request appropriately
+
+      if (results?.ClassifiedStores == null)
+          return Results.NoContent();
+
+      var categories = results.ClassifiedStores
+          .Where(s => s.StoreSlug == StoreSlug && !string.IsNullOrEmpty(s.ProductCategory))
+          .Select(s => s.ProductCategory)
+          .Distinct()
+          .ToList();
+
+      if (!categories.Any())
+          return Results.NoContent();
+
+      return Results.Ok(new { Categories = categories });
+
+  }).WithName("StoreCategory")
+.WithTags("Classified")
+.WithSummary("List the categories")
+.WithDescription("List the categories from stores")
+.Produces<string>(StatusCodes.Status200OK)
+.Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+.Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             group.MapPost("/stores-search-product-list/{StoreSlug}", async (
-                [FromRoute] string? StoreSlug,
-    
+                [FromRoute] string? StoreSlug,    
        [FromQuery] string? OrderBy,
        [FromQuery] int PageNumber,
        [FromQuery] int PageSize,
+       [FromQuery] string? SearchProduct,
+       [FromQuery] string? Category,
      [FromServices] ISearchService svc,
      [FromServices] ILoggerFactory logFac
  ) =>
@@ -6024,12 +6078,14 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         {
                             Products = results.ClassifiedStores
                                         .Where(x =>
-                                            (string.IsNullOrEmpty(StoreSlug) || x.StoreSlug.ToLower().Contains(StoreSlug.ToLower()))
+                                            (string.IsNullOrEmpty(StoreSlug) || x.StoreSlug.ToLower().Contains(StoreSlug.ToLower())) &&
+                                            (string.IsNullOrEmpty(SearchProduct) || x.ProductName.ToLower().Contains(SearchProduct.ToLower())) &&
+                                            (string.IsNullOrEmpty(Category) || x.ProductCategory.ToLower().Contains(Category.ToLower()))
                                         )
                                         .ToList()
                         };
 
-                        response.Products = req.OrderBy?.ToLower() switch
+                        response.Products = OrderBy?.ToLower() switch
                         {
                             "desc" => response.Products.OrderByDescending(t => t.ProductPrice).ToList(),
                             "asc" => response.Products.OrderBy(t => t.ProductPrice).ToList(),
@@ -6159,7 +6215,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                                         .ToList()
                         };
 
-                        response.Products = req.OrderBy?.ToLower() switch
+                        response.Products = OrderBy?.ToLower() switch
                         {
                             "desc" => response.Products.OrderByDescending(t => t.ProductPrice).ToList(),
                             "asc" => response.Products.OrderBy(t => t.ProductPrice).ToList(),

@@ -93,50 +93,24 @@
                 </TemplateColumn>
                 <TemplateColumn Title="Created Date">
                     <CellTemplate>
-                        @(context.Item.CreatedDateForApi)
+                        @(string.IsNullOrWhiteSpace(context.Item.CreationDate) ? "-" : context.Item.CreationDate)
                     </CellTemplate>
                 </TemplateColumn>
                 <TemplateColumn Title="Published Date">
                     <CellTemplate>
-                        @(context.Item.PublishedDate != default ? context.Item.PublishedDate.ToString("dd-MM-yyyy hh:mmtt") : "-")
+                        @(context.Item.PublishedDate != default ? context.Item.PublishedDate : "-")
                     </CellTemplate>
                 </TemplateColumn>
                 <TemplateColumn Title="Start Date">
                     <CellTemplate>
-                        @(context.Item.StartDate != default ? context.Item.StartDate.ToQatarTime("dd-MM-yyyy hh:mmtt") : "-")
+                        @(context.Item.StartDate != default ? context.Item.StartDate : "-")
                     </CellTemplate>
                 </TemplateColumn>
                 <TemplateColumn Title="End Date">
                     <CellTemplate>
-                        @(context.Item.EndDate != default ? context.Item.EndDate.ToString("dd-MM-yyyy hh:mmtt") : "-")
+                        @(context.Item.EndDate != default ? context.Item.EndDate : "-")
                     </CellTemplate>
                 </TemplateColumn>
-                <TemplateColumn Title="Duration">
-                    <CellTemplate>
-                     @{
-                        var start = context.Item.StartDate;
-                        var end = context.Item.EndDate;
-                        string durationText = "-";
-                        if (start != default && end != default && end > start)
-                        {
-                            var diff = end - start;
-                            if (diff.TotalDays >= 30)
-                            {
-                                durationText = $"{(int)(diff.TotalDays / 30)} months";
-                            }
-                            else if (diff.TotalDays >= 7)
-                            {
-                                 durationText = $"{(int)(diff.TotalDays / 7)} weeks";
-                            }
-                            else
-                            {
-                                durationText = $"{(int)diff.TotalDays} days";
-                            }
-                        }
-                    }
-                    @durationText
-                </CellTemplate>
-            </TemplateColumn>
 
                 <TemplateColumn Title="Views">
                     <CellTemplate>

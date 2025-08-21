@@ -1383,6 +1383,7 @@ namespace QLN.Classified.MS.Service.Services
         public async Task<List<CategoryAdCountDto>> GetCategoryAdCount(CancellationToken ct = default)
         {
             return await _dbContext.Services
+                .Where(s => s.Status == ServiceStatus.Published)
                 .GroupBy(s => s.CategoryId)
                 .Select(g => new CategoryAdCountDto
                 {
