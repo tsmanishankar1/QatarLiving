@@ -164,7 +164,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
             throw new NotImplementedException();
         }
 
-        public async Task<AdCreatedResponseDto> CreateClassifiedItemsAd(Items dto, CancellationToken cancellationToken = default)
+        public async Task<AdCreatedResponseDto> CreateClassifiedItemsAd(Items dto, SaveIntent intent, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(dto);
 
@@ -175,12 +175,24 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
             if (dto.SubVertical != SubVertical.Items)
                 throw new InvalidOperationException("This endpoint only supports posting ads under the 'Items' subvertical.");
-           
+
 
             try
             {
-                _log.LogTrace($"Calling internal service with {dto.Images.Count} images");
-                var requestUrl = $"/api/classifieds/items/post-by-id";
+                if (intent == SaveIntent.SaveAndSubmitForApproval)
+                {
+                    dto.Status = AdStatus.PendingApproval;
+                }
+                else
+                {
+                    dto.Status = AdStatus.Draft;
+                }
+
+                dto.CreatedAt = DateTime.UtcNow;
+                dto.UpdatedAt = DateTime.UtcNow;
+
+                //_log.LogTrace($"Calling internal service with {dto.Images.Count} images");
+                var requestUrl = $"/api/classifieds/items/post-by-id?intent={intent}";
                 var payload = JsonSerializer.Serialize(dto);
                 var req = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, SERVICE_APP_ID, requestUrl);
                 req.Content = new StringContent(payload, Encoding.UTF8, "application/json");
@@ -198,9 +210,9 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 if (createdDto == null)
                     throw new InvalidOperationException("Failed to deserialize ad creation response.");
 
-                return createdDto;              
+                return createdDto;
             }
-            catch(DaprServiceException)
+            catch (DaprServiceException)
             {
                 throw;
             }

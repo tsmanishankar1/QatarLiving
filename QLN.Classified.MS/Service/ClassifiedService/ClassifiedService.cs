@@ -228,8 +228,8 @@ namespace QLN.Classified.MS.Service
         }
 
         public async Task<AdCreatedResponseDto> CreateClassifiedItemsAd(
-    Items dto,
-    CancellationToken cancellationToken = default)
+Items dto, SaveIntent intent,
+CancellationToken cancellationToken = default)
         {
             if (dto == null)
             {
@@ -259,9 +259,18 @@ namespace QLN.Classified.MS.Service
             {
                 _logger.LogInformation("Starting CreateClassifiedItemsAd for UserId={UserId}, Title='{Title}'", dto.UserId, dto.Title);
 
-                dto.Status = AdStatus.Draft;
+                if (intent == SaveIntent.SaveAndSubmitForApproval)
+                {
+                    dto.Status = AdStatus.PendingApproval;
+                }
+                else
+                {
+                    dto.Status = AdStatus.Draft;
+                }
+
                 dto.CreatedAt = DateTime.UtcNow;
-                
+                dto.UpdatedAt = DateTime.UtcNow;
+
                 _logger.LogDebug("Adding Items ad to EF context...");
                 _context.Item.Add(dto);
 
@@ -276,7 +285,7 @@ namespace QLN.Classified.MS.Service
                 return new AdCreatedResponseDto
                 {
                     AdId = dto.Id,
-                    Title = dto.Title,                    
+                    Title = dto.Title,
                     CreatedAt = DateTime.UtcNow,
                     Message = "Items Ad created successfully"
                 };

@@ -22,6 +22,7 @@ using QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.D365Endpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.FatoraEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.FileUploadService;
+using QLN.Common.Infrastructure.CustomEndpoints.InstagramService;
 using QLN.Common.Infrastructure.CustomEndpoints.PayToPublishEndpoint;
 using QLN.Common.Infrastructure.CustomEndpoints.ProductEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.ServiceBOEndpoint;
@@ -434,6 +435,8 @@ var paymentGroup = app.MapGroup("/api/pay");
 paymentGroup.MapD365Endpoints();
 var wishlistgroup = app.MapGroup("/api/wishlist");
 wishlistgroup.MapWishlist();
+var instapost = app.MapGroup("/api/insta");
+instapost.MapInstagramEndpoints();
 var companyProfileGroup = app.MapGroup("/api/companyprofile");
 companyProfileGroup.MapCompanyProfile()
     .RequireAuthorization();

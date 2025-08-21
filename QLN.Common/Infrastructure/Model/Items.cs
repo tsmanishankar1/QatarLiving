@@ -16,4 +16,9 @@ namespace QLN.Common.Infrastructure.Model
         public bool IsPromoted { get; set; } = false;
         public bool IsRefreshed { get; set; } = false;
     }
+    public enum SaveIntent
+    {
+        SaveAsDraft = 1,
+        SaveAndSubmitForApproval = 2
+    }
 }

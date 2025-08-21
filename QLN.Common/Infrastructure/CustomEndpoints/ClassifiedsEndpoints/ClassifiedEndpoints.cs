@@ -821,11 +821,12 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
             // itemsAd post
             group.MapPost("items", async Task<IResult> (
-                HttpContext httpContext,
-                ClassifiedsItemsDTO dto,
-                IClassifiedService service,
-                AuditLogger auditLogger,
-                CancellationToken token) =>
+    HttpContext httpContext,
+    ClassifiedsItemsDTO dto,
+    SaveIntent indent,
+    IClassifiedService service,
+    AuditLogger auditLogger,
+    CancellationToken token) =>
             {
                 string? uid = "unknown";
                 string? subId = null;
@@ -854,7 +855,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                                     subscription.TryGetProperty("SubVertical", out var subVerticalProp) &&
                                     subVerticalProp.GetInt32() == 1)
                                 {
-                                    
+
                                     if (subscription.TryGetProperty("EndDate", out var endDateProp) &&
                                     endDateProp.ValueKind == JsonValueKind.String)
                                     {
@@ -931,7 +932,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                             Url = i.Url,
                             Order = i.Order
                         }).ToList(),
-                        Attributes = dto.Attributes                        
+                        Attributes = dto.Attributes
 
                     };
 
@@ -944,7 +945,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                             Status = StatusCodes.Status400BadRequest
                         });
                     }
-                    var response = await service.CreateClassifiedItemsAd(request, token);
+                    var response = await service.CreateClassifiedItemsAd(request, indent, token);
 
                     await auditLogger.LogAuditAsync(
                         module: "Classified",
@@ -998,18 +999,19 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                     );
                 }
             })
-                .WithName("PostItemsAd")
-                .WithTags("Classified")
-                .WithSummary("Post classified items ad using authenticated user")
-                .WithDescription("Takes user ID from JWT token and creates the ad.")
-                .Produces<AdCreatedResponseDto>(StatusCodes.Status201Created)
-                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-                .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
-                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
-                .RequireAuthorization();
+    .WithName("PostItemsAdsaveintent")
+    .WithTags("Classified")
+    .WithSummary("Post classified items ad using authenticated user")
+    .WithDescription("Takes user ID from JWT token and creates the ad.")
+    .Produces<AdCreatedResponseDto>(StatusCodes.Status201Created)
+    .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+    .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
+    .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
+    .RequireAuthorization();
 
             group.MapPost("items/post-by-id", async Task<IResult> (
                 Items dto,
+                SaveIntent indent,
                 IClassifiedService service,
                 CancellationToken token) =>
             {
@@ -1025,7 +1027,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         });
                     }
 
-                    var response = await service.CreateClassifiedItemsAd(dto, token);
+                    var response = await service.CreateClassifiedItemsAd(dto, indent, token);
                     return TypedResults.Created($"/api/classifieds/items/user-ads-by-id/{response.AdId}", response);
 
                 }
@@ -1065,15 +1067,15 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                     );
                 }
             })
-                .WithName("PostItemsAdById")
+                .WithName("PostItemsAdByIdsaveintent")
                 .WithTags("Classified")
                 .WithSummary("Post classified items ad using provided UserId")
                 .WithDescription("For admin/service scenarios where the UserId is passed explicitly.")
                 .Produces<AdCreatedResponseDto>(StatusCodes.Status201Created)
                 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
                 .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
-                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
-                .ExcludeFromDescription();
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+               
 
             group.MapPut("/items/refresh", async Task<IResult> (
                 HttpContext httpContext,
