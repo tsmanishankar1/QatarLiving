@@ -17,11 +17,11 @@
 
     public class SubscriptionConstraint
     {
-        public decimal AdsBudget { get; set; }
-        public decimal FeaturedBudget { get; set; }
-        public decimal PromotedBudget { get; set; }
-        public decimal RefreshBudgetPerDay { get; set; }
-        public decimal RefreshBudgetPerAd { get; set; }
+        public decimal? AdsBudget { get; set; }
+        public decimal? FeaturedBudget { get; set; }
+        public decimal? PromotedBudget { get; set; }
+        public decimal? RefreshBudgetPerDay { get; set; }
+        public decimal? RefreshBudgetPerAd { get; set; }
         public string Duration { get; set; } = string.Empty;
         public string Scope { get; set; } = string.Empty;
         public bool IsAddOn { get; set; }

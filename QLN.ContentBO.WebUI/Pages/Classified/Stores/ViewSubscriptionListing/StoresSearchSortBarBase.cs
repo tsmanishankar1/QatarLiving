@@ -38,10 +38,10 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.ViewSubscriptionListing
             {
                 if (firstRender)
                 {
-                    var tListOfSubsctiptions = await GetSubscriptionProductsAsync((int)VerticalTypeEnum.Classifieds, (int)SubVerticalTypeEnum.Preloved);
+                    var tListOfSubsctiptions = await GetSubscriptionProductsAsync((int)VerticalTypeEnum.Classifieds, (int)SubVerticalTypeEnum.Stores);
                     if (tListOfSubsctiptions != null && tListOfSubsctiptions.Count != 0)
                     {
-                        SubscriptionTypes = [.. tListOfSubsctiptions.Select(x => x.ProductName)];
+                        SubscriptionTypes = [.. tListOfSubsctiptions.Select(x => x.ProductName).ToList()];
                     }
                 }
             }
