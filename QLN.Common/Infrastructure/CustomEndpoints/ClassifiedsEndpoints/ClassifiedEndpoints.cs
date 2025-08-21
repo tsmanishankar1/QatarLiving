@@ -1230,7 +1230,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             group.MapPost("preloved", async Task<IResult> (
      HttpContext httpContext,
      [FromBody]ClassifiedsPrelovedDTO dto,
-     [FromQuery]SaveIntent intent,
      IClassifiedService service,
      AuditLogger auditLogger,
      CancellationToken token) =>
@@ -1348,7 +1347,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         Attributes = dto.Attributes,
                     };
 
-                    var result = await service.CreateClassifiedPrelovedAd(request, intent, token);
+                    var result = await service.CreateClassifiedPrelovedAd(request, token);
 
                     await auditLogger.LogAuditAsync(
                         module: "Classified",
@@ -1385,7 +1384,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
             group.MapPost("preloved/post-by-id", async Task<IResult> (
                 Preloveds dto,
-                [FromQuery] SaveIntent intent,
                 IClassifiedService service,
                 CancellationToken token) =>
             {
@@ -1401,7 +1399,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         });
                     }
 
-                    var result = await service.CreateClassifiedPrelovedAd(dto, intent, token);
+                    var result = await service.CreateClassifiedPrelovedAd(dto, token);
 
                     return TypedResults.Created(
            $"/api/classifieds/preloved/user-ads-by-id/{result.AdId}", result);
@@ -2547,7 +2545,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             group.MapPost("deals", async Task<IResult> (
                 HttpContext httpContext,
                 [FromBody] ClassifiedsDealsDTO dto,
-                [FromQuery] SaveIntent intent,
                 IClassifiedService service,
                 AuditLogger auditLogger,
                 CancellationToken token) =>
@@ -2637,7 +2634,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                     
 
                     //dto.UserId = uid;
-                    var result = await service.CreateClassifiedDealsAd(request, intent, token);
+                    var result = await service.CreateClassifiedDealsAd(request, token);
 
                     await auditLogger.LogAuditAsync(
                         module: "Classified",
@@ -2712,7 +2709,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
             group.MapPost("deals/post-by-id", async Task<IResult> (
                 Deals dto,
-                [FromQuery] SaveIntent intent,
                 IClassifiedService service,
                 CancellationToken token) =>
             {
@@ -2728,7 +2724,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         });
                     }
 
-                    var result = await service.CreateClassifiedDealsAd(dto, intent, token);
+                    var result = await service.CreateClassifiedDealsAd(dto, token);
 
                     return TypedResults.Created($"/api/classifieds/deals/user-ads-by-id/{result.AdId}", result);
 

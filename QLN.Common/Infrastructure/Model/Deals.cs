@@ -88,6 +88,7 @@ namespace QLN.Common.Infrastructure.Model
         public bool IsFeatured { get; set; }
         public bool IsPromoted { get; set; }
         [Required]
-        public AdStatus Status { get; set; }       
+        public AdStatus Status { get; set; }   
+        public bool? IsSold { get; set; }
     }
 }
