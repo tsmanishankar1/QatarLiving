@@ -1,6 +1,5 @@
 ﻿using QLN.Common.DTO_s;
 using QLN.Common.DTO_s.Classifieds;
-using QLN.Common.DTO_s.ClassifiedsBo;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.Subscriptions;

@@ -105,7 +105,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.ViewTransactions
 
                     if (result != null)
                     {
-                        Transactions = result.Items;
+                        Transactions = result.Records;
                         TotalRecords = result.TotalRecords;
                     }
                 }

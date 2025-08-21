@@ -528,7 +528,7 @@ namespace QLN.Classified.MS.Service
                     dto.AuthenticityCertificateName = null;
                     _logger.LogInformation("No authenticity certificate provided. Fields set to null.");
                 }               
-                dto.Status = AdStatus.PendingApproval;
+                dto.Status = AdStatus.Published;
                 dto.CreatedAt = DateTime.UtcNow;
                 dto.UpdatedAt = DateTime.UtcNow;
 
@@ -697,7 +697,7 @@ namespace QLN.Classified.MS.Service
                     socialLinks.Add(company.InstagramUrl);
 
                 dto.SocialMediaLinks = socialLinks.Any() ? string.Join(", ", socialLinks) : null;               
-                dto.Status = AdStatus.PendingApproval;
+                dto.Status = AdStatus.Published;
 
                 dto.CreatedAt = DateTime.UtcNow;
                 dto.UpdatedAt = DateTime.UtcNow;

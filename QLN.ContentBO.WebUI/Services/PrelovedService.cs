@@ -59,27 +59,39 @@ namespace QLN.ContentBO.WebUI.Services
         {
             try
             {
-                var queryParams = new Dictionary<string, string?>
-                {
-                    { "createdDate", query.CreatedDate },
-                    { "publishedDate", query.PublishedDate },
-                    { "Page", query.Page.ToString() },
-                    { "PageSize", query.PageSize.ToString() },
-                    { "Search", query.Search },
-                    { "SortBy", query.SortBy },
-                    { "SortOrder", query.SortOrder }
-                };
+                var baseUrl = "/api/v2/classifiedbo/preloved/transactions";
+                var queryParams = new List<string>();
+                if (query.Page.HasValue)
+                    queryParams.Add($"pageNumber={query.Page}");
 
-                var queryString = string.Join("&",
-                    queryParams
-                    .Where(kvp => !string.IsNullOrWhiteSpace(kvp.Value))
-                    .Select(kvp => $"{kvp.Key}={Uri.EscapeDataString(kvp.Value!)}"));
+                if (query.PageSize.HasValue)
+                    queryParams.Add($"pageSize={query.PageSize}");
 
-                var requestUrl = $"/api/v2/classifiedbo/preloved-p2p-transactions?{queryString}";
+                if (!string.IsNullOrWhiteSpace(query.Search))
+                    queryParams.Add($"searchText={Uri.EscapeDataString(query.Search)}");
 
-                var request = new HttpRequestMessage(HttpMethod.Get, requestUrl);
+                if (!string.IsNullOrWhiteSpace(query.CreatedDate))
+                    queryParams.Add($"dateCreated={Uri.EscapeDataString(query.CreatedDate)}");
 
-                return await _httpClient.SendAsync(request);
+                if (!string.IsNullOrWhiteSpace(query.PublishedDate))
+                    queryParams.Add($"datePublished={Uri.EscapeDataString(query.PublishedDate)}");
+
+                if (!string.IsNullOrWhiteSpace(query.Status))
+                    queryParams.Add($"status={Uri.EscapeDataString(query.Status)}");
+
+                if (!string.IsNullOrWhiteSpace(query.SortBy))
+                    queryParams.Add($"sortBy={Uri.EscapeDataString(query.SortBy)}");
+
+                if (!string.IsNullOrWhiteSpace(query.SortOrder))
+                    queryParams.Add($"sortOrder={Uri.EscapeDataString(query.SortOrder)}");
+
+                var requestUrl = queryParams.Count > 0
+                    ? $"{baseUrl}?{string.Join("&", queryParams)}"
+                    : baseUrl;
+
+                _logger.LogInformation("Final Request URL: {RequestUrl}", requestUrl);
+                var response = await _httpClient.GetAsync(requestUrl);
+                return response;
             }
             catch (Exception ex)
             {
