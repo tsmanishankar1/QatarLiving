@@ -201,7 +201,7 @@ namespace QLN.Backend.API.Service.CompanyService
                 throw;
             }
         }
-        public async Task<string> UpdateCompany(QLN.Common.Infrastructure.Model.Company dto, CancellationToken cancellationToken = default)
+        public async Task<string> UpdateCompany(Common.Infrastructure.Model.Company dto, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -338,7 +338,7 @@ namespace QLN.Backend.API.Service.CompanyService
                 throw;
             }
         }
-        public async Task<List<QLN.Common.Infrastructure.Model.Company>> GetCompaniesByTokenUser(string userId, CancellationToken cancellationToken = default)
+        public async Task<List<Common.Infrastructure.Model.Company>> GetCompaniesByTokenUser(string userId, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -358,6 +358,28 @@ namespace QLN.Backend.API.Service.CompanyService
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error retrieving companies for token user");
+                throw;
+            }
+        }
+        public async Task<List<CompanyWithSubscriptionDto>> GetCompaniesByToken(string userId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var url = $"/api/companyprofile/getcompanieswithsubscription?userId={userId}";
+                return await _dapr.InvokeMethodAsync<List<CompanyWithSubscriptionDto>>(
+                    HttpMethod.Get,
+                    ConstantValues.Company.CompanyServiceAppId,
+                    url,
+                    cancellationToken);
+            }
+            catch (InvocationException ex) when (ex.Response?.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                _logger.LogWarning("No companies found for token user.");
+                return new List<CompanyWithSubscriptionDto>();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving companies with subscriptions for token user");
                 throw;
             }
         }

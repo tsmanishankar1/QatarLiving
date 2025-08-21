@@ -75,9 +75,7 @@ namespace QLN.Common.Infrastructure.IService.V2IClassifiedBoService
         Task<PaginatedResult<PrelovedAdPaymentSummaryDto>> GetAllPrelovedAdPaymentSummaries(int? pageNumber = 1, int? pageSize = 12, string? search = null,
             string? sortBy = null, CancellationToken cancellationToken = default);
 
-        Task<PaginatedResult<PrelovedAdSummaryDto>> GetAllPrelovedBoAds(string? sortBy = "CreationDate", string? search = null, DateTime? fromDate = null,
-            DateTime? toDate = null, DateTime? publishedFrom = null, DateTime? publishedTo = null, int? status = null, bool? isFeatured = null,
-            bool? isPromoted = null, int pageNumber = 1, int pageSize = 12, CancellationToken cancellationToken = default);
+        Task<ClassifiedsBoPrelovedResponseDto> GetAllPrelovedBoAds(GetAllSearch request, CancellationToken cancellation = default);
 
         Task<PaginatedResult<DealsAdSummaryDto>> GetAllDeals(
                     int? pageNumber = 1,
@@ -88,7 +86,7 @@ namespace QLN.Common.Infrastructure.IService.V2IClassifiedBoService
                     string? search = null,
                     string? sortBy = null,
                     CancellationToken cancellationToken = default);
-
+       
         Task<PaginatedResult<DealsViewSummaryDto>> DealsViewSummary(
             int? pageNumber = 1,
             int? pageSize = 12,

@@ -9,6 +9,7 @@ using QLN.Common.Infrastructure.IService.ICompanyService;
 using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.QLDbContext;
 using QLN.Common.Infrastructure.Utilities;
+using System.Linq;
 using System.Text.RegularExpressions;
 
 namespace QLN.Company.MS.Service
@@ -37,6 +38,7 @@ namespace QLN.Company.MS.Service
                 {
                     duplicateByUserAndVertical = await _context.Companies.AnyAsync(
                         c => c.UserId == uid &&
+                             c.IsActive &&
                              c.Vertical == VerticalType.Services,
                         cancellationToken);
                 }
@@ -45,6 +47,7 @@ namespace QLN.Company.MS.Service
                     duplicateByUserAndVertical = await _context.Companies.AnyAsync(
                         c => c.UserId == uid &&
                              c.Vertical == dto.Vertical &&
+                             c.IsActive &&
                              c.SubVertical == dto.SubVertical,
                         cancellationToken);
                 }
@@ -327,6 +330,8 @@ namespace QLN.Company.MS.Service
                 CRDocument = dto.CRDocument,
                 UploadFeed = dto.UploadFeed,
                 XMLFeed = dto.XMLFeed,
+                StoresURL = dto.StoresURL,
+                ImportType = dto.ImportType,
                 CompanyVerificationStatus = dto.CompanyVerificationStatus,
                 Status = dto.Status,
                 CreatedBy = uid,
@@ -373,7 +378,6 @@ namespace QLN.Company.MS.Service
                 throw;
             }
         }
-
         public async Task<string> UpdateCompany(Common.Infrastructure.Model.Company dto, CancellationToken cancellationToken = default)
         {
             try
@@ -391,6 +395,7 @@ namespace QLN.Company.MS.Service
                     .AnyAsync(c => c.Id != dto.Id &&
                                    c.UserId == dto.UserId &&
                                    c.Vertical == dto.Vertical &&
+                                   c.IsActive &&
                                    c.SubVertical == dto.SubVertical,
                               cancellationToken);
 
@@ -400,6 +405,7 @@ namespace QLN.Company.MS.Service
                 bool phoneEmailUsed = await _context.Companies
                     .AnyAsync(c => c.Id != dto.Id &&
                                    c.UserId != dto.UserId &&
+                                   c.IsActive &&
                                    (c.PhoneNumber == dto.PhoneNumber || c.Email == dto.Email),
                               cancellationToken);
 
@@ -498,6 +504,8 @@ namespace QLN.Company.MS.Service
                         : existing.CRDocument,
                 UploadFeed = dto.UploadFeed,
                 XMLFeed = dto.XMLFeed,
+                StoresURL = dto.StoresURL,
+                ImportType = dto.ImportType,
                 Status = dto.Status,
                 CreatedBy = existing.CreatedBy,
                 CreatedUtc = existing.CreatedUtc,
@@ -632,6 +640,101 @@ namespace QLN.Company.MS.Service
             }
             catch (Exception)
             {
+                throw;
+            }
+        }
+        public async Task<List<CompanyWithSubscriptionDto>> GetCompaniesByToken(
+            string userId,
+            CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var companies = await _context.Companies
+                    .Where(c => c.UserId == userId && c.IsActive)
+                    .ToListAsync(cancellationToken);
+
+                if (!companies.Any())
+                {
+                    return new List<CompanyWithSubscriptionDto>();
+                }
+
+                var companyIds = companies.Select(c => c.Id).ToList();
+
+                var latestSubscriptions = await _dbContext.Subscriptions
+                    .Where(s => companyIds.Contains((Guid)s.CompanyId))
+                    .GroupBy(s => s.CompanyId)
+                    .Select(g => g.OrderByDescending(s => s.StartDate).FirstOrDefault())
+                    .ToListAsync(cancellationToken);
+
+                var result = companies.Select(c =>
+                {
+                    var latestSub = latestSubscriptions.FirstOrDefault(s => s.CompanyId == c.Id);
+
+                    return new CompanyWithSubscriptionDto
+                    {
+                        Id = c.Id,
+                        Vertical = c.Vertical,
+                        SubVertical = c.SubVertical,
+                        Slug = c.Slug,
+                        UserId = c.UserId,
+                        CompanyName = c.CompanyName,
+                        Country = c.Country,
+                        City = c.City,
+                        BranchLocations = c.BranchLocations,
+                        PhoneNumberCountryCode = c.PhoneNumberCountryCode,
+                        WhatsAppCountryCode = c.WhatsAppCountryCode,
+                        PhoneNumber = c.PhoneNumber,
+                        WhatsAppNumber = c.WhatsAppNumber,
+                        Email = c.Email,
+                        WebsiteUrl = c.WebsiteUrl,
+                        FacebookUrl = c.FacebookUrl,
+                        InstagramUrl = c.InstagramUrl,
+                        StartDay = c.StartDay,
+                        EndDay = c.EndDay,
+                        StartHour = c.StartHour,
+                        EndHour = c.EndHour,
+                        UserDesignation = c.UserDesignation,
+                        UserName = c.UserName,
+                        CoverImage1 = c.CoverImage1,
+                        CoverImage2 = c.CoverImage2,
+                        NatureOfBusiness = c.NatureOfBusiness,
+                        IsTherapeuticService = c.IsTherapeuticService,
+                        TherapeuticCertificate = c.TherapeuticCertificate,
+                        LicenseNumber = c.LicenseNumber,
+                        CompanySize = c.CompanySize,
+                        CompanyType = c.CompanyType,
+                        BusinessDescription = c.BusinessDescription,
+                        CRNumber = c.CRNumber,
+                        CompanyLogo = c.CompanyLogo,
+                        CRExpiryDate = c.CRExpiryDate,
+                        AuthorisedContactPersonName = c.AuthorisedContactPersonName,
+                        CRDocument = c.CRDocument,
+                        UploadFeed = c.UploadFeed,
+                        XMLFeed = c.XMLFeed,
+                        CompanyVerificationStatus = c.CompanyVerificationStatus,
+                        Status = c.Status,
+                        CreatedBy = c.CreatedBy,
+                        UpdatedBy = c.UpdatedBy,
+                        CreatedUtc = c.CreatedUtc,
+                        UpdatedUtc = c.UpdatedUtc,
+                        IsBasicProfile = c.IsBasicProfile,
+                        IsActive = c.IsActive,
+                        SubscriptionStartDate = latestSub?.StartDate,
+                        SubscriptionEndDate = latestSub?.EndDate,
+                        ProductName = latestSub?.ProductName
+                    };
+                }).ToList();
+
+                foreach (var company in result)
+                {
+                    Console.WriteLine($"Final Result: CompanyId={company.Id}, CompanyName={company.CompanyName}, ProductName={company.ProductName}");
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
                 throw;
             }
         }
