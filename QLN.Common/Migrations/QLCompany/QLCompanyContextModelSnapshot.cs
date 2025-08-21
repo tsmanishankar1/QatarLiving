@@ -116,6 +116,10 @@ namespace QLN.Common.Migrations.QLCompany
                         .HasMaxLength(150)
                         .HasColumnType("character varying(150)");
 
+                    b.Property<string>("ImportType")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
                     b.Property<string>("InstagramUrl")
                         .HasMaxLength(150)
                         .HasColumnType("character varying(150)");
@@ -162,6 +166,10 @@ namespace QLN.Common.Migrations.QLCompany
 
                     b.Property<int?>("Status")
                         .HasColumnType("integer");
+
+                    b.Property<string>("StoresURL")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
 
                     b.Property<int?>("SubVertical")
                         .HasColumnType("integer");

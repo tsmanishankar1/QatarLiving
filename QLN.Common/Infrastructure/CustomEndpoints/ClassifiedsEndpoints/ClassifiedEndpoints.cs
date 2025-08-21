@@ -999,15 +999,15 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                     );
                 }
             })
-                .WithName("PostItemsAd")
-                .WithTags("Classified")
-                .WithSummary("Post classified items ad using authenticated user")
-                .WithDescription("Takes user ID from JWT token and creates the ad.")
-                .Produces<AdCreatedResponseDto>(StatusCodes.Status201Created)
-                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-                .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
-                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
-                .RequireAuthorization();
+    .WithName("PostItemsAdsaveintent")
+    .WithTags("Classified")
+    .WithSummary("Post classified items ad using authenticated user")
+    .WithDescription("Takes user ID from JWT token and creates the ad.")
+    .Produces<AdCreatedResponseDto>(StatusCodes.Status201Created)
+    .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+    .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
+    .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
+    .RequireAuthorization();
 
             group.MapPost("items/post-by-id", async Task<IResult> (
                 Items dto,
