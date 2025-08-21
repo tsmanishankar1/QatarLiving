@@ -23,9 +23,10 @@ namespace QLN.ContentBO.WebUI.Handlers
             {
                 if (httpContext.Request.Cookies.TryGetValue("qat", out var jwt) && !string.IsNullOrEmpty(jwt))
                 {
-                    // Set the request headers to add the value of the JWT so we can pass it to the backend
+                    var configuration = httpContext.RequestServices.GetService<IConfiguration>();
+                    var baseAddress = configuration?["ServiceUrlPaths:BOAPIBaseUrl"] ?? "https://qlc-bo-dev.qatarliving.com";
                     var refreshClient = _httpClientFactory.CreateClient("auth");
-                    var refreshRequest = new HttpRequestMessage(HttpMethod.Get, "https://qlc-bo-dev.qatarliving.com/auth/sync");
+                    var refreshRequest = new HttpRequestMessage(HttpMethod.Get, $"{baseAddress}/auth/sync");
                     refreshRequest.Headers.Authorization = new AuthenticationHeaderValue(JwtBearerDefaults.AuthenticationScheme, jwt);
                     var refreshResponse = await refreshClient.SendAsync(refreshRequest, cancellationToken);
 
