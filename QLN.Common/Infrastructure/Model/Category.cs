@@ -30,25 +30,40 @@ namespace QLN.Common.Infrastructure.Model
         public SubVertical? SubVertical { get; set; }
 
     }
+
     public class CategoryDto
     {
-        public long Id { get; set; }
+        public long? Id { get; set; }
         public string CategoryName { get; set; } = default!;
         public string Vertical { get; set; } = default!;
-        public long? ParentId { get; set; }
         public string SubVertical { get; set; } = default!;
+        public long? ParentId { get; set; }
         public List<FieldDto>? Fields { get; set; } = new();
-
     }
     public class FieldDto
     {
-        public long Id { get; set; }
+        public long? Id { get; set; }
         public string CategoryName { get; set; } = default!;
-        public string? Type { get; set; } = "text";
+        public string? Type { get; set; }
+        public List<string>? Options { get; set; } = new();
+        public List<FieldDto>? Fields { get; set; } = new();
+    }
 
-        public List<string>? Options { get; set; }
+    public class CategoryDropdown
+    {
+        [Key]
+        public long Id { get; set; }
+
+        public string CategoryName { get; set; } = default!;
+
+        public long? ParentId { get; set; }
+
+        [Column(TypeName = "jsonb")]
         public List<FieldDto>? Fields { get; set; }
 
+        public Vertical Vertical { get; set; }
+        public SubVertical? SubVertical { get; set; }
     }
+
 }
 
