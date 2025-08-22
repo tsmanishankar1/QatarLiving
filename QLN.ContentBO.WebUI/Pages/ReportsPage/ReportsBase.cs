@@ -37,7 +37,7 @@ namespace QLN.ContentBO.WebUI.Pages.ReportsPage
         {
             try
             {
-                await AuthorizedPage();
+                await base.OnInitializedAsync();
                 Navigation.LocationChanged += OnLocationChanged;
                 await SetTypeAndLoadReportsAsync();
             }
