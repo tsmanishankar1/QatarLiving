@@ -244,8 +244,7 @@ namespace QLN.Common.Infrastructure.Utilities
             };
 
         }
-        public static (string uid, string username) ExtractUserAsync(
-   HttpContext httpContext)
+        public static (string uid, string username) ExtractUserAsync(HttpContext httpContext)
         {
             string uid = "";
             string username = "unknown";
