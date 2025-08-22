@@ -1,6 +1,7 @@
 ﻿using Dapr.Client;
 using Microsoft.AspNetCore.Mvc;
 using QLN.Common.DTO_s;
+using QLN.Common.DTO_s.Services;
 using QLN.Common.DTO_s.Subscription;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.CustomException;
@@ -905,10 +906,210 @@ namespace QLN.Backend.API.Service.Services
                 throw;
             }
         }
-
         public Task<string> MigrateServiceAd(Common.Infrastructure.Model.Services dto, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
+        }
+        public async Task<Common.Infrastructure.Model.Services> P2PromoteService(PayToPromote request, string uid, Guid addonId, CancellationToken ct)
+        {
+            try
+            {
+                var quotaAction = ActionTypes.Promote;
+
+                var canUse = await _v2SubscriptionService.ValidateAddonUsageAsync(
+                    addonId,
+                    quotaAction,
+                    1,
+                    ct
+                );
+
+                if (!canUse)
+                {
+                    _logger.LogWarning(
+                        "Addon {AddonId} has insufficient quota for {QuotaAction}.",
+                        addonId,
+                        quotaAction
+                    );
+                    throw new InvalidDataException($"Insufficient addon quota for {quotaAction.ToLower()}.");
+                }
+                var url = $"/api/service/p2promotebyuserid?uid={uid}&addonId={addonId}";
+                var serviceRequest = _dapr.CreateInvokeMethodRequest(
+                    HttpMethod.Post,
+                    ConstantValues.Services.ServiceAppId,
+                    url
+                );
+                serviceRequest.Content = new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json");
+
+                var response = await _dapr.InvokeMethodWithResponseAsync(serviceRequest, ct);
+
+                if (response.StatusCode == HttpStatusCode.OK)
+                {
+                    var json = await response.Content.ReadAsStringAsync(ct);
+                    var serviceDto = JsonSerializer.Deserialize<Common.Infrastructure.Model.Services>(json, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+
+                    if (serviceDto is null)
+                        throw new InvalidDataException("Invalid data returned from service.");
+
+                    if (serviceDto.SubscriptionId != Guid.Empty)
+                    {
+                        var success = await _v2SubscriptionService.RecordAddonUsageAsync(
+                            addonId,
+                            quotaAction,
+                            1,
+                            ct
+                        );
+
+                        if (!success)
+                        {
+                            _logger.LogWarning(
+                                "Failed to record subscription usage for Addon {AddonId}",
+                                serviceDto.SubscriptionId
+                            );
+                        }
+                    }
+
+                    return serviceDto;
+                }
+                else if (response.StatusCode == HttpStatusCode.NotFound)
+                {
+                    throw new KeyNotFoundException("Service not found");
+                }
+                else
+                {
+                    var errorJson = await response.Content.ReadAsStringAsync(ct);
+                    throw new InvalidDataException(errorJson);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error promoting service");
+                throw;
+            }
+        }
+        public async Task<Common.Infrastructure.Model.Services> P2FeatureService(PayToFeature request, string uid, Guid addonId, CancellationToken ct)
+        {
+            try
+            {
+                var quotaAction = ActionTypes.Feature;
+
+                var canUse = await _v2SubscriptionService.ValidateAddonUsageAsync(
+                    addonId,
+                    quotaAction,
+                    1,
+                    ct
+                );
+
+                if (!canUse)
+                {
+                    _logger.LogWarning(
+                        "Addon {AddonId} has insufficient quota for {QuotaAction}.",
+                        addonId,
+                        quotaAction
+                    );
+                    throw new InvalidDataException($"Insufficient addon quota for {quotaAction.ToLower()}.");
+                }
+                var url = $"/api/service/p2featurebyuserid?uid={uid}&addonId={addonId}";
+                var serviceRequest = _dapr.CreateInvokeMethodRequest(
+                    HttpMethod.Post,
+                    ConstantValues.Services.ServiceAppId,
+                    url
+                );
+                serviceRequest.Content = new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json");
+
+                var response = await _dapr.InvokeMethodWithResponseAsync(serviceRequest, ct);
+
+                if (response.StatusCode == HttpStatusCode.OK)
+                {
+                    var json = await response.Content.ReadAsStringAsync(ct);
+                    var serviceDto = JsonSerializer.Deserialize<Common.Infrastructure.Model.Services>(json, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+
+                    if (serviceDto is null)
+                        throw new InvalidDataException("Invalid data returned from service.");
+
+                    if (serviceDto.SubscriptionId != Guid.Empty)
+                    {
+                        var success = await _v2SubscriptionService.RecordAddonUsageAsync(
+                            addonId,
+                            quotaAction,
+                            1,
+                            ct
+                        );
+
+                        if (!success)
+                        {
+                            _logger.LogWarning(
+                                "Failed to record subscription usage for addon {AddonId}",
+                                serviceDto.SubscriptionId
+                            );
+                        }
+                    }
+
+                    return serviceDto;
+                }
+                else if (response.StatusCode == HttpStatusCode.NotFound)
+                {
+                    throw new KeyNotFoundException("Service not found");
+                }
+                else
+                {
+                    var errorJson = await response.Content.ReadAsStringAsync(ct);
+                    throw new InvalidDataException(errorJson);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error featuring service");
+                throw;
+            }
+        }
+        public async Task<Common.Infrastructure.Model.Services> P2PublishService(PayToPublish request, string uid, Guid subscriptionId, CancellationToken ct)
+        {
+            try
+            {
+                var url = $"/api/service/p2publishbyuserid?uid={uid}&subscriptionId={subscriptionId}";
+                var serviceRequest = _dapr.CreateInvokeMethodRequest(
+                    HttpMethod.Post,
+                    ConstantValues.Services.ServiceAppId,
+                    url
+                );
+                serviceRequest.Content = new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json");
+
+                var response = await _dapr.InvokeMethodWithResponseAsync(serviceRequest, ct);
+
+                if (response.StatusCode == HttpStatusCode.OK)
+                {
+                    var json = await response.Content.ReadAsStringAsync(ct);
+                    var serviceDto = JsonSerializer.Deserialize<Common.Infrastructure.Model.Services>(json, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+
+                    if (serviceDto is null)
+                        throw new InvalidDataException("Invalid data returned from service.");
+
+                    return serviceDto;
+                }
+                else if (response.StatusCode == HttpStatusCode.NotFound)
+                {
+                    throw new KeyNotFoundException("Service not found");
+                }
+                else
+                {
+                    var errorJson = await response.Content.ReadAsStringAsync(ct);
+                    throw new InvalidDataException(errorJson);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error publishing service");
+                throw;
+            }
         }
     }
 }
