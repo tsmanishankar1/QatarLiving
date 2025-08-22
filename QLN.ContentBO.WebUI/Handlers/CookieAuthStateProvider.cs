@@ -51,7 +51,7 @@ namespace QLN.ContentBO.WebUI.Handlers
                     ValidateIssuer = true,
                     ValidateAudience = true,
                     ValidateLifetime = false,
-                    ValidateIssuerSigningKey = false,
+                    ValidateIssuerSigningKey = true,
                     IssuerSigningKey = issuerSigningKey,
                     ValidIssuer = jwtIssuer,
                     ValidAudience = jwtAudience,

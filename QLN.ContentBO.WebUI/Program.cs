@@ -36,9 +36,9 @@ try
 
     builder.Services.AddHttpContextAccessor();
 
-    builder.Services.AddScoped<CustomAuthStateProvider>();
+    builder.Services.AddScoped<CookieAuthStateProvider>();
 
-    builder.Services.AddScoped<AuthenticationStateProvider>(provider => provider.GetRequiredService<CustomAuthStateProvider>());
+    builder.Services.AddScoped<AuthenticationStateProvider>(provider => provider.GetRequiredService<CookieAuthStateProvider>());
 
     builder.Services.AddCascadingAuthenticationState();
 
@@ -47,7 +47,7 @@ try
         options.AddPolicy("AdminOnly", policy => policy.RequireRole("business_account")); // just a placeholder role
     });
 
-    builder.Services.AddTransient<CustomHttpMessageHandler>();
+    builder.Services.AddTransient<JwtTokenHeaderHandler>();
 
     builder.Services.Configure<NavigationPath>(
 
@@ -59,84 +59,84 @@ try
 
         client.BaseAddress = new Uri(BOAPIBaseUrl);
 
-    }).AddHttpMessageHandler<CustomHttpMessageHandler>();
+    }).AddHttpMessageHandler<JwtTokenHeaderHandler>();
 
     builder.Services.AddHttpClient<IEventsService, EventsService>(client =>
     {
         client.BaseAddress = new Uri(BOAPIBaseUrl);
-    }).AddHttpMessageHandler<CustomHttpMessageHandler>();
+    }).AddHttpMessageHandler<JwtTokenHeaderHandler>();
 
     builder.Services.AddHttpClient<ICommunityService, CommunityService>(client =>
     {
         client.BaseAddress = new Uri(BOAPIBaseUrl);
-    }).AddHttpMessageHandler<CustomHttpMessageHandler>();
+    }).AddHttpMessageHandler<JwtTokenHeaderHandler>();
 
     builder.Services.AddHttpClient<IReportService, ReportService>(client =>
     {
         client.BaseAddress = new Uri(BOAPIBaseUrl);
-    }).AddHttpMessageHandler<CustomHttpMessageHandler>();
+    }).AddHttpMessageHandler<JwtTokenHeaderHandler>();
 
 
     builder.Services.AddHttpClient<IDailyLivingService, DailyService>(client =>
     {
         client.BaseAddress = new Uri(BOAPIBaseUrl);
-    }).AddHttpMessageHandler<CustomHttpMessageHandler>();
+    }).AddHttpMessageHandler<JwtTokenHeaderHandler>();
 
     builder.Services.AddHttpClient<IBannerService, BannerService>(client =>
     {
         client.BaseAddress = new Uri(BOAPIBaseUrl);
-    }).AddHttpMessageHandler<CustomHttpMessageHandler>();
+    }).AddHttpMessageHandler<JwtTokenHeaderHandler>();
     builder.Services.AddHttpClient<IServiceBOService, ServicesBOService>(client =>
     {
         client.BaseAddress = new Uri(BOAPIBaseUrl);
-    }).AddHttpMessageHandler<CustomHttpMessageHandler>();
+    }).AddHttpMessageHandler<JwtTokenHeaderHandler>();
 
     builder.Services.AddHttpClient<IClassifiedService, ClassifiedService>(client =>
     {
         client.BaseAddress = new Uri(BOAPIBaseUrl);
-    }).AddHttpMessageHandler<CustomHttpMessageHandler>();
+    }).AddHttpMessageHandler<JwtTokenHeaderHandler>();
 
 
     builder.Services.AddHttpClient<IFileUploadService, FileUploadService>(client =>
     {
         client.BaseAddress = new Uri(BOAPIBaseUrl);
-    }).AddHttpMessageHandler<CustomHttpMessageHandler>();
+    }).AddHttpMessageHandler<JwtTokenHeaderHandler>();
 
     builder.Services.AddHttpClient<IDrupalUserService, DrupalUserService>(client =>
      {
          client.BaseAddress = new Uri(BOAPIBaseUrl);
-     }).AddHttpMessageHandler<CustomHttpMessageHandler>();
+     }).AddHttpMessageHandler<JwtTokenHeaderHandler>();
 
 
     builder.Services.AddHttpClient<IStoresService, StoresService>(client =>
     {
         client.BaseAddress = new Uri(BOAPIBaseUrl);
-    }).AddHttpMessageHandler<CustomHttpMessageHandler>();
+    }).AddHttpMessageHandler<JwtTokenHeaderHandler>();
 
     builder.Services.AddHttpClient<IPrelovedService, PrelovedService>(client =>
     {
         client.BaseAddress = new Uri(BOAPIBaseUrl);
-    }).AddHttpMessageHandler<CustomHttpMessageHandler>();
+    }).AddHttpMessageHandler<JwtTokenHeaderHandler>();
 
     builder.Services.AddHttpClient<IItemService, ItemService>(client =>
     {
         client.BaseAddress = new Uri(BOAPIBaseUrl);
-    }).AddHttpMessageHandler<CustomHttpMessageHandler>();
+    }).AddHttpMessageHandler<JwtTokenHeaderHandler>();
 
     builder.Services.AddHttpClient<ICollectiblesService, CollectiblesService>(client =>
     {
         client.BaseAddress = new Uri(BOAPIBaseUrl);
-    }).AddHttpMessageHandler<CustomHttpMessageHandler>();
+    }).AddHttpMessageHandler<JwtTokenHeaderHandler>();
 
     builder.Services.AddHttpClient<IDealsService, DealsService>(client =>
     {
         client.BaseAddress = new Uri(BOAPIBaseUrl);
-    }).AddHttpMessageHandler<CustomHttpMessageHandler>();
+    }).AddHttpMessageHandler<JwtTokenHeaderHandler>();
 
     builder.Services.AddHttpClient<ITokenService, TokenService>(client =>
     {
         client.BaseAddress = new Uri(BOAPIBaseUrl);
-    }).AddHttpMessageHandler<CustomHttpMessageHandler>();
+    }).AddHttpMessageHandler<JwtTokenHeaderHandler>();
 
     var app = builder.Build();
 

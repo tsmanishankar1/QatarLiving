@@ -1,7 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
-using QLN.ContentBO.WebUI.Models;
 using System.Net.Http.Headers;
-using System.Text.Json;
 
 namespace QLN.ContentBO.WebUI.Handlers
 {
