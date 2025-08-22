@@ -1,5 +1,7 @@
-﻿using Microsoft.AspNetCore.Components.Authorization;
+﻿using Azure.Core;
+using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.IdentityModel.Tokens;
+using QLN.ContentBO.WebUI.Models;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net.Http.Headers;
 using System.Security.Claims;
@@ -51,6 +53,8 @@ namespace QLN.ContentBO.WebUI.Handlers
         private readonly IConfiguration _configuration;
         private readonly HttpClient _httpClient;
 
+        private string accessToken;
+
         public CustomAuthStateProvider(IHttpContextAccessor httpContextAccessor, IConfiguration configuration, HttpClient httpClient)
         {
             _httpContextAccessor = httpContextAccessor;
@@ -58,14 +62,14 @@ namespace QLN.ContentBO.WebUI.Handlers
             _httpClient = httpClient;
         }
 
-        public override Task<AuthenticationState> GetAuthenticationStateAsync()
+        public async override Task<AuthenticationState> GetAuthenticationStateAsync()
         {
             var httpContext = _httpContextAccessor.HttpContext;
             ClaimsPrincipal principal = new(new ClaimsIdentity());
 
             if (httpContext == null)
             {
-                return Task.FromResult(new AuthenticationState(principal));
+                return new AuthenticationState(principal);
             }
 
             if (httpContext.Request.Cookies.TryGetValue("qat_v2", out var jwt) && !string.IsNullOrEmpty(jwt))
@@ -91,6 +95,7 @@ namespace QLN.ContentBO.WebUI.Handlers
 
                     if (validatedToken.ValidTo > DateTime.UtcNow)
                     {
+
                         var jwtToken = tokenHandler.ReadJwtToken(jwt);
 
                         var identity = (ClaimsIdentity)validatedPrincipal.Identity!;
@@ -189,13 +194,51 @@ namespace QLN.ContentBO.WebUI.Handlers
 
                         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", jwt);
                     }
+
+                    // If access token expired, try refresh
+                    if (validatedToken.ValidTo <= DateTime.UtcNow)
+                    {
+                        if (httpContext.Request.Cookies.TryGetValue("qat_v2_refresh", out var refreshToken) && !string.IsNullOrEmpty(refreshToken))
+                        {
+                           
+                        }
+                        else
+                        {
+                            // Call backend to refresh tokens
+                            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", jwt);
+                            var refreshResponse = await _httpClient.PostAsync("/api/auth/refresh", null);
+                            if (refreshResponse.IsSuccessStatusCode)
+                            {
+                                var json = await refreshResponse.Content.ReadAsStringAsync();
+                                var result = JsonSerializer.Deserialize<TokenV2Response>(json);
+                                // Set new cookies
+                                httpContext.Response.Cookies.Append("qat_v2", result.AccessToken, new CookieOptions { HttpOnly = true, Secure = true });
+                                httpContext.Response.Cookies.Append("qat_v2_refresh", result.RefreshToken, new CookieOptions
+                                {
+                                    HttpOnly = true,
+                                    Secure = true,
+                                    SameSite = SameSiteMode.Strict,
+                                    Expires = DateTimeOffset.UtcNow.AddHours(2)
+
+                                });
+                                accessToken = result.AccessToken;
+                                // Re-validate with new access token
+                                validatedPrincipal = tokenHandler.ValidateToken(accessToken, validationParameters, out validatedToken);
+                            }
+                            else
+                            {
+                                // Refresh failed, logout
+                                return new AuthenticationState(principal);
+                            }
+                        }
+                    }
                 }
                 catch
                 {
                     principal = new ClaimsPrincipal(new ClaimsIdentity());
                 }
             }
-            return Task.FromResult(new AuthenticationState(principal));
+            return new AuthenticationState(principal);
         }
     }
 }
