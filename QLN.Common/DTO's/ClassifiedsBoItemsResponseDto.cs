@@ -20,7 +20,7 @@ namespace QLN.Common.DTO_s
     public class ClassifiedsBoCollectiblesResponseDto
     {
         public long? TotalCount { get; set; }
-        public List<ClassifiedsCollectibles>? ClassifiedsCollectibles { get; set; }
+        public List<Collectibles>? ClassifiedsCollectibles { get; set; }
     }
     public class ClassifiedsBoDealsResponseDto
     {

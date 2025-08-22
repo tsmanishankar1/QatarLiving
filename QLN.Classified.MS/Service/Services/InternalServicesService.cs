@@ -1049,10 +1049,6 @@ namespace QLN.Classified.MS.Service.Services
 
                 if (subscription == null)
                     throw new InvalidDataException("Active subscription not found for this service.");
-                serviceAd.PromotedExpiryDate = effectiveExpiryDate;
-                serviceAd.FeaturedExpiryDate = effectiveExpiryDate;
-                serviceAd.IsFeatured = true;
-                serviceAd.IsPromoted = true;
                 serviceAd.Status = ServiceStatus.Published;
                 serviceAd.PublishedDate = DateTime.UtcNow;
             }
@@ -1060,10 +1056,6 @@ namespace QLN.Classified.MS.Service.Services
             {
                 if (serviceAd.Status == ServiceStatus.Unpublished)
                     throw new InvalidDataException("Service is already unpublished.");
-                serviceAd.IsPromoted = false;
-                serviceAd.IsFeatured = false;
-                serviceAd.PromotedExpiryDate = null;
-                serviceAd.FeaturedExpiryDate = null;
                 serviceAd.Status = ServiceStatus.Unpublished;
                 serviceAd.PublishedDate = null;
             }
@@ -1154,10 +1146,6 @@ namespace QLN.Classified.MS.Service.Services
                         case BulkModerationAction.Publish:
                             if (ad.Status == ServiceStatus.Unpublished)
                             {
-                                ad.IsPromoted = true;
-                                ad.PromotedExpiryDate = effectiveExpiryDate;
-                                ad.IsFeatured = true;
-                                ad.FeaturedExpiryDate = effectiveExpiryDate;
                                 ad.Status = ServiceStatus.Published;
                                 ad.PublishedDate = DateTime.UtcNow;
                                 shouldUpdate = true;
@@ -1168,10 +1156,6 @@ namespace QLN.Classified.MS.Service.Services
                         case BulkModerationAction.Unpublish:
                             if (ad.Status == ServiceStatus.Published)
                             {
-                                ad.IsPromoted = false;
-                                ad.PromotedExpiryDate = null;
-                                ad.IsFeatured = false;
-                                ad.FeaturedExpiryDate = null;
                                 ad.Status = ServiceStatus.Unpublished;
                                 ad.PublishedDate = null;
                                 shouldUpdate = true;
@@ -1432,6 +1416,7 @@ namespace QLN.Classified.MS.Service.Services
         public async Task<List<CategoryAdCountDto>> GetCategoryAdCount(CancellationToken ct = default)
         {
             return await _dbContext.Services
+                .Where(s => s.Status == ServiceStatus.Published && s.IsActive)
                 .GroupBy(s => s.CategoryId)
                 .Select(g => new CategoryAdCountDto
                 {

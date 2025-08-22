@@ -4,6 +4,7 @@ using QLN.ContentBO.WebUI.Components;
 using QLN.ContentBO.WebUI.Components.ConfirmationDialog;
 using QLN.ContentBO.WebUI.Components.RejectVerificationDialog;
 using QLN.ContentBO.WebUI.Components.ToggleTabs;
+using QLN.ContentBO.WebUI.Pages.Classified.Collectibles.EditAd;
 using QLN.ContentBO.WebUI.Enums;
 using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Models;
@@ -19,6 +20,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewListing
         [Parameter] public bool IsLoading { get; set; }
         [Inject] public ILogger<ViewListingTableBase> Logger { get; set; }
         [Parameter] public List<ClassifiedItemViewListing> Items { get; set; } = [];
+        [Parameter] public CollectiblesEditAdPost AdModel { get; set; } = new();
         [Parameter] public int TotalCount { get; set; }
         [Parameter]
         public EventCallback<string> OnTabChange { get; set; }
@@ -173,9 +175,63 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewListing
             }
         }
 
-        protected void OnPreview(ClassifiedItemViewListing item)
+        protected async Task OnPreview(ClassifiedItemViewListing item)
         {
-            Console.WriteLine($"Preview clicked: {item.Title}");
+            if (item == null)
+                throw new ArgumentNullException(nameof(item));
+
+            AdModel = new CollectiblesEditAdPost
+            {
+                Id = item.Id,
+                CategoryId = item.CategoryId,
+                L1CategoryId = item.L1CategoryId,
+                L2CategoryId = item.L2CategoryId,
+                SubVertical = 3,
+                AdType = item.AdType,
+                Title = item.Title,
+                Description = item.Description,
+                Price = (int)item.Price,
+                Location = item.Location,
+                Longitude = item.Longitude,
+                Status = item.Status,
+                IsFeatured = item.IsFeatured,
+                IsPromoted = item.IsPromoted,
+                FeaturedExpiryDate = item.FeaturedExpiryDate,
+                PromotedExpiryDate = item.PromotedExpiryDate,
+                CreatedBy = item.CreatedBy,
+                CreatedAt = item.CreatedAt,
+                UserId = item.UserId,
+                UserName = item.UserName,
+                Images = item.Images?.Select((img, index) => new AdImage
+                {
+                    AdImageFileName = img.AdImageFileNames,
+                    Url = img.Url,
+                    Order = img.Order
+                }).ToList() ?? new List<AdImage>
+        {
+            new AdImage { Order = 0 },
+            new AdImage { Order = 1 },
+            new AdImage { Order = 2 }
+        }
+
+            };
+
+            await OpenPreviewDialog();
+
+        }
+        protected async Task OpenPreviewDialog()
+        {
+            var parameters = new DialogParameters { { "AdModel", AdModel } };
+
+            var options = new DialogOptions
+            {
+                FullScreen = true,
+                CloseButton = true,
+                MaxWidth = MaxWidth.ExtraLarge,
+            };
+
+            var dialog = await DialogService.ShowAsync<PreviewAd>("Ad Preview", parameters, options);
+            await dialog.Result;
         }
 
         protected Task ApproveSelected() => PerformBulkAction(AdBulkActionType.Approve);

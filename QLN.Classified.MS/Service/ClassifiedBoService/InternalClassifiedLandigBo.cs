@@ -2175,8 +2175,6 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
         }
 
 
-
-
         public async Task<PaginatedResult<DealsAdSummaryDto>> GetAllDeals(
      int? pageNumber = 1,
      int? pageSize = 12,
@@ -2936,9 +2934,6 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
             return transactions.OrderByDescending(t => ParseDate(t.CreationDate)).ToList();
 
         }
-
-
-
    
         public async Task<ClassifiedsBoItemsResponseDto> GetAllItems(GetAllSearch request, CancellationToken ct)
         {
@@ -3226,7 +3221,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                 _logger.LogInformation("Retrieved {Count} collectibles from DB", pagedEntities.Count);
 
                 
-                var result = pagedEntities.Select(c => new ClassifiedsCollectibles
+                var result = pagedEntities.Select(c => new Collectibles
                 {
                     Id = c.Id,
                     Title = c.Title,

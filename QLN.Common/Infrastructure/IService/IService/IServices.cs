@@ -26,7 +26,7 @@ namespace QLN.Common.Infrastructure.IService.IService
         Task<Services> RefreshService(RefreshServiceRequest request, string? uid, string? subscriptionId, CancellationToken ct);
         Task<Services> PublishService(PublishServiceRequest request, string? uid, string? subscriptionId, CancellationToken ct);
         Task<string> MigrateServiceAd(Services dto, CancellationToken cancellationToken = default);
-        Task<BulkAdActionResponseitems> ModerateBulkService(BulkModerationRequest request, string? userId, string subscriptionId, DateTime? expiryDate, CancellationToken cancellationToken = default);
+        Task<BulkAdActionResponseitems> ModerateBulkService(BulkModerationRequest request, string userId, string subscriptionId, DateTime? expiryDate, CancellationToken cancellationToken = default);
         Task<SubscriptionBudgetDto> GetSubscriptionBudgetsAsyncBySubVertical(Guid subscriptionIdFromToken, Vertical verticalId, SubVertical? subVerticalId, CancellationToken cancellationToken = default);
         Task<List<CategoryAdCountDto>> GetCategoryAdCount(CancellationToken ct = default);
     }

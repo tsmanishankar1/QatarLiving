@@ -1556,8 +1556,6 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
         }
 
 
-
-
         public async Task<PaginatedResult<DealsAdSummaryDto>> GetAllDeals(
             int? pageNumber = 1,
             int? pageSize = 12,

@@ -173,12 +173,12 @@ namespace QLN.Backend.API.Service.ClassifiedBoService
         }
 
         public async Task<string> GetProcessStoresCSV(string Url, string CsvPlatform,string? CompanyId, string? SubscriptionId,
-           string? UserId, CancellationToken cancellationToken = default)
+           string? UserId,string Domain, CancellationToken cancellationToken = default)
         {
             try
             {
                 using var cts = new CancellationTokenSource(TimeSpan.FromMinutes(10));
-                var queryParams = $"?Url={Url}&CsvPlatform={CsvPlatform}&CompanyId={CompanyId}&SubscriptionId={SubscriptionId}&UserId={UserId}";
+                var queryParams = $"?Url={Url}&CsvPlatform={CsvPlatform}&CompanyId={CompanyId}&SubscriptionId={SubscriptionId}&UserId={UserId}&Domain={Domain}";
                 var response = await _dapr.InvokeMethodAsync<string>(
                     HttpMethod.Get,
                     SERVICE_APP_ID,

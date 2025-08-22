@@ -274,7 +274,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                 try
                 {
                     var (extractedUid, extractedUserName, subscriptionId, expiryDate) =
-                        await UserTokenHelper.ExtractUserAndSubscriptionDetailsAsync(httpContext, vertical: (int)Vertical.Services);
+                        await UserTokenHelper.ExtractUserAndSubscriptionDetailsAsync(httpContext, vertical: (int)Vertical.Services, serviceAdType: (int)dto.AdType);
                     uid = extractedUid;
                     userName = extractedUserName;
                     subscriptionId = subscriptionId;
@@ -1506,7 +1506,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                ProblemHttpResult
            >> (
                BulkModerationRequest req,
-               string? userId,
+               string userId,
                string subscriptionId,
                DateTime? expiryDate,
                HttpContext httpContext,
