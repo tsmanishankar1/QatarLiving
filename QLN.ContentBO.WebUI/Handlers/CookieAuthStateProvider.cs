@@ -4,6 +4,7 @@ using QLN.ContentBO.WebUI.Models;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net.Http.Headers;
 using System.Security.Claims;
+using System.Text;
 using System.Text.Json;
 
 namespace QLN.ContentBO.WebUI.Handlers
@@ -36,6 +37,15 @@ namespace QLN.ContentBO.WebUI.Handlers
             if (httpContext.Request.Cookies.TryGetValue("qat", out var jwt) && !string.IsNullOrEmpty(jwt))
             {
                 //Console.WriteLine("Cookie found: {0}", jwt);
+
+                // Get the JWT configuration
+                var jwtIssuer = _configuration["Jwt:Issuer"];
+                var jwtAudience = _configuration["Jwt:Audience"];
+                var jwtSecretKey = _configuration["Jwt:Key"];
+
+                var keyBytes = Encoding.UTF8.GetBytes(jwtSecretKey.Trim());
+                var issuerSigningKey = new SymmetricSecurityKey(keyBytes);
+
                 var tokenHandler = new JwtSecurityTokenHandler();
                 var validationParameters = new TokenValidationParameters
                 {
@@ -43,13 +53,9 @@ namespace QLN.ContentBO.WebUI.Handlers
                     ValidateAudience = true,
                     ValidateLifetime = false,
                     ValidateIssuerSigningKey = false,
-                    SignatureValidator = (token, parameters) =>
-                    {
-                        // Bypass signature validation for demo purposes
-                        return new JwtSecurityToken(token);
-                    },
-                    ValidIssuer = _configuration["Jwt:Issuer"],
-                    ValidAudience = _configuration["Jwt:Audience"],
+                    IssuerSigningKey = issuerSigningKey,
+                    ValidIssuer = jwtIssuer,
+                    ValidAudience = jwtAudience,
                     RoleClaimType = ClaimTypes.Role,
                     NameClaimType = ClaimTypes.Name
                 };
@@ -106,7 +112,7 @@ namespace QLN.ContentBO.WebUI.Handlers
                                             foreach (var perm in user.Permissions)
                                                 identity.AddClaim(new Claim("permission", perm));
                                         }
-                                        if (user.Roles != null && user.Roles.Any())
+                                        if (user.Roles != null && user.Roles.Count != 0)
                                         {
                                             foreach (var role in user.Roles)
                                                 identity.AddClaim(new Claim(ClaimTypes.Role, role));
