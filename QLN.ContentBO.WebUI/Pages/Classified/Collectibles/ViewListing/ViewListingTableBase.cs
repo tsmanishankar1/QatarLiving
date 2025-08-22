@@ -3,11 +3,13 @@ using QLN.ContentBO.WebUI.Components.ToggleTabs;
 using QLN.ContentBO.WebUI.Models;
 using QLN.ContentBO.WebUI.Components.ConfirmationDialog;
 using QLN.ContentBO.WebUI.Components.RejectVerificationDialog;
+using QLN.ContentBO.WebUI.Pages.Classified.Collectibles.EditAd;
 using QLN.ContentBO.WebUI.Interfaces;
 using MudBlazor;
 using QLN.ContentBO.WebUI.Enums;
 using System.Text.Json;
 using QLN.ContentBO.WebUI.Components;
+using System.Threading.Tasks;
 
 namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.ViewListing
 {
@@ -24,6 +26,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.ViewListing
         [Parameter] public EventCallback<int> OnPageSizeChanged { get; set; }
         [Parameter] public EventCallback OnAddClicked { get; set; }
         protected HashSet<CollectibleItem> SelectedListings { get; set; } = [];
+        [Parameter] public CollectiblesEditAdPost AdModel { get; set; } = new();
         [Inject] public IDialogService DialogService { get; set; }
         protected int currentPage = 1;
         protected int pageSize = 12;
@@ -126,6 +129,20 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.ViewListing
 
             var dialog = await DialogService.ShowAsync<RejectVerificationDialog>("", parameters, options);
         }
+        protected async Task OpenPreviewDialog()
+        {
+            var parameters = new DialogParameters { { "AdModel", AdModel } };
+
+            var options = new DialogOptions
+            {
+                FullScreen = true,
+                CloseButton = true,
+                MaxWidth = MaxWidth.ExtraLarge,
+            };
+
+            var dialog = await DialogService.ShowAsync<PreviewAd>("Ad Preview", parameters, options);
+            await dialog.Result;
+        }
 
         private async void OpenRemoveReasonDialog()
         {
@@ -156,9 +173,70 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.ViewListing
             }
         }
 
-        protected void OnPreview(CollectibleItem item)
+        protected async Task OnPreview(CollectibleItem item)
         {
-            Console.WriteLine($"Preview clicked: {item.Title}");
+            if (item == null)
+                throw new ArgumentNullException(nameof(item));
+
+            AdModel = new CollectiblesEditAdPost
+            {
+                Id = item.Id,
+                CategoryId = item.CategoryId,
+                L1CategoryId = item.L1CategoryId,
+                L2CategoryId = item.L2CategoryId,
+                SubVertical = item.SubVertical,
+                AdType = item.AdType,
+                Title = item.Title,
+                Description = item.Description,
+                Price = decimal.ToInt32(item.Price),
+                YearOrEra = item.YearOrEra,
+                ContactNumberCountryCode = item.ContactNumberCountryCode,
+                ContactNumber = item.ContactNumber,
+                WhatsappNumberCountryCode = item.WhatsappNumberCountryCode,
+                WhatsappNumber = item.WhatsAppNumber,
+                ContactEmail = item.ContactEmail,
+                Location = item.Location,
+                Zone = item.Zone,
+                StreetNumber = item.StreetNumber,
+                BuildingNumber = item.BuildingNumber,
+                Latitude = item.Latitude,
+                Longitude = item.Longitude,
+                Brand = item.Brand,
+                Model = item.Model,
+                Condition = item.Condition,
+                Color = item.Color,
+                HasWarranty = item.HasWarranty,
+                HasAuthenticityCertificate = item.HasAuthenticityCertificate,
+                AuthenticityCertificateName = item.AuthenticityCertificateName,
+                AuthenticityCertificateUrl = item.AuthenticityCertificateUrl,
+                IsHandmade = item.IsHandmade,
+                Status = item.Status,
+                IsFeatured = item.IsFeatured,
+                IsPromoted = item.IsPromoted,
+                FeaturedExpiryDate = item.FeaturedExpiryDate,
+                PromotedExpiryDate = item.PromotedExpiryDate,
+                CreatedBy = item.CreatedBy,
+                CreatedAt = item.CreatedAt,
+                UserId = item.UserId,
+                UserName = item.UserName,
+                Attributes = item.Attributes as Dictionary<string, string> ?? new Dictionary<string, string>(),
+                Images = item.Images?.Select((img, index) => new AdImage
+                {
+                    AdImageFileName = img.AdImageFileNames,
+                    Url = img.Url,
+                    Order = img.Order
+                }).ToList() ?? new List<AdImage>
+        {
+            new AdImage { Order = 0 },
+            new AdImage { Order = 1 },
+            new AdImage { Order = 2 }
+        }
+
+            };
+
+            await OpenPreviewDialog();
+
+
         }
 
         protected Task ApproveSelected() => PerformBulkAction(AdBulkActionType.Approve);
