@@ -228,7 +228,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Modal
                 var payload = new
                 {
                     vertical = 3,
-                    subVertical = 5,
+                    subVertical = 3,
                     pageNumber = 1,
                     pageSize = 50
                 };

@@ -129,7 +129,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewListing
             {
                 ["Image URL"] = x.Images?.FirstOrDefault()?.Url ?? "-",
                 ["Ad ID"] = x.Id,
-                ["Ad Type"] = x.AdType,
+                ["Ad Type"] = x.AdTypeName,
                 ["Ad Title"] = x.Title,
                 ["User ID"] = x.UserId,
                 ["User Name"] = x.UserName,
