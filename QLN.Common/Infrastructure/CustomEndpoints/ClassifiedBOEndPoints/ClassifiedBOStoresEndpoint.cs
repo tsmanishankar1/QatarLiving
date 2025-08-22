@@ -346,6 +346,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
         string CsvPlatform,
         string CompanyId,
         string SubscriptionId,
+        string Domain,
         [FromServices] IClassifiedStoresBOService service,
         HttpContext context,
         CancellationToken cancellationToken
@@ -369,7 +370,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 return TypedResults.Forbid();
             }
 
-            var result = await service.GetProcessStoresCSV(Url, CsvPlatform,CompanyId, SubscriptionId, userId?.ToString(), cancellationToken);
+            var result = await service.GetProcessStoresCSV(Url, CsvPlatform,CompanyId, SubscriptionId, userId?.ToString(), Domain, cancellationToken);
 
             if (result?.ToString() == "created")
             {
@@ -409,6 +410,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
        string CompanyId,
        string SubscriptionId,
        string UserId,
+       string Domain,
        [FromServices] IClassifiedStoresBOService service,
        HttpContext context,
        CancellationToken cancellationToken
@@ -416,7 +418,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
    {
        try
        {
-           var result = await service.GetProcessStoresCSV(Url, CsvPlatform, CompanyId, SubscriptionId, UserId, cancellationToken);
+           var result = await service.GetProcessStoresCSV(Url, CsvPlatform, CompanyId, SubscriptionId, UserId, Domain, cancellationToken);
            return TypedResults.Ok(result);
 
        }

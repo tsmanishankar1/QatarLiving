@@ -26,7 +26,7 @@ namespace QLN.ContentBO.WebUI.Handlers
                 if (httpContext.Request.Cookies.TryGetValue("qat_v2", out var qatJWT) && !string.IsNullOrEmpty(qatJWT))
                 {
                     var configuration = httpContext.RequestServices.GetService<IConfiguration>();
-                    var baseAddress = configuration?["ServiceUrlPaths:BOAPIBaseUrl"] ?? "https://qlc-bo-dev.qatarliving.com";
+                    var baseAddress = configuration?["ServiceUrlPaths:ContentBOAPI"] ?? "https://qlc-bo-dev.qatarliving.com";
                     var refreshClient = _httpClientFactory.CreateClient("auth");
                     var refreshRequest = new HttpRequestMessage(HttpMethod.Get, $"{baseAddress}/auth/sync");
                     refreshRequest.Headers.Authorization = new AuthenticationHeaderValue(JwtBearerDefaults.AuthenticationScheme, qatJWT);
