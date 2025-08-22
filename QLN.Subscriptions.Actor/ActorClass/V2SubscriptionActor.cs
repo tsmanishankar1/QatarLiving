@@ -14,6 +14,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
+using static QLN.Common.DTO_s.Subscription.SubscriptionQuota;
 
 namespace QLN.Subscriptions.Actor.ActorClass
 {
@@ -870,6 +871,7 @@ namespace QLN.Subscriptions.Actor.ActorClass
             {
                 Id = dbSubscription.SubscriptionId,
                 ProductCode = dbSubscription.ProductCode,
+                ProductType = dbSubscription.ProductType,
                 ProductName = dbSubscription.ProductName,
                 UserId = dbSubscription.UserId,
                 CompanyId = dbSubscription.CompanyId,
@@ -1042,5 +1044,368 @@ namespace QLN.Subscriptions.Actor.ActorClass
                 throw;
             }
         }
+        #region FREE Ads Specific Methods
+
+        /// <summary>
+        /// Validate FREE ads usage for specific category
+        /// </summary>
+        public async Task<bool> ValidateFreeAdsUsageAsync(string category, string? l1Category, string? l2Category, int requestedAmount, CancellationToken cancellationToken = default)
+        {
+            // ALWAYS sync from database first to catch manual changes
+            var data = await SyncFromDatabaseAsync(force: true, cancellationToken);
+            if (data == null)
+            {
+                _logger.LogWarning("Cannot validate free ads usage: subscription data not found for {Id}", this.Id.GetId());
+                return false;
+            }
+
+            // Check if subscription is active
+            if (data.StatusId != SubscriptionStatus.Active || data.EndDate <= DateTime.UtcNow)
+            {
+                _logger.LogWarning("Cannot validate free ads usage: subscription {Id} is not active (Status: {Status}) or expired (EndDate: {EndDate})",
+                    data.Id, data.StatusId, data.EndDate);
+                return false;
+            }
+            _logger.LogWarning("product type = {Type}", data.ProductType);
+            // Check if this is a FREE product type
+            if (data.ProductType != ProductType.FREE)
+            {
+                _logger.LogWarning("Cannot validate free ads usage: subscription {Id} is not a FREE product type", data.Id);
+                return false;
+            }
+
+            // Find the specific category quota
+            var categoryUsage = data.Quota.CategoryQuotas.FirstOrDefault(c =>
+                c.Category == category &&
+                c.L1Category == l1Category &&
+                c.L2Category == l2Category);
+
+            if (categoryUsage == null)
+            {
+                _logger.LogWarning("Category quota not found for {Category}/{L1}/{L2} in subscription {Id}",
+                    category, l1Category, l2Category, data.Id);
+                return false;
+            }
+
+            // Validate against category quota (for FREE products, we use AdsUsed/AdsAllowed)
+            var isValid = categoryUsage.AdsUsed + requestedAmount <= categoryUsage.AdsAllowed;
+
+            _logger.LogInformation("Free ads usage validation for subscription {Id}: category={Category}/{L1}/{L2}, amount={Amount}, valid={IsValid}, used={Used}, allowed={Allowed}",
+                data.Id, category, l1Category, l2Category, requestedAmount, isValid, categoryUsage.AdsUsed, categoryUsage.AdsAllowed);
+
+            return isValid;
+        }
+
+        /// <summary>
+        /// Record FREE ads usage for specific category
+        /// </summary>
+        public async Task<bool> RecordFreeAdsUsageAsync(string category, string? l1Category, string? l2Category, int amount, CancellationToken cancellationToken = default)
+        {
+            using var scope = _scopeFactory.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<QLSubscriptionContext>();
+
+            using var transaction = await context.Database.BeginTransactionAsync(cancellationToken);
+            try
+            {
+                // ALWAYS sync from database first to catch manual changes
+                var data = await SyncFromDatabaseAsync(force: true, cancellationToken);
+                if (data == null)
+                {
+                    _logger.LogWarning("Cannot record free ads usage: subscription data not found for {Id}", this.Id.GetId());
+                    return false;
+                }
+
+                if (data.StatusId != SubscriptionStatus.Active || data.EndDate <= DateTime.UtcNow)
+                {
+                    _logger.LogWarning("Cannot record free ads usage: subscription {Id} is not active (Status: {Status}) or expired (EndDate: {EndDate})",
+                        data.Id, data.StatusId, data.EndDate);
+                    return false;
+                }
+
+                if (data.ProductType != ProductType.FREE)
+                {
+                    _logger.LogWarning("Cannot record free ads usage: subscription {Id} is not a FREE product type", data.Id);
+                    return false;
+                }
+
+                // Find the specific category quota
+                var categoryUsage = data.Quota.CategoryQuotas.FirstOrDefault(c =>
+                    c.Category == category &&
+                    c.L1Category == l1Category &&
+                    c.L2Category == l2Category);
+
+                if (categoryUsage == null)
+                {
+                    _logger.LogWarning("Category quota not found for {Category}/{L1}/{L2} in subscription {Id}",
+                        category, l1Category, l2Category, data.Id);
+                    return false;
+                }
+
+                // Validate before recording
+                if (categoryUsage.AdsUsed + amount > categoryUsage.AdsAllowed)
+                {
+                    _logger.LogWarning("Free ads quota exceeded for category {Category}/{L1}/{L2} in subscription {Id}. Used: {Used}, Requested: {Amount}, Allowed: {Allowed}",
+                        category, l1Category, l2Category, data.Id, categoryUsage.AdsUsed, amount, categoryUsage.AdsAllowed);
+                    return false;
+                }
+
+                // Update database using interpolated SQL - this avoids the format string issue
+                var subscriptionId = Guid.Parse(this.Id.GetId());
+                var updatedAt = DateTime.UtcNow;
+                var l1CategoryValue = l1Category ?? "";
+                var l2CategoryValue = l2Category ?? "";
+
+                var rowsAffected = await context.Database.ExecuteSqlInterpolatedAsync($@"
+            UPDATE ""Subscriptions"" 
+            SET ""Quota"" = jsonb_set(
+                jsonb_set(""Quota"", '{{""AdsUsed""}}', (COALESCE((""Quota""->>'AdsUsed')::int, 0) + {amount})::text::jsonb),
+                '{{""CategoryQuotas""}}', 
+                (
+                    SELECT jsonb_agg(
+                        CASE 
+                            WHEN category_item->>'Category' = {category} 
+                                AND COALESCE(category_item->>'L1Category', '') = COALESCE({l1CategoryValue}, '')
+                                AND COALESCE(category_item->>'L2Category', '') = COALESCE({l2CategoryValue}, '')
+                            THEN jsonb_set(category_item, '{{""AdsUsed""}}', ((category_item->>'AdsUsed')::int + {amount})::text::jsonb)
+                            ELSE category_item
+                        END
+                    )
+                    FROM jsonb_array_elements(""Quota""->'CategoryQuotas') AS category_item
+                )
+            ),
+            ""UpdatedAt"" = {updatedAt}
+            WHERE ""SubscriptionId"" = {subscriptionId}");
+
+                if (rowsAffected == 0)
+                {
+                    _logger.LogWarning("No rows updated when recording usage for subscription {Id}", subscriptionId);
+                    return false;
+                }
+
+                // Record usage in actor state
+                categoryUsage.AdsUsed += amount;
+                data.Quota.AdsUsed += amount;
+
+                // Update actor state
+                await FastSetDataAsync(data, cancellationToken);
+                await transaction.CommitAsync(cancellationToken);
+
+                // Clear cache after update
+                ClearCache();
+
+                _logger.LogInformation("Free ads usage recorded successfully for subscription {Id}: category={Category}/{L1}/{L2}, amount={Amount}, remaining={Remaining}",
+                    data.Id, category, l1Category, l2Category, amount, categoryUsage.AdsAllowed - categoryUsage.AdsUsed);
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                _logger.LogError(ex, "Error recording free ads usage for subscription {Id}", this.Id.GetId());
+                return false;
+            }
+        }                          /// </summary>
+        public async Task<List<FreeAdsCategorySummary>> GetFreeAdsUsageSummaryAsync(CancellationToken cancellationToken = default)
+        {
+            // ALWAYS sync from database to get latest data
+            var data = await SyncFromDatabaseAsync(force: true, cancellationToken);
+            if (data == null || data.ProductType != ProductType.FREE)
+            {
+                return new List<FreeAdsCategorySummary>();
+            }
+
+            return data.Quota.CategoryQuotas.Select(c => new FreeAdsCategorySummary
+            {
+                CategoryPath = GetCategoryPath(c.Category, c.L1Category, c.L2Category),
+                FreeAdsAllowed = c.AdsAllowed,
+                FreeAdsUsed = c.AdsUsed,
+                FreeAdsRemaining = Math.Max(0, c.AdsAllowed - c.AdsUsed),
+                UsagePercentage = c.AdsAllowed > 0 ? (double)c.AdsUsed / c.AdsAllowed * 100 : 0
+            }).ToList();
+        }
+
+        /// <summary>
+        /// Get remaining FREE ads quota for specific category
+        /// </summary>
+        public async Task<int> GetRemainingFreeAdsQuotaAsync(string category, string? l1Category, string? l2Category, CancellationToken cancellationToken = default)
+        {
+            var data = await SyncFromDatabaseAsync(force: true, cancellationToken);
+            if (data == null || data.ProductType != ProductType.FREE)
+            {
+                return 0;
+            }
+
+            var categoryUsage = data.Quota.CategoryQuotas.FirstOrDefault(c =>
+                c.Category == category &&
+                c.L1Category == l1Category &&
+                c.L2Category == l2Category);
+
+            return categoryUsage != null ? Math.Max(0, categoryUsage.AdsAllowed - categoryUsage.AdsUsed) : 0;
+        }
+
+        private string GetCategoryPath(string category, string? l1Category, string? l2Category)
+        {
+            if (!string.IsNullOrEmpty(l2Category))
+                return $"{category} > {l1Category} > {l2Category}";
+            if (!string.IsNullOrEmpty(l1Category))
+                return $"{category} > {l1Category}";
+            return category;
+        }
+
+        #endregion
+
+        #region Enhanced CreateSubscription for FREE Products
+
+        /// <summary>
+        /// Enhanced CreateSubscriptionAsync that properly handles FREE products with category quotas
+        /// </summary>
+        public async Task<bool> CreateFreeAdsSubscriptionAsync(V2SubscriptionPurchaseRequestDto request, CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(request);
+
+            _logger.LogInformation("Creating FREE ads subscription for user {UserId} with product {ProductCode}",
+                request.UserId, request.ProductCode);
+
+            using var scope = _scopeFactory.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<QLSubscriptionContext>();
+            var productService = scope.ServiceProvider.GetRequiredService<IProductService>();
+
+            using var transaction = await context.Database.BeginTransactionAsync(cancellationToken);
+            try
+            {
+                var subscriptionId = Guid.Parse(this.Id.GetId());
+
+                // Validate product
+                var product = await context.Products
+                    .FirstOrDefaultAsync(p => p.ProductCode == request.ProductCode && p.IsActive, cancellationToken);
+
+                if (product == null)
+                    throw new InvalidOperationException($"Product with code {request.ProductCode} not found or inactive");
+
+                if (product.ProductType != ProductType.FREE)
+                    throw new InvalidOperationException($"Product {request.ProductCode} is not a FREE product type");
+
+                // Build FREE ads subscription quota
+                var freeAdsQuota = BuildFreeAdsQuotaFromProduct(product);
+
+                // Create database subscription
+                var dbSubscription = new Subscription
+                {
+                    SubscriptionId = subscriptionId,
+                    ProductCode = product.ProductCode,
+                    ProductName = product.ProductName,
+                    ProductType = ProductType.FREE,
+                    UserId = request.UserId,
+                    AdId = request.AdId,
+                    CompanyId = request.CompanyId,
+                    PaymentId = request.PaymentId,
+                    Vertical = product.Vertical,
+                    SubVertical = product.SubVertical,
+                    Quota = freeAdsQuota,
+                    StartDate = DateTime.UtcNow,
+                    EndDate = product.Constraints?.Duration.HasValue == true
+                        ? DateTime.UtcNow.Add(product.Constraints.Duration.Value)
+                        : DateTime.UtcNow.AddYears(1),
+                    Status = SubscriptionStatus.Active,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+
+                context.Subscriptions.Add(dbSubscription);
+                await context.SaveChangesAsync(cancellationToken);
+
+                // Create actor state
+                var v2Dto = new V2SubscriptionDto
+                {
+                    Id = subscriptionId,
+                    ProductCode = product.ProductCode,
+                    ProductName = product.ProductName,
+                    ProductType = ProductType.FREE,
+                    UserId = request.UserId,
+                    CompanyId = request.CompanyId,
+                    PaymentId = request.PaymentId,
+                    Vertical = product.Vertical,
+                    SubVertical = product.SubVertical,
+                    Price = 0, 
+                    Currency = product.Currency,
+                    Quota = freeAdsQuota,
+                    StartDate = dbSubscription.StartDate,
+                    EndDate = dbSubscription.EndDate,
+                    StatusId = SubscriptionStatus.Active,
+                    lastUpdated = DateTime.UtcNow,
+                    Version = "V2"
+                };
+
+                await FastSetDataAsync(v2Dto, cancellationToken);
+
+                // Commit transaction
+                await transaction.CommitAsync(cancellationToken);
+
+                // Clear cache to ensure fresh reads
+                ClearCache();
+
+                _logger.LogInformation("FREE ads subscription created successfully: {Id} for user: {UserId} with {CategoryCount} category quotas",
+                    subscriptionId, request.UserId, freeAdsQuota.CategoryQuotas.Count);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                _logger.LogError(ex, "Failed to create FREE ads subscription for user {UserId}", request.UserId);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Build SubscriptionQuota specifically for FREE ads products
+        /// </summary>
+        private SubscriptionQuota BuildFreeAdsQuotaFromProduct(Product product)
+        {
+            var constraints = product.Constraints ?? new ProductConstraints();
+
+            var quota = new SubscriptionQuota
+            {
+                Vertical = product.Vertical.ToString(),
+                Scope = constraints.Scope ?? "Category-Based-Free",
+
+                // Global quotas - sum of all category quotas for FREE products
+                TotalAdsAllowed = constraints.CategoryQuotas?.Sum(c => c.AdsBudget) ?? 0,
+                TotalPromotionsAllowed = 0, // No promotions for FREE
+                TotalFeaturesAllowed = 0, // No features for FREE
+                DailyRefreshesAllowed = 0, // No refreshes for FREE
+                RefreshesPerAdAllowed = 0,
+                SocialMediaPostsAllowed = 0,
+
+                // Permissions for FREE products
+                CanPublishAds = true, // Free to publish
+                CanPromoteAds = false, // Must pay to promote
+                CanFeatureAds = false, // Must pay to feature
+                CanRefreshAds = false, // No refresh for FREE
+                CanPostSocialMedia = false,
+
+                RefreshInterval = "Not Available", // No refresh for FREE
+                RefreshIntervalHours = 0
+            };
+
+            // Add category-specific quotas for FREE products
+            if (constraints.CategoryQuotas != null)
+            {
+                foreach (var categoryQuota in constraints.CategoryQuotas)
+                {
+                    quota.CategoryQuotas.Add(new CategoryQuotaUsage
+                    {
+                        Category = categoryQuota.Category,
+                        L1Category = categoryQuota.L1Category,
+                        L2Category = categoryQuota.L2Category,
+                        AdsAllowed = categoryQuota.AdsBudget,
+                        AdsUsed = 0
+                    });
+                }
+            }
+
+            return quota;
+        }
+
+        #endregion
     }
 }
