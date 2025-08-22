@@ -19,20 +19,37 @@ namespace QLN.Common.Infrastructure.QLDbContext
         public DbSet<UserAddOn> UserAddOns { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<Product>().OwnsOne(p => p.Constraints, owned =>
+            modelBuilder.Entity<Product>(entity =>
             {
-                owned.ToJson();
+                entity.OwnsOne(p => p.Constraints, constraintsBuilder =>
+                {
+                    constraintsBuilder.ToJson();
+
+                    constraintsBuilder.OwnsMany(c => c.CategoryQuotas, categoryQuotaBuilder =>
+                    {
+                        categoryQuotaBuilder.Property(cq => cq.Category).IsRequired();
+                        categoryQuotaBuilder.Property(cq => cq.AdsBudget).IsRequired();
+                    });
+                });
             });
 
             modelBuilder.Entity<Subscription>().OwnsOne(s => s.Quota, qb =>
             {
                 qb.ToJson();
+                qb.OwnsMany(q => q.CategoryQuotas, cq =>
+                {
+                    cq.ToJson();
+                });
                 qb.OwnsOne(q => q.SocialMedia, sm => { sm.ToJson(); });
             });
 
             modelBuilder.Entity<UserAddOn>().OwnsOne(a => a.Quota, qb =>
             {
                 qb.ToJson();
+                qb.OwnsMany(q => q.CategoryQuotas, cq =>
+                {
+                    cq.ToJson();
+                });
                 qb.OwnsOne(q => q.SocialMedia, sm => { sm.ToJson(); });
             });
 

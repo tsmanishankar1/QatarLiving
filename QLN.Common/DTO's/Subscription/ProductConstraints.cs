@@ -19,7 +19,18 @@ namespace QLN.Common.DTO_s.Subscription
         public bool? PayToPublish { get; set; } // Used for pay2publish
         public bool? PayToPromote { get; set; }
         public bool? PayToFeature { get; set; }
-        public string? Remarks { get; set; } 
+        public string? Remarks { get; set; }
+        public List<CategoryQuota> CategoryQuotas { get; set; } = new List<CategoryQuota>();
+    }
+    public class CategoryQuota
+    {
+        public string Category { get; set; } = string.Empty; // e.g., "Electronics"
+        public string? L1Category { get; set; } // e.g., "Home appliances"
+        public string? L2Category { get; set; } // e.g., "ACs"
+        public int AdsBudget { get; set; } // Ads allowed in this category/subcategory
+        public int FeaturedBudget { get; set; } = 0; // Featured ads in this category
+        public int PromotedBudget { get; set; } = 0; // Promoted ads in this category
+        public int RefreshBudget { get; set; } = 0; // Refresh budget for this category
     }
 
 }
