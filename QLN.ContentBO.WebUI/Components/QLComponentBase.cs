@@ -11,7 +11,7 @@ namespace QLN.ContentBO.WebUI.Components
 {
     public class QLComponentBase : ComponentBase
     {
-        [Inject] public CookieAuthStateProvider CookieAuthenticationStateProvider { get; set; } = default!;
+        [Inject] public CustomAuthStateProvider CookieAuthenticationStateProvider { get; set; } = default!;
         [Inject] public NavigationManager NavManager { get; set; }
         [Inject] public ISnackbar Snackbar { get; set; } = default!;
         [Inject] public IOptions<NavigationPath> NavigationPath { get; set; } = default!;
@@ -31,6 +31,7 @@ namespace QLN.ContentBO.WebUI.Components
 
         public string ClassifiedsBlobContainerName => NavigationPath.Value.ClassifiedsBlobContainerName;
 
+        [Obsolete("We have Token based Admin Policy in place.")]
         protected async Task AuthorizedPage()
         {
             try

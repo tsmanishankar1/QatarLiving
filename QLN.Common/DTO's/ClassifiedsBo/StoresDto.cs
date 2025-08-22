@@ -118,6 +118,8 @@ namespace QLN.Common.DTO_s.ClassifiedsBo
         public string Currency { get; set; } = string.Empty;
         public string ProductSummary { get; set; } = string.Empty;
         public string ProductDescription { get; set; } = string.Empty;
+        public string ProductCategory { get; set; } 
+        public string ProductUrl { get; set; } 
         public List<string> Features { get; set; } = new();
         public List<string> Images { get; set; } = new();
        

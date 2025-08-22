@@ -175,7 +175,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
             if (dto.SubVertical != SubVertical.Items)
                 throw new InvalidOperationException("This endpoint only supports posting ads under the 'Items' subvertical.");
-           
+
 
             try
             {               
@@ -199,9 +199,9 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 if (createdDto == null)
                     throw new InvalidOperationException("Failed to deserialize ad creation response.");
 
-                return createdDto;              
+                return createdDto;
             }
-            catch(DaprServiceException)
+            catch (DaprServiceException)
             {
                 throw;
             }
@@ -354,7 +354,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-        public async Task<AdCreatedResponseDto> CreateClassifiedPrelovedAd(Preloveds dto, SaveIntent intent, CancellationToken cancellationToken = default)
+        public async Task<AdCreatedResponseDto> CreateClassifiedPrelovedAd(Preloveds dto, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(dto);
             if (dto.UserId == null) throw new ArgumentException("UserId is required.");
@@ -368,7 +368,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
             try
             {
                 _log.LogTrace($"Calling internal service with CertificateUrl: {dto.AuthenticityCertificateUrl} and {dto.Images.Count} images");
-                var requestUrl = $"api/classifieds/preloved/post-by-id?intent={(int)intent}";
+                var requestUrl = $"api/classifieds/preloved/post-by-id";
                 var payload = JsonSerializer.Serialize(dto);
                 var req = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, SERVICE_APP_ID, requestUrl);
                 req.Content = new StringContent(payload, Encoding.UTF8, "application/json");
@@ -438,7 +438,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-        public async Task<AdCreatedResponseDto> CreateClassifiedDealsAd(Deals dto, SaveIntent intent, CancellationToken cancellationToken = default)
+        public async Task<AdCreatedResponseDto> CreateClassifiedDealsAd(Deals dto, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(dto);
 
@@ -451,7 +451,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
             try
             {               
-                var requestUrl = $"api/classifieds/deals/post-by-id?intent={(int)intent}";
+                var requestUrl = $"api/classifieds/deals/post-by-id";
                 var payload = JsonSerializer.Serialize(dto);
                 var req = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, SERVICE_APP_ID, requestUrl);
                 req.Content = new StringContent(payload, Encoding.UTF8, "application/json");

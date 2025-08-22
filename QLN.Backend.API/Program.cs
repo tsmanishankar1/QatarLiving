@@ -22,6 +22,7 @@ using QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.D365Endpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.FatoraEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.FileUploadService;
+using QLN.Common.Infrastructure.CustomEndpoints.InstagramService;
 using QLN.Common.Infrastructure.CustomEndpoints.PayToPublishEndpoint;
 using QLN.Common.Infrastructure.CustomEndpoints.ProductEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.ServiceBOEndpoint;
@@ -38,6 +39,7 @@ using QLN.Common.Infrastructure.QLDbContext;
 using QLN.Common.Infrastructure.ServiceConfiguration;
 using QLN.Common.Infrastructure.TokenProvider;
 using System.IdentityModel.Tokens.Jwt;
+using System.Linq;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
@@ -126,7 +128,8 @@ builder.Services.Configure<DataProtectionTokenProviderOptions>(opt =>
 {
     opt.TokenLifespan = TimeSpan.FromDays(1);
 });
-
+builder.Services.Configure<TokenLifetimeOptions>(
+    builder.Configuration.GetSection("TokenLifetimes"));
 #region Identity password options
 builder.Services.Configure<IdentityOptions>(options =>
 {
@@ -319,6 +322,32 @@ builder.Services.AddAuthorization(options =>
                 return false;
             }
         }));
+
+    options.AddPolicy("administrator", policy =>
+        policy.RequireAssertion(context =>
+        {
+            var userClaim = context.User.Claims.Where(c => c.Type == "role").ToList();
+            if (userClaim == null) return false;
+
+            try
+            {
+                //var userJson = JsonDocument.Parse(userClaim);
+                //var root = userJson.RootElement;
+
+                //if (root.TryGetProperty("role", out var rolesProp) &&
+                //    rolesProp.EnumerateArray().Any(role => role.GetString() == "administrator"))
+                //{
+                //    return true;
+                //}
+                //return false;
+                return context.User.Claims
+                .Any(c => c.Type == "role" && c.Value == "administrator");
+            }
+            catch
+            {
+                return false;
+            }
+        }));
 });
 
 
@@ -434,6 +463,8 @@ var paymentGroup = app.MapGroup("/api/pay");
 paymentGroup.MapD365Endpoints();
 var wishlistgroup = app.MapGroup("/api/wishlist");
 wishlistgroup.MapWishlist();
+var instapost = app.MapGroup("/api/insta");
+instapost.MapInstagramEndpoints();
 var companyProfileGroup = app.MapGroup("/api/companyprofile");
 companyProfileGroup.MapCompanyProfile()
     .RequireAuthorization();
@@ -478,7 +509,7 @@ var bannerPostGroup  = app.MapGroup("/api/v2/banner");
 bannerPostGroup.MapBannerPostEndpoints();
 var ClassifiedBo = app.MapGroup("/api/v2/classifiedbo");
 ClassifiedBo.MapClassifiedboEndpoints()
-    .RequireAuthorization();
+    .RequireAuthorization("administrator");
 
 var ServicesBo = app.MapGroup("/api/servicebo");
 ServicesBo.MapAllServiceBoConfiguration();

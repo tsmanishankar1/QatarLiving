@@ -142,7 +142,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.P2p
                         PropertyNameCaseInsensitive = true
                     });
 
-                    Listings = data?.Items ?? [];
+                    Listings = data?.Records ?? [];
                     TotalCount = data?.TotalCount ?? 0;
                 }
 
@@ -375,10 +375,10 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.P2p
                     ["Whatsapp"] = string.IsNullOrWhiteSpace(x.Whatsapp) ? "-" : x.Whatsapp,
                     ["Amount"] = (x.Amount != 0) ? x.Amount.ToString("0.00") : "-",
                     ["Status"] = string.IsNullOrWhiteSpace(x.Status) ? "-" : x.Status,
-                    ["Created Date"] = x.CreateDate.ToString("dd-MM-yyyy") ?? "-",
-                    ["Published Date"] = (x.PublishedDate != default) ? x.PublishedDate.ToString("dd-MM-yyyy") : "-",
-                    ["Start Date"] = (x.StartDate != default) ? x.StartDate.ToString("dd-MM-yyyy hh:mmtt") : "-",
-                    ["End Date"] = (x.EndDate != default) ? x.EndDate.ToString("dd-MM-yyyy hh:mmtt") : "-",
+                    ["Created Date"] = x.CreationDate ?? "-",
+                    ["Published Date"] = (x.PublishedDate != default) ? x.PublishedDate : "-",
+                    ["Start Date"] = (x.StartDate != default) ? x.StartDate : "-",
+                    ["End Date"] = (x.EndDate != default) ? x.EndDate : "-",
                     ["Views"] = x.Views,
                     ["WhatsApp Click"] = x.WhatsAppLeads,
                     ["Phone Click"] = x.PhoneLeads

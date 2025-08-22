@@ -126,6 +126,12 @@ namespace QLN.Common.Infrastructure.Model
         [MaxLength(200)]
         public string? Slug { get; set; }
 
+        [MaxLength(200)]
+        public string? StoresURL { get; set; }
+
+        [MaxLength(200)]
+        public string? ImportType { get; set; }
+
         public bool IsActive { get; set; } = true;
 
         [Required, MaxLength(100)]
