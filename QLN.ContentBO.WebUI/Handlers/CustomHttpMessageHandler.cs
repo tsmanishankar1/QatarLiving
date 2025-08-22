@@ -23,29 +23,11 @@ namespace QLN.ContentBO.WebUI.Handlers
             var httpContext = _httpContextAccessor.HttpContext;
             if (httpContext != null)
             {
-                if (httpContext.Request.Cookies.TryGetValue("qat_v2", out var qatJWT) && !string.IsNullOrEmpty(qatJWT))
+                // Try to get the cookie value from the incoming request
+                if (httpContext.Request.Cookies.TryGetValue("qat_v2", out var jwt) && !string.IsNullOrEmpty(jwt))
                 {
-                    var configuration = httpContext.RequestServices.GetService<IConfiguration>();
-                    var baseAddress = configuration?["ServiceUrlPaths:ContentBOAPI"] ?? "https://qlc-bo-dev.qatarliving.com";
-                    var refreshClient = _httpClientFactory.CreateClient("auth");
-                    var refreshRequest = new HttpRequestMessage(HttpMethod.Get, $"{baseAddress}/auth/sync");
-                    refreshRequest.Headers.Authorization = new AuthenticationHeaderValue(JwtBearerDefaults.AuthenticationScheme, qatJWT);
-                    var refreshResponse = await refreshClient.SendAsync(refreshRequest, cancellationToken);
-
-                    if (refreshResponse.IsSuccessStatusCode)
-                    {
-                        // If the refresh is successful, we can update the JWT in the request headers
-
-                        // Read the response content if needed
-                        var json = await refreshResponse.Content.ReadAsStringAsync(cancellationToken);
-                        var result = JsonSerializer.Deserialize<TokenV2Response>(json, new JsonSerializerOptions
-                        {
-                            PropertyNameCaseInsensitive = true
-                        });
-
-                        request.Headers.Authorization = new AuthenticationHeaderValue(JwtBearerDefaults.AuthenticationScheme, result?.AccessToken ?? qatJWT);
-
-                    }
+                    // set the request headers to add the value of the jwt so we can pass it to the backend
+                    request.Headers.Authorization = new AuthenticationHeaderValue(JwtBearerDefaults.AuthenticationScheme, jwt);
                 }
                 else
                 {
