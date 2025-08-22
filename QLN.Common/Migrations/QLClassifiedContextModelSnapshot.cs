@@ -417,7 +417,7 @@ namespace QLN.Common.Migrations
 
                     b.ToTable("StoresDashboardSummaryItems");
 
-                    b.ToSqlQuery("\r\n        SELECT \r\n            subs.\"SubscriptionId\",\r\n            subs.\"CompanyId\",\r\n            subs.\"ProductName\",\r\n            comp.\"CompanyName\",\r\n            COUNT(prod.\"StoreProductId\") as \"ProductCount\"\r\n        FROM public.\"Subscriptions\" AS subs\r\n        LEFT JOIN public.\"Companies\" AS comp\r\n            ON subs.\"CompanyId\" = comp.\"Id\"\r\n        LEFT JOIN public.\"StoreFlyer\" AS fly\r\n            ON subs.\"SubscriptionId\" = fly.\"SubscriptionId\"\r\n            AND subs.\"CompanyId\" = fly.\"CompanyId\"\r\n        LEFT JOIN public.\"StoreProduct\" AS prod\r\n            ON fly.\"StoreFlyersId\" = prod.\"FlyerId\"\r\n        WHERE subs.\"Vertical\" = 3\r\n          AND subs.\"SubVertical\" = 3\r\n        GROUP BY subs.\"SubscriptionId\",\r\n                 subs.\"CompanyId\",\r\n                 subs.\"ProductName\",\r\n                 comp.\"CompanyName\"\r\n    ");
+                    b.ToSqlQuery("\r\n        SELECT \r\n            subs.\"SubscriptionId\",\r\n            subs.\"CompanyId\",\r\n            subs.\"ProductName\",\r\n            comp.\"CompanyName\",\r\n            COUNT(prod.\"StoreProductId\") as \"ProductCount\"\r\n        FROM public.\"Subscriptions\" AS subs\r\n        INNER JOIN public.\"Companies\" AS comp\r\n            ON subs.\"CompanyId\" = comp.\"Id\"\r\n        INNER JOIN public.\"StoreFlyer\" AS fly\r\n            ON subs.\"SubscriptionId\" = fly.\"SubscriptionId\"\r\n            AND subs.\"CompanyId\" = fly.\"CompanyId\"\r\n        INNER JOIN public.\"StoreProduct\" AS prod\r\n            ON fly.\"StoreFlyersId\" = prod.\"FlyerId\"\r\n        WHERE subs.\"Vertical\" = 3\r\n          AND subs.\"SubVertical\" = 3\r\n        GROUP BY subs.\"SubscriptionId\",\r\n                 subs.\"CompanyId\",\r\n                 subs.\"ProductName\",\r\n                 comp.\"CompanyName\"\r\n    ");
                 });
 
             modelBuilder.Entity("QLN.Common.Infrastructure.Model.Category", b =>
@@ -550,6 +550,9 @@ namespace QLN.Common.Migrations
                         .HasColumnType("boolean");
 
                     b.Property<bool>("IsPromoted")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool?>("IsSold")
                         .HasColumnType("boolean");
 
                     b.Property<string>("L1Category")
@@ -777,6 +780,9 @@ namespace QLN.Common.Migrations
                         .HasColumnType("boolean");
 
                     b.Property<bool>("IsPromoted")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool?>("IsSold")
                         .HasColumnType("boolean");
 
                     b.Property<LocationsDtos>("Locations")
@@ -1061,6 +1067,9 @@ namespace QLN.Common.Migrations
                     b.Property<bool>("IsRefreshed")
                         .HasColumnType("boolean");
 
+                    b.Property<bool?>("IsSold")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("L1Category")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
@@ -1260,6 +1269,9 @@ namespace QLN.Common.Migrations
                         .HasColumnType("boolean");
 
                     b.Property<bool>("IsRefreshed")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool?>("IsSold")
                         .HasColumnType("boolean");
 
                     b.Property<string>("L1Category")

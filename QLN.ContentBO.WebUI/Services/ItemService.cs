@@ -60,33 +60,16 @@ namespace QLN.ContentBO.WebUI.Services
         {
             try
             {
-                var queryParams = new Dictionary<string, string?>
+                var requestUrl = "/api/v2/classifiedbo/items/transactions";
+                var json = JsonSerializer.Serialize(itemTransactionRequest);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+                var request = new HttpRequestMessage(HttpMethod.Post, requestUrl)
                 {
-                    { "subVertical", itemTransactionRequest.SubVertical.ToString() },
-                    { "status", itemTransactionRequest.Status },
-                    { "createdDate", itemTransactionRequest.DateCreated },
-                    { "publishedDate", itemTransactionRequest.DatePublished },
-                    { "dateStart", itemTransactionRequest.DateStart },
-                    { "dateEnd", itemTransactionRequest.DateEnd },
-                    { "page", itemTransactionRequest.PageNumber.ToString() },
-                    { "pageSize", itemTransactionRequest.PageSize.ToString() },
-                    { "search", itemTransactionRequest.SearchText },
-                    { "productType", itemTransactionRequest.ProductType },
-                    { "paymentMethod", itemTransactionRequest.PaymentMethod },
-                    { "sortBy", itemTransactionRequest.SortBy },
-                    { "sortOrder", itemTransactionRequest.SortOrder }
+                    Content = content
                 };
-
-                var queryString = string.Join("&",
-                    queryParams
-                        .Where(kvp => !string.IsNullOrWhiteSpace(kvp.Value))
-                        .Select(kvp => $"{kvp.Key}={Uri.EscapeDataString(kvp.Value!)}"));
-
-                var requestUrl = $"/api/v2/classifiedbo/items/transactions?{queryString}";
-
-                var request = new HttpRequestMessage(HttpMethod.Get, requestUrl);
-
-                return await _httpClient.SendAsync(request);
+                var response = await _httpClient.SendAsync(request);
+                var responseBody = await response.Content.ReadAsStringAsync();
+                return response;
             }
             catch (Exception ex)
             {

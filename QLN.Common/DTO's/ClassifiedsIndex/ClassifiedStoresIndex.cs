@@ -74,6 +74,7 @@ namespace QLN.Common.DTO_s
 
         [SimpleField(IsFilterable = true, IsSortable = true)]
         public bool IsActive { get; set; }
+        
         [SimpleField(IsFilterable = true, IsSortable = true)]
         public string ProductCategory { get; set; }
         [SimpleField(IsFilterable = true, IsSortable = true)]

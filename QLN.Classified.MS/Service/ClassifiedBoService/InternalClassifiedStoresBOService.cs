@@ -3,6 +3,7 @@ using Google.Api;
 using Google.Api.Gax.ResourceNames;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
+using Npgsql;
 using QLN.Classified.MS.Utilities;
 using QLN.Common.DTO_s;
 using QLN.Common.DTO_s.ClassifiedsBo;
@@ -353,7 +354,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
         }
 
         public async Task<string> GetProcessStoresCSV(string Url, string CsvPlatform, string? CompanyId, string? SubscriptionId,
-           string? UserId, CancellationToken cancellationToken = default)
+           string? UserId,string Domain, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -413,6 +414,14 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
 
                     if (company != null)
                     {
+                                            await _context.Database.ExecuteSqlRawAsync(
+                        "CALL updatecompanystoresurl(@companyId, @storesUrl, @importType);",
+                        new[]
+                        {
+                            new NpgsqlParameter("companyId", company.Id),
+                            new NpgsqlParameter("storesUrl", Domain),
+                            new NpgsqlParameter("importType", CsvPlatform)
+                        });
                         storeIndexDto.CompanyId = company.Id.ToString();
                         storeIndexDto.CompanyName = company.CompanyName;
                         storeIndexDto.ImageUrl = company.CompanyLogo;
@@ -461,10 +470,11 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
     .Select(img => img.Images)
     .ToList(),
                         Currency = storeProducts.Currency.ToString(),
-                        Features = storeProducts.Features.Select(x=>x.Features).ToList(),
+                        Features = storeProducts.Features.Select(x => x.Features).ToList(),
                         StoreSlug = storeIndexDto.StoreSlug,
-                        ProductSlug = storeProducts.Slug
-
+                        ProductSlug = storeProducts.Slug,
+                        ProductCategory = storeProducts.Category,
+                        ProductUrl = Domain + "Products/" + storeProducts.ProductBarcode
 
                     };
                         storesIndexList.Add(classifiedStoresIndex);
@@ -526,8 +536,8 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
              
                 var indexDoc = new ClassifiedStoresIndex
                 {
-                     ContactNumber=dto.ContactNumber,
-                     Email=dto.Email,
+                    ContactNumber=dto.ContactNumber,
+                    Email=dto.Email,
                     ProductId = dto.ProductId,
                     CompanyId = dto.CompanyId,
                     SubscriptionId = dto.SubscriptionId,
@@ -546,7 +556,9 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                     Images = dto.Images,
                     IsActive = dto.IsActive,
                     StoreSlug=dto.StoreSlug,
-                    ProductSlug=dto.ProductSlug
+                    ProductSlug=dto.ProductSlug,
+                     ProductCategory=dto.ProductCategory,
+                     ProductUrl=dto.ProductUrl
                 };
                 var indexRequest = new CommonIndexRequest
                 {
