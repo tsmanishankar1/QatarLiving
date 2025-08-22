@@ -7,10 +7,10 @@
     protected override void OnInitialized()
     {
         var destination = new Uri(NavManager.Uri).AbsolutePath.Substring(1);
-        if(string.IsNullOrEmpty(destination))
+        if (string.IsNullOrEmpty(destination))
         {
             destination = "/dashboard";
         }
-        NavManager.NavigateTo($"{NavigationPath.Value.Login}", forceLoad: true);
+        NavManager.NavigateTo($"{NavigationPath.Value.Login}?destination={NavigationPath.Value.BORedirectPrefix}{destination}", forceLoad: true);
     }
 }
