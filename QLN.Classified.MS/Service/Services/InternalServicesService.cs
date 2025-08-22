@@ -1,6 +1,7 @@
 ﻿using Dapr.Client;
 using Microsoft.EntityFrameworkCore;
 using QLN.Common.DTO_s;
+using QLN.Common.DTO_s.Services;
 using QLN.Common.Infrastructure.Auditlog;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.CustomException;
@@ -1429,7 +1430,6 @@ namespace QLN.Classified.MS.Service.Services
                 })
                 .ToListAsync(ct);
         }
-
         public async Task<string> MigrateServiceAd(Common.Infrastructure.Model.Services dto, CancellationToken cancellationToken = default)
         {
             try
@@ -1480,6 +1480,120 @@ namespace QLN.Classified.MS.Service.Services
             {
                 throw new Exception("Error updating service ad", ex);
             }
+        }
+        public async Task<Common.Infrastructure.Model.Services> P2PromoteService(PayToPromote request, string uid, Guid addonId, CancellationToken ct)
+        {
+            var serviceAd = await _dbContext.Services
+                .FirstOrDefaultAsync(s => s.Id == request.ServiceId && s.IsActive, ct);
+
+            if (serviceAd == null)
+                throw new KeyNotFoundException("Service Ad not found.");
+
+            var subscription = await _qLSubscriptionContext.Subscriptions
+                .FirstOrDefaultAsync();
+            serviceAd.IsPromoted = true;
+            serviceAd.PromotedExpiryDate = subscription.EndDate;
+            serviceAd.UpdatedBy = uid;
+            serviceAd.UpdatedAt = DateTime.UtcNow;
+
+            await _dbContext.SaveChangesAsync(ct);
+
+            var upsertRequest = await IndexServiceToAzureSearch(serviceAd, ct);
+
+            if (upsertRequest != null)
+            {
+                var message = new IndexMessage
+                {
+                    Action = "Upsert",
+                    Vertical = ConstantValues.IndexNames.ServicesIndex,
+                    UpsertRequest = upsertRequest
+                };
+
+                await _dapr.PublishEventAsync(
+                    pubsubName: ConstantValues.PubSubName,
+                    topicName: ConstantValues.PubSubTopics.IndexUpdates,
+                    data: message,
+                    cancellationToken: ct
+                );
+            }
+
+            return serviceAd;
+        }
+        public async Task<Common.Infrastructure.Model.Services> P2FeatureService(PayToFeature request, string uid, Guid addonId, CancellationToken ct)
+        {
+            var serviceAd = await _dbContext.Services
+                .FirstOrDefaultAsync(s => s.Id == request.ServiceId && s.IsActive, ct);
+
+            if (serviceAd == null)
+                throw new KeyNotFoundException("Service Ad not found.");
+
+            var subscription = await _qLSubscriptionContext.Subscriptions
+                .FirstOrDefaultAsync();
+            serviceAd.IsFeatured = true;
+            serviceAd.FeaturedExpiryDate = subscription.EndDate;
+            serviceAd.UpdatedBy = uid;
+            serviceAd.UpdatedAt = DateTime.UtcNow;
+
+            await _dbContext.SaveChangesAsync(ct);
+
+            var upsertRequest = await IndexServiceToAzureSearch(serviceAd, ct);
+
+            if (upsertRequest != null)
+            {
+                var message = new IndexMessage
+                {
+                    Action = "Upsert",
+                    Vertical = ConstantValues.IndexNames.ServicesIndex,
+                    UpsertRequest = upsertRequest
+                };
+
+                await _dapr.PublishEventAsync(
+                    pubsubName: ConstantValues.PubSubName,
+                    topicName: ConstantValues.PubSubTopics.IndexUpdates,
+                    data: message,
+                    cancellationToken: ct
+                );
+            }
+
+            return serviceAd;
+        }
+        public async Task<Common.Infrastructure.Model.Services> P2PublishService(PayToPublish request, string uid, Guid subscriptionId, CancellationToken ct)
+        {
+            var serviceAd = await _dbContext.Services
+                .FirstOrDefaultAsync(s => s.Id == request.ServiceId && s.IsActive, ct);
+
+            if (serviceAd == null)
+                throw new KeyNotFoundException("Service Ad not found.");
+
+            var subscription = await _qLSubscriptionContext.Subscriptions
+                .FirstOrDefaultAsync();
+            serviceAd.Status = ServiceStatus.PendingApproval;
+            serviceAd.AdType = ServiceAdType.PayToPublish;
+            serviceAd.UpdatedBy = uid;
+            serviceAd.UpdatedAt = DateTime.UtcNow;
+
+            await _dbContext.SaveChangesAsync(ct);
+
+            var upsertRequest = await IndexServiceToAzureSearch(serviceAd, ct);
+
+            if (upsertRequest != null)
+            {
+                var message = new IndexMessage
+                {
+                    Action = "Upsert",
+                    Vertical = ConstantValues.IndexNames.ServicesIndex,
+                    UpsertRequest = upsertRequest
+                };
+
+                await _dapr.PublishEventAsync(
+                    pubsubName: ConstantValues.PubSubName,
+                    topicName: ConstantValues.PubSubTopics.IndexUpdates,
+                    data: message,
+                    cancellationToken: ct
+                );
+            }
+
+            return serviceAd;
         }
     }
 }

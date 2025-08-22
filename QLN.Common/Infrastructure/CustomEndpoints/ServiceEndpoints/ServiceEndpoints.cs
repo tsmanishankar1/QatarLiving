@@ -20,6 +20,7 @@ using QLN.Common.Infrastructure.Utilities;
 using System.ComponentModel.DataAnnotations;
 using System.Net.Http;
 using System.Text.Json;
+using QLN.Common.DTO_s.Services;
 
 namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
 {
@@ -1725,6 +1726,453 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
             .WithDescription("Get the count of service ads by category")
             .Produces<Dictionary<string, int>>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+            return group;
+        }
+        public static RouteGroupBuilder MapP2PromoteEndpoint(this RouteGroupBuilder group)
+        {
+            group.MapPost("/paytopromote", async Task<IResult> (
+                PayToPromote request,
+                HttpContext httpContext,
+                AuditLogger auditLogger,
+                IServices service,
+                CancellationToken cancellationToken) =>
+            {
+                string uid = "unknown";
+                string? userName = null;
+
+                try
+                {
+                    var (extractedUid, extractedUserName, subscriptionId, expiryDate) =
+                        await UserTokenHelper.ExtractUserAndSubscriptionDetailsAsync(httpContext, vertical: 4);
+
+                    uid = extractedUid;
+                    subscriptionId = subscriptionId;
+                    if (string.IsNullOrEmpty(uid))
+                    {
+                        return TypedResults.Problem(new ProblemDetails
+                        {
+                            Title = "Unauthorized Access",
+                            Detail = "User ID or username could not be extracted from token.",
+                            Status = StatusCodes.Status403Forbidden
+                        });
+                    }
+
+                    var resultMessage = await service.P2PromoteService(request, uid, request.AddonId, cancellationToken);
+
+                    if (resultMessage == null)
+                    {
+                        return Results.Problem(
+                            detail: "Service not found",
+                            statusCode: StatusCodes.Status404NotFound,
+                            title: "Service Not Found");
+                    }
+
+                    await auditLogger.LogAuditAsync(
+                        module: ModuleName,
+                        httpMethod: "POST",
+                        apiEndpoint: "/api/service/paytopromote",
+                        message: "Service ad promoted successfully",
+                        createdBy: uid,
+                        payload: request,
+                        cancellationToken: cancellationToken
+                    );
+
+                    return Results.Ok(resultMessage);
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    await auditLogger.LogExceptionAsync(ModuleName, "/api/service/paytopromote", ex, uid, cancellationToken);
+                    return Results.Problem(
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status404NotFound,
+                        title: "Invalid Request");
+                }
+                catch (InvalidDataException ex)
+                {
+                    await auditLogger.LogExceptionAsync(ModuleName, "/api/service/paytopromote", ex, uid, cancellationToken);
+                    return Results.Problem(
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status400BadRequest,
+                        title: "Invalid Request");
+                }
+                catch (Exception ex)
+                {
+                    await auditLogger.LogExceptionAsync(ModuleName, "/api/service/paytopromote", ex, uid, cancellationToken);
+                    return Results.Problem(
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        title: "Internal Server Error");
+                }
+            })
+            .WithName("P2PromoteService")
+            .WithTags("Service")
+            .WithSummary("Promote a service ad")
+            .WithDescription("Promotes a service ad by paying a fee. Requires valid service ID.")
+            .Produces<Services>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapPost("/p2promotebyuserid", async Task<IResult> (
+                PayToPromote request,
+                [FromQuery] string uid,
+                [FromQuery] Guid addonId,
+                IServices service,
+                CancellationToken cancellationToken) =>
+            {
+                try
+                {
+                    if (request == null || request.ServiceId <= 0)
+                    {
+                        return Results.BadRequest(new ProblemDetails
+                        {
+                            Title = "Invalid Request",
+                            Detail = "Invalid request data. ServiceId must be a positive number.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    var resultMessage = await service.P2PromoteService(request, uid, addonId, cancellationToken);
+
+                    if (resultMessage == null)
+                    {
+                        return Results.Problem(
+                            detail: "Service not found",
+                            statusCode: StatusCodes.Status404NotFound,
+                            title: "Service Not Found");
+                    }
+                    return Results.Ok(resultMessage);
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    return Results.Problem(
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status404NotFound,
+                        title: "Invalid Request");
+                }
+                catch (InvalidDataException ex)
+                {
+                    return Results.Problem(
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status400BadRequest,
+                        title: "Invalid Request");
+                }
+                catch (Exception ex)
+                {
+                    return Results.Problem(
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        title: "Internal Server Error");
+                }
+            })
+            .ExcludeFromDescription()
+            .WithName("P2PromoteServiceByUserId")
+            .WithTags("Service")
+            .WithSummary("Promote a service ad")
+            .WithDescription("Promotes a service ad by paying a fee. Requires valid service ID.")
+            .Produces<Services>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            return group;
+        }
+        public static RouteGroupBuilder MapP2FeatureEndpoint(this RouteGroupBuilder group)
+        {
+            group.MapPost("/paytofeature", async Task<IResult> (
+                PayToFeature request,
+                HttpContext httpContext,
+                AuditLogger auditLogger,
+                IServices service,
+                CancellationToken cancellationToken) =>
+            {
+                string uid = "unknown";
+                string? userName = null;
+
+                try
+                {
+                    var (extractedUid, extractedUserName, subscriptionId, expiryDate) =
+                        await UserTokenHelper.ExtractUserAndSubscriptionDetailsAsync(httpContext, vertical: 4);
+
+                    uid = extractedUid;
+                    subscriptionId = subscriptionId;
+                    if (string.IsNullOrEmpty(uid))
+                    {
+                        return TypedResults.Problem(new ProblemDetails
+                        {
+                            Title = "Unauthorized Access",
+                            Detail = "User ID or username could not be extracted from token.",
+                            Status = StatusCodes.Status403Forbidden
+                        });
+                    }
+
+                    var resultMessage = await service.P2FeatureService(request, uid, request.AddonId, cancellationToken);
+
+                    if (resultMessage == null)
+                    {
+                        return Results.Problem(
+                            detail: "Service not found",
+                            statusCode: StatusCodes.Status404NotFound,
+                            title: "Service Not Found");
+                    }
+
+                    await auditLogger.LogAuditAsync(
+                        module: ModuleName,
+                        httpMethod: "POST",
+                        apiEndpoint: "/api/service/paytofeature",
+                        message: "Service ad featured successfully",
+                        createdBy: uid,
+                        payload: request,
+                        cancellationToken: cancellationToken
+                    );
+
+                    return Results.Ok(resultMessage);
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    await auditLogger.LogExceptionAsync(ModuleName, "/api/service/paytofeature", ex, uid, cancellationToken);
+                    return Results.Problem(
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status404NotFound,
+                        title: "Invalid Request");
+                }
+                catch (InvalidDataException ex)
+                {
+                    await auditLogger.LogExceptionAsync(ModuleName, "/api/service/paytofeature", ex, uid, cancellationToken);
+                    return Results.Problem(
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status400BadRequest,
+                        title: "Invalid Request");
+                }
+                catch (Exception ex)
+                {
+                    await auditLogger.LogExceptionAsync(ModuleName, "/api/service/paytofeature", ex, uid, cancellationToken);
+                    return Results.Problem(
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        title: "Internal Server Error");
+                }
+            })
+            .WithName("P2FeatureService")
+            .WithTags("Service")
+            .WithSummary("Feature a service ad")
+            .WithDescription("Features a service ad by paying a fee. Requires valid service ID.")
+            .Produces<Services>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapPost("/p2featurebyuserid", async Task<IResult> (
+                PayToFeature request,
+                [FromQuery] string uid,
+                [FromQuery] Guid addonId,
+                IServices service,
+                CancellationToken cancellationToken) =>
+            {
+                try
+                {
+                    if (request == null || request.ServiceId <= 0)
+                    {
+                        return Results.BadRequest(new ProblemDetails
+                        {
+                            Title = "Invalid Request",
+                            Detail = "Invalid request data. ServiceId must be a positive number.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    var resultMessage = await service.P2FeatureService(request, uid, addonId, cancellationToken);
+
+                    if (resultMessage == null)
+                    {
+                        return Results.Problem(
+                            detail: "Service not found",
+                            statusCode: StatusCodes.Status404NotFound,
+                            title: "Service Not Found");
+                    }
+                    return Results.Ok(resultMessage);
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    return Results.Problem(
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status404NotFound,
+                        title: "Invalid Request");
+                }
+                catch (InvalidDataException ex)
+                {
+                    return Results.Problem(
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status400BadRequest,
+                        title: "Invalid Request");
+                }
+                catch (Exception ex)
+                {
+                    return Results.Problem(
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        title: "Internal Server Error");
+                }
+            })
+            .ExcludeFromDescription()
+            .WithName("P2FeatureServiceByUserId")
+            .WithTags("Service")
+            .WithSummary("Feature a service ad")
+            .WithDescription("Features a service ad by paying a fee. Requires valid service ID.")
+            .Produces<Services>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            return group;
+        }
+        public static RouteGroupBuilder MapP2PublishEndpoint(this RouteGroupBuilder group)
+        {
+            group.MapPost("/paytopublish", async Task<IResult> (
+                PayToPublish request,
+                HttpContext httpContext,
+                AuditLogger auditLogger,
+                IServices service,
+                CancellationToken cancellationToken) =>
+            {
+                string uid = "unknown";
+                string? userName = null;
+
+                try
+                {
+                    var (extractedUid, extractedUserName, subscriptionId, expiryDate) =
+                        await UserTokenHelper.ExtractUserAndSubscriptionDetailsAsync(httpContext, vertical: 4);
+
+                    uid = extractedUid;
+                    subscriptionId = subscriptionId;
+                    if (string.IsNullOrEmpty(uid))
+                    {
+                        return TypedResults.Problem(new ProblemDetails
+                        {
+                            Title = "Unauthorized Access",
+                            Detail = "User ID or username could not be extracted from token.",
+                            Status = StatusCodes.Status403Forbidden
+                        });
+                    }
+
+                    var resultMessage = await service.P2PublishService(request, uid, request.SubscriptionId, cancellationToken);
+
+                    if (resultMessage == null)
+                    {
+                        return Results.Problem(
+                            detail: "Service not found",
+                            statusCode: StatusCodes.Status404NotFound,
+                            title: "Service Not Found");
+                    }
+
+                    await auditLogger.LogAuditAsync(
+                        module: ModuleName,
+                        httpMethod: "POST",
+                        apiEndpoint: "/api/service/paytopublish",
+                        message: "Service ad publish successfully",
+                        createdBy: uid,
+                        payload: request,
+                        cancellationToken: cancellationToken
+                    );
+
+                    return Results.Ok(resultMessage);
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    await auditLogger.LogExceptionAsync(ModuleName, "/api/service/paytopublish", ex, uid, cancellationToken);
+                    return Results.Problem(
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status404NotFound,
+                        title: "Invalid Request");
+                }
+                catch (InvalidDataException ex)
+                {
+                    await auditLogger.LogExceptionAsync(ModuleName, "/api/service/paytopublish", ex, uid, cancellationToken);
+                    return Results.Problem(
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status400BadRequest,
+                        title: "Invalid Request");
+                }
+                catch (Exception ex)
+                {
+                    await auditLogger.LogExceptionAsync(ModuleName, "/api/service/paytopublish", ex, uid, cancellationToken);
+                    return Results.Problem(
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        title: "Internal Server Error");
+                }
+            })
+            .WithName("P2PublishService")
+            .WithTags("Service")
+            .WithSummary("Publish a service ad")
+            .WithDescription("Publishes a service ad by paying a fee. Requires valid service ID.")
+            .Produces<Services>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapPost("/p2publishbyuserid", async Task<IResult> (
+                PayToPublish request,
+                [FromQuery] string uid,
+                [FromQuery] Guid subscriptionId,
+                IServices service,
+                CancellationToken cancellationToken) =>
+            {
+                try
+                {
+                    if (request == null || request.ServiceId <= 0)
+                    {
+                        return Results.BadRequest(new ProblemDetails
+                        {
+                            Title = "Invalid Request",
+                            Detail = "Invalid request data. ServiceId must be a positive number.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    var resultMessage = await service.P2PublishService(request, uid, subscriptionId, cancellationToken);
+
+                    if (resultMessage == null)
+                    {
+                        return Results.Problem(
+                            detail: "Service not found",
+                            statusCode: StatusCodes.Status404NotFound,
+                            title: "Service Not Found");
+                    }
+                    return Results.Ok(resultMessage);
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    return Results.Problem(
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status404NotFound,
+                        title: "Invalid Request");
+                }
+                catch (InvalidDataException ex)
+                {
+                    return Results.Problem(
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status400BadRequest,
+                        title: "Invalid Request");
+                }
+                catch (Exception ex)
+                {
+                    return Results.Problem(
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        title: "Internal Server Error");
+                }
+            })
+            .ExcludeFromDescription()
+            .WithName("P2PublishServiceByUserId")
+            .WithTags("Service")
+            .WithSummary("Publish a service ad")
+            .WithDescription("Publishes a service ad by paying a fee. Requires valid service ID.")
+            .Produces<Services>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
             return group;
         }
     }
