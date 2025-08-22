@@ -3,24 +3,14 @@
 @inject NavigationManager NavManager
 @inject IOptions<NavigationPath> NavigationPath
 
-<p>You are not authorized. Redirecting to login…</p>
-
 @code {
     protected override void OnInitialized()
     {
         var destination = new Uri(NavManager.Uri).AbsolutePath.Substring(1);
-        if(string.IsNullOrEmpty(destination))
+        if (string.IsNullOrEmpty(destination))
         {
-            destination = "/";
+            destination = "/dashboard";
         }
-
-        if (NavigationPath.Value.IsLocal)
-        {
-            NavManager.NavigateTo($"{NavigationPath.Value.Login}?destination={destination}", forceLoad: true);
-        }
-        else
-        {
-            NavManager.NavigateTo($"{NavigationPath.Value.Login}?destination={NavigationPath.Value.BORedirectPrefix}{destination}", forceLoad: true);
-        }
+        NavManager.NavigateTo($"{NavigationPath.Value.Login}?destination={NavigationPath.Value.BORedirectPrefix}{destination}", forceLoad: true);
     }
 }
