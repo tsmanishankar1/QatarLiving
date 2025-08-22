@@ -1,6 +1,8 @@
-﻿@using QLN.ContentBO.WebUI.Models
+﻿@using Microsoft.Extensions.Options
+@using QLN.ContentBO.WebUI.Models
 @using QLN.ContentBO.WebUI.Pages.Auth
-@inject NavigationPath NavigationPath
+@inject IOptions<NavigationPath> NavigationPath
+
 <CascadingAuthenticationState>
     <AuthorizeView Policy="AdminOnly">
         <Authorized>
@@ -18,7 +20,7 @@
         </Authorized>
         <NotAuthorized>
             <p>You are not authorized</p>
-            @if (!NavigationPath.IsLocal)
+            @if (!NavigationPath.Value.IsLocal)
             {
                 <RedirectToLogin />
             }
