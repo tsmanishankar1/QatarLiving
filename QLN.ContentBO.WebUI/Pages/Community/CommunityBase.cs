@@ -31,7 +31,7 @@ namespace QLN.ContentBO.WebUI.Pages.Community
         {
             try
             {
-                await AuthorizedPage();
+                await base.OnInitializedAsync();
                 await LoadPostsAsync();
             }
             catch (Exception ex)

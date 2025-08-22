@@ -3,7 +3,6 @@ using System.Net.Http.Headers;
 
 namespace QLN.ContentBO.WebUI.Handlers
 {
-    [Obsolete("This handler is deprecated and will be removed in future versions. Use the new CustomHttpMessageHandler instead.")]
     public class JwtTokenHeaderHandler : DelegatingHandler
     {
         private readonly IHttpContextAccessor _httpContextAccessor;

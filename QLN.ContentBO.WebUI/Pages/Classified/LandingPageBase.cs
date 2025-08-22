@@ -36,7 +36,7 @@ public class LandingPageBase : QLComponentBase
 
             if (!NavigationPath.Value.IsLocal)
             {
-                await AuthorizedPage();
+                await base.OnInitializedAsync();
             }
 
             await LoadDataForCurrentTab();

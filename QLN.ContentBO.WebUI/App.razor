@@ -1,4 +1,8 @@
-﻿@using QLN.ContentBO.WebUI.Pages.Auth
+﻿@using Microsoft.Extensions.Options
+@using QLN.ContentBO.WebUI.Models
+@using QLN.ContentBO.WebUI.Pages.Auth
+@inject IOptions<NavigationPath> NavigationPath
+
 <CascadingAuthenticationState>
     <AuthorizeView Policy="AdminOnly">
         <Authorized>
@@ -15,8 +19,30 @@
             </Router>
         </Authorized>
         <NotAuthorized>
-            <p>You are not authorized</p>
-            <RedirectToLogin />
+            @if (context.User.Identity?.IsAuthenticated ?? false)
+            {
+                <!-- User is logged in but missing role -->
+                <RedirectToAccessDenied />
+            }
+            else
+            {
+                <p>You are not authorized</p>
+                <!-- User not logged in at all -->
+                @if (!NavigationPath.Value.IsLocal)
+                {
+                    <RedirectToLogin />
+                }
+            }
         </NotAuthorized>
     </AuthorizeView>
 </CascadingAuthenticationState>
+
+@code {
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationStateTask { get; set; } = default!;
+    private AuthenticationState context = default!;
+    protected override async Task OnInitializedAsync()
+    {
+        context = await authenticationStateTask;
+    }
+}

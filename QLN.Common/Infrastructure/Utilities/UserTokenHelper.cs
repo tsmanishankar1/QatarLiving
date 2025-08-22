@@ -151,5 +151,98 @@ namespace QLN.Common.Infrastructure.Utilities
 
             return (uid, username, subscriptions, roles);
         }
+        /// <summary>
+
+        /// Parses the JSON "user" claim (Drupal). Returns (uid, username, email, alias, qlNextUserId, roles).
+
+        /// </summary>
+
+        public static (string uid, string username)
+
+             GetDrupalUser(HttpContext httpContext)
+
+        {
+
+            string uid = string.Empty, username = string.Empty;
+
+            string? email = null, alias = null, qlNextUserId = null;
+
+            var roles = new List<string>();
+
+            if (TryGetDrupalUserElement(httpContext, out var user))
+
+            {
+
+                uid = TryGetString(user, "uid") ?? string.Empty;
+
+                username = TryGetString(user, "name") ?? string.Empty;
+
+            }
+
+            return (uid, username);
+
+        }
+
+        private static bool TryGetDrupalUserElement(HttpContext httpContext, out JsonElement user)
+
+        {
+
+            user = default;
+
+            var userClaim = httpContext.User.FindFirst("user")?.Value;
+
+            return TryParseJson(userClaim, out user);
+
+        }
+
+
+        private static bool TryParseJson(string? json, out JsonElement root)
+
+        {
+
+            root = default;
+
+            if (string.IsNullOrWhiteSpace(json)) return false;
+
+            try
+
+            {
+
+                using var doc = JsonDocument.Parse(json);
+
+                root = doc.RootElement.Clone();
+
+                return root.ValueKind == JsonValueKind.Object;
+
+            }
+
+            catch { return false; }
+
+        }
+
+        private static string? TryGetString(JsonElement obj, string name)
+
+        {
+
+            if (!obj.TryGetProperty(name, out var v)) return null;
+
+            return v.ValueKind switch
+
+            {
+
+                JsonValueKind.String => v.GetString(),
+
+                JsonValueKind.Number => v.TryGetInt64(out var n) ? n.ToString() : v.ToString(),
+
+                JsonValueKind.True => "true",
+
+                JsonValueKind.False => "false",
+
+                _ => null
+
+            };
+
+        }
+
     }
 }

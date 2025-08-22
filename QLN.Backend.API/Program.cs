@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Npgsql;
 using QLN.Backend.API.ServiceConfiguration;
 using QLN.Common.DTO_s;
 using QLN.Common.DTO_s.Payments;
@@ -143,6 +144,10 @@ builder.Services.Configure<IdentityOptions>(options =>
 #endregion
 
 #region Database context
+var connStr = builder.Configuration.GetConnectionString("DefaultConnection")!;
+var dsb = new NpgsqlDataSourceBuilder(connStr);
+dsb.EnableDynamicJson();      
+var dataSource = dsb.Build();
 builder.Services.AddDbContext<QLApplicationContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddDbContext<QLPaymentsContext>(options =>
@@ -323,31 +328,31 @@ builder.Services.AddAuthorization(options =>
             }
         }));
 
-    options.AddPolicy("administrator", policy =>
-        policy.RequireAssertion(context =>
-        {
-            var userClaim = context.User.Claims.Where(c => c.Type == "role").ToList();
-            if (userClaim == null) return false;
+    //options.AddPolicy("administrator", policy =>
+    //    policy.RequireAssertion(context =>
+    //    {
+    //        var userClaim = context.User.Claims.Where(c => c.Type == "roles").ToList();
+    //        if (userClaim == null) return false;
 
-            try
-            {
-                //var userJson = JsonDocument.Parse(userClaim);
-                //var root = userJson.RootElement;
+    //        try
+    //        {
+    //            //var userJson = JsonDocument.Parse(userClaim);
+    //            //var root = userJson.RootElement;
 
-                //if (root.TryGetProperty("role", out var rolesProp) &&
-                //    rolesProp.EnumerateArray().Any(role => role.GetString() == "administrator"))
-                //{
-                //    return true;
-                //}
-                //return false;
-                return context.User.Claims
-                .Any(c => c.Type == "role" && c.Value == "administrator");
-            }
-            catch
-            {
-                return false;
-            }
-        }));
+    //            //if (root.TryGetProperty("role", out var rolesProp) &&
+    //            //    rolesProp.EnumerateArray().Any(role => role.GetString() == "administrator"))
+    //            //{
+    //            //    return true;
+    //            //}
+    //            //return false;
+    //            return context.User.Claims
+    //            .Any(c => c.Type == "roles" && c.Value == "administrator");
+    //        }
+    //        catch
+    //        {
+    //            return false;
+    //        }
+    //    }));
 });
 
 
@@ -509,7 +514,8 @@ var bannerPostGroup  = app.MapGroup("/api/v2/banner");
 bannerPostGroup.MapBannerPostEndpoints();
 var ClassifiedBo = app.MapGroup("/api/v2/classifiedbo");
 ClassifiedBo.MapClassifiedboEndpoints()
-    .RequireAuthorization("administrator");
+    //.RequireAuthorization("administrator");
+    .RequireAuthorization("RequireActiveBusinessAccount");
 
 var ServicesBo = app.MapGroup("/api/servicebo");
 ServicesBo.MapAllServiceBoConfiguration();
