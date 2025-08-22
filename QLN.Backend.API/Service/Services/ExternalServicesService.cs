@@ -61,6 +61,7 @@ namespace QLN.Backend.API.Service.Services
                 throw;
             }
         }
+
         public async Task<string> UpdateCategory(CategoryDto dto, CancellationToken cancellationToken = default)
         {
             try
