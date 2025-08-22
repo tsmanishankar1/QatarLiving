@@ -328,31 +328,31 @@ builder.Services.AddAuthorization(options =>
             }
         }));
 
-    options.AddPolicy("administrator", policy =>
-        policy.RequireAssertion(context =>
-        {
-            var userClaim = context.User.Claims.Where(c => c.Type == "role").ToList();
-            if (userClaim == null) return false;
+    //options.AddPolicy("administrator", policy =>
+    //    policy.RequireAssertion(context =>
+    //    {
+    //        var userClaim = context.User.Claims.Where(c => c.Type == "roles").ToList();
+    //        if (userClaim == null) return false;
 
-            try
-            {
-                //var userJson = JsonDocument.Parse(userClaim);
-                //var root = userJson.RootElement;
+    //        try
+    //        {
+    //            //var userJson = JsonDocument.Parse(userClaim);
+    //            //var root = userJson.RootElement;
 
-                //if (root.TryGetProperty("role", out var rolesProp) &&
-                //    rolesProp.EnumerateArray().Any(role => role.GetString() == "administrator"))
-                //{
-                //    return true;
-                //}
-                //return false;
-                return context.User.Claims
-                .Any(c => c.Type == "role" && c.Value == "administrator");
-            }
-            catch
-            {
-                return false;
-            }
-        }));
+    //            //if (root.TryGetProperty("role", out var rolesProp) &&
+    //            //    rolesProp.EnumerateArray().Any(role => role.GetString() == "administrator"))
+    //            //{
+    //            //    return true;
+    //            //}
+    //            //return false;
+    //            return context.User.Claims
+    //            .Any(c => c.Type == "roles" && c.Value == "administrator");
+    //        }
+    //        catch
+    //        {
+    //            return false;
+    //        }
+    //    }));
 });
 
 
@@ -515,10 +515,12 @@ var bannerPostGroup  = app.MapGroup("/api/v2/banner");
 bannerPostGroup.MapBannerPostEndpoints();
 var ClassifiedBo = app.MapGroup("/api/v2/classifiedbo");
 ClassifiedBo.MapClassifiedboEndpoints()
-    .RequireAuthorization("administrator");
+    //.RequireAuthorization("administrator");
+    .RequireAuthorization("RequireActiveBusinessAccount");
 
 var ServicesBo = app.MapGroup("/api/servicebo");
 ServicesBo.MapAllServiceBoConfiguration();
+    //.RequireAuthorization("administrator");
 
 var Product = app.MapGroup("/api/products");
 Product.MapProductEndpoints()

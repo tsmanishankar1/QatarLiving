@@ -50,7 +50,7 @@ namespace QLN.ContentBO.WebUI.Components.News
             try
             {
                 IsLoading = true;
-                await AuthorizedPage();
+                await base.OnInitializedAsync();
                 Categories = await GetNewsCategories();
                 Slots = await GetSlots();
                 WriterTags = await GetWriterTags();

@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Http;
+using QLN.Common.DTO_s;
 using QLN.Common.DTO_s.Company;
 using System;
 using System.Collections.Generic;
@@ -12,7 +13,7 @@ namespace QLN.Common.Infrastructure.Utilities
     public static class UserTokenHelper
     {
         public static async Task<(string uid, string username, string? subscriptionId, DateTime? expiryDate)> ExtractUserAndSubscriptionDetailsAsync(
-            HttpContext httpContext, int vertical, int? subVertical = null)
+            HttpContext httpContext, int vertical, int? subVertical = null, int? serviceAdType = null)
         {
             string uid = "";
             string? subscriptionId = null;
@@ -48,6 +49,11 @@ namespace QLN.Common.Infrastructure.Utilities
                 else
                 {
                     var subscriptionClaims = httpContext.User.FindAll("subscriptions").ToList();
+                    string? p2pSubscriptionId = null;
+                    DateTime? p2pExpiryDate = null;
+
+                    string? subSubscriptionId = null;
+                    DateTime? subExpiryDate = null;
                     foreach (var claim in subscriptionClaims)
                     {
                         try
@@ -62,16 +68,27 @@ namespace QLN.Common.Infrastructure.Utilities
                                   subVerticalProp.ValueKind != JsonValueKind.Null &&
                                   subVerticalProp.GetInt32() == subVertical.Value)))
                             {
+                                var productCode = subscription.GetProperty("ProductCode").GetString();
                                 subscriptionId = subscription.GetProperty("Id").GetString();
-
+                                DateTime? endDate = null;
                                 if (subscription.TryGetProperty("EndDate", out var endDateProp) &&
                                     endDateProp.ValueKind == JsonValueKind.String)
                                 {
                                     if (DateTime.TryParse(endDateProp.GetString(), out var parsedExpiry))
                                         expiryDate = parsedExpiry;
                                 }
-
-                                break;
+                                if (serviceAdType == 1 && productCode != null && productCode.Contains("P2P"))
+                                {
+                                    subscriptionId = subscriptionId;
+                                    expiryDate = endDate;
+                                    break;
+                                }
+                                else if (serviceAdType == 2 && productCode != null && productCode.Contains("SUB"))
+                                {
+                                    subscriptionId = subscriptionId;
+                                    expiryDate = endDate;
+                                    break;
+                                }
                             }
                         }
                         catch
@@ -80,7 +97,6 @@ namespace QLN.Common.Infrastructure.Utilities
                         }
                     }
                 }
-
                 return (uid, username, subscriptionId, expiryDate);
             }
             catch
@@ -136,104 +152,98 @@ namespace QLN.Common.Infrastructure.Utilities
 
             return (uid, username, subscriptions, roles);
         }
-        public static (string uid, string username) ExtractUserAsync(
-    HttpContext httpContext)
-        {
-            string uid = "";
-            string username = "unknown";
-
-            try
-            {
-                uid = httpContext.User.FindFirst("sub")?.Value;
-                username = httpContext.User.FindFirst("preferred_username")?.Value ?? "unknown";
-
-                if (string.IsNullOrEmpty(uid))
-                {
-                    var userClaim = httpContext.User.FindFirst("user")?.Value;
-                    if (!string.IsNullOrEmpty(userClaim))
-                    {
-                        using var doc = JsonDocument.Parse(userClaim);
-                        var user = doc.RootElement;
-
-                        if (user.TryGetProperty("uid", out var uidProp) && !string.IsNullOrEmpty(uidProp.GetString()))
-                            uid = uidProp.GetString();
-
-                        if (user.TryGetProperty("name", out var unameProp) && !string.IsNullOrEmpty(unameProp.GetString()))
-                            username = unameProp.GetString();                      
-                    }
-                }
-                return (uid, username);
-            }
-            catch
-            {
-                return (uid, username);
-            }
-        }
-
         /// <summary>
+
         /// Parses the JSON "user" claim (Drupal). Returns (uid, username, email, alias, qlNextUserId, roles).
+
         /// </summary>
-        public static (string uid, string username, string? email, string? alias, List<string> roles)
-            GetDrupalUser(HttpContext httpContext)
+
+        public static (string uid, string username)
+
+             GetDrupalUser(HttpContext httpContext)
+
         {
+
             string uid = string.Empty, username = string.Empty;
+
             string? email = null, alias = null, qlNextUserId = null;
+
             var roles = new List<string>();
 
             if (TryGetDrupalUserElement(httpContext, out var user))
-            {
-                uid = TryGetString(user, "uid") ?? string.Empty;
-                username = TryGetString(user, "name") ?? string.Empty;
-                email = TryGetString(user, "email");
-                alias = TryGetString(user, "alias");
 
-                // roles array
-                if (user.TryGetProperty("roles", out var arr) && arr.ValueKind == JsonValueKind.Array)
-                {
-                    foreach (var el in arr.EnumerateArray())
-                    {
-                        var r = el.ValueKind == JsonValueKind.String ? el.GetString() : null;
-                        if (!string.IsNullOrWhiteSpace(r)) roles.Add(r!);
-                    }
-                }
+            {
+
+                uid = TryGetString(user, "uid") ?? string.Empty;
+
+                username = TryGetString(user, "name") ?? string.Empty;
+
             }
 
-            return (uid, username, email, alias, roles);
+            return (uid, username);
+
         }
 
         private static bool TryGetDrupalUserElement(HttpContext httpContext, out JsonElement user)
-        {
-            user = default;
-            var userClaim = httpContext.User.FindFirst("user")?.Value;
-            return TryParseJson(userClaim, out user);
-        }
 
+        {
+
+            user = default;
+
+            var userClaim = httpContext.User.FindFirst("user")?.Value;
+
+            return TryParseJson(userClaim, out user);
+
+        }
 
 
         private static bool TryParseJson(string? json, out JsonElement root)
+
         {
+
             root = default;
+
             if (string.IsNullOrWhiteSpace(json)) return false;
+
             try
+
             {
+
                 using var doc = JsonDocument.Parse(json);
+
                 root = doc.RootElement.Clone();
+
                 return root.ValueKind == JsonValueKind.Object;
+
             }
+
             catch { return false; }
+
         }
 
         private static string? TryGetString(JsonElement obj, string name)
+
         {
+
             if (!obj.TryGetProperty(name, out var v)) return null;
+
             return v.ValueKind switch
+
             {
+
                 JsonValueKind.String => v.GetString(),
+
                 JsonValueKind.Number => v.TryGetInt64(out var n) ? n.ToString() : v.ToString(),
+
                 JsonValueKind.True => "true",
+
                 JsonValueKind.False => "false",
+
                 _ => null
+
             };
+
         }
+
     }
 }

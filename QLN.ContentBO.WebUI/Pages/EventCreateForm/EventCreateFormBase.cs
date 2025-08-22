@@ -157,7 +157,7 @@ namespace QLN.ContentBO.WebUI.Pages
 
         protected override async Task OnInitializedAsync()
         {
-            await AuthorizedPage();
+            await base.OnInitializedAsync();
             CurrentEvent ??= new EventDTO();
             CurrentEvent.EventSchedule ??= new EventScheduleModel();
             CurrentEvent.EventSchedule.TimeSlotType = EventTimeType.GeneralTime;
