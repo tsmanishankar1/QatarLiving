@@ -4,7 +4,9 @@ using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService.IServiceBoService;
+using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.QLDbContext;
+using QLN.Common.Infrastructure.Subscriptions;
 using System.Linq;
 
 
@@ -621,44 +623,341 @@ namespace QLN.Classified.MS.Service.ServicesBoService
                 throw new Exception("Error retrieving service ads", ex);
             }
         }
-
-
-
-        public async Task<List<CompanyProfileDto>> GetCompaniesByVerticalAsync(VerticalType verticalId, SubVertical? subVerticalId, CancellationToken cancellationToken = default)
+        public async Task<BulkAdActionResponseitems> ModerateBulkService(BulkModerationRequest request, string? userId, CancellationToken ct)
         {
-            try
+            var ads = await _dbContext.Services
+                .Where(s => request.AdIds.Contains(s.Id))
+                .ToListAsync(ct);
+            var succeeded = new ResultGroup
             {
-                var result = await _dapr.GetBulkStateAsync<CompanyProfileDto>(
-                    storeName: ConstantValues.Company.CompanyStoreName,
-                    keys: await GetAllCompanyIdsAsync(cancellationToken), 
-                    parallelism: 10,
-                    metadata: null,
-                    cancellationToken: cancellationToken);
+                Count = 0,
+                Ids = new List<long>(),
+                Reason = string.Empty
+            };
 
-                var filtered = result
-                    .Where(entry =>  entry.Value != null)
-                    .Select(entry => entry.Value!)
-                    .Where(company => company.Vertical == verticalId &&
-                        (subVerticalId == null || company.SubVertical == subVerticalId) &&
-                        company.IsActive)
-                    .ToList();
-
-                return filtered;
-            }
-            catch (Exception ex)
+            var failed = new ResultGroup
             {
-                _logger.LogError(ex, "Error retrieving companies for vertical '{VerticalId}' and subvertical '{SubVerticalId}'", verticalId, subVerticalId);
-                throw;
+                Count = 0,
+                Ids = new List<long>(),
+                Reason = string.Empty
+            };
+            var subscriptionId = ads.FirstOrDefault()?.SubscriptionId;
+            if (subscriptionId == null)
+                throw new InvalidOperationException("No subscription associated with these ads.");
+
+            var subscription = await _subscriptionContext.Subscriptions
+            .FirstOrDefaultAsync(sub =>
+            sub.SubscriptionId == subscriptionId &&
+            (int)sub.Status == (int)SubscriptionStatus.Active, ct);
+
+            if (subscription == null)
+                throw new InvalidOperationException("Active subscription not found for this service.");
+            var effectiveExpiryDate = subscription.EndDate;
+
+            var updatedAds = new List<Common.Infrastructure.Model.Services>();
+
+            foreach (var ad in ads)
+            {
+                bool shouldUpdate = false;
+                string failReason = string.Empty;
+
+                try
+                {
+                    string actionReason = string.Empty;
+                    string actionComment = request.Comments ?? string.Empty;
+                    string reason = request.Reason ?? string.Empty;
+                    string userid = ad.CreatedBy;
+                    string username = ad.UserName;
+                    switch (request.Action)
+                    {
+                        case BulkModerationAction.Approve:
+                            if (ad.Status == ServiceStatus.PendingApproval)
+                            {
+                                ad.Status = ServiceStatus.Published;
+                                ad.PublishedDate = DateTime.UtcNow;
+                                shouldUpdate = true;
+                            }
+                            else failReason = $"Cannot approve ad with status '{ad.Status}'.";
+                            break;
+
+                        case BulkModerationAction.Publish:
+                            if (ad.Status == ServiceStatus.Unpublished)
+                            {
+                                ad.Status = ServiceStatus.Published;
+                                ad.PublishedDate = DateTime.UtcNow;
+                                shouldUpdate = true;
+                            }
+                            else failReason = $"Cannot publish ad with status '{ad.Status}'.";
+                            break;
+
+                        case BulkModerationAction.Unpublish:
+                            if (ad.Status == ServiceStatus.Published)
+                            {
+                                ad.Status = ServiceStatus.Unpublished;
+                                ad.PublishedDate = null;
+                                shouldUpdate = true;
+                            }
+                            else failReason = $"Cannot unpublish ad with status '{ad.Status}'.";
+                            break;
+
+                        case BulkModerationAction.UnPromote:
+                            if (ad.IsPromoted)
+                            {
+                                ad.IsPromoted = false;
+                                ad.PromotedExpiryDate = null;
+                                shouldUpdate = true;
+                            }
+                            else failReason = "Cannot unpromote an ad that is not promoted.";
+                            break;
+
+                        case BulkModerationAction.UnFeature:
+                            if (ad.IsFeatured)
+                            {
+                                ad.IsFeatured = false;
+                                ad.FeaturedExpiryDate = null;
+                                shouldUpdate = true;
+                            }
+                            else failReason = "Cannot unfeature an ad that is not featured.";
+                            break;
+
+                        case BulkModerationAction.Promote:
+                            if (!ad.IsPromoted)
+                            {
+                                ad.IsPromoted = true;
+                                ad.PromotedExpiryDate = effectiveExpiryDate;
+                                shouldUpdate = true;
+                            }
+                            else failReason = "Cannot promote an ad that is already promoted.";
+                            break;
+
+                        case BulkModerationAction.Feature:
+                            if (!ad.IsFeatured)
+                            {
+                                ad.IsFeatured = true;
+                                ad.FeaturedExpiryDate = effectiveExpiryDate;
+                                shouldUpdate = true;
+                            }
+                            else failReason = "Cannot feature an ad that is already featured.";
+                            break;
+
+                        case BulkModerationAction.IsRefreshed:
+                            ad.IsRefreshed = true;
+                            ad.LastRefreshedOn = DateTime.UtcNow;
+                            ad.CreatedAt = DateTime.UtcNow;
+                            ad.CreatedBy = userId;
+                            shouldUpdate = true;
+                            break;
+
+                        case BulkModerationAction.Remove:
+                            ad.Status = ServiceStatus.Rejected;
+                            ad.IsActive = false;
+                            actionReason = "Ad Removed (Rejected)";
+                            reason = "Ad rejected by admin.";
+                            shouldUpdate = true;
+                            break;
+
+                        case BulkModerationAction.NeedChanges:
+                            if (ad.Status == ServiceStatus.PendingApproval)
+                            {
+                                ad.Status = ServiceStatus.NeedsModification;
+                                shouldUpdate = true;
+                                ad.UpdatedAt = DateTime.UtcNow;
+                                actionReason = "Ad Needs Changes";
+                            }
+                            else
+                            {
+                                failReason = $"Cannot mark ad as NeedsModification with status '{ad.Status}'.";
+                            }
+                            break;
+
+                        case BulkModerationAction.Hold:
+                            if (ad.Status == ServiceStatus.Draft)
+                                failReason = "Cannot hold an ad that is in draft status.";
+                            else if (ad.Status != ServiceStatus.Hold)
+                            {
+                                ad.Status = ServiceStatus.Hold;
+                                shouldUpdate = true;
+                                ad.UpdatedAt = DateTime.UtcNow;
+                                actionReason = "Ad On Hold";
+                                reason = "Ad placed on hold by admin.";
+                            }
+                            else
+                            {
+                                failReason = "Ad is already on hold.";
+                            }
+                            break;
+
+                        case BulkModerationAction.Onhold:
+                            ad.Status = ServiceStatus.Onhold;
+                            shouldUpdate = true;
+                            break;
+
+                        default:
+                            failReason = "Invalid action.";
+                            break;
+                    }
+                    if (shouldUpdate)
+                    {
+                        ad.UpdatedAt = DateTime.UtcNow;
+                        ad.UpdatedBy = userId;
+                        updatedAds.Add(ad);
+
+                        if (request.Action == BulkModerationAction.Hold || request.Action == BulkModerationAction.Remove || request.Action == BulkModerationAction.NeedChanges)
+                        {
+                            var actionCommentEntity = new Comment
+                            {
+                                AdId = ad.Id,
+                                Action = actionReason,
+                                Reason = reason ?? string.Empty,
+                                Comments = actionComment,
+                                Vertical = Vertical.Services,
+                                SubVertical = 0,
+                                CreatedAt = DateTime.UtcNow,
+                                CreatedUserId = userid,
+                                CreatedUserName = username,
+                                UpdatedUserId = userId,
+                                UpdatedUserName = username,
+                            };
+
+                            await _dbContext.Comments.AddAsync(actionCommentEntity, ct);
+                            _dbContext.Services.Update(ad);
+
+                            await _dapr.PublishEventAsync("pubsub", "notifications-email", new NotificationEntity
+                            {
+                                Destinations = new List<string> { "email" },
+                                Recipients = new List<RecipientDto>
+                                {
+                                    new RecipientDto
+                                    {
+                                        Name = username,
+                                        Email = ad.EmailAddress
+                                    }
+                                },
+                                Subject = $"Service '{ad.Title} was updated",
+                                Plaintext = $"Hello,\n\nYour ad titled '{ad.Title}' has been updated.\n\nStatus: {ad.Status}\n\nThanks,\nQL Team",
+                                Html = $@"
+                                <p>Hi,</p>
+                                <p>Your ad titled '<b>{ad.Title}</b>' has been updated.</p>
+                                <p>Status: <b>{ad.Status}</b></p>
+                                <p>Thanks,<br/>QL Team</p>"
+                            }, ct);
+
+                            succeeded.Count++;
+                            succeeded.Ids.Add(ad.Id);
+                        }
+                    }
+                    else
+                    {
+                        failed.Count++;
+                        failed.Ids.Add(ad.Id);
+                        failed.Reason += $"Ad {ad.Id}: {failReason} ";
+                    }
+                }
+                catch (Exception ex)
+                {
+                    failed.Count++;
+                    failed.Ids.Add(ad.Id);
+                    failed.Reason += $"Ad {ad.Id}: {ex.Message} ";
+                }
             }
+
+            if (updatedAds.Any())
+            {
+                _dbContext.Services.UpdateRange(updatedAds);
+                await _dbContext.SaveChangesAsync(ct);
+
+                foreach (var ad in updatedAds)
+                {
+                    var upsertRequest = await IndexServiceToAzureSearch(ad, ct);
+                    if (upsertRequest != null)
+                    {
+                        var message = new IndexMessage
+                        {
+                            Action = "Upsert",
+                            Vertical = ConstantValues.IndexNames.ServicesIndex,
+                            UpsertRequest = upsertRequest
+                        };
+
+                        await _dapr.PublishEventAsync(
+                            ConstantValues.PubSubName,
+                            ConstantValues.PubSubTopics.IndexUpdates,
+                            message,
+                            ct
+                        );
+                    }
+                }
+            }
+
+            return new BulkAdActionResponseitems
+            {
+                Succeeded = succeeded,
+                Failed = failed
+            };
         }
-
-        private async Task<IReadOnlyList<string>> GetAllCompanyIdsAsync(CancellationToken cancellationToken)
+        private async Task<CommonIndexRequest> IndexServiceToAzureSearch(Common.Infrastructure.Model.Services dto, CancellationToken cancellationToken)
         {
-            var indexKey = ConstantValues.Company.CompanyIndexKey; 
-            var index = await _dapr.GetStateAsync<List<string>>(ConstantValues.Company.CompanyStoreName, indexKey, cancellationToken: cancellationToken);
-            return index ?? new List<string>();
+
+            var indexDoc = new ServicesIndex
+            {
+                Id = dto.Id.ToString(),
+                CategoryId = dto.CategoryId.ToString(),
+                L1CategoryId = dto.L1CategoryId.ToString(),
+                L2CategoryId = dto.L2CategoryId.ToString(),
+                CategoryName = dto.CategoryName,
+                L1CategoryName = dto.L1CategoryName,
+                L2CategoryName = dto.L2CategoryName,
+                Price = (double)dto.Price,
+                IsPriceOnRequest = dto.IsPriceOnRequest,
+                Title = dto.Title,
+                Description = dto.Description,
+                PhoneNumberCountryCode = dto.PhoneNumberCountryCode,
+                PhoneNumber = dto.PhoneNumber,
+                WhatsappNumberCountryCode = dto.WhatsappNumberCountryCode,
+                WhatsappNumber = dto.WhatsappNumber,
+                EmailAddress = dto.EmailAddress,
+                Location = dto.Location,
+                LocationId = dto.LocationId,
+                StreetNumber = dto.StreetNumber,
+                BuildingNumber = dto.BuildingNumber,
+                LicenseCertificate = dto.LicenseCertificate,
+                ZoneId = dto.ZoneId,
+                SubscriptionId = dto.SubscriptionId.ToString(),
+                Comments = dto.Comments,
+                Longitude = (double)dto.Longitude,
+                Lattitude = (double)dto.Lattitude,
+                AdType = dto.AdType.ToString(),
+                IsFeatured = dto.IsFeatured,
+                IsPromoted = dto.IsPromoted,
+                Status = dto.Status.ToString(),
+                FeaturedExpiryDate = dto.FeaturedExpiryDate,
+                PromotedExpiryDate = dto.PromotedExpiryDate,
+                LastRefreshedOn = dto.LastRefreshedOn,
+                IsRefreshed = dto.IsRefreshed,
+                PublishedDate = dto.PublishedDate,
+                ExpiryDate = dto.ExpiryDate,
+                Availability = dto.Availability,
+                Duration = dto.Duration,
+                Reservation = dto.Reservation,
+                UserName = dto.UserName,
+                IsActive = dto.IsActive,
+                CreatedBy = dto.CreatedBy,
+                CreatedAt = dto.CreatedAt,
+                UpdatedAt = dto.UpdatedAt,
+                UpdatedBy = dto.UpdatedBy,
+                Slug = dto.Slug,
+                Images = dto.PhotoUpload.Select(i => new ImageInfo
+                {
+                    Url = i.Url,
+                    Order = i.Order
+                }).ToList()
+            };
+            var indexRequest = new CommonIndexRequest
+            {
+                IndexName = ConstantValues.IndexNames.ServicesIndex,
+                ServicesItem = indexDoc
+            };
+            return indexRequest;
+
         }
-
-
     }
 }

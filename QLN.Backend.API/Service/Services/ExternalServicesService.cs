@@ -634,30 +634,16 @@ namespace QLN.Backend.API.Service.Services
                     ? ActionTypes.Publish
                     : ActionTypes.UnPublish;
 
-                var quotaActionPromote = request.Status == ServiceStatus.Published
-                    ? ActionTypes.Promote
-                    : ActionTypes.UnPromote;
-
-                var quotaActionFeature = request.Status == ServiceStatus.Published
-                    ? ActionTypes.Feature
-                    : ActionTypes.UnFeature;
-
                 if (request.Status == ServiceStatus.Published)
                 {
                     var canPublish = await _v2SubscriptionService.ValidateSubscriptionUsageAsync(
                         Guid.Parse(subscriptionId), quotaActionPublish, 1, ct);
 
-                    var canPromote = await _v2SubscriptionService.ValidateSubscriptionUsageAsync(
-                        Guid.Parse(subscriptionId), quotaActionPromote, 1, ct);
-
-                    var canFeature = await _v2SubscriptionService.ValidateSubscriptionUsageAsync(
-                        Guid.Parse(subscriptionId), quotaActionFeature, 1, ct);
-
-                    if (!canPublish || !canPromote || !canFeature)
+                    if (!canPublish)
                     {
                         _logger.LogWarning(
                             "Subscription {SubscriptionId} insufficient quota. Publish={Publish}, Promote={Promote}, Feature={Feature}",
-                            subscriptionId, canPublish, canPromote, canFeature);
+                            subscriptionId, canPublish);
 
                         throw new InvalidDataException("Insufficient subscription quota.");
                     }
@@ -684,18 +670,6 @@ namespace QLN.Backend.API.Service.Services
                         var success = await _v2SubscriptionService.RecordSubscriptionUsageAsync(
                             Guid.Parse(subscriptionId),
                             quotaActionPublish,
-                            1,
-                            ct
-                        );
-                        var success1 = await _v2SubscriptionService.RecordSubscriptionUsageAsync(
-                            Guid.Parse(subscriptionId),
-                            quotaActionPromote,
-                            1,
-                            ct
-                        );
-                        var success2 = await _v2SubscriptionService.RecordSubscriptionUsageAsync(
-                            Guid.Parse(subscriptionId),
-                            quotaActionFeature,
                             1,
                             ct
                         );
@@ -736,15 +710,14 @@ namespace QLN.Backend.API.Service.Services
                 BulkModerationAction.UnFeature => new[] { ActionTypes.UnFeature },
 
                 BulkModerationAction.Publish or BulkModerationAction.Approve
-                    => new[] { ActionTypes.Publish, ActionTypes.Promote, ActionTypes.Feature },
+                    => new[] { ActionTypes.Publish},
 
                 BulkModerationAction.Unpublish
-                    => new[] { ActionTypes.UnPublish, ActionTypes.UnPromote, ActionTypes.UnFeature },
+                    => new[] { ActionTypes.UnPublish},
 
                 _ => Array.Empty<string>()
             };
         }
-
         public async Task<BulkAdActionResponseitems> ModerateBulkService(BulkModerationRequest request, string? userId, string subscriptionGuid, DateTime? expiryDate,
             CancellationToken cancellationToken = default)
         {
