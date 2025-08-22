@@ -513,6 +513,7 @@ ClassifiedBo.MapClassifiedboEndpoints()
 
 var ServicesBo = app.MapGroup("/api/servicebo");
 ServicesBo.MapAllServiceBoConfiguration();
+    //.RequireAuthorization("administrator");
 
 var Product = app.MapGroup("/api/products");
 Product.MapProductEndpoints()

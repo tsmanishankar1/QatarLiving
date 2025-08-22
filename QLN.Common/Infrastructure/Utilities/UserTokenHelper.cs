@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Http;
+using QLN.Common.DTO_s;
 using QLN.Common.DTO_s.Company;
 using System;
 using System.Collections.Generic;
@@ -11,7 +12,7 @@ namespace QLN.Common.Infrastructure.Utilities
     public static class UserTokenHelper
     {
         public static async Task<(string uid, string username, string? subscriptionId, DateTime? expiryDate)> ExtractUserAndSubscriptionDetailsAsync(
-            HttpContext httpContext, int vertical, int? subVertical = null)
+            HttpContext httpContext, int vertical, int? subVertical = null, int? serviceAdType = null)
         {
             string uid = "";
             string? subscriptionId = null;
@@ -47,6 +48,11 @@ namespace QLN.Common.Infrastructure.Utilities
                 else
                 {
                     var subscriptionClaims = httpContext.User.FindAll("subscriptions").ToList();
+                    string? p2pSubscriptionId = null;
+                    DateTime? p2pExpiryDate = null;
+
+                    string? subSubscriptionId = null;
+                    DateTime? subExpiryDate = null;
                     foreach (var claim in subscriptionClaims)
                     {
                         try
@@ -61,16 +67,27 @@ namespace QLN.Common.Infrastructure.Utilities
                                   subVerticalProp.ValueKind != JsonValueKind.Null &&
                                   subVerticalProp.GetInt32() == subVertical.Value)))
                             {
+                                var productCode = subscription.GetProperty("ProductCode").GetString();
                                 subscriptionId = subscription.GetProperty("Id").GetString();
-
+                                DateTime? endDate = null;
                                 if (subscription.TryGetProperty("EndDate", out var endDateProp) &&
                                     endDateProp.ValueKind == JsonValueKind.String)
                                 {
                                     if (DateTime.TryParse(endDateProp.GetString(), out var parsedExpiry))
                                         expiryDate = parsedExpiry;
                                 }
-
-                                break;
+                                if (serviceAdType == 1 && productCode != null && productCode.Contains("P2P"))
+                                {
+                                    subscriptionId = subscriptionId;
+                                    expiryDate = endDate;
+                                    break;
+                                }
+                                else if (serviceAdType == 2 && productCode != null && productCode.Contains("SUB"))
+                                {
+                                    subscriptionId = subscriptionId;
+                                    expiryDate = endDate;
+                                    break;
+                                }
                             }
                         }
                         catch
@@ -79,7 +96,6 @@ namespace QLN.Common.Infrastructure.Utilities
                         }
                     }
                 }
-
                 return (uid, username, subscriptionId, expiryDate);
             }
             catch

@@ -1,17 +1,24 @@
 ﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Logging;
 using QLN.Common.DTO_s;
+using QLN.Common.Infrastructure.Auditlog;
+using QLN.Common.Infrastructure.CustomException;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService.ICompanyService;
+using QLN.Common.Infrastructure.IService.IService;
 using QLN.Common.Infrastructure.IService.IServiceBoService;
 using QLN.Common.Infrastructure.Subscriptions;
+using QLN.Common.Infrastructure.Utilities;
+using System.Text.Json;
 namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceBOEndpoint
 {
     public static class ServiceBOEndpoint
     {
+        const string ModuleName = "Services";
         public static RouteGroupBuilder MapServiceAdGetAllEndpoints(this RouteGroupBuilder group)
         {
             group.MapGet("/getallbo", async (
@@ -61,7 +68,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceBOEndpoint
 
             return group;
         }
-
         public static RouteGroupBuilder MapServiceAdPaymentSummaryEndpoints(this RouteGroupBuilder group)
         {
             group.MapGet("/getalladpayments", async (
@@ -117,8 +123,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceBOEndpoint
 
             return group;
         }
-
-
         public static RouteGroupBuilder MapServiceP2PAdGetAllEndpoints(this RouteGroupBuilder group)
         {
             group.MapGet("/getallp2pbo", async (
@@ -202,50 +206,158 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceBOEndpoint
 
             return group;
         }
-        public static RouteGroupBuilder MapGetCompaniesByVertical(this RouteGroupBuilder group)
+        public static RouteGroupBuilder MapBulkActionEndpoint(this RouteGroupBuilder group)
         {
-            group.MapGet("/getByVertical", async Task<IResult> (
-                [FromQuery] VerticalType verticalId,
-                [FromQuery] SubVertical? subVerticalId,
-                [FromServices] IServicesBoService service) =>
+            group.MapPost("/bulkaction", async Task<Results<
+                    Ok<BulkAdActionResponseitems>,
+                    ForbidHttpResult,
+                    BadRequest<ProblemDetails>,
+                    ProblemHttpResult
+                >> (
+                    BulkModerationRequest req,
+                    HttpContext httpContext,
+                    AuditLogger auditLogger,
+                    IServicesBoService service,
+                    CancellationToken ct
+                ) =>
             {
+                var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                if (string.IsNullOrEmpty(userClaim))
+                {
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Unauthorized Access",
+                        Detail = "User information is missing or invalid in the token.",
+                        Status = StatusCodes.Status403Forbidden
+                    });
+                }
+                var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                var uid = userData.GetProperty("uid").GetString();
+                if (uid == null)
+                {
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Unauthorized Access",
+                        Detail = "User ID could not be extracted from token.",
+                        Status = StatusCodes.Status403Forbidden
+                    });
+                }
+                req.UpdatedBy = uid;
                 try
                 {
-                    var result = await service.GetCompaniesByVerticalAsync(verticalId, subVerticalId);
-
-                    if (result == null || result.Count == 0)
-                    {
-                        return TypedResults.NotFound(new ProblemDetails
-                        {
-                            Title = "Not Found",
-                            Detail = "No companies found for the specified vertical and subvertical.",
-                            Status = StatusCodes.Status404NotFound
-                        });
-                    }
-
+                    var result = await service.ModerateBulkService(req, uid, ct);
+                    await auditLogger.LogAuditAsync(
+                        module: ModuleName,
+                        httpMethod: "POST",
+                        apiEndpoint: "/api/service/moderatebulk",
+                        message: "Bulk moderation action performed successfully",
+                        createdBy: uid,
+                        payload: req,
+                        cancellationToken: ct
+                    );
                     return TypedResults.Ok(result);
+                }
+                catch (InvalidDataException ex)
+                {
+                    await auditLogger.LogExceptionAsync(ModuleName, "/api/service/moderatebulk", ex, uid, ct);
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid Data",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (ConflictException ex)
+                {
+                    await auditLogger.LogExceptionAsync(ModuleName, "/api/service/moderatebulk", ex, uid, ct);
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Conflict",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status409Conflict
+                    });
                 }
                 catch (Exception ex)
                 {
-                    return TypedResults.Problem(
-                        title: "Internal Server Error",
-                        detail: "An unexpected error occurred while retrieving company profiles.",
-                        statusCode: StatusCodes.Status500InternalServerError);
+                    await auditLogger.LogExceptionAsync(ModuleName, "/api/service/moderatebulk", ex, uid, ct);
+                    return TypedResults.Problem(ex.Message);
                 }
             })
-            .WithName("GetCompaniesByVertical")
-            .WithTags("ServicesBo")
-            .WithSummary("Get company profiles by vertical and subvertical")
-            .WithDescription("Retrieves company profiles based on the provided verticalId and optional subVerticalId.")
-            .Produces<List<CompanyProfileDto>>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
-            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+                .WithName("BulkModerateBoServices")
+                .WithTags("ServicesBo")
+                .WithSummary("Bulk moderate service ads")
+                .WithDescription("Performs bulk moderation actions (approve, publish, unpublish, remove) on selected service ads. " +
+                                 "Requires a list of ad IDs and the action to perform. " +
+                                 "If removing, a reason must be provided.")
+                .Produces<string>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
+                .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
+            group.MapPost("/bobulkactions", async Task<Results<
+               Ok<BulkAdActionResponseitems>,
+               BadRequest<ProblemDetails>,
+               ForbidHttpResult,
+               ProblemHttpResult
+           >> (
+               BulkModerationRequest req,
+               string userId,
+               HttpContext httpContext,
+               IServicesBoService service,
+               CancellationToken ct
+           ) =>
+            {
+                try
+                {
+                    if (req.UpdatedBy == string.Empty)
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Invalid Data",
+                            Detail = "UpdatedBy cannot be null.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+                    var result = await service.ModerateBulkService(req, userId, ct);
+                    return TypedResults.Ok(result);
+                }
+                catch (InvalidDataException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid Data",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (ConflictException ex)
+                {
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Conflict",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status409Conflict
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(ex.Message);
+                }
+            })
+           .ExcludeFromDescription()
+           .WithName("ModerateBoServices")
+           .WithTags("ServicesBo")
+           .WithSummary("Bulk moderate service ads")
+           .WithDescription("Performs bulk moderation actions (approve, publish, unpublish, remove) on selected service ads. " +
+                            "Requires a list of ad IDs and the action to perform. " +
+                            "If removing, a reason must be provided.")
+           .Produces<string>(StatusCodes.Status200OK)
+           .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+           .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
+           .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
+           .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
             return group;
         }
-
-
-
-
     }
 }
