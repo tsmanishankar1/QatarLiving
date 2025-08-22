@@ -3,20 +3,22 @@ using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using QLN.Common.DTO_s;
-using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.QLDbContext;
 
 #nullable disable
 
-namespace QLN.Common.Migrations
+namespace QLN.Common.Migrations.ClassifiedDev
 {
     [DbContext(typeof(QLClassifiedContext))]
-    partial class QLClassifiedContextModelSnapshot : ModelSnapshot
+    [Migration("20250821090017_categorydropdowns")]
+    partial class categorydropdowns
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -467,8 +469,11 @@ namespace QLN.Common.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<List<FieldDto>>("Fields")
+                    b.Property<List<string>>("Fields")
                         .HasColumnType("jsonb");
+
+                    b.Property<long?>("ParentId")
+                        .HasColumnType("bigint");
 
                     b.Property<int?>("SubVertical")
                         .HasColumnType("integer");
@@ -477,6 +482,8 @@ namespace QLN.Common.Migrations
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ParentId");
 
                     b.ToTable("CategoryDropdowns");
                 });
@@ -1758,6 +1765,15 @@ namespace QLN.Common.Migrations
                         .WithMany("CategoryFields")
                         .HasForeignKey("ParentId")
                         .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("ParentCategory");
+                });
+
+            modelBuilder.Entity("QLN.Common.Infrastructure.Model.CategoryDropdown", b =>
+                {
+                    b.HasOne("QLN.Common.Infrastructure.Model.Category", "ParentCategory")
+                        .WithMany()
+                        .HasForeignKey("ParentId");
 
                     b.Navigation("ParentCategory");
                 });

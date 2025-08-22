@@ -30,7 +30,7 @@ namespace QLN.Common.Infrastructure.QLDbContext
         public DbSet<Collectibles> Collectible { get; set; }
         public DbSet<StoreFlyers> StoreFlyer { get; set; }
         public DbSet<SeasonalPicks> SeasonalPicks { get; set; }
-
+        public DbSet<CategoryDropdown> CategoryDropdowns { get; set; }
         public DbSet<FeaturedStore> FeaturedStores { get; set; }
         public DbSet<FeaturedCategory> FeaturedCategories { get; set; }
         public DbSet<Services> Services { get; set; }
@@ -54,6 +54,11 @@ namespace QLN.Common.Infrastructure.QLDbContext
             modelBuilder.Entity<Items>()
                 .Property(p => p.Attributes)
                 .HasColumnType("jsonb");
+
+            modelBuilder.Entity<CategoryDropdown>()
+            .Property(c => c.Fields)
+           .HasColumnType("jsonb");
+
 
             modelBuilder.Entity<StoreProducts>()
                 .HasMany(s => s.Features)

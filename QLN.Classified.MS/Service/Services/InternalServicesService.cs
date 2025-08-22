@@ -11,7 +11,7 @@ using QLN.Common.Infrastructure.Subscriptions;
 using QLN.Common.Infrastructure.Utilities;
 using System.Text.Json;
 using System.Text.RegularExpressions;
-using System.Threading;
+
 
 namespace QLN.Classified.MS.Service.Services
 {
@@ -28,125 +28,125 @@ namespace QLN.Classified.MS.Service.Services
             _dbContext = dbContext;
             _qLSubscriptionContext = qLSubscriptionContext;
         }
-        public async Task<List<CategoryDto>> GetAllCategories(string? vertical, string? subVertical, CancellationToken cancellationToken = default)
-        {
-            var query = _dbContext.Categories.AsQueryable();
+        //public async Task<List<CategoryDto>> GetAllCategories(string? vertical, string? subVertical, CancellationToken cancellationToken = default)
+        //{
+        //    var query = _dbContext.Categories.AsQueryable();
 
-            if (!string.IsNullOrEmpty(vertical))
-            {
-                if (!Enum.TryParse<Vertical>(vertical, ignoreCase: true, out var verticalEnum))
-                {
-                    return new List<CategoryDto>();
-                }
-                query = query.Where(c => c.Vertical == verticalEnum);
-            }
+        //    if (!string.IsNullOrEmpty(vertical))
+        //    {
+        //        if (!Enum.TryParse<Vertical>(vertical, ignoreCase: true, out var verticalEnum))
+        //        {
+        //            return new List<CategoryDto>();
+        //        }
+        //        query = query.Where(c => c.Vertical == verticalEnum);
+        //    }
 
-            if (!string.IsNullOrEmpty(subVertical))
-            {
-                if (!Enum.TryParse<SubVertical>(subVertical, ignoreCase: true, out var subVerticalEnum))
-                {
-                    return new List<CategoryDto>();
-                }
-                query = query.Where(c => c.SubVertical == subVerticalEnum);
-            }
+        //    if (!string.IsNullOrEmpty(subVertical))
+        //    {
+        //        if (!Enum.TryParse<SubVertical>(subVertical, ignoreCase: true, out var subVerticalEnum))
+        //        {
+        //            return new List<CategoryDto>();
+        //        }
+        //        query = query.Where(c => c.SubVertical == subVerticalEnum);
+        //    }
 
-            var allCategories = await query
-                .AsNoTracking()
-                .OrderBy(c => c.Id)
-                .ToListAsync(cancellationToken);
+        //    var allCategories = await query
+        //        .AsNoTracking()
+        //        .OrderBy(c => c.Id)
+        //        .ToListAsync(cancellationToken);
 
-            var rootCategories = allCategories
-                .Where(c => c.ParentId == null)
-                .Select(c => MapCategoryRecursive(c, allCategories))
-                .ToList();
+        //    var rootCategories = allCategories
+        //        .Where(c => c.ParentId == null)
+        //        .Select(c => MapCategoryRecursive(c, allCategories))
+        //        .ToList();
 
-            return rootCategories;
-        }
-        private CategoryDto MapCategoryRecursive(Category category, List<Category> allCategories)
-        {
-            return new CategoryDto
-            {
-                Id = category.Id,
-                CategoryName = category.CategoryName,
-                Vertical = category.Vertical.ToString(),
-                SubVertical = category.SubVertical?.ToString() ?? string.Empty,
-                ParentId = category.ParentId,
-                Fields = allCategories
-                    .Where(child => child.ParentId == category.Id)
-                    .Select(child => MapFieldRecursive(child, allCategories))
-                    .ToList()
-            };
-        }
-        private FieldDto MapFieldRecursive(Category field, List<Category> allCategories)
-        {
-            return new FieldDto
-            {
-                Id = field.Id,
-                CategoryName = field.CategoryName,
-                Type = field.Type,
-                Options = field.Options,
-                Fields = allCategories
-                    .Where(c => c.ParentId == field.Id)
-                    .Select(c => MapFieldRecursive(c, allCategories))
-                    .ToList()
-            };
-        }
-        public async Task<CategoryDto?> GetCategoryById(long id, CancellationToken cancellationToken = default)
-        {
-            var allCategories = await _dbContext.Categories
-                .AsNoTracking()
-                .ToListAsync(cancellationToken);
+        //    return rootCategories;
+        //}
+        //private CategoryDto MapCategoryRecursive(Category category, List<Category> allCategories)
+        //{
+        //    return new CategoryDto
+        //    {
+        //        Id = category.Id,
+        //        CategoryName = category.CategoryName,
+        //        Vertical = category.Vertical.ToString(),
+        //        SubVertical = category.SubVertical?.ToString() ?? string.Empty,
+        //        ParentId = category.ParentId,
+        //        Fields = allCategories
+        //            .Where(child => child.ParentId == category.Id)
+        //            .Select(child => MapFieldRecursive(child, allCategories))
+        //            .ToList()
+        //    };
+        //}
+        //private FieldDto MapFieldRecursive(Category field, List<Category> allCategories)
+        //{
+        //    return new FieldDto
+        //    {
+        //        Id = field.Id,
+        //        CategoryName = field.CategoryName,
+        //        Type = field.Type,
+        //        Options = field.Options,
+        //        Fields = allCategories
+        //            .Where(c => c.ParentId == field.Id)
+        //            .Select(c => MapFieldRecursive(c, allCategories))
+        //            .ToList()
+        //    };
+        //}
+        // public async Task<CategoryDto?> GetCategoryById(long id, CancellationToken cancellationToken = default)
+        //{
+        //    var allCategories = await _dbContext.Categories
+        //        .AsNoTracking()
+        //        .ToListAsync(cancellationToken);
 
-            var category = allCategories.FirstOrDefault(c => c.Id == id);
-            if (category == null)
-                return null;
+        //    var category = allCategories.FirstOrDefault(c => c.Id == id);
+        //    if (category == null)
+        //        return null;
 
-            return MapCategoryRecursive(category, allCategories);
-        }
-        public async Task<string> UpdateCategory(CategoryDto dto, CancellationToken cancellationToken = default)
-        {
-            var category = await _dbContext.Categories
-                .FirstOrDefaultAsync(c => c.Id == dto.Id, cancellationToken);
+        //    return MapCategoryRecursive(category, allCategories);
+        //}
+        //public async Task<string> UpdateCategory(CategoryDto dto, CancellationToken cancellationToken = default)
+        //{
+        //    var category = await _dbContext.Categories
+        //        .FirstOrDefaultAsync(c => c.Id == dto.Id, cancellationToken);
 
-            if (category == null)
-                return "Category not found";
+        //    if (category == null)
+        //        return "Category not found";
 
-            category.CategoryName = dto.CategoryName;
-            category.Vertical = Enum.Parse<Vertical>(dto.Vertical);
-            category.SubVertical = Enum.TryParse<SubVertical>(dto.SubVertical, out var sub) ? sub : null;
+        //    category.CategoryName = dto.CategoryName;
+        //    category.Vertical = Enum.Parse<Vertical>(dto.Vertical);
+        //    category.SubVertical = Enum.TryParse<SubVertical>(dto.SubVertical, out var sub) ? sub : null;
 
-            var allFieldDtos = FlattenFields(dto.Fields);
+        //    var allFieldDtos = FlattenFields(dto.Fields);
 
-            foreach (var fieldDto in allFieldDtos)
-            {
-                var existingField = await _dbContext.Categories
-                    .FirstOrDefaultAsync(c => c.Id == fieldDto.Id, cancellationToken);
+        //    foreach (var fieldDto in allFieldDtos)
+        //    {
+        //        var existingField = await _dbContext.Categories
+        //            .FirstOrDefaultAsync(c => c.Id == fieldDto.Id, cancellationToken);
 
-                if (existingField != null)
-                {
-                    existingField.CategoryName = fieldDto.CategoryName;
-                    existingField.Type = fieldDto.Type;
-                    existingField.Options = fieldDto.Options;
-                }
-            }
+        //        if (existingField != null)
+        //        {
+        //            existingField.CategoryName = fieldDto.CategoryName;
+        //            existingField.Type = fieldDto.Type;
+        //            existingField.Options = fieldDto.Options;
+        //        }
+        //    }
 
-            await _dbContext.SaveChangesAsync(cancellationToken);
-            return "Category Updated Successfully";
-        }
-        private List<FieldDto> FlattenFields(List<FieldDto>? fields)
-        {
-            var list = new List<FieldDto>();
-            if (fields == null) return list;
+        //    await _dbContext.SaveChangesAsync(cancellationToken);
+        //    return "Category Updated Successfully";
+        //}
+        //private List<FieldDto> FlattenFields(List<FieldDto>? fields)
+        //{
+        //    var list = new List<FieldDto>();
+        //    if (fields == null) return list;
 
-            foreach (var field in fields)
-            {
-                list.Add(field);
-                if (field.Fields != null)
-                    list.AddRange(FlattenFields(field.Fields));
-            }
+        //    foreach (var field in fields)
+        //    {
+        //        list.Add(field);
+        //        if (field.Fields != null)
+        //            list.AddRange(FlattenFields(field.Fields));
+        //    }
 
-            return list;
-        }
+        //    return list;
+        //}
         public async Task<string> CreateCategory(CategoryDto dto, CancellationToken cancellationToken)
         {
             try
@@ -162,40 +162,23 @@ namespace QLN.Classified.MS.Service.Services
                     else
                         return "Invalid sub-vertical value";
                 }
+                long lastUsedId = await GetLastIdFromJsonFieldsAsync();
+                long nextCategoryId = lastUsedId + 1;
+                long currentFieldId = nextCategoryId;
+                AssignIds(dto.Fields, ref currentFieldId);
 
-                Category? mainCategory;
-
-                if (dto.ParentId.HasValue)
+                var category = new CategoryDropdown
                 {
-                    mainCategory = await _dbContext.Categories
-                        .FirstOrDefaultAsync(c => c.Id == dto.ParentId.Value, cancellationToken);
+                    Id = nextCategoryId,
+                    CategoryName = dto.CategoryName,
+                    Vertical = verticalEnum,
+                    SubVertical = subVerticalEnum,
+                    Fields = dto.Fields 
+                };
 
-                    if (mainCategory == null)
-                        return $"Parent category with ID {dto.ParentId.Value} not found.";
-                }
-                else
-                {
-                    mainCategory = new Category
-                    {
-                        CategoryName = dto.CategoryName,
-                        Vertical = verticalEnum,
-                        SubVertical = subVerticalEnum,
-                        ParentId = null
-                    };
-
-                    _dbContext.Categories.Add(mainCategory);
-                    await _dbContext.SaveChangesAsync(cancellationToken);
-                }
-
-                if (dto.Fields != null && dto.Fields.Any())
-                {
-                    foreach (var fieldDto in dto.Fields)
-                    {
-                        await SaveFieldRecursive(fieldDto, mainCategory.Id, verticalEnum, subVerticalEnum, cancellationToken);
-                    }
-                }
-
+                _dbContext.CategoryDropdowns.Add(category);
                 await _dbContext.SaveChangesAsync(cancellationToken);
+
                 return "Category created successfully";
             }
             catch (Exception ex)
@@ -203,52 +186,137 @@ namespace QLN.Classified.MS.Service.Services
                 return $"Error: {ex.Message}";
             }
         }
-        private async Task SaveFieldRecursive(FieldDto fieldDto, long parentId, Vertical vertical, SubVertical? subVertical, CancellationToken cancellationToken)
+
+        private async Task<long> GetLastIdFromJsonFieldsAsync()
         {
-            var category = new Category
-            {
-                CategoryName = fieldDto.CategoryName,
-                Type = fieldDto.Type,
-                Options = fieldDto.Options,
-                ParentId = parentId,
-                Vertical = vertical,
-                SubVertical = subVertical
-            };
+            var allCategories = await _dbContext.CategoryDropdowns
+                .AsNoTracking()
+                .ToListAsync();
 
-            _dbContext.Categories.Add(category);
-            await _dbContext.SaveChangesAsync(cancellationToken);
-
-            if (fieldDto.Fields != null && fieldDto.Fields.Any())
+            long maxId = 0;
+            if (allCategories.Any())
             {
-                foreach (var childField in fieldDto.Fields)
-                {
-                    await SaveFieldRecursive(childField, category.Id, vertical, subVertical, cancellationToken);
-                }
+                maxId = allCategories.Max(c => c.Id);
             }
-        }
-        private Category MapField(FieldDto dto, Category parent, Vertical verticalEnum, SubVertical? subVerticalEnum)
-        {
-            var category = new Category
+            foreach (var category in allCategories)
             {
-                CategoryName = dto.CategoryName,
-                Type = dto.Type,
-                Options = dto.Options,
-                ParentCategory = parent,
-                Vertical = verticalEnum,
-                SubVertical = subVerticalEnum
-            };
-
-            if (dto.Fields != null && dto.Fields.Any())
-            {
-                foreach (var childDto in dto.Fields)
+                if (category.Fields != null)
                 {
-                    var childCategory = MapField(childDto, category, verticalEnum, subVerticalEnum);
-                    category.CategoryFields.Add(childCategory);
+                    var fieldIds = ExtractAllFieldIds(category.Fields);
+                    if (fieldIds.Any())
+                    {
+                        maxId = Math.Max(maxId, fieldIds.Max());
+                    }
                 }
             }
 
-            return category;
+            return maxId;
         }
+
+        private List<long> ExtractAllFieldIds(List<FieldDto> fields)
+        {
+            var ids = new List<long>();
+
+            foreach (var field in fields)
+            {
+                if (field.Id.HasValue && field.Id > 0)
+                    ids.Add(field.Id.Value);
+
+                // Check for nested fields in Options
+                if (field.Options != null && field.Options.ContainsKey("fields"))
+                {
+                    if (field.Options["fields"] is Newtonsoft.Json.Linq.JArray nestedArray)
+                    {
+                        var nestedFields = nestedArray.ToObject<List<FieldDto>>();
+                        if (nestedFields != null)
+                        {
+                            ids.AddRange(ExtractAllFieldIds(nestedFields));
+                        }
+                    }
+                }
+            }
+
+            return ids;
+        }
+
+        private void AssignIds(List<FieldDto>? fields, ref long lastFieldId)
+        {
+            if (fields == null) return;
+
+            foreach (var field in fields)
+            {
+                // Assign new ID if not present or invalid
+                if (field.Id == null || field.Id <= 0)
+                    field.Id = ++lastFieldId;
+
+                // Check if Options contains nested "fields"
+                if (field.Options != null && field.Options.ContainsKey("fields"))
+                {
+                    if (field.Options["fields"] is Newtonsoft.Json.Linq.JArray nestedArray)
+                    {
+                        // Deserialize nested array to List<FieldDto>
+                        var nestedFields = nestedArray.ToObject<List<FieldDto>>();
+                        if (nestedFields != null)
+                        {
+                            AssignIds(nestedFields, ref lastFieldId);
+                            // Serialize back to JArray
+                            field.Options["fields"] = Newtonsoft.Json.Linq.JArray.FromObject(nestedFields);
+                        }
+                    }
+                }
+            }
+        }
+
+
+
+
+
+        //private async Task SaveFieldRecursive(FieldDto fieldDto, long parentId, Vertical vertical, SubVertical? subVertical, CancellationToken cancellationToken)
+        //{
+        //    var category = new Category
+        //    {
+        //        CategoryName = fieldDto.CategoryName,
+        //        Type = fieldDto.Type,
+        //        Options = fieldDto.Options,
+        //        ParentId = parentId,
+        //        Vertical = vertical,
+        //        SubVertical = subVertical
+        //    };
+
+        //    _dbContext.Categories.Add(category);
+        //    await _dbContext.SaveChangesAsync(cancellationToken);
+
+        //    if (fieldDto.Fields != null && fieldDto.Fields.Any())
+        //    {
+        //        foreach (var childField in fieldDto.Fields)
+        //        {
+        //            await SaveFieldRecursive(childField, category.Id, vertical, subVertical, cancellationToken);
+        //        }
+        //    }
+        //}
+        //private Category MapField(FieldDto dto, Category parent, Vertical verticalEnum, SubVertical? subVerticalEnum)
+        //{
+        //    var category = new Category
+        //    {
+        //        CategoryName = dto.CategoryName,
+        //        Type = dto.Type,
+        //        Options = dto.Options,
+        //        ParentCategory = parent,
+        //        Vertical = verticalEnum,
+        //        SubVertical = subVerticalEnum
+        //    };
+
+        //    if (dto.Fields != null && dto.Fields.Any())
+        //    {
+        //        foreach (var childDto in dto.Fields)
+        //        {
+        //            var childCategory = MapField(childDto, category, verticalEnum, subVerticalEnum);
+        //            category.CategoryFields.Add(childCategory);
+        //        }
+        //    }
+
+        //    return category;
+        //}
         public async Task<string> CreateServiceAd(string uid, string userName, string subscriptionId, ServiceDto dto, CancellationToken cancellationToken = default)
         {
             try
