@@ -19,11 +19,30 @@
             </Router>
         </Authorized>
         <NotAuthorized>
-            <p>You are not authorized</p>
-            @if (!NavigationPath.Value.IsLocal)
+            @if (context.User.Identity?.IsAuthenticated ?? false)
             {
-                <RedirectToLogin />
+                <!-- User is logged in but missing role -->
+                <RedirectToAccessDenied />
+            }
+            else
+            {
+                <p>You are not authorized</p>
+                <!-- User not logged in at all -->
+                @if (!NavigationPath.Value.IsLocal)
+                {
+                    <RedirectToLogin />
+                }
             }
         </NotAuthorized>
     </AuthorizeView>
 </CascadingAuthenticationState>
+
+@code {
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationStateTask { get; set; } = default!;
+    private AuthenticationState context = default!;
+    protected override async Task OnInitializedAsync()
+    {
+        context = await authenticationStateTask;
+    }
+}

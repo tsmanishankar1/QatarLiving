@@ -1,0 +1,29 @@
+﻿@page "/access-denied"
+
+<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;font-family:Arial, sans-serif;color:#333;">
+    <div style="border:1px solid #ccc;width:48px;height:48px;display:flex;align-items:center;justify-content:center;margin-bottom:20px;">
+        <span style="font-size:24px;color:#888;">☒</span>
+    </div>
+
+    <h2 style="margin:0;font-weight:500;">Access to this page was denied</h2>
+
+    <p style="margin-top:8px;color:#666;">
+        You don’t have authorization to view this page.<br />
+        <strong>HTTP ERROR 403</strong>
+    </p>
+
+    <button style="margin-top:20px;padding:10px 20px;background:#0078d7;color:white;border:none;border-radius:4px;cursor:pointer;"
+            @onclick="ReloadPage">
+        Reload
+    </button>
+</div>
+
+@code {
+    [Inject] NavigationManager NavigationManager { get; set; } = default!;
+
+    private void ReloadPage()
+    {
+        var nav = new Uri(NavigationManager.Uri);
+        NavigationManager.NavigateTo(nav.PathAndQuery, forceLoad: true);
+    }
+}
