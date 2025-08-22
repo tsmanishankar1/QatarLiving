@@ -15,7 +15,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
         private readonly ILogger<FatoraService> _logger;
 
         public FatoraService(
-            IOptions<FatoraConfig> fatoraConfig, 
+            IOptions<FatoraConfig> fatoraConfig,
             HttpClient httpClient,
             ILogger<FatoraService> logger
             )
@@ -24,11 +24,21 @@ namespace QLN.Common.Infrastructure.Service.Payments
             _httpClient = httpClient;
             _logger = logger;
         }
-        public async Task<PaymentResponse> CreatePaymentAsync(ExternalPaymentRequest request, string username,string productCode, Vertical vertical, SubVertical? subVertical, string? email, string? mobile, string? platform, CancellationToken cancellationToken = default)
+
+        public async Task<PaymentResponse> CreatePaymentAsync(
+            ExternalPaymentRequest request,
+            string username,
+            string productCode,
+            Vertical vertical,
+            SubVertical? subVertical,
+            string? email,
+            string? mobile,
+            string? platform,
+            CancellationToken cancellationToken = default)
         {
             try
             {
-                var paymentDetails = BuildPaymentCheckoutPayload(request, username,productCode, vertical, subVertical, email, mobile, platform);
+                var paymentDetails = BuildPaymentCheckoutPayload(request, username, productCode, vertical, subVertical, email, mobile, platform);
 
                 using var httpRequest = new HttpRequestMessage(HttpMethod.Post, $"{_fatoraConfig.ApiUrl}/checkout")
                 {
@@ -50,7 +60,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex.Message ?? "Error has been encountered while payment", ex);
+                _logger.LogError(ex, "Error occurred while creating payment for order {OrderId}", request.OrderId);
             }
 
             return new PaymentResponse
@@ -59,6 +69,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
                 Error = new FaturaPaymentError { Message = "An error occurred while processing the payment." }
             };
         }
+
         public async Task<FatoraVerificationResponse> VerifyPayment(string orderId, CancellationToken cancellationToken = default)
         {
             try
@@ -105,10 +116,25 @@ namespace QLN.Common.Infrastructure.Service.Payments
             };
         }
 
-        private FatoraPaymentRequest BuildPaymentCheckoutPayload(ExternalPaymentRequest request, string username, string productCode, Vertical vertical, SubVertical? subVertical, string? email, string? mobile, string? platform = "web")
+        private FatoraPaymentRequest BuildPaymentCheckoutPayload(
+            ExternalPaymentRequest request,
+            string username,
+            string productCode,
+            Vertical vertical,
+            SubVertical? subVertical,
+            string? email,
+            string? mobile,
+            string? platform = "web")
         {
+            // Build query string with all product codes for better tracking
+            var productCodes = request.Products.Any()
+                ? string.Join(",", request.Products.Select(p => p.ProductCode))
+                : productCode;
 
-            var query = $"?platform={Uri.EscapeDataString(platform ?? "web")}&vertical={Uri.EscapeDataString(vertical.ToString())}&subvertical={Uri.EscapeDataString(subVertical?.ToString() ?? string.Empty)}&product_code={Uri.EscapeDataString(productCode)}";
+            var query = $"?platform={Uri.EscapeDataString(platform ?? "web")}" +
+                       $"&vertical={Uri.EscapeDataString(vertical.ToString())}" +
+                       $"&subvertical={Uri.EscapeDataString(subVertical?.ToString() ?? string.Empty)}" +
+                       $"&product_code={Uri.EscapeDataString(productCodes)}";
 
             var successUrl = $"{_fatoraConfig.BaseUrl}/{_fatoraConfig.SuccessUrl}{query}";
             var failureUrl = $"{_fatoraConfig.BaseUrl}/{_fatoraConfig.FailureUrl}{query}";
