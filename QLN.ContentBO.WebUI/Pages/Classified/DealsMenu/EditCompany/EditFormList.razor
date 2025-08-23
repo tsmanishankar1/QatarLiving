@@ -144,7 +144,20 @@
                 }
             </MudSelect>
         }
+        <MudSelect T="int"
+                   Class="white-bg"
+                   Variant="Variant.Outlined"
+                   Label="Nature Of Business"
+                   MultiSelection="true"
+                   SelectedValues="Company.NatureOfBusiness"
+                   SelectedValuesChanged="@(values => Company.NatureOfBusiness = values.ToList())"
+                   ToStringFunc="@(id => NatureOfBusinessOptions.FirstOrDefault(x => x.Id == id)?.NameOfBusiness)">
 
+            @foreach (var option in NatureOfBusinessOptions)
+            {
+                <MudSelectItem T="int" Value="@option.Id">@option.NameOfBusiness</MudSelectItem>
+            }
+        </MudSelect>
 
         <MudTextField Class="white-bg" Variant="Variant.Outlined" T="string" Label="User Designation*"
             @bind-Value="Company.UserDesignation" For="@(() => Company.UserDesignation)" FullWidth="true" />

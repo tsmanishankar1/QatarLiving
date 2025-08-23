@@ -54,7 +54,6 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.EditCompnay
             get => TimeSpan.TryParse(Company.EndHour, out var t) ? t : (TimeSpan?)null;
             set => Company.EndHour = value?.ToString(@"hh\:mm") ?? string.Empty;
         }
-        protected HashSet<int> NatureOfBusinesValues = new HashSet<int>();
         [Inject]
         protected NavigationManager Navigation { get; set; } = default!;
         protected string _value = "Nothing selected";
