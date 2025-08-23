@@ -1,6 +1,7 @@
 ﻿using Dapr.Client;
 using Microsoft.EntityFrameworkCore;
 using QLN.Common.DTO_s;
+using QLN.Common.DTO_s.Services;
 using QLN.Common.Infrastructure.Auditlog;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.CustomException;
@@ -11,7 +12,7 @@ using QLN.Common.Infrastructure.Subscriptions;
 using QLN.Common.Infrastructure.Utilities;
 using System.Text.Json;
 using System.Text.RegularExpressions;
-using System.Threading;
+
 
 namespace QLN.Classified.MS.Service.Services
 {
@@ -28,81 +29,90 @@ namespace QLN.Classified.MS.Service.Services
             _dbContext = dbContext;
             _qLSubscriptionContext = qLSubscriptionContext;
         }
-        public async Task<List<CategoryDto>> GetAllCategories(string? vertical, string? subVertical, CancellationToken cancellationToken = default)
+        public async Task<List<CategoryDto>> GetAllCategories(
+            string? vertical,
+            string? subVertical,
+            CancellationToken cancellationToken = default)
         {
-            var query = _dbContext.Categories.AsQueryable();
+            var query = _dbContext.CategoryDropdowns.AsNoTracking().AsQueryable();
 
             if (!string.IsNullOrEmpty(vertical))
             {
-                if (!Enum.TryParse<Vertical>(vertical, ignoreCase: true, out var verticalEnum))
-                {
+                if (!Enum.TryParse<Vertical>(vertical, true, out var verticalEnum))
                     return new List<CategoryDto>();
-                }
+
                 query = query.Where(c => c.Vertical == verticalEnum);
             }
 
             if (!string.IsNullOrEmpty(subVertical))
             {
-                if (!Enum.TryParse<SubVertical>(subVertical, ignoreCase: true, out var subVerticalEnum))
-                {
+                if (!Enum.TryParse<SubVertical>(subVertical, true, out var subVerticalEnum))
                     return new List<CategoryDto>();
-                }
+
                 query = query.Where(c => c.SubVertical == subVerticalEnum);
             }
 
-            var allCategories = await query
-                .AsNoTracking()
+            var categories = await query
                 .OrderBy(c => c.Id)
                 .ToListAsync(cancellationToken);
 
-            var rootCategories = allCategories
-                .Where(c => c.ParentId == null)
-                .Select(c => MapCategoryRecursive(c, allCategories))
-                .ToList();
-
-            return rootCategories;
-        }
-        private CategoryDto MapCategoryRecursive(Category category, List<Category> allCategories)
-        {
-            return new CategoryDto
+            var result = categories.Select(c => new CategoryDto
             {
-                Id = category.Id,
-                CategoryName = category.CategoryName,
-                Vertical = category.Vertical.ToString(),
-                SubVertical = category.SubVertical?.ToString() ?? string.Empty,
-                ParentId = category.ParentId,
-                Fields = allCategories
-                    .Where(child => child.ParentId == category.Id)
-                    .Select(child => MapFieldRecursive(child, allCategories))
-                    .ToList()
-            };
-        }
-        private FieldDto MapFieldRecursive(Category field, List<Category> allCategories)
-        {
-            return new FieldDto
-            {
-                Id = field.Id,
-                CategoryName = field.CategoryName,
-                Type = field.Type,
-                Options = field.Options,
-                Fields = allCategories
-                    .Where(c => c.ParentId == field.Id)
-                    .Select(c => MapFieldRecursive(c, allCategories))
-                    .ToList()
-            };
-        }
-        public async Task<CategoryDto?> GetCategoryById(long id, CancellationToken cancellationToken = default)
-        {
-            var allCategories = await _dbContext.Categories
-                .AsNoTracking()
-                .ToListAsync(cancellationToken);
+                Id = c.Id,
+                CategoryName = c.CategoryName,
+                Vertical = c.Vertical.ToString(),
+                SubVertical = c.SubVertical?.ToString() ?? string.Empty,
+                ParentId = c.ParentId,
+                Fields = c.Fields ?? new List<FieldDto>()
+            }).ToList();
 
-            var category = allCategories.FirstOrDefault(c => c.Id == id);
-            if (category == null)
-                return null;
-
-            return MapCategoryRecursive(category, allCategories);
+            return result;
         }
+
+        /*        private CategoryDto MapCategoryRecursive(CategoryDropdown category, List<CategoryDropdown> allCategories)
+                {
+                    return new CategoryDto
+                    {
+                        Id = category.Id,
+                        CategoryName = category.CategoryName,
+                        Vertical = category.Vertical.ToString(),
+                        SubVertical = category.SubVertical?.ToString() ?? string.Empty,
+                        ParentId = category.ParentId,
+                        Fields = allCategories
+                            .Where(child => child.ParentId == category.Id)
+                            .Select(child => MapFieldRecursive(child, allCategories))
+                            .ToList()
+                    };
+                }
+
+                private FieldDto MapFieldRecursive(CategoryDropdown field, List<CategoryDropdown> allCategories)
+                {
+                    return new FieldDto
+                    {
+                        Id = field.Id,
+                        CategoryName = field.CategoryName,
+                        Type = field.Type,
+                        Options = field.Options ?? new List<string>(),
+                        Fields = allCategories
+                            .Where(c => c.ParentId == field.Id)
+                            .Select(c => MapFieldRecursive(c, allCategories))
+                            .ToList()
+                    };
+                }
+        */
+        /*        public async Task<CategoryDto?> GetCategoryById(long id, CancellationToken cancellationToken = default)
+                {
+                    var allCategories = await _dbContext.Categories
+                        .AsNoTracking()
+                        .ToListAsync(cancellationToken);
+
+                    var category = allCategories.FirstOrDefault(c => c.Id == id);
+                    if (category == null)
+                        return null;
+
+                    return MapCategoryRecursive(category, allCategories);
+                }
+        */
         public async Task<string> UpdateCategory(CategoryDto dto, CancellationToken cancellationToken = default)
         {
             var category = await _dbContext.Categories
@@ -147,6 +157,7 @@ namespace QLN.Classified.MS.Service.Services
 
             return list;
         }
+
         public async Task<string> CreateCategory(CategoryDto dto, CancellationToken cancellationToken)
         {
             try
@@ -163,39 +174,24 @@ namespace QLN.Classified.MS.Service.Services
                         return "Invalid sub-vertical value";
                 }
 
-                Category? mainCategory;
+                long lastUsedId = await GetLastIdFromJsonFieldsAsync();
+                long nextCategoryId = dto.Id ?? (lastUsedId + 1);
+                long currentFieldId = nextCategoryId;
+                AssignIds(dto.Fields, ref currentFieldId);
 
-                if (dto.ParentId.HasValue)
+                var category = new CategoryDropdown
                 {
-                    mainCategory = await _dbContext.Categories
-                        .FirstOrDefaultAsync(c => c.Id == dto.ParentId.Value, cancellationToken);
+                    Id = nextCategoryId,
+                    CategoryName = dto.CategoryName,
+                    ParentId = dto.ParentId,
+                    Vertical = verticalEnum,
+                    SubVertical = subVerticalEnum,
+                    Fields = dto.Fields
+                };
 
-                    if (mainCategory == null)
-                        return $"Parent category with ID {dto.ParentId.Value} not found.";
-                }
-                else
-                {
-                    mainCategory = new Category
-                    {
-                        CategoryName = dto.CategoryName,
-                        Vertical = verticalEnum,
-                        SubVertical = subVerticalEnum,
-                        ParentId = null
-                    };
-
-                    _dbContext.Categories.Add(mainCategory);
-                    await _dbContext.SaveChangesAsync(cancellationToken);
-                }
-
-                if (dto.Fields != null && dto.Fields.Any())
-                {
-                    foreach (var fieldDto in dto.Fields)
-                    {
-                        await SaveFieldRecursive(fieldDto, mainCategory.Id, verticalEnum, subVerticalEnum, cancellationToken);
-                    }
-                }
-
+                _dbContext.CategoryDropdowns.Add(category);
                 await _dbContext.SaveChangesAsync(cancellationToken);
+
                 return "Category created successfully";
             }
             catch (Exception ex)
@@ -203,52 +199,106 @@ namespace QLN.Classified.MS.Service.Services
                 return $"Error: {ex.Message}";
             }
         }
-        private async Task SaveFieldRecursive(FieldDto fieldDto, long parentId, Vertical vertical, SubVertical? subVertical, CancellationToken cancellationToken)
+
+        private async Task<long> GetLastIdFromJsonFieldsAsync()
         {
-            var category = new Category
-            {
-                CategoryName = fieldDto.CategoryName,
-                Type = fieldDto.Type,
-                Options = fieldDto.Options,
-                ParentId = parentId,
-                Vertical = vertical,
-                SubVertical = subVertical
-            };
+            var allCategories = await _dbContext.CategoryDropdowns
+                .AsNoTracking()
+                .ToListAsync();
 
-            _dbContext.Categories.Add(category);
-            await _dbContext.SaveChangesAsync(cancellationToken);
+            long maxId = 0;
+            if (allCategories.Any())
+                maxId = allCategories.Max(c => c.Id);
 
-            if (fieldDto.Fields != null && fieldDto.Fields.Any())
+            foreach (var category in allCategories)
             {
-                foreach (var childField in fieldDto.Fields)
+                if (category.Fields != null)
                 {
-                    await SaveFieldRecursive(childField, category.Id, vertical, subVertical, cancellationToken);
-                }
-            }
-        }
-        private Category MapField(FieldDto dto, Category parent, Vertical verticalEnum, SubVertical? subVerticalEnum)
-        {
-            var category = new Category
-            {
-                CategoryName = dto.CategoryName,
-                Type = dto.Type,
-                Options = dto.Options,
-                ParentCategory = parent,
-                Vertical = verticalEnum,
-                SubVertical = subVerticalEnum
-            };
-
-            if (dto.Fields != null && dto.Fields.Any())
-            {
-                foreach (var childDto in dto.Fields)
-                {
-                    var childCategory = MapField(childDto, category, verticalEnum, subVerticalEnum);
-                    category.CategoryFields.Add(childCategory);
+                    var fieldIds = ExtractAllFieldIds(category.Fields);
+                    if (fieldIds.Any())
+                        maxId = Math.Max(maxId, fieldIds.Max());
                 }
             }
 
-            return category;
+            return maxId;
         }
+
+        private List<long> ExtractAllFieldIds(List<FieldDto> fields)
+        {
+            var ids = new List<long>();
+
+            foreach (var field in fields)
+            {
+                if (field.Id.HasValue && field.Id > 0)
+                    ids.Add(field.Id.Value);
+
+                if (field.Fields != null && field.Fields.Any())
+                    ids.AddRange(ExtractAllFieldIds(field.Fields));
+            }
+
+            return ids;
+        }
+
+        private void AssignIds(List<FieldDto>? fields, ref long lastFieldId)
+        {
+            if (fields == null) return;
+
+            foreach (var field in fields)
+            {
+                if (field.Id == null || field.Id <= 0)
+                    field.Id = ++lastFieldId;
+
+                if (field.Fields != null && field.Fields.Any())
+                    AssignIds(field.Fields, ref lastFieldId);
+            }
+        }
+
+        //private async Task SaveFieldRecursive(FieldDto fieldDto, long parentId, Vertical vertical, SubVertical? subVertical, CancellationToken cancellationToken)
+        //{
+        //    var category = new Category
+        //    {
+        //        CategoryName = fieldDto.CategoryName,
+        //        Type = fieldDto.Type,
+        //        Options = fieldDto.Options,
+        //        ParentId = parentId,
+        //        Vertical = vertical,
+        //        SubVertical = subVertical
+        //    };
+
+        //    _dbContext.Categories.Add(category);
+        //    await _dbContext.SaveChangesAsync(cancellationToken);
+
+        //    if (fieldDto.Fields != null && fieldDto.Fields.Any())
+        //    {
+        //        foreach (var childField in fieldDto.Fields)
+        //        {
+        //            await SaveFieldRecursive(childField, category.Id, vertical, subVertical, cancellationToken);
+        //        }
+        //    }
+        //}
+        //private Category MapField(FieldDto dto, Category parent, Vertical verticalEnum, SubVertical? subVerticalEnum)
+        //{
+        //    var category = new Category
+        //    {
+        //        CategoryName = dto.CategoryName,
+        //        Type = dto.Type,
+        //        Options = dto.Options,
+        //        ParentCategory = parent,
+        //        Vertical = verticalEnum,
+        //        SubVertical = subVerticalEnum
+        //    };
+
+        //    if (dto.Fields != null && dto.Fields.Any())
+        //    {
+        //        foreach (var childDto in dto.Fields)
+        //        {
+        //            var childCategory = MapField(childDto, category, verticalEnum, subVerticalEnum);
+        //            category.CategoryFields.Add(childCategory);
+        //        }
+        //    }
+
+        //    return category;
+        //}
         public async Task<string> CreateServiceAd(string uid, string userName, string subscriptionId, ServiceDto dto, CancellationToken cancellationToken = default)
         {
             try
@@ -1380,7 +1430,6 @@ namespace QLN.Classified.MS.Service.Services
                 })
                 .ToListAsync(ct);
         }
-
         public async Task<string> MigrateServiceAd(Common.Infrastructure.Model.Services dto, CancellationToken cancellationToken = default)
         {
             try
@@ -1391,7 +1440,7 @@ namespace QLN.Classified.MS.Service.Services
                 var existing = await _dbContext.Services.FirstOrDefaultAsync(s => s.Id == dto.Id, cancellationToken);
 
                 var slug = SlugHelper.GenerateSlug(dto.Title, dto.CategoryName, "Services", Guid.NewGuid()); // leave this here for now - not sure if required ?
-                
+
                 dto.Slug = slug;
 
                 if (existing != null)
@@ -1403,7 +1452,7 @@ namespace QLN.Classified.MS.Service.Services
                 {
                     _dbContext.Services.Add(dto);
                 }
-                
+
                 await _dbContext.SaveChangesAsync(cancellationToken);
 
                 var upsertRequest = await IndexServiceToAzureSearch(existing, cancellationToken);
@@ -1431,6 +1480,120 @@ namespace QLN.Classified.MS.Service.Services
             {
                 throw new Exception("Error updating service ad", ex);
             }
+        }
+        public async Task<Common.Infrastructure.Model.Services> P2PromoteService(PayToPromote request, string uid, Guid addonId, CancellationToken ct)
+        {
+            var serviceAd = await _dbContext.Services
+                .FirstOrDefaultAsync(s => s.Id == request.ServiceId && s.IsActive, ct);
+
+            if (serviceAd == null)
+                throw new KeyNotFoundException("Service Ad not found.");
+
+            var subscription = await _qLSubscriptionContext.Subscriptions
+                .FirstOrDefaultAsync();
+            serviceAd.IsPromoted = true;
+            serviceAd.PromotedExpiryDate = subscription.EndDate;
+            serviceAd.UpdatedBy = uid;
+            serviceAd.UpdatedAt = DateTime.UtcNow;
+
+            await _dbContext.SaveChangesAsync(ct);
+
+            var upsertRequest = await IndexServiceToAzureSearch(serviceAd, ct);
+
+            if (upsertRequest != null)
+            {
+                var message = new IndexMessage
+                {
+                    Action = "Upsert",
+                    Vertical = ConstantValues.IndexNames.ServicesIndex,
+                    UpsertRequest = upsertRequest
+                };
+
+                await _dapr.PublishEventAsync(
+                    pubsubName: ConstantValues.PubSubName,
+                    topicName: ConstantValues.PubSubTopics.IndexUpdates,
+                    data: message,
+                    cancellationToken: ct
+                );
+            }
+
+            return serviceAd;
+        }
+        public async Task<Common.Infrastructure.Model.Services> P2FeatureService(PayToFeature request, string uid, Guid addonId, CancellationToken ct)
+        {
+            var serviceAd = await _dbContext.Services
+                .FirstOrDefaultAsync(s => s.Id == request.ServiceId && s.IsActive, ct);
+
+            if (serviceAd == null)
+                throw new KeyNotFoundException("Service Ad not found.");
+
+            var subscription = await _qLSubscriptionContext.Subscriptions
+                .FirstOrDefaultAsync();
+            serviceAd.IsFeatured = true;
+            serviceAd.FeaturedExpiryDate = subscription.EndDate;
+            serviceAd.UpdatedBy = uid;
+            serviceAd.UpdatedAt = DateTime.UtcNow;
+
+            await _dbContext.SaveChangesAsync(ct);
+
+            var upsertRequest = await IndexServiceToAzureSearch(serviceAd, ct);
+
+            if (upsertRequest != null)
+            {
+                var message = new IndexMessage
+                {
+                    Action = "Upsert",
+                    Vertical = ConstantValues.IndexNames.ServicesIndex,
+                    UpsertRequest = upsertRequest
+                };
+
+                await _dapr.PublishEventAsync(
+                    pubsubName: ConstantValues.PubSubName,
+                    topicName: ConstantValues.PubSubTopics.IndexUpdates,
+                    data: message,
+                    cancellationToken: ct
+                );
+            }
+
+            return serviceAd;
+        }
+        public async Task<Common.Infrastructure.Model.Services> P2PublishService(PayToPublish request, string uid, Guid subscriptionId, CancellationToken ct)
+        {
+            var serviceAd = await _dbContext.Services
+                .FirstOrDefaultAsync(s => s.Id == request.ServiceId && s.IsActive, ct);
+
+            if (serviceAd == null)
+                throw new KeyNotFoundException("Service Ad not found.");
+
+            var subscription = await _qLSubscriptionContext.Subscriptions
+                .FirstOrDefaultAsync();
+            serviceAd.Status = ServiceStatus.PendingApproval;
+            serviceAd.AdType = ServiceAdType.PayToPublish;
+            serviceAd.UpdatedBy = uid;
+            serviceAd.UpdatedAt = DateTime.UtcNow;
+
+            await _dbContext.SaveChangesAsync(ct);
+
+            var upsertRequest = await IndexServiceToAzureSearch(serviceAd, ct);
+
+            if (upsertRequest != null)
+            {
+                var message = new IndexMessage
+                {
+                    Action = "Upsert",
+                    Vertical = ConstantValues.IndexNames.ServicesIndex,
+                    UpsertRequest = upsertRequest
+                };
+
+                await _dapr.PublishEventAsync(
+                    pubsubName: ConstantValues.PubSubName,
+                    topicName: ConstantValues.PubSubTopics.IndexUpdates,
+                    data: message,
+                    cancellationToken: ct
+                );
+            }
+
+            return serviceAd;
         }
     }
 }

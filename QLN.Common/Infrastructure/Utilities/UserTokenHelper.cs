@@ -4,6 +4,7 @@ using QLN.Common.DTO_s.Company;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Text.Json;
 using System.Threading.Tasks;
 
@@ -242,6 +243,38 @@ namespace QLN.Common.Infrastructure.Utilities
 
             };
 
+        }
+        public static (string uid, string username) ExtractUserAsync(HttpContext httpContext)
+        {
+            string uid = "";
+            string username = "unknown";
+
+            try
+            {
+                uid = httpContext.User.FindFirst("sub")?.Value;
+                username = httpContext.User.FindFirst("preferred_username")?.Value ?? "unknown";
+
+                if (string.IsNullOrEmpty(uid))
+                {
+                    var userClaim = httpContext.User.FindFirst("user")?.Value;
+                    if (!string.IsNullOrEmpty(userClaim))
+                    {
+                        using var doc = JsonDocument.Parse(userClaim);
+                        var user = doc.RootElement;
+
+                        if (user.TryGetProperty("uid", out var uidProp) && !string.IsNullOrEmpty(uidProp.GetString()))
+                            uid = uidProp.GetString();
+
+                        if (user.TryGetProperty("name", out var unameProp) && !string.IsNullOrEmpty(unameProp.GetString()))
+                            username = unameProp.GetString();
+                    }
+                }
+                return (uid, username);
+            }
+            catch
+            {
+                return (uid, username);
+            }
         }
 
     }

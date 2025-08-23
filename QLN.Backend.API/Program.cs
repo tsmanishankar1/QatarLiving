@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Npgsql;
 using QLN.Backend.API.ServiceConfiguration;
 using QLN.Common.DTO_s;
 using QLN.Common.DTO_s.Payments;
@@ -143,6 +144,10 @@ builder.Services.Configure<IdentityOptions>(options =>
 #endregion
 
 #region Database context
+var connStr = builder.Configuration.GetConnectionString("DefaultConnection")!;
+var dsb = new NpgsqlDataSourceBuilder(connStr);
+dsb.EnableDynamicJson();      
+var dataSource = dsb.Build();
 builder.Services.AddDbContext<QLApplicationContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddDbContext<QLPaymentsContext>(options =>
@@ -488,6 +493,7 @@ analyticGroup.MapAnalyticsEndpoints();
 app.MapGroup("/api/v2/subscriptions")
     .MapV2SubscriptionEndpoints()
     .MapV2AdminEndpoints()
+    .MapV2FreeAdsEndpoints()
     .RequireAuthorization();
 
 var fatoraGroup = app.MapGroup("/api/pay");

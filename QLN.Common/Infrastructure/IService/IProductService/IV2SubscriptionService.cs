@@ -279,6 +279,13 @@ namespace QLN.Common.Infrastructure.IService.IProductService
         Task<bool> CancelAddonAsync(Guid addonId, string userId, CancellationToken cancellationToken = default);
         Task<bool> AdminCancelAddonAsync(Guid addonId, CancellationToken cancellationToken = default);
         Task<Guid> MigrateSubscriptionAsync(Guid subscriptionId, V2SubscriptionDto request, CancellationToken cancellationToken = default);
+        Task<Guid> PurchaseFreeAdsSubscriptionAsync(V2SubscriptionPurchaseRequestDto request, CancellationToken cancellationToken = default);
+        Task<bool> ValidateFreeAdsUsageAsync(Guid subscriptionId, string category, string? l1Category, string? l2Category, int requestedAmount, CancellationToken cancellationToken = default);
+        Task<bool> RecordFreeAdsUsageAsync(Guid subscriptionId, string category, string? l1Category, string? l2Category, int amount, CancellationToken cancellationToken = default);
+        Task<List<FreeAdsCategorySummary>> GetFreeAdsUsageSummaryAsync(Guid subscriptionId, CancellationToken cancellationToken = default);
+        Task<int> GetRemainingFreeAdsQuotaAsync(Guid subscriptionId, string category, string? l1Category, string? l2Category, CancellationToken cancellationToken = default);
+        Task<List<V2SubscriptionResponseDto>> GetUserFreeSubscriptionsAsync(string userId, CancellationToken cancellationToken = default);
+
     }
     #endregion
 }

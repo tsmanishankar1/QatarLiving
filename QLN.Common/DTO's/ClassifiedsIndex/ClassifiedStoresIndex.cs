@@ -80,7 +80,6 @@ namespace QLN.Common.DTO_s
         [SimpleField(IsFilterable = true, IsSortable = true)]
         public string ProductUrl { get; set; }
     }
-
     public class StoreIndexDto
     {     
         public string? CompanyId { get; set; }

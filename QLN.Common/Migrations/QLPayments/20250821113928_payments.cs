@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -7,7 +8,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace QLN.Common.Migrations.QLPayments
 {
     /// <inheritdoc />
-    public partial class InitilSchema : Migration
+    public partial class payments : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -71,11 +72,11 @@ namespace QLN.Common.Migrations.QLPayments
                 {
                     PaymentId = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    ProductType = table.Column<int>(type: "integer", nullable: false),
                     UserSubscriptionId = table.Column<Guid>(type: "uuid", nullable: true),
-                    UserAddonId = table.Column<Guid>(type: "uuid", nullable: true),
+                    UserAddonIds = table.Column<List<Guid>>(type: "uuid[]", nullable: false, defaultValueSql: "'{}'::uuid[]"),
                     Vertical = table.Column<int>(type: "integer", nullable: false),
                     SubVertical = table.Column<int>(type: "integer", nullable: true),
+                    Products = table.Column<string>(type: "jsonb", nullable: false, defaultValueSql: "'[]'::jsonb"),
                     AdId = table.Column<long>(type: "bigint", nullable: true),
                     Status = table.Column<int>(type: "integer", nullable: false),
                     Fee = table.Column<decimal>(type: "numeric", nullable: false),
