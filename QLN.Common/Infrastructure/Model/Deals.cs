@@ -34,7 +34,7 @@ namespace QLN.Common.Infrastructure.Model
         public string? CompanyLogo { get; set; }
         [MaxLength(200)]
         public string? Slug { get; set; }
-        [MaxLength(300)]
+        [MaxLength(5000)]
         public string? Description { get; set; }
         public DateTime? StartDate { get; set; }
         public DateTime? EndDate { get; set; }
