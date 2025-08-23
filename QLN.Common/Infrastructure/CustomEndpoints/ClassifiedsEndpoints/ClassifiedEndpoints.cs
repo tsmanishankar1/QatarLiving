@@ -963,7 +963,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
             group.MapPost("items/post-by-id", async Task<IResult> (
                 Items dto,
-                [FromQuery] SaveIntent intent,
                 IClassifiedService service,
                 CancellationToken token) =>
             {
