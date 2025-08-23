@@ -33,8 +33,8 @@
                     Items="SubscriptionTypes"
                     SelectedId="@SelectedSubscriptionType"
                     SelectedIdChanged="OnSubscriptionChanged"
-                    GetId="item => item"
-                    GetLabel="item => item"
+                    GetId="SubscriptionTypes => SubscriptionTypes"
+                    GetLabel="SubscriptionTypes => SubscriptionTypes"
                     Placeholder="Subscription type" />
         </div>
         <div class="custom-date-picker-container @(showDatePopover ? "active" : "")" @onclick="ToggleDatePopover">
