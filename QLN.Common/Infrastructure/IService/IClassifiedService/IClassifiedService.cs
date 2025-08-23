@@ -26,7 +26,7 @@ namespace QLN.Common.Infrastructure.IService
       Guid subscriptionId,
       CancellationToken cancellationToken);
         Task<AdCreatedResponseDto> CreateClassifiedPrelovedAd(Preloveds dto, CancellationToken cancellationToken = default);
-        Task<AdCreatedResponseDto> CreateClassifiedCollectiblesAd(Collectibles dto, SaveIntent intent, CancellationToken cancellationToken = default);
+        Task<AdCreatedResponseDto> CreateClassifiedCollectiblesAd(Collectibles dto, CancellationToken cancellationToken = default);
         Task<string> MigrateClassifiedCollectiblesAd(Collectibles dto, CancellationToken cancellationToken = default);
         Task<AdCreatedResponseDto> CreateClassifiedDealsAd(Deals dto, CancellationToken cancellationToken = default);       
         Task<DeleteAdResponseDto> DeleteClassifiedAd(SubVertical subVertical, long adId, string userId, CancellationToken cancellationToken = default);
@@ -67,6 +67,8 @@ namespace QLN.Common.Infrastructure.IService
         Task<string> Favourite(WishlistCreateDto dto, string userId, CancellationToken cancellationToken);
         Task<List<Wishlist>> GetAllByUserFavouriteList(string userId, Vertical vertical, SubVertical subVertical, CancellationToken cancellationToken);
         Task<string> UnFavourite(string userId, Vertical vertical, SubVertical subVertical, long adId, CancellationToken cancellationToken);
+
+        Task<Items> P2PromoteItems(ItemsPayToPromote promote, string uid, CancellationToken ct);
         Task<List<CategoryCountDto>> GetCategoryCountsAsync(CancellationToken cancellationToken);
 
     }

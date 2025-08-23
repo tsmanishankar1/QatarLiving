@@ -2622,268 +2622,14 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
             })
                 .ExcludeFromDescription()
                 .WithName("DealsSoftDeleteInternal")
-                .WithTags("ClassifiedBo")
+                .WithTags("Classified")
                 .WithSummary("Internal soft delete for deals")
                 .WithDescription("Soft deletes deals using Ad IDs and User ID from query.")
                 .Produces<string>(StatusCodes.Status200OK)
                 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-
-            group.MapPost("items", async Task<IResult> (
-                HttpContext httpContext,
-                ClassifiedsItemsDTO dto,
-                IClassifiedService service,
-                AuditLogger auditLogger,
-                CancellationToken token) =>
-            {
-                string? uid = "unknown";
-                string? subId = null;
-                string? name = null;
-                try
-                {
-                    uid = httpContext.User.FindFirst("sub")?.Value ?? "unknown";
-                    var userName = httpContext.User.FindFirst("preferred_username")?.Value ?? "unknown";
-
-                    // Get all subscription claims
-                    var subscriptionClaims = httpContext.User.FindAll("subscriptions").ToList();
-                    Guid? subscriptionId = null;
-                    DateTime? expiryDate = null;
-
-                    // Find items subscription (Vertical=3 and SubVertical=4)
-                    foreach (var claim in subscriptionClaims)
-                    {
-                        try
-                        {
-                            using (var doc = JsonDocument.Parse(claim.Value))
-                            {
-                                var subscription = doc.RootElement;
-
-                                if (subscription.TryGetProperty("Vertical", out var verticalProp) &&
-                                    verticalProp.GetInt32() == 3 &&
-                                    subscription.TryGetProperty("SubVertical", out var subVerticalProp) &&
-                                    subVerticalProp.GetInt32() == 1)
-                                {
-
-                                    if (subscription.TryGetProperty("EndDate", out var endDateProp) &&
-                                    endDateProp.ValueKind == JsonValueKind.String)
-                                    {
-                                        // Parse to DateTime and ensure UTC
-                                        expiryDate = DateTime.Parse(endDateProp.GetString()).ToUniversalTime();
-                                        subscriptionId = Guid.Parse(subscription.GetProperty("Id").GetString());
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-                        catch
-                        {
-                            continue;
-                        }
-                    }
-
-                    if (subscriptionId == null)
-                    {
-                        return TypedResults.BadRequest(new ProblemDetails
-                        {
-                            Title = "Subscription Required",
-                            Detail = "No Preloved subscription found for this user.",
-                            Status = StatusCodes.Status400BadRequest
-                        });
-                    }
-                    var slug = SlugHelper.GenerateSlug(dto.Title, dto.Category, "Classifieds", Guid.NewGuid());
-                    var request = new Items
-                    {
-                        UserId = uid,
-                        UserName = userName,
-                        L2CategoryId = dto.L2CategoryId,
-                        BuildingNumber = dto.BuildingNumber,
-                        SubVertical = SubVertical.Items,
-                        Slug = slug,
-                        AdType = dto.AdType,
-                        Title = dto.Title,
-                        Description = dto.Description,
-                        Price = dto.Price,
-                        PriceType = dto.PriceType,
-                        CategoryId = dto.CategoryId,
-                        Category = dto.Category,
-                        L1CategoryId = dto.L1CategoryId,
-                        L1Category = dto.L1Category,
-                        L2Category = dto.L2Category,
-                        Brand = dto.Brand,
-                        Model = dto.Model,
-                        Color = dto.Color,
-                        Condition = dto.Condition,
-                        Location = dto.Location,
-                        Latitude = dto.Latitude,
-                        Longitude = dto.Longitude,
-                        ContactNumber = dto.ContactNumber,
-                        ContactEmail = dto.ContactEmail,
-                        WhatsAppNumber = dto.WhatsAppNumber,
-                        StreetNumber = dto.StreetNumber,
-                        zone = dto.zone,
-                        ContactNumberCountryCode = dto.ContactNumberCountryCode,
-                        WhatsappNumberCountryCode = dto.WhatsappNumberCountryCode,
-                        ExpiryDate = expiryDate,
-                        FeaturedExpiryDate = null,
-                        IsFeatured = false,
-                        IsPromoted = false,
-                        LastRefreshedOn = null,
-                        PromotedExpiryDate = null,
-                        PublishedDate = null,
-                        Status = AdStatus.Draft,
-                        SubscriptionId = subscriptionId,
-                        IsActive = true,
-                        CreatedBy = userName,
-                        CreatedAt = DateTime.UtcNow,
-                        Images = dto.Images.Select(i => new ImageInfo
-                        {
-                            Url = i.Url,
-                            Order = i.Order
-                        }).ToList(),
-                        Attributes = dto.Attributes
-
-                    };
-
-                    if (uid == null && name == null)
-                    {
-                        return TypedResults.BadRequest(new ProblemDetails
-                        {
-                            Title = "Validation Error",
-                            Detail = "Authenticated user ID is missing or invalid.",
-                            Status = StatusCodes.Status400BadRequest
-                        });
-                    }
-                    var response = await service.CreateClassifiedItemsAd(request, token);
-
-                    await auditLogger.LogAuditAsync(
-                        module: "Classified",
-                        httpMethod: "POST",
-                        apiEndpoint: "/api/classifieds/items",
-                        message: $"Classified items ad created successfully. Title: {dto.Title}",
-                        createdBy: uid,
-                        payload: dto,
-                        cancellationToken: token
-                        );
-
-
-                    return TypedResults.Created($"/api/classifieds/items/user-ads-by-id/{response.AdId}", response);
-
-                }
-                catch (ArgumentException ex)
-                {
-                    await auditLogger.LogExceptionAsync("Classified", "/api/classifieds/items", ex, uid, token);
-                    return TypedResults.BadRequest(new ProblemDetails
-                    {
-                        Title = "Validation Error",
-                        Detail = ex.Message,
-                        Status = StatusCodes.Status400BadRequest
-                    });
-                }
-                catch (Exception ex)
-                {
-                    await auditLogger.LogExceptionAsync("Classified", "/api/classifieds/items", ex, uid, token);
-                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
-                    {
-                        return TypedResults.NotFound(new ProblemDetails
-                        {
-                            Title = "Not Found",
-                            Detail = "Requested resource or reference was not found.",
-                            Status = StatusCodes.Status404NotFound
-                        });
-                    }
-                    else if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
-                    {
-                        return TypedResults.BadRequest(new ProblemDetails
-                        {
-                            Title = "Bad Request",
-                            Detail = ex.Message,
-                            Status = StatusCodes.Status400BadRequest
-                        });
-                    }
-                    return TypedResults.Problem(
-                        title: "Internal Server Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError
-                    );
-                }
-            })
-    .WithName("PostItemsAd")
-    .WithTags("Classified")
-    .WithSummary("Post classified items ad using authenticated user")
-    .WithDescription("Takes user ID from JWT token and creates the ad.")
-    .Produces<AdCreatedResponseDto>(StatusCodes.Status201Created)
-    .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-    .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
-    .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
-    .RequireAuthorization();
-
-            group.MapPost("items/post-by-id", async Task<IResult> (
-                Items dto,
-                IClassifiedService service,
-                CancellationToken token) =>
-            {
-                try
-                {
-                    if (dto.UserId == null)
-                    {
-                        return TypedResults.BadRequest(new ProblemDetails
-                        {
-                            Title = "Validation Error",
-                            Detail = "User ID must not be empty.",
-                            Status = StatusCodes.Status400BadRequest
-                        });
-                    }
-
-                    var response = await service.CreateClassifiedItemsAd(dto, token);
-                    return TypedResults.Created($"/api/classifieds/items/user-ads-by-id/{response.AdId}", response);
-
-                }
-                catch (ArgumentException ex)
-                {
-                    return TypedResults.BadRequest(new ProblemDetails
-                    {
-                        Title = "Validation Error",
-                        Detail = ex.Message,
-                        Status = StatusCodes.Status400BadRequest
-                    });
-                }
-                catch (Exception ex)
-                {
-                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
-                    {
-                        return TypedResults.NotFound(new ProblemDetails
-                        {
-                            Title = "Not Found",
-                            Detail = "Requested resource or reference was not found.",
-                            Status = StatusCodes.Status404NotFound
-                        });
-                    }
-                    else if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
-                    {
-                        return TypedResults.BadRequest(new ProblemDetails
-                        {
-                            Title = "Bad Request",
-                            Detail = ex.Message,
-                            Status = StatusCodes.Status400BadRequest
-                        });
-                    }
-                    return TypedResults.Problem(
-                        title: "Internal Server Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError
-                    );
-                }
-            })
-                .WithName("PostItemsAdByIdBo")
-                .WithTags("Classified")
-                .WithSummary("Post classified items ad using provided UserId")
-                .WithDescription("For admin/service scenarios where the UserId is passed explicitly.")
-                .Produces<AdCreatedResponseDto>(StatusCodes.Status201Created)
-                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-                .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
-                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
-                .ExcludeFromDescription();
+         
 
 
             group.MapPost("/bulk-preloved-action", async Task<Results<
@@ -3093,7 +2839,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
 
             group.MapPost("preloved/admin/post-by-id", async Task<IResult> (
                 Preloveds dto,
-                SaveIntent indent,
                 IClassifiedService service,
                 CancellationToken token) =>
             {
@@ -3170,7 +2915,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
            
             group.MapPost("collectibles/admin/post-by-id", async Task<IResult> (
                 Collectibles dto,
-                SaveIntent indent,
                 IClassifiedService service,
                 CancellationToken token) =>
             {
@@ -3186,7 +2930,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                         });
                     }
 
-                    var result = await service.CreateClassifiedCollectiblesAd(dto, indent, token);
+                    var result = await service.CreateClassifiedCollectiblesAd(dto,token);
 
                     return TypedResults.Created(
                         $"/api/classifieds/collectibles/admin/post-by-id/{result.AdId}", result);
