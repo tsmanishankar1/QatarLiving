@@ -44,7 +44,7 @@ public class DailyLivingBase : QLComponentBase
             NewsCategories = await GetNewsCategories();
             if (!NavigationPath.Value.IsLocal)
             {
-                await AuthorizedPage();
+                await base.OnInitializedAsync();
             }
             var paginatedData = await GetEvents(1, 50, "", "desc", 1);
             var allEvents = paginatedData.Items;

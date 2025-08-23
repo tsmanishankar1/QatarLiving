@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Routing;
-using QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,8 +15,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                  .MapServiceSearch()
                  .MapServiceCategoryEndpoints()
                  .MapServiceCategoryGetAllEndpoints()
-                 .MapServiceCategoryGetByIdEndpoint()
-                 .MapServiceCategoryUpdateEndpoints()
+                
+                 
                  .MapServiceAdEndpoints()
                  .MapServiceAdUpdateEndpoints()
                  .MapServiceGetAllEndpoints()
@@ -33,6 +32,9 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                  .MapBulkActionsEndpoint()
                  .MapServicesFeaturedItemEndpoint()
                  .MapGetCategoryCount()
+                 .MapP2PromoteEndpoint()
+                 .MapP2FeatureEndpoint()
+                 .MapP2PublishEndpoint()
                  .MapServiceCountbySubverticalEndpoints();
             return group;
         }

@@ -59,8 +59,6 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.ViewListing
             showPublishedPopover = true;
         }
 
-        protected void CancelCreatedPopover() => showCreatedPopover = false;
-        protected void CancelPublishedPopover() => showPublishedPopover = false;
 
         protected async void ConfirmCreatedPopover()
         {
@@ -68,10 +66,22 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.ViewListing
             showCreatedPopover = false;
             await OnDateFilterChanged.InvokeAsync((dateCreated, datePublished));
         }
+        protected async void CancelCreatedPopover()
+        {
+            dateCreated = null;
+            showCreatedPopover = false;
+            await OnDateFilterChanged.InvokeAsync((dateCreated, datePublished));
+        }
 
         protected async void ConfirmPublishedPopover()
         {
             datePublished = tempPublishedDate;
+            showPublishedPopover = false;
+            await OnDateFilterChanged.InvokeAsync((dateCreated, datePublished));
+        }
+        protected async void CancelPublishedPopover()
+        {
+            datePublished = null;
             showPublishedPopover = false;
             await OnDateFilterChanged.InvokeAsync((dateCreated, datePublished));
         }
@@ -125,7 +135,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.ViewListing
                 {
                     ["Image URL"] = x.Images?.FirstOrDefault()?.Url ?? "-",
                     ["Ad ID"] = x.Id,
-                    ["Ad Type"] = x.AdType,
+                    ["Ad Type"] = (AdTypeEnum)x.AdType,
                     ["Ad Title"] = x.Title,
                     ["User ID"] = x.UserId,
                     ["User Name"] = x.UserName,

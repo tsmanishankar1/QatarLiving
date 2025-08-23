@@ -39,7 +39,6 @@ namespace QLN.ContentBO.WebUI.Pages
         protected override async Task OnInitializedAsync()
         {
             await base.OnInitializedAsync();
-            await AuthorizedPage();
         }
         private bool shouldReinitializeSortable = false;
 

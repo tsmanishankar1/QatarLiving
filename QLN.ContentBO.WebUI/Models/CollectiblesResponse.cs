@@ -70,4 +70,10 @@
         public string? Url { get; set; }
         public int Order { get; set; }
     }
+    public enum AdTypeEnum
+    {
+        P2P = 0,
+        Subscription = 1,
+        Free = 2
+    }
 }
