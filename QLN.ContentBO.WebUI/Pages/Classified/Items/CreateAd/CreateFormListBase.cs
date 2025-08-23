@@ -108,7 +108,6 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.CreateAd
             Ad.SelectedSubSubcategoryId = null;
             Ad.DynamicFields.Clear();
             DynamicFieldErrors.Clear();
-
             // Notify validation and refresh UI
             editContext.NotifyValidationStateChanged();
             StateHasChanged();
@@ -120,6 +119,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.CreateAd
             Ad.SelectedSubSubcategoryId = null;
             Ad.DynamicFields.Clear();
             DynamicFieldErrors.Clear();
+            Console.Write("the selectedsubcategory Type is is " + SelectedSubcategory.Type);
             editContext.NotifyValidationStateChanged();
             StateHasChanged();
         }

@@ -45,17 +45,20 @@
 
         @if (!string.IsNullOrEmpty(Ad.SelectedSubcategoryId) && SelectedSubcategory?.Fields?.Any() == true)
         {
-            <MudSelect T="string"Class="white-bg" Label="Section" Variant="Variant.Outlined"
+             var firstField = SelectedSubcategory.Fields.FirstOrDefault();
+            if (firstField != null && firstField.Type == "L2Category")
+            {
+                <MudSelect T="string"Class="white-bg" Label="Section" Variant="Variant.Outlined"
                 Value="@Ad.SelectedSubSubcategoryId"
                 ValueChanged="@OnSubSubCategoryChanged"
                 For="@(() => Ad.SelectedSubSubcategoryId)"
                 FullWidth="true">
-            @foreach (var subsub in SelectedSubcategory.Fields)
-            {
-                <MudSelectItem T="string" Value="@subsub.Id.ToString()">@subsub.CategoryName</MudSelectItem>
+                @foreach (var subsub in SelectedSubcategory.Fields)
+                {
+                    <MudSelectItem T="string" Value="@subsub.Id.ToString()">@subsub.CategoryName</MudSelectItem>
+                }
+                 </MudSelect>
             }
-        </MudSelect>
-
         }
         @if (AvailableFields != null)
         {
