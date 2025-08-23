@@ -12,6 +12,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
 using QLN.Common.DTO_s;
 using QLN.Common.DTO_s.Company;
+using QLN.Common.DTO_s.Payments;
 using QLN.Common.DTO_s.Subscription;
 using QLN.Common.DTOs;
 using QLN.Common.Infrastructure.Constants;
@@ -1412,8 +1413,13 @@ namespace QLN.Common.Infrastructure.Service.AuthService
 
                 // Group subscriptions by vertical
                 var subscriptionsByVertical = activeSubscriptions
+                    .Where(s => s.ProductType == ProductType.SUBSCRIPTION)
                     .GroupBy(s => s.Vertical)
                     .ToDictionary(g => g.Key, g => g.ToList());
+                var activeP2PSubscriptions = activeSubscriptions
+                            .Where(s => s.ProductType == ProductType.PUBLISH)
+                            .GroupBy(s => s.Vertical)
+                            .ToDictionary(g => g.Key, g => g.ToList());
 
                 var freeSubscriptionsByVertical = activeFreeSubscriptions
                     .GroupBy(s => s.Vertical)
@@ -1500,9 +1506,11 @@ namespace QLN.Common.Infrastructure.Service.AuthService
                     {
                         TotalActiveSubscriptions = activeSubscriptions.Count,
                         TotalActiveFreeSubscriptions = activeFreeSubscriptions.Count,
+                        TotalActiveP2PSubscriptions = activeP2PSubscriptions.Count,
                         TotalActiveAddons = activeAddons.Count(a => a.IsActive),
                         ActiveSubscriptions = subscriptionsByVertical,
                         ActiveFreeSubscriptions = freeSubscriptionsByVertical,
+                        ActiveP2PSubscriptions = activeP2PSubscriptions,
                         ActiveAddons = addonsByVertical,
                         UsageSummary = usageSummary,
                         EarliestExpiryDate = GetEarliestExpiryDate(activeSubscriptions, activeFreeSubscriptions),
