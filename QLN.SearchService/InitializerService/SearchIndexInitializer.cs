@@ -11,7 +11,7 @@ using Azure.Search.Documents.Indexes.Models;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using QLN.Common.DTO_s;
-using Azure.Search.Documents.Indexes.Models;
+
 namespace QLN.SearchService
 {
     public interface ISearchIndexInitializer
@@ -67,7 +67,6 @@ namespace QLN.SearchService
             }
         }
 
-
         private async Task EnsureIndexExistsAsync(string vertical, string indexName)
         {
             try
@@ -103,27 +102,26 @@ namespace QLN.SearchService
                 var fieldsList = fields.ToList();
                 fieldsList.Add(vectorField);
 
-
                 var indexDefinition = new SearchIndex(indexName, fieldsList)
                 {
                     VectorSearch = new VectorSearch
                     {
                         Profiles =
-         {
-             new VectorSearchProfile("default-vector-profile", "hnsw-config")
-         },
+                        {
+                            new VectorSearchProfile("default-vector-profile", "hnsw-config")
+                        },
                         Algorithms =
-         {
-             new HnswAlgorithmConfiguration("hnsw-config")
-             {
-                 Parameters = new HnswParameters
-                 {
-                     M = 4,
-                     EfConstruction = 400
-                 }
-             }
-         }
-                    },
+                        {
+                            new HnswAlgorithmConfiguration("hnsw-config")
+                            {
+                                Parameters = new HnswParameters
+                                {
+                                    M = 4,
+                                    EfConstruction = 400
+                                }
+                            }
+                        }
+                    }
                 };
 
                 _logger.LogInformation("Creating index '{IndexName}' for vertical '{Vertical}'", indexName, vertical);
@@ -172,5 +170,5 @@ namespace QLN.SearchService
             return type;
         }
     }
-    
+
 }

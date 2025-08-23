@@ -479,7 +479,6 @@ namespace QLN.Common.Infrastructure.Service.Payments
             };
         }
 
-        // Helper: centralize the ? vs & rule
         private static string BuildRedirect(string baseUrl, bool success, string? error = null)
         {
             var sep =baseUrl.Contains('?') ? "&" : "?";
