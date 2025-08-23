@@ -269,7 +269,7 @@ namespace QLN.Classified.MS.Service
                 }
 
                 dto.CreatedAt = DateTime.UtcNow;
-                dto.UpdatedAt = DateTime.UtcNow;
+                dto.UpdatedAt = DateTime.MinValue;
 
                 _logger.LogDebug("Adding Items ad to EF context...");
                 _context.Item.Add(dto);
