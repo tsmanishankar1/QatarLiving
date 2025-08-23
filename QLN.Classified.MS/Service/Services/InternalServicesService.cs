@@ -67,82 +67,7 @@ namespace QLN.Classified.MS.Service.Services
             }).ToList();
 
             return result;
-        }
-
-        /*        private CategoryDto MapCategoryRecursive(CategoryDropdown category, List<CategoryDropdown> allCategories)
-                {
-                    return new CategoryDto
-                    {
-                        Id = category.Id,
-                        CategoryName = category.CategoryName,
-                        Vertical = category.Vertical.ToString(),
-                        SubVertical = category.SubVertical?.ToString() ?? string.Empty,
-                        ParentId = category.ParentId,
-                        Fields = allCategories
-                            .Where(child => child.ParentId == category.Id)
-                            .Select(child => MapFieldRecursive(child, allCategories))
-                            .ToList()
-                    };
-                }
-
-                private FieldDto MapFieldRecursive(CategoryDropdown field, List<CategoryDropdown> allCategories)
-                {
-                    return new FieldDto
-                    {
-                        Id = field.Id,
-                        CategoryName = field.CategoryName,
-                        Type = field.Type,
-                        Options = field.Options ?? new List<string>(),
-                        Fields = allCategories
-                            .Where(c => c.ParentId == field.Id)
-                            .Select(c => MapFieldRecursive(c, allCategories))
-                            .ToList()
-                    };
-                }
-        */
-        /*        public async Task<CategoryDto?> GetCategoryById(long id, CancellationToken cancellationToken = default)
-                {
-                    var allCategories = await _dbContext.Categories
-                        .AsNoTracking()
-                        .ToListAsync(cancellationToken);
-
-                    var category = allCategories.FirstOrDefault(c => c.Id == id);
-                    if (category == null)
-                        return null;
-
-                    return MapCategoryRecursive(category, allCategories);
-                }
-        */
-        public async Task<string> UpdateCategory(CategoryDto dto, CancellationToken cancellationToken = default)
-        {
-            var category = await _dbContext.Categories
-                .FirstOrDefaultAsync(c => c.Id == dto.Id, cancellationToken);
-
-            if (category == null)
-                return "Category not found";
-
-            category.CategoryName = dto.CategoryName;
-            category.Vertical = Enum.Parse<Vertical>(dto.Vertical);
-            category.SubVertical = Enum.TryParse<SubVertical>(dto.SubVertical, out var sub) ? sub : null;
-
-            var allFieldDtos = FlattenFields(dto.Fields);
-
-            foreach (var fieldDto in allFieldDtos)
-            {
-                var existingField = await _dbContext.Categories
-                    .FirstOrDefaultAsync(c => c.Id == fieldDto.Id, cancellationToken);
-
-                if (existingField != null)
-                {
-                    existingField.CategoryName = fieldDto.CategoryName;
-                    existingField.Type = fieldDto.Type;
-                    existingField.Options = fieldDto.Options;
-                }
-            }
-
-            await _dbContext.SaveChangesAsync(cancellationToken);
-            return "Category Updated Successfully";
-        }
+        }       
         private List<FieldDto> FlattenFields(List<FieldDto>? fields)
         {
             var list = new List<FieldDto>();
@@ -252,53 +177,6 @@ namespace QLN.Classified.MS.Service.Services
                     AssignIds(field.Fields, ref lastFieldId);
             }
         }
-
-        //private async Task SaveFieldRecursive(FieldDto fieldDto, long parentId, Vertical vertical, SubVertical? subVertical, CancellationToken cancellationToken)
-        //{
-        //    var category = new Category
-        //    {
-        //        CategoryName = fieldDto.CategoryName,
-        //        Type = fieldDto.Type,
-        //        Options = fieldDto.Options,
-        //        ParentId = parentId,
-        //        Vertical = vertical,
-        //        SubVertical = subVertical
-        //    };
-
-        //    _dbContext.Categories.Add(category);
-        //    await _dbContext.SaveChangesAsync(cancellationToken);
-
-        //    if (fieldDto.Fields != null && fieldDto.Fields.Any())
-        //    {
-        //        foreach (var childField in fieldDto.Fields)
-        //        {
-        //            await SaveFieldRecursive(childField, category.Id, vertical, subVertical, cancellationToken);
-        //        }
-        //    }
-        //}
-        //private Category MapField(FieldDto dto, Category parent, Vertical verticalEnum, SubVertical? subVerticalEnum)
-        //{
-        //    var category = new Category
-        //    {
-        //        CategoryName = dto.CategoryName,
-        //        Type = dto.Type,
-        //        Options = dto.Options,
-        //        ParentCategory = parent,
-        //        Vertical = verticalEnum,
-        //        SubVertical = subVerticalEnum
-        //    };
-
-        //    if (dto.Fields != null && dto.Fields.Any())
-        //    {
-        //        foreach (var childDto in dto.Fields)
-        //        {
-        //            var childCategory = MapField(childDto, category, verticalEnum, subVerticalEnum);
-        //            category.CategoryFields.Add(childCategory);
-        //        }
-        //    }
-
-        //    return category;
-        //}
         public async Task<string> CreateServiceAd(string uid, string userName, string subscriptionId, ServiceDto dto, CancellationToken cancellationToken = default)
         {
             try
@@ -307,7 +185,7 @@ namespace QLN.Classified.MS.Service.Services
                 string? l1CategoryName = null;
                 string? l2CategoryName = null;
 
-                var mainCategory = await _dbContext.Categories
+                var mainCategory = await _dbContext.CategoryDropdowns
                     .AsNoTracking()
                     .FirstOrDefaultAsync(c => c.Id == dto.CategoryId && c.ParentId == null, cancellationToken);
 
@@ -496,7 +374,7 @@ namespace QLN.Classified.MS.Service.Services
                 string? l1CategoryName = null;
                 string? l2CategoryName = null;
 
-                var mainCategory = await _dbContext.Categories
+                var mainCategory = await _dbContext.CategoryDropdowns
                     .AsNoTracking()
                     .FirstOrDefaultAsync(c => c.Id == dto.CategoryId && c.ParentId == null, cancellationToken);
 
