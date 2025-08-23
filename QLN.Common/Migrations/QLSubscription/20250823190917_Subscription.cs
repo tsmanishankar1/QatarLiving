@@ -39,9 +39,11 @@ namespace QLN.Common.Migrations.QLSubscription
                     SubscriptionId = table.Column<Guid>(type: "uuid", nullable: false),
                     ProductCode = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
                     ProductName = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
-                    UserId = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: true),
+                    ProductType = table.Column<int>(type: "integer", nullable: true),
+                    UserId = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
                     CompanyId = table.Column<Guid>(type: "uuid", nullable: true),
                     PaymentId = table.Column<int>(type: "integer", nullable: true),
+                    AdId = table.Column<long>(type: "bigint", nullable: true),
                     Vertical = table.Column<int>(type: "integer", nullable: false),
                     SubVertical = table.Column<int>(type: "integer", nullable: true),
                     StartDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
@@ -54,6 +56,12 @@ namespace QLN.Common.Migrations.QLSubscription
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Subscriptions", x => x.SubscriptionId);
+                    table.ForeignKey(
+                        name: "FK_Subscriptions_Products_ProductCode",
+                        column: x => x.ProductCode,
+                        principalTable: "Products",
+                        principalColumn: "ProductCode",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -63,7 +71,8 @@ namespace QLN.Common.Migrations.QLSubscription
                     UserAddOnId = table.Column<Guid>(type: "uuid", nullable: false),
                     ProductCode = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
                     ProductName = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
-                    UserId = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: true),
+                    ProductType = table.Column<int>(type: "integer", nullable: true),
+                    UserId = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
                     CompanyId = table.Column<Guid>(type: "uuid", nullable: true),
                     SubscriptionId = table.Column<Guid>(type: "uuid", nullable: false),
                     PaymentId = table.Column<int>(type: "integer", maxLength: 100, nullable: true),
@@ -79,6 +88,18 @@ namespace QLN.Common.Migrations.QLSubscription
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_UserAddOns", x => x.UserAddOnId);
+                    table.ForeignKey(
+                        name: "FK_UserAddOns_Products_ProductCode",
+                        column: x => x.ProductCode,
+                        principalTable: "Products",
+                        principalColumn: "ProductCode",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_UserAddOns_Subscriptions_SubscriptionId",
+                        column: x => x.SubscriptionId,
+                        principalTable: "Subscriptions",
+                        principalColumn: "SubscriptionId",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateIndex(
@@ -142,13 +163,13 @@ namespace QLN.Common.Migrations.QLSubscription
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "Products");
+                name: "UserAddOns");
 
             migrationBuilder.DropTable(
                 name: "Subscriptions");
 
             migrationBuilder.DropTable(
-                name: "UserAddOns");
+                name: "Products");
         }
     }
 }

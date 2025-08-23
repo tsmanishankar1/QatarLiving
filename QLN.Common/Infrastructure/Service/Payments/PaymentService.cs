@@ -4,11 +4,13 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using QLN.Common.DTO_s;
 using QLN.Common.DTO_s.Payments;
+using QLN.Common.DTO_s.Services;
 using QLN.Common.DTO_s.Subscription;
 using QLN.Common.DTOs;
 using QLN.Common.Infrastructure.IService.IAuth;
 using QLN.Common.Infrastructure.IService.IPayments;
 using QLN.Common.Infrastructure.IService.IProductService;
+using QLN.Common.Infrastructure.IService.IService;
 using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.QLDbContext;
 using QLN.Common.Infrastructure.Subscriptions;
@@ -30,6 +32,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
         private readonly QLSubscriptionContext _subscriptionContext;
         private readonly QLApplicationContext _applicationDbContext;
         private readonly IV2SubscriptionService _subscriptionService;
+        private readonly IServices _services;
 
         public PaymentService(
             ILogger<PaymentService> logger,
@@ -39,7 +42,8 @@ namespace QLN.Common.Infrastructure.Service.Payments
             IConfiguration configuration,
             IV2SubscriptionService subscriptionService,
             QLSubscriptionContext subscriptionContext,
-            QLApplicationContext applicationDbContext
+            QLApplicationContext applicationDbContext,
+            IServices services
         )
         {
             _logger = logger;
@@ -50,6 +54,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
             _subscriptionService = subscriptionService;
             _subscriptionContext = subscriptionContext;
             _applicationDbContext = applicationDbContext;
+            _services = services;
         }
 
         public async Task<PaymentResponse> PayAsync(ExternalPaymentRequest request, CancellationToken cancellationToken = default)
@@ -605,6 +610,11 @@ namespace QLN.Common.Infrastructure.Service.Payments
                     }
                 }
 
+                if (payment.Vertical == Vertical.Services && payment.Products != null && payment.Products.Any())
+                {
+                    await ProcessServicesAddonsAsync(payment, cancellationToken);
+                }
+
                 var d365Data = new D365Data
                 {
                     PaymentInfo = payment,
@@ -629,6 +639,141 @@ namespace QLN.Common.Infrastructure.Service.Payments
             }
         }
 
+        private async Task ProcessServicesAddonsAsync(PaymentEntity payment, CancellationToken cancellationToken)
+        {
+            try
+            {
+                if (!payment.AdId.HasValue || payment.AdId.Value <= 0)
+                {
+                    _logger.LogWarning("Cannot process services addons - AdId is missing or invalid for Payment ID: {PaymentId}", payment.PaymentId);
+                    return;
+                }
+
+                var addonMappings = await GetAddonIdsByProductTypeAsync(payment, cancellationToken);
+
+                foreach (var product in payment.Products)
+                {
+                    switch (product.ProductType)
+                    {
+                        case ProductType.ADDON_PROMOTE:
+                            {
+                                if (!addonMappings.TryGetValue(ProductType.ADDON_PROMOTE, out var addonId) || addonId == Guid.Empty)
+                                {
+                                    _logger.LogError("Cannot process P2Promote - AddonId for PROMOTE not found for Payment ID: {PaymentId}", payment.PaymentId);
+                                    continue;
+                                }
+
+                                var promoteRequest = new PayToPromote
+                                {
+                                    ServiceId = payment.AdId.Value,
+                                    AddonId = addonId,
+                                };
+
+                                await _services.P2PromoteService(promoteRequest, payment.PaidByUid, addonId, cancellationToken);
+                                _logger.LogInformation("Successfully processed P2Promote for Service ID: {ServiceId}, AddonId: {AddonId}, Payment ID: {PaymentId}",
+                                    payment.AdId.Value, addonId, payment.PaymentId);
+                                break;
+                            }
+
+                        case ProductType.ADDON_FEATURE:
+                            {
+                                if (!addonMappings.TryGetValue(ProductType.ADDON_FEATURE, out var addonId) || addonId == Guid.Empty)
+                                {
+                                    _logger.LogError("Cannot process P2Feature - AddonId for FEATURE not found for Payment ID: {PaymentId}", payment.PaymentId);
+                                    continue;
+                                }
+
+                                var featureRequest = new PayToFeature
+                                {
+                                    ServiceId = payment.AdId.Value,
+                                    AddonId = addonId
+                                };
+
+                                await _services.P2FeatureService(featureRequest, payment.PaidByUid, addonId, cancellationToken);
+                                _logger.LogInformation("Successfully processed P2Feature for Service ID: {ServiceId}, AddonId: {AddonId}, Payment ID: {PaymentId}",
+                                    payment.AdId.Value, addonId, payment.PaymentId);
+                                break;
+                            }
+
+                        case ProductType.PUBLISH:
+                            {
+                                var subscriptionId = payment.UserSubscriptionId ?? Guid.Empty;
+
+                                if (subscriptionId == Guid.Empty)
+                                {
+                                    _logger.LogError("Cannot process P2Publish - SubscriptionId is missing for Payment ID: {PaymentId}", payment.PaymentId);
+                                    continue;
+                                }
+
+                                var publishRequest = new PayToPublish
+                                {
+                                    ServiceId = payment.AdId.Value,
+                                    SubscriptionId = subscriptionId
+                                };
+
+                                await _services.P2PublishService(publishRequest, payment.PaidByUid, subscriptionId, cancellationToken);
+                                _logger.LogInformation("Successfully processed P2Publish for Service ID: {ServiceId}, SubscriptionId: {SubscriptionId}, Payment ID: {PaymentId}",
+                                    payment.AdId.Value, subscriptionId, payment.PaymentId);
+                                break;
+                            }
+
+                        default:
+
+                            break;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error processing services addons for Payment ID: {PaymentId}", payment.PaymentId);
+            }
+        }
+
+        private async Task<Dictionary<ProductType, Guid>> GetAddonIdsByProductTypeAsync(PaymentEntity payment, CancellationToken cancellationToken)
+        {
+            var addonMappings = new Dictionary<ProductType, Guid>();
+
+            if (payment.UserAddonIds == null || !payment.UserAddonIds.Any())
+            {
+                _logger.LogWarning("No addon IDs found for Payment ID: {PaymentId}", payment.PaymentId);
+                return addonMappings;
+            }
+
+            try
+            {
+                var addons = await _subscriptionContext.UserAddOns
+                    .Where(ua => payment.UserAddonIds.Contains(ua.UserAddOnId) && ua.PaymentId == payment.PaymentId)
+                    .Select(ua => new { ua.UserAddOnId, ua.ProductType })
+                    .ToListAsync(cancellationToken);
+
+                if (!addons.Any())
+                {
+                    _logger.LogWarning("No addon records found in database for Payment ID: {PaymentId}", payment.PaymentId);
+                    return addonMappings;
+                }
+
+                foreach (var addon in addons)
+                {
+                    if (addon.ProductType.HasValue)
+                    {
+                        addonMappings[addon.ProductType.Value] = addon.UserAddOnId;
+                        _logger.LogDebug("Mapped AddonId {AddonId} to ProductType {ProductType} for Payment ID: {PaymentId}",
+                            addon.UserAddOnId, addon.ProductType.Value, payment.PaymentId);
+                    }
+                    else
+                    {
+                        _logger.LogWarning("ProductType is null for AddonId {AddonId} in Payment ID: {PaymentId}",
+                            addon.UserAddOnId, payment.PaymentId);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error mapping addon IDs to product types for Payment ID: {PaymentId}", payment.PaymentId);
+            }
+
+            return addonMappings;
+        }
         private async Task UpdateUserSubscriptionAsync(Subscription subscription, int orderId, CancellationToken cancellationToken)
         {
             try

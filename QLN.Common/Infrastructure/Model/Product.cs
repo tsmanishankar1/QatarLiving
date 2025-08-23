@@ -14,7 +14,7 @@ namespace QLN.Common.Infrastructure.Model
     {
         [Key]
         [MaxLength(50)]
-        public string ProductCode { get; set; } = string.Empty; 
+        public string ProductCode { get; set; } = string.Empty;
 
         [Required]
         [MaxLength(100)]
@@ -44,5 +44,8 @@ namespace QLN.Common.Infrastructure.Model
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         public DateTime? UpdatedAt { get; set; }
+
+        public virtual ICollection<Subscription> Subscriptions { get; set; } = new List<Subscription>();
+        public virtual ICollection<UserAddOn> UserAddOns { get; set; } = new List<UserAddOn>();
     }
 }
