@@ -17,7 +17,7 @@ namespace QLN.Common.Infrastructure.IService
         Task<List<SavedSearchResponseDto>> GetSearches(string userId, Vertical vertical, SubVertical? subVertical = null, CancellationToken cancellationToken = default);
         Task<bool> SaveSearch(SaveSearchRequestDto dto, string userId, CancellationToken cancellationToken = default);
         Task<bool> SaveSearchById(SaveSearchRequestByIdDto dto, CancellationToken cancellationToken = default);
-        Task<AdCreatedResponseDto> CreateClassifiedItemsAd(Items dto, SaveIntent intent, CancellationToken cancellationToken = default);
+        Task<AdCreatedResponseDto> CreateClassifiedItemsAd(Items dto, CancellationToken cancellationToken = default);
         Task<string> MigrateClassifiedItemsAd(Items dto, CancellationToken cancellationToken = default);
         Task<AdCreatedResponseDto> RefreshClassifiedItemsAd(
       SubVertical subVertical,
