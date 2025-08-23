@@ -181,40 +181,6 @@ namespace QLN.Classified.MS.Service.Services
         {
             try
             {
-                string? categoryName = null;
-                string? l1CategoryName = null;
-                string? l2CategoryName = null;
-
-                var mainCategory = await _dbContext.CategoryDropdowns
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(c => c.Id == dto.CategoryId && c.ParentId == null, cancellationToken);
-
-                if (mainCategory == null)
-                {
-                    throw new ArgumentException($"Invalid CategoryId: {dto.CategoryId}. No matching main category found.");
-                }
-                dto.CategoryName = mainCategory.CategoryName;
-
-                var l1Category = await _dbContext.CategoryDropdowns
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(c => c.Id == dto.L1CategoryId && c.ParentId == mainCategory.Id, cancellationToken);
-
-                if (l1Category == null)
-                {
-                    throw new ArgumentException($"Invalid L1CategoryId: {dto.L1CategoryId}. Not found under main category '{mainCategory.CategoryName}'.");
-                }
-                dto.L1CategoryName = l1Category.CategoryName;
-
-                var l2Category = await _dbContext.CategoryDropdowns
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(c => c.Id == dto.L2CategoryId && c.ParentId == l1Category.Id, cancellationToken);
-
-                if (l2Category == null)
-                {
-                    throw new ArgumentException($"Invalid L2CategoryId: {dto.L2CategoryId}. Not found under L1 category '{l1Category.CategoryName}'.");
-                }
-                dto.L2CategoryName = l2Category.CategoryName;
-
                 var hasActiveAd = await _dbContext.Services
                     .AnyAsync(s =>
                         s.CreatedBy == uid &&
@@ -369,40 +335,6 @@ namespace QLN.Classified.MS.Service.Services
 
                 if (existing == null)
                     throw new ArgumentException("Service Ad not found for update.");
-
-                string? categoryName = null;
-                string? l1CategoryName = null;
-                string? l2CategoryName = null;
-
-                var mainCategory = await _dbContext.CategoryDropdowns
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(c => c.Id == dto.CategoryId && c.ParentId == null, cancellationToken);
-
-                if (mainCategory == null)
-                {
-                    throw new ArgumentException($"Invalid CategoryId: {dto.CategoryId}. No matching main category found.");
-                }
-                dto.CategoryName = mainCategory.CategoryName;
-
-                var l1Category = await _dbContext.CategoryDropdowns
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(c => c.Id == dto.L1CategoryId && c.ParentId == mainCategory.Id, cancellationToken);
-
-                if (l1Category == null)
-                {
-                    throw new ArgumentException($"Invalid L1CategoryId: {dto.L1CategoryId}. Not found under main category '{mainCategory.CategoryName}'.");
-                }
-                dto.L1CategoryName = l1Category.CategoryName;
-
-                var l2Category = await _dbContext.CategoryDropdowns
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(c => c.Id == dto.L2CategoryId && c.ParentId == l1Category.Id, cancellationToken);
-
-                if (l2Category == null)
-                {
-                    throw new ArgumentException($"Invalid L2CategoryId: {dto.L2CategoryId}. Not found under L1 category '{l1Category.CategoryName}'.");
-                }
-                dto.L2CategoryName = l2Category.CategoryName;
 
                 var hasActiveAd = await _dbContext.Services.AnyAsync(ad =>
                     ad.CreatedBy == userId &&

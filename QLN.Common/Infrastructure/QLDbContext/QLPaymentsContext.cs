@@ -9,11 +9,8 @@ using QLN.Common.Infrastructure.Model;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection.Metadata;
-using System.Text;
-using System.Text.Json.Serialization;
 using System.Text.Json;
-using System.Threading.Tasks;
+using System.Text.Json.Serialization;
 
 namespace QLN.Common.Infrastructure.QLDbContext
 {
@@ -48,11 +45,10 @@ namespace QLN.Common.Infrastructure.QLDbContext
                 DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
             };
 
+            
             var productsConverter = new ValueConverter<List<ProductDetails>, string>(
                 v => JsonSerializer.Serialize(v ?? new List<ProductDetails>(), jsonOpts),
-                v => string.IsNullOrWhiteSpace(v)
-                     ? new List<ProductDetails>()
-                     : (JsonSerializer.Deserialize<List<ProductDetails>>(v, jsonOpts) ?? new List<ProductDetails>())
+                v => SafeDeserializeProducts(v, jsonOpts)
             );
 
             var productsComparer = new ValueComparer<List<ProductDetails>>(
@@ -63,14 +59,30 @@ namespace QLN.Common.Infrastructure.QLDbContext
             );
 
             e.Property(p => p.Products)
-             .HasConversion(productsConverter)
-             .HasColumnType("jsonb")
-             .HasDefaultValueSql("'[]'::jsonb")
-             .Metadata.SetValueComparer(productsComparer);
+                .HasConversion(productsConverter)
+                .HasColumnType("jsonb")
+                .HasDefaultValueSql("'[]'::jsonb")
+                .Metadata.SetValueComparer(productsComparer);
 
             e.Property(p => p.UserAddonIds)
-             .HasColumnType("uuid[]")
-             .HasDefaultValueSql("'{}'::uuid[]");
+                .HasColumnType("uuid[]")
+                .HasDefaultValueSql("'{}'::uuid[]");
+        }
+
+        
+        private static List<ProductDetails> SafeDeserializeProducts(string v, JsonSerializerOptions opts)
+        {
+            if (string.IsNullOrWhiteSpace(v)) return new List<ProductDetails>();
+
+            try
+            {
+                return JsonSerializer.Deserialize<List<ProductDetails>>(v, opts) ?? new List<ProductDetails>();
+            }
+            catch
+            {
+                
+                return new List<ProductDetails>();
+            }
         }
     }
 }

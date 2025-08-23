@@ -58,7 +58,7 @@ namespace QLN.DataMigration.Services
             throw new NotImplementedException();
         }
 
-        public Task<AdCreatedResponseDto> CreateClassifiedItemsAd(Items dto, SaveIntent intent, CancellationToken cancellationToken = default)
+        public Task<AdCreatedResponseDto> CreateClassifiedItemsAd(Items dto, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }
@@ -203,7 +203,7 @@ namespace QLN.DataMigration.Services
             return $"Published article {dto.Title} to {ConstantValues.PubSubTopics.ItemsMigration} topic";
         }
 
-        public Task<AdCreatedResponseDto> CreateClassifiedCollectiblesAd(Collectibles dto, SaveIntent intent, CancellationToken cancellationToken = default)
+        public Task<AdCreatedResponseDto> CreateClassifiedCollectiblesAd(Collectibles dto, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }
@@ -274,6 +274,11 @@ namespace QLN.DataMigration.Services
         }
 
         public Task<BulkAdActionResponse> BulkUpdateAdPublishStatusAsync(int subVertical, string userId, List<long> adIds, bool isPublished, Guid subscriptionId, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<Items> P2PromoteItems(ItemsPayToPromote promote, string uid, CancellationToken ct)
         {
             throw new NotImplementedException();
         }

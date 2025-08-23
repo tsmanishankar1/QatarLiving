@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using QLN.Common.DTO_s;
 using QLN.Common.DTO_s.Company;
+using QLN.Common.Infrastructure.DTO_s;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -104,8 +105,7 @@ namespace QLN.Common.Infrastructure.Utilities
                 return (uid, username, subscriptionId, expiryDate);
             }
         }
-        public static async Task<(string uid, string username, List<UserSubscription> subscriptions, List<string> roles)>
-            ExtractUserAndSubscriptionDetailsAsync(HttpContext httpContext)
+        public static async Task<(string uid, string username, List<UserSubscription> subscriptions, List<string> roles)>ExtractUserAndSubscriptionDetailsAsync(HttpContext httpContext)
         {
             string uid = "";
             string username = "unknown";
@@ -151,6 +151,16 @@ namespace QLN.Common.Infrastructure.Utilities
             catch { }
 
             return (uid, username, subscriptions, roles);
+        }
+        public static bool RequiresSubscription(VerticalType vertical, SubVertical? subVertical)
+        {
+            if (vertical == VerticalType.Classifieds &&
+               (subVertical == SubVertical.Items || subVertical == SubVertical.Collectibles))
+            {
+                return false;
+            }
+
+            return true;
         }
         /// <summary>
 

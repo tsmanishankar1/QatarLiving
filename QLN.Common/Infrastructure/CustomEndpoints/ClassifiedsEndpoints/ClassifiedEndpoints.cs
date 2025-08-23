@@ -960,7 +960,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
     .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
     .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
     .RequireAuthorization();
-
+                
             group.MapPost("items/post-by-id", async Task<IResult> (
                 Items dto,
                 IClassifiedService service,
@@ -2261,8 +2261,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
             group.MapPost("collectibles", async Task<IResult> (
                 HttpContext httpContext,
-                [FromBody] ClassifiedsCollectablesDTO dto,
-                [FromQuery] SaveIntent intent,
+                [FromBody] ClassifiedsCollectablesDTO dto,                
                 IClassifiedService service,
                 AuditLogger auditLogger,
                 CancellationToken token) =>
@@ -2381,7 +2380,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
                     };
 
-                    var result = await service.CreateClassifiedCollectiblesAd(request, intent, token);
+                    var result = await service.CreateClassifiedCollectiblesAd(request, token);
 
                     await auditLogger.LogAuditAsync(
                         module: "Classified",
@@ -2436,7 +2435,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             group.MapPost("collectibles/post-by-id", async Task<IResult> (
                 Collectibles dto,
                 IClassifiedService service,
-                [FromQuery] SaveIntent intent,
                 CancellationToken token) =>
             {
                 try
@@ -2451,7 +2449,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         });
                     }
 
-                    var result = await service.CreateClassifiedCollectiblesAd(dto, intent, token);
+                    var result = await service.CreateClassifiedCollectiblesAd(dto, token);
 
                     return TypedResults.Created(
                         $"/api/classifieds/collectibles/user-ads-by-id/{result.AdId}", result);
@@ -4733,11 +4731,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
 
-
-
-
-
-
             group.MapPut("/promoted/{userId}/{adId}",
       async Task<IResult> (
           string userId,
@@ -6418,7 +6411,157 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
+            #region payToPromote with addons for items
+
+            group.MapPost("/items/paytopromote", async Task<IResult> (
+                [FromBody] ItemsPayToPromote request,
+                HttpContext httpContext,
+                AuditLogger auditLogger,
+                IClassifiedService service,
+                CancellationToken cancellationToken) =>
+            {
+                string uid = "unknown";
+                string username = "unknown";
+
+                try
+                {
+                    (uid, username) = UserTokenHelper.ExtractUserAsync(httpContext);
+
+
+                    if (string.IsNullOrWhiteSpace(uid))
+                    {
+                        return Results.Problem(
+                            detail: "User ID could not be extracted from token.",
+                            statusCode: StatusCodes.Status403Forbidden,
+                            title: "Unauthorized Access");
+                    }
+
+                    if (request is null || request.ItemsAdId <= 0)
+                    {
+                        return Results.BadRequest(new ProblemDetails
+                        {
+                            Title = "Invalid Request",
+                            Detail = "Invalid request data. ItemsAdId must be a positive number.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    var result = await service.P2PromoteItems(request, uid, cancellationToken);
+
+                    await auditLogger.LogAuditAsync(
+                        module: "Items",
+                        httpMethod: "POST",
+                        apiEndpoint: "/api/classifieds/itemspaytopromote",
+                        message: $"Items ad {request.ItemsAdId} promoted successfully",
+                        createdBy: uid,
+                        payload: request,
+                        cancellationToken: cancellationToken
+                    );
+
+                    return Results.Ok(result);
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    await auditLogger.LogExceptionAsync("Items", "/api/items/paytopromote", ex, uid, cancellationToken);
+                    return Results.Problem(
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status404NotFound,
+                        title: "Invalid Request");
+                }
+                catch (InvalidDataException ex)
+                {
+                    await auditLogger.LogExceptionAsync("Items", "/api/items/paytopromote", ex, uid, cancellationToken);
+                    return Results.Problem(
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status400BadRequest,
+                        title: "Invalid Request");
+                }
+                catch (Exception ex)
+                {
+                    await auditLogger.LogExceptionAsync("Items", "/api/items/paytopromote", ex, uid, cancellationToken);
+                    return Results.Problem(
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        title: "Internal Server Error");
+                }
+            })
+                .WithName("P2PromoteItems")
+                .WithTags("Classified")
+                .WithSummary("Promote an Items ad")
+                .WithDescription("Promotes an Items ad (pay to promote). Requires a valid ItemsAdId.")
+                .Produces<Items>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
+                .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapPost("/items/p2promotebyuserid", async Task<IResult> (
+                [FromBody] ItemsPayToPromote request,
+                [FromQuery] string uid,    
+                IClassifiedService service,
+                CancellationToken cancellationToken) =>
+            {
+                try
+                {
+                    if (string.IsNullOrWhiteSpace(uid))
+                    {
+                        return Results.Problem(
+                            detail: "User id (uid) is required.",
+                            statusCode: StatusCodes.Status400BadRequest,
+                            title: "Invalid Request");
+                    }
+
+                    if (request is null || request.ItemsAdId <= 0)
+                    {
+                        return Results.BadRequest(new ProblemDetails
+                        {
+                            Title = "Invalid Request",
+                            Detail = "Invalid request data. ItemsAdId must be a positive number.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    var result = await service.P2PromoteItems(request, uid, cancellationToken);
+                    return Results.Ok(result);
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    return Results.Problem(
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status404NotFound,
+                        title: "Invalid Request");
+                }
+                catch (InvalidDataException ex)
+                {
+                    return Results.Problem(
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status400BadRequest,
+                        title: "Invalid Request");
+                }
+                catch (Exception ex)
+                {
+                    return Results.Problem(
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        title: "Internal Server Error");
+                }
+            })
+                .ExcludeFromDescription()
+                .WithName("P2PromoteItemsByUserId")
+                .WithTags("Classified")
+                .WithSummary("Promote an Items ad (by user id)")
+                .WithDescription("Promotes an Items ad by user id. Requires a valid ItemsAdId and uid.")
+                .Produces<Items>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            #endregion
+
             return group;
+
+
+           
         }
 
     }
