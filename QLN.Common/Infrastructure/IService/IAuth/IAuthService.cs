@@ -27,5 +27,6 @@ namespace QLN.Common.Infrastructure.IService.IAuthService
         Task<Results<Ok<string>, BadRequest<ProblemDetails>, ProblemHttpResult>> SendTwoFactorOtp(Send2FARequest request);
 
         Task<Results<Ok<LoginResponse>, BadRequest<ProblemDetails>, UnauthorizedHttpResult, ProblemHttpResult, ValidationProblem>> UserSync(DrupalUser drupalUser, DateTime expiry);
+        Task<Results<Ok<UseMeResponseDto>, BadRequest<ProblemDetails>, NotFound<ProblemDetails>, UnauthorizedHttpResult, ProblemHttpResult>> UseMe(Guid userId);
     }
 }

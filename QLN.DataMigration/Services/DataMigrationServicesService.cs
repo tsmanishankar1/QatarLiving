@@ -1,6 +1,7 @@
 ﻿using Dapr.Client;
 using Microsoft.AspNetCore.Mvc;
 using QLN.Common.DTO_s;
+using QLN.Common.DTO_s.Services;
 using QLN.Common.DTO_s.Subscription;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.CustomException;
@@ -146,6 +147,21 @@ namespace QLN.DataMigration.Services
         }
 
         public Task<BulkAdActionResponseitems> ModerateBulkService(BulkModerationRequest request, string userId, string subscriptionId, DateTime? expiryDate, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<Common.Infrastructure.Model.Services> P2FeatureService(PayToFeature request, string uid, Guid addonId, CancellationToken ct)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<Common.Infrastructure.Model.Services> P2PromoteService(PayToPromote request, string uid, Guid addonId, CancellationToken ct)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<Common.Infrastructure.Model.Services> P2PublishService(PayToPublish request, string uid, Guid subscriptionId, CancellationToken ct)
         {
             throw new NotImplementedException();
         }

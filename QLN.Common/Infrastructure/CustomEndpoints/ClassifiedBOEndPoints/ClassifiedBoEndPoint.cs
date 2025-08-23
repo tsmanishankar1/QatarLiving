@@ -2633,7 +2633,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
             group.MapPost("items", async Task<IResult> (
                 HttpContext httpContext,
                 ClassifiedsItemsDTO dto,
-                SaveIntent indent,
                 IClassifiedService service,
                 AuditLogger auditLogger,
                 CancellationToken token) =>
@@ -2755,7 +2754,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                             Status = StatusCodes.Status400BadRequest
                         });
                     }
-                    var response = await service.CreateClassifiedItemsAd(request, indent, token);
+                    var response = await service.CreateClassifiedItemsAd(request, token);
 
                     await auditLogger.LogAuditAsync(
                         module: "Classified",
@@ -2821,7 +2820,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
 
             group.MapPost("items/post-by-id", async Task<IResult> (
                 Items dto,
-                SaveIntent indent,
                 IClassifiedService service,
                 CancellationToken token) =>
             {
@@ -2837,7 +2835,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                         });
                     }
 
-                    var response = await service.CreateClassifiedItemsAd(dto, indent, token);
+                    var response = await service.CreateClassifiedItemsAd(dto, token);
                     return TypedResults.Created($"/api/classifieds/items/user-ads-by-id/{response.AdId}", response);
 
                 }
@@ -3027,7 +3025,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
 
             group.MapPost("items/admin/post-by-id", async Task<IResult> (
               Items dto,
-              SaveIntent intent,
               IClassifiedService service,
               CancellationToken token) =>
             {
@@ -3043,7 +3040,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                         });
                     }
 
-                    var response = await service.CreateClassifiedItemsAd(dto, intent, token);
+                    var response = await service.CreateClassifiedItemsAd(dto, token);
                     return TypedResults.Created($"/api/classifieds/items/admin/post-by-id/{response.AdId}", response);
 
                 }
