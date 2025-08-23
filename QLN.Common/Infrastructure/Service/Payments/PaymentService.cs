@@ -64,7 +64,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
                     Status = "failure",
                     Error = new FaturaPaymentError
                     {
-                        ErrorCode = "400",
+                        ErrorCode = "409",
                         Description = validationResult.ErrorMessage
                     }
                 };
@@ -479,12 +479,24 @@ namespace QLN.Common.Infrastructure.Service.Payments
             };
         }
 
+        // Helper: centralize the ? vs & rule
+        private static string BuildRedirect(string baseUrl, bool success, string? error = null)
+        {
+            var sep =baseUrl.Contains('?') ? "&" : "?";
+
+            var qs = $"paymentSuccess={(success ? "true" : "false")}";
+            if (!string.IsNullOrWhiteSpace(error))
+                qs += $"&error={Uri.EscapeDataString(error)}";
+
+            return $"{baseUrl}{sep}{qs}";
+        }
+
         public async Task<string> PaymentFailureAsync(PaymentTransactionRequest request, CancellationToken cancellationToken = default)
         {
             string baseRedirectUrl = GenerateRedirectURLBase(request.Vertical, request.SubVertical);
 
             if (!int.TryParse(request.OrderId, out var orderId))
-                return $"{baseRedirectUrl}?paymentSuccess=false&error=invalid_order_id";
+                return BuildRedirect(baseRedirectUrl, success: false, error: "invalid_order_id");
 
             _logger.LogDebug("Processing payment failure for Order ID: {OrderId}", orderId);
 
@@ -497,7 +509,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
                 if (payment == null)
                 {
                     _logger.LogError("Payment not found for Order ID: {OrderId}", orderId);
-                    return $"{baseRedirectUrl}?paymentSuccess=false&error=payment_not_found";
+                    return BuildRedirect(baseRedirectUrl, success: false, error: "payment_not_found");
                 }
 
                 payment.Status = PaymentStatus.Failure;
@@ -539,12 +551,12 @@ namespace QLN.Common.Infrastructure.Service.Payments
 
                 await _d365Service.SendPaymentInfoD365Async(d365Data, cancellationToken);
 
-                return $"{baseRedirectUrl}?paymentSuccess=false&error=payment_failed";
+                return BuildRedirect(baseRedirectUrl, success: false, error: "payment_failed");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error processing payment failure for Order ID: {OrderId}", orderId);
-                return $"{baseRedirectUrl}?paymentSuccess=false&error=processing_error";
+                return BuildRedirect(baseRedirectUrl, success: false, error: "processing_error");
             }
         }
 
@@ -553,7 +565,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
             string baseRedirectUrl = GenerateRedirectURLBase(request.Vertical, request.SubVertical);
 
             if (!int.TryParse(request.OrderId, out var orderId))
-                return $"{baseRedirectUrl}?paymentSuccess=false";
+                return BuildRedirect(baseRedirectUrl, success: false);
 
             _logger.LogDebug("Processing payment success for Order ID: {OrderId}", orderId);
 
@@ -562,7 +574,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
             {
                 _logger.LogError("Payment verification failed for Order ID {OrderId}. Status: {Status}",
                     request.OrderId, paymentConfirmation?.Status ?? "null");
-                return $"{baseRedirectUrl}?paymentSuccess=false";
+                return BuildRedirect(baseRedirectUrl, success: false, error: "verification_failed");
             }
 
             var payment = await _dbContext.Payments
@@ -571,7 +583,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
             if (payment == null)
             {
                 _logger.LogError("Payment not found for Order ID: {OrderId}", orderId);
-                return $"{baseRedirectUrl}?paymentSuccess=false";
+                return BuildRedirect(baseRedirectUrl, success: false, error: "payment_not_found");
             }
 
             try
@@ -609,12 +621,12 @@ namespace QLN.Common.Infrastructure.Service.Payments
 
                 await _d365Service.SendPaymentInfoD365Async(d365Data, cancellationToken);
 
-                return $"{baseRedirectUrl}?paymentSuccess=true";
+                return BuildRedirect(baseRedirectUrl, success: true);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error updating payment/subscriptions for Order ID: {OrderId}", orderId);
-                return $"{baseRedirectUrl}?paymentSuccess=false";
+                return BuildRedirect(baseRedirectUrl, success: false, error: "processing_error");
             }
         }
 
