@@ -318,7 +318,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
                     if (payment == null)
                     {
                         _logger.LogError("Payment not found for ID: {PaymentId} from order: {OrderId}", paymentId, orderId);
-                        continue;
+                        //continue;
                     }
 
                     // Process each item in the order group
@@ -440,6 +440,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
                 orderItem.D365Itemid, orderItem.OrderId);
 
             // Find the corresponding product in payment
+            //var product = payment.Products.FirstOrDefault(p => p.ProductCode == orderItem.D365Itemid);
             var product = payment.Products.FirstOrDefault(p => p.ProductCode == orderItem.D365Itemid);
 
             if (product == null)
