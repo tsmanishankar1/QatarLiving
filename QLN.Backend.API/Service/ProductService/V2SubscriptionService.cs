@@ -860,5 +860,177 @@ namespace QLN.Backend.API.Service.ProductService
         }
 
         #endregion
+
+        #region FREE Ads Subscription Operations
+
+        /// <summary>
+        /// Purchase FREE ads subscription with category-based quotas
+        /// </summary>
+        public async Task<Guid> PurchaseFreeAdsSubscriptionAsync(V2SubscriptionPurchaseRequestDto request, CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(request);
+
+            _logger.LogInformation("Purchasing FREE ads subscription for user {UserId} with product {ProductCode}", request.UserId, request.ProductCode);
+
+            // Validate that the product is FREE type
+            var product = await _context.Products
+                .FirstOrDefaultAsync(p => p.ProductCode == request.ProductCode && p.IsActive && p.ProductType == ProductType.FREE, cancellationToken);
+
+            if (product == null)
+                throw new InvalidOperationException($"FREE product with code {request.ProductCode} not found or inactive");
+
+            var subscriptionId = Guid.NewGuid();
+            var actor = GetV2SubscriptionActorProxy(subscriptionId);
+
+            // Use the FREE ads specific creation method
+            var success = await actor.CreateFreeAdsSubscriptionAsync(request, cancellationToken);
+            if (!success)
+            {
+                throw new InvalidOperationException("Failed to create FREE ads subscription via actor");
+            }
+
+            _logger.LogInformation("FREE ads subscription created successfully: {SubscriptionId}", subscriptionId);
+            return subscriptionId;
+        }
+
+        /// <summary>
+        /// Validate FREE ads usage for specific category
+        /// </summary>
+        public async Task<bool> ValidateFreeAdsUsageAsync(Guid subscriptionId, string category, string? l1Category, string? l2Category, int requestedAmount, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var actor = GetV2SubscriptionActorProxy(subscriptionId);
+                var isValid = await actor.ValidateFreeAdsUsageAsync(category, l1Category, l2Category, requestedAmount, cancellationToken);
+
+                _logger.LogInformation("FREE ads validation for subscription {SubscriptionId}: category={Category}/{L1}/{L2}, amount={Amount}, valid={IsValid}",
+                    subscriptionId, category, l1Category, l2Category, requestedAmount, isValid);
+
+                return isValid;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error validating FREE ads usage for subscription {SubscriptionId}", subscriptionId);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Record FREE ads usage for specific category
+        /// </summary>
+        public async Task<bool> RecordFreeAdsUsageAsync(Guid subscriptionId, string category, string? l1Category, string? l2Category, int amount, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var actor = GetV2SubscriptionActorProxy(subscriptionId);
+                var success = await actor.RecordFreeAdsUsageAsync(category, l1Category, l2Category, amount, cancellationToken);
+
+                if (success)
+                {
+                    _logger.LogInformation("FREE ads usage recorded for subscription {SubscriptionId}: category={Category}/{L1}/{L2}, amount={Amount}",
+                        subscriptionId, category, l1Category, l2Category, amount);
+                }
+
+                return success;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error recording FREE ads usage for subscription {SubscriptionId}", subscriptionId);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Get FREE ads usage summary for subscription
+        /// </summary>
+        public async Task<List<FreeAdsCategorySummary>> GetFreeAdsUsageSummaryAsync(Guid subscriptionId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var actor = GetV2SubscriptionActorProxy(subscriptionId);
+                return await actor.GetFreeAdsUsageSummaryAsync(cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting FREE ads usage summary for subscription {SubscriptionId}", subscriptionId);
+                return new List<FreeAdsCategorySummary>();
+            }
+        }
+
+        /// <summary>
+        /// Get remaining FREE ads quota for specific category
+        /// </summary>
+        public async Task<int> GetRemainingFreeAdsQuotaAsync(Guid subscriptionId, string category, string? l1Category, string? l2Category, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var actor = GetV2SubscriptionActorProxy(subscriptionId);
+                return await actor.GetRemainingFreeAdsQuotaAsync(category, l1Category, l2Category, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting remaining FREE ads quota for subscription {SubscriptionId}", subscriptionId);
+                return 0;
+            }
+        }
+        public async Task<int> GetRemainingFreeAdsQuotaForUserAsync(string uId, string category, string? l1Category, string? l2Category, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var subscriptionId = await _context.Subscriptions
+                .Where(s => s.UserId == uId &&
+                           s.ProductType == ProductType.FREE &&
+                           s.Status == SubscriptionStatus.Active &&
+                           s.EndDate > DateTime.UtcNow)
+                .Select(s => s.SubscriptionId).FirstAsync();
+                var actor = GetV2SubscriptionActorProxy(subscriptionId);
+                return await actor.GetRemainingFreeAdsQuotaAsync(category, l1Category, l2Category, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting remaining FREE ads quota for user {UserId}", uId);
+                return 0;
+            }
+        }
+
+        /// <summary>
+        /// Get user's FREE subscriptions
+        /// </summary>
+        public async Task<List<V2SubscriptionResponseDto>> GetUserFreeSubscriptionsAsync(string userId, CancellationToken cancellationToken = default)
+        {
+            _logger.LogInformation("Getting FREE subscriptions for user: {UserId}", userId);
+
+            var subscriptionIds = await _context.Subscriptions
+                .Where(s => s.UserId == userId &&
+                           s.ProductType == ProductType.FREE &&
+                           s.Status == SubscriptionStatus.Active &&
+                           s.EndDate > DateTime.UtcNow)
+                .Select(s => s.SubscriptionId)
+                .ToListAsync(cancellationToken);
+
+            var subscriptions = new List<V2SubscriptionResponseDto>();
+
+            foreach (var subscriptionId in subscriptionIds)
+            {
+                try
+                {
+                    var actor = GetV2SubscriptionActorProxy(subscriptionId);
+                    var actorData = await actor.GetDataAsync(cancellationToken);
+
+                    if (actorData != null && actorData.ProductType == ProductType.FREE)
+                    {
+                        subscriptions.Add(MapToResponseDto(actorData));
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error getting FREE subscription {Id}", subscriptionId);
+                }
+            }
+
+            return subscriptions;
+        }
+
+        #endregion
     }
 }

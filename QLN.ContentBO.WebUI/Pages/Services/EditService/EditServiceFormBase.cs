@@ -78,13 +78,6 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
                 if (selectedService == null)
                     return;
 
-                var json = JsonSerializer.Serialize(selectedService, new JsonSerializerOptions
-                {
-                    WriteIndented = true // pretty print
-                });
-
-                Console.WriteLine("fetched selectedService JSON:");
-                Console.WriteLine(json);
 
                 if (CategoryTrees == null || !CategoryTrees.Any())
                     await LoadCategoryTreesAsync();
@@ -391,7 +384,6 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
             try
             {
                 selectedService.IsPriceOnRequest = _priceOnRequest;
-                // selectedService.Description = Description;
                 if (selectedService?.PhotoUpload != null)
                 {
                     selectedService.PhotoUpload = await UploadImagesAsync(selectedService.PhotoUpload);

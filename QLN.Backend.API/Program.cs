@@ -493,6 +493,7 @@ analyticGroup.MapAnalyticsEndpoints();
 app.MapGroup("/api/v2/subscriptions")
     .MapV2SubscriptionEndpoints()
     .MapV2AdminEndpoints()
+    .MapV2FreeAdsEndpoints()
     .RequireAuthorization();
 
 var fatoraGroup = app.MapGroup("/api/pay");

@@ -50,7 +50,7 @@ namespace QLN.Common.DTO_s.Subscription
         public int DailyRefreshesUsed { get; set; } = 0;
         public int RefreshesPerAdUsed { get; set; } = 0;
         public int SocialMediaPostsUsed { get; set; } = 0;
-
+        public List<CategoryQuotaUsage> CategoryQuotas { get; set; } = new List<CategoryQuotaUsage>();
         // Flags
         public bool CanPublishAds { get; set; } = true;
         public bool CanUnPublishAds { get; set; } = true;
@@ -187,6 +187,28 @@ namespace QLN.Common.DTO_s.Subscription
             LastUsageUpdate = DateTime.UtcNow;
             return true;
         }
+        public class CategoryQuotaUsage
+        {
+            public string Category { get; set; } = string.Empty;
+            public string? L1Category { get; set; }
+            public string? L2Category { get; set; }
 
+            // Allowed quotas for this category
+            public int AdsAllowed { get; set; }
+
+            // Used counters for this category
+            public int AdsUsed { get; set; }
+
+            public string GetCategoryPath()
+            {
+                if (!string.IsNullOrEmpty(L2Category))
+                    return $"{Category} > {L1Category} > {L2Category}";
+                if (!string.IsNullOrEmpty(L1Category))
+                    return $"{Category} > {L1Category}";
+                return Category;
+            }
+
+            public int GetRemainingAds() => Math.Max(0, AdsAllowed - AdsUsed);
+        }
     }
 }
