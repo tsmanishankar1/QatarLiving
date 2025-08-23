@@ -348,6 +348,9 @@ public class LandingPageBase : QLComponentBase
 
     protected async Task ReplaceItem(LandingPageItem item)
     {
+         await LoadAllSeasonalPicks();
+        await LoadAllFeaturedCategory();
+        await LoadAllFeaturedStores();
         var title = activeIndex switch
         {
             0 => "Replace Featured Category",

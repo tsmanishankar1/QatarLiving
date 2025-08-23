@@ -61,8 +61,6 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewListing
             showPublishedPopover = true;
         }
 
-        protected void CancelCreatedPopover() => showCreatedPopover = false;
-        protected void CancelPublishedPopover() => showPublishedPopover = false;
 
         protected async void ConfirmCreatedPopover()
         {
@@ -70,6 +68,17 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewListing
             showCreatedPopover = false;
             await OnDateFilterChanged.InvokeAsync((dateCreated, datePublished));
         }
+        protected void CancelCreatedPopover()
+        {
+            dateCreated = null;
+            showCreatedPopover = false;
+        }
+        protected void CancelPublishedPopover()
+        {
+            datePublished = null;
+            showPublishedPopover = false;
+        }
+
 
         protected async void ConfirmPublishedPopover()
         {
