@@ -37,7 +37,27 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
                 try
                 {
                     var (extractedUid, extractedUsername, subscriptions, roles) = await UserTokenHelper.ExtractUserAndSubscriptionDetailsAsync(httpContext);
+                    bool requiresSubscription = UserTokenHelper.RequiresSubscription(dto.Vertical, dto.SubVertical);
 
+                    if (requiresSubscription)
+                    {
+                        var now = DateTime.UtcNow;
+                        var activeSub = subscriptions.FirstOrDefault(s =>
+                            (int)s.Vertical == (int)dto.Vertical &&
+                            (!dto.SubVertical.HasValue || (int)s.SubVertical == (int)dto.SubVertical) &&
+                            s.StartDate <= now && s.EndDate >= now
+                        );
+
+                        if (activeSub == null)
+                        {
+                            return TypedResults.Problem(new ProblemDetails
+                            {
+                                Title = "Subscription Required",
+                                Detail = $"No active subscription found for Vertical {dto.Vertical} and SubVertical {dto.SubVertical}.",
+                                Status = StatusCodes.Status403Forbidden
+                            });
+                        }
+                    }
                     uid = extractedUid;
                     userName = extractedUsername;
 
@@ -47,23 +67,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
                         {
                             Title = "Unauthorized Access",
                             Detail = "User ID or username could not be extracted from token.",
-                            Status = StatusCodes.Status403Forbidden
-                        });
-                    }
-
-                    var now = DateTime.UtcNow;
-                    var hasValidSubscription = subscriptions.Any(s =>
-                        s.Vertical == (int)dto.Vertical &&
-                        (!dto.SubVertical.HasValue || (int)s.SubVertical ==(int) dto.SubVertical) &&
-                        s.StartDate <= now && s.EndDate >= now
-                    );
-
-                    if (!hasValidSubscription)
-                    {
-                        return TypedResults.Problem(new ProblemDetails
-                        {
-                            Title = "Subscription Required",
-                            Detail = $"No active subscription found for Vertical {dto.Vertical} and SubVertical {dto.SubVertical}.",
                             Status = StatusCodes.Status403Forbidden
                         });
                     }
@@ -350,7 +353,31 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
                 try
                 {
                     var (extractedUid, extractedUsername, subscriptions, roles) = await UserTokenHelper.ExtractUserAndSubscriptionDetailsAsync(httpContext);
+                    bool requiresSubscription = UserTokenHelper.RequiresSubscription(dto.Vertical, dto.SubVertical);
 
+                    if (requiresSubscription)
+                    {
+                        var now = DateTime.UtcNow;
+
+                        var activeSub = subscriptions.FirstOrDefault(s =>
+                            s.Vertical == (int)dto.Vertical &&
+                            (
+                                !dto.SubVertical.HasValue
+                                || (s.SubVertical.HasValue && s.SubVertical.Value == (int)dto.SubVertical.Value)
+                            ) &&
+                            s.StartDate <= now && s.EndDate >= now
+                        );
+
+                        if (activeSub == null)
+                        {
+                            return TypedResults.Problem(new ProblemDetails
+                            {
+                                Title = "Subscription Required",
+                                Detail = $"No active subscription found for Vertical {dto.Vertical} and SubVertical {dto.SubVertical}.",
+                                Status = StatusCodes.Status403Forbidden
+                            });
+                        }
+                    }
                     uid = extractedUid;
                     userName = extractedUsername;
 
@@ -363,24 +390,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
                             Status = StatusCodes.Status403Forbidden
                         });
                     }
-
-                    var now = DateTime.UtcNow;
-                    var hasValidSubscription = subscriptions.Any(s =>
-                        s.Vertical == (int)dto.Vertical &&
-                        (!dto.SubVertical.HasValue || (int)s.SubVertical == (int)dto.SubVertical) &&
-                        s.StartDate <= now && s.EndDate >= now
-                    );
-
-                    if (!hasValidSubscription)
-                    {
-                        return TypedResults.Problem(new ProblemDetails
-                        {
-                            Title = "Subscription Required",
-                            Detail = $"No active subscription found for Vertical {dto.Vertical} and SubVertical {dto.SubVertical}.",
-                            Status = StatusCodes.Status403Forbidden
-                        });
-                    }
-
                     var existingCompany = await service.GetCompanyById(dto.Id, cancellationToken);
                     if (existingCompany == null)
                     {
