@@ -1,12 +1,8 @@
-﻿using Azure.Search.Documents.Models;
-using Azure.Search.Documents;
-using Azure;
-using Microsoft.AspNetCore.Builder;
+﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Auditlog;
@@ -132,50 +128,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
             return group;
         }
-        //public static RouteGroupBuilder MapServiceCategoryUpdateEndpoints(this RouteGroupBuilder group)
-        //{
-        //    group.MapPut("/updatecategory", async Task<Results<
-        //        Ok<string>,
-        //        NotFound,
-        //        BadRequest<ProblemDetails>,
-        //        ProblemHttpResult>>
-        //    (
-        //        CategoryDto dto,
-        //        IServices service,
-        //        CancellationToken cancellationToken
-        //    ) =>
-        //    {
-        //        try
-        //        {
-        //            var result = await service.UpdateCategory(dto, cancellationToken);
-        //            return TypedResults.Ok(result);
-        //        }
-        //        catch (InvalidDataException ex)
-        //        {
-        //            return TypedResults.BadRequest(new ProblemDetails
-        //            {
-        //                Title = "Invalid Data",
-        //                Detail = ex.Message,
-        //                Status = StatusCodes.Status400BadRequest
-        //            });
-        //        }
-        //        catch (Exception ex)
-        //        {
-        //            return TypedResults.Problem("Internal Server Error", ex.Message);
-        //        }
-        //    })
-        //    .WithName("UpdateServiceCategory")
-        //    .WithTags("Service")
-        //    .WithSummary("Update an existing service category")
-        //    .WithDescription("Updates an existing service category with the provided details. " +
-        //                     "The category must already exist in the system.")
-        //    .Produces<string>(StatusCodes.Status200OK)
-        //    .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-        //    .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
-        //    .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-
-        //    return group;
-        //}
         public static RouteGroupBuilder MapServiceCategoryGetAllEndpoints(this RouteGroupBuilder group)
         {
             group.MapGet("/getallcategories", async (
@@ -205,61 +157,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
             return group;
         }
-        //public static RouteGroupBuilder MapServiceCategoryGetByIdEndpoint(this RouteGroupBuilder group)
-        //{
-        //    group.MapGet("/getbycategoryid/{id:long}", async Task<Results<
-        //        Ok<CategoryDto>,
-        //        NotFound<ProblemDetails>,
-        //        ProblemHttpResult>>
-        //    (
-        //        long id,
-        //        IServices service,
-        //        CancellationToken cancellationToken
-        //    ) =>
-        //    {
-        //        try
-        //        {
-        //            var result = await service.GetCategoryById(id, cancellationToken);
-
-        //            if (result == null)
-        //            {
-        //                return TypedResults.NotFound(new ProblemDetails
-        //                {
-        //                    Title = "Category Id Not Found",
-        //                    Detail = $"No Category found with ID: {id}",
-        //                    Status = StatusCodes.Status404NotFound
-        //                });
-        //            }
-
-        //            return TypedResults.Ok(result);
-        //        }
-        //        catch (InvalidDataException ex)
-        //        {
-        //            var details = new ProblemDetails
-        //            {
-        //                Title = "Category id Not Found",
-        //                Detail = ex.Message,
-        //                Status = StatusCodes.Status404NotFound
-        //            };
-        //            return TypedResults.NotFound(details);
-        //        }
-        //        catch (Exception ex)
-        //        {
-        //            return TypedResults.Problem("Internal Server Error", ex.Message);
-        //        }
-        //    })
-        //    .AllowAnonymous()
-        //    .WithName("GetServiceCategoryById")
-        //    .WithTags("Service")
-        //    .WithSummary("Get a service category by ID")
-        //    .WithDescription("Retrieves a specific service category by its unique identifier. " +
-        //                     "If the category does not exist, a 404 Not Found response is returned.")
-        //    .Produces<CategoryDto>(StatusCodes.Status200OK)
-        //    .Produces(StatusCodes.Status404NotFound)
-        //    .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-
-        //    return group;
-        //}
         public static RouteGroupBuilder MapServiceAdEndpoints(this RouteGroupBuilder group)
         {
             group.MapPost("/create", async Task<Results<Ok<string>, BadRequest<ProblemDetails>, ProblemHttpResult>> (

@@ -230,5 +230,10 @@ namespace QLN.DataMigration.Services
         {
             throw new NotImplementedException();
         }
+
+        public Task<int> GetRemainingFreeAdsQuotaForUserAsync(string userId, string category, string? l1Category, string? l2Category, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

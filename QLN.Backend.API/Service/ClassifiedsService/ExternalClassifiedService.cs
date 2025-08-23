@@ -164,7 +164,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
             throw new NotImplementedException();
         }
 
-        public async Task<AdCreatedResponseDto> CreateClassifiedItemsAd(Items dto, SaveIntent intent, CancellationToken cancellationToken = default)
+        public async Task<AdCreatedResponseDto> CreateClassifiedItemsAd(Items dto, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(dto);
 
@@ -180,8 +180,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
             try
             {               
                 _log.LogTrace($"Calling internal service with {dto.Images.Count} images");
-                var requestUrl = $"/api/classifieds/items/post-by-id?intent={(int)intent}";
-                Console.WriteLine($"Received SaveIntent value: {(int)intent}");
+                var requestUrl = $"/api/classifieds/items/post-by-id";
                 var payload = JsonSerializer.Serialize(dto);
                 var req = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, SERVICE_APP_ID, requestUrl);
                 req.Content = new StringContent(payload, Encoding.UTF8, "application/json");
