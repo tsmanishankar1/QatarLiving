@@ -36,7 +36,7 @@ namespace QLN.Common.Infrastructure.Model
         public string Title { get; set; } = default!;
 
         [Required]
-        [MaxLength(300)]
+        [MaxLength(5000)]
         public string Description { get; set; } = string.Empty;
 
         [Required]
