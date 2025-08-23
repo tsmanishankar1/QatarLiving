@@ -225,6 +225,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.Subscription
             SearchText = string.Empty;
             _dateRange = new();
             _tempDateRange = new();
+            SelectedSubscriptionType = string.Empty;
         }
 
         protected async void CancelDatePicker()
