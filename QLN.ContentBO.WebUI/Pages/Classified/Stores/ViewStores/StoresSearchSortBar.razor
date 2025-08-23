@@ -29,20 +29,13 @@
     <!-- Filter row -->
     <div class="filter-row">
         <div class="subscription-types">
-
-            <MudSelect T="string"
-                       Value="SelectedSubscriptionType"
-                       ValueChanged="OnSubscriptionChanged"
-                       Placeholder="Subscription type"
-                       Variant="Variant.Outlined"
-                       Dense="true">
-
-                <MudSelectItem Value="@("Subscription Type")" Disabled="true">Subscription Type</MudSelectItem>
-                @foreach (var item in SubscriptionTypes)
-                {
-                    <MudSelectItem Value="@(item)">@item</MudSelectItem>
-                }
-            </MudSelect>
+            <NewCustomSelect TItem="string"
+                             Items="SubscriptionTypes"
+                             SelectedId="@SelectedSubscriptionType"
+                             SelectedIdChanged="OnSubscriptionChanged"
+                             GetId="SubscriptionTypes => SubscriptionTypes"
+                             GetLabel="SubscriptionTypes => SubscriptionTypes"
+                             Placeholder="Subscription type" />
         </div>
         <div class="custom-date-picker-container @(showDatePopover ? "active" : "")" @onclick="ToggleDatePopover">
             <div class="label-and-value">
@@ -99,48 +92,3 @@
     </div>
 
 </div>
-
-<style>
-    /* Base sizing */
-    .ql-select .mud-input-root {
-        min-height: 44px;
-        border-radius: 12px; /* rounded corners */
-    }
-
-        /* Default border (outlined) */
-        .ql-select .mud-input-root.mud-input-root-outlined .mud-notched-outline,
-        .ql-select .mud-input-root-outlined .mud-input-outlined-border {
-            border-color: #e1e1e1 !important; /* light grey */
-            border-width: 1px !important;
-            border-radius: 12px !important;
-        }
-
-        /* Focus/active border */
-        .ql-select .mud-input-root.mud-input-root-outlined.mud-focused .mud-notched-outline,
-        .ql-select .mud-input-root-outlined.mud-focused .mud-input-outlined-border {
-            border-color: #ff6a00 !important; /* orange */
-            box-shadow: 0 0 0 3px rgba(255,106,0,0.15) !important;
-        }
-
-    /* Make sure any underlines (from Filled/Standard) never show */
-    .ql-select .mud-input-slot:before,
-    .ql-select .mud-input-slot:after {
-        display: none !important;
-    }
-
-    /* Dropdown/popup look */
-    .ql-select .mud-popover {
-        border-radius: 12px !important;
-        box-shadow: 0 8px 20px rgba(0,0,0,0.10) !important;
-    }
-
-    /* Optional: caret color */
-    .ql-select .mud-input-adornment .mud-icon-root {
-        color: #616161;
-    }
-
-    .ql-select .mud-input-root.mud-focused .mud-input-adornment .mud-icon-root {
-        color: #ff6a00;
-    }
-
-</style>

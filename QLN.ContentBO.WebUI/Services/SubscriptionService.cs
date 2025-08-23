@@ -40,7 +40,7 @@ namespace QLN.ContentBO.WebUI.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "GetAllSubscriptionProductsAsync");
+                _logger.LogError(ex, "GetAllSubscriptionProducts");
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
