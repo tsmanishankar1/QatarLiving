@@ -1965,63 +1965,74 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
         {
             try
             {
-                var result = new List<PrelovedAdPaymentSummaryDto>();
+                _logger.LogInformation("Starting GetAllPrelovedAdPaymentSummaries");
 
-                var keys = await _dapr.GetStateAsync<List<string>>(
-                    ConstantValues.StateStoreNames.UnifiedStore,
-                    ConstantValues.StateStoreNames.PrelovedIndexKey,
-                    cancellationToken: cancellationToken) ?? new();
+                
+                var payments = await _Paymentcontext.Payments.ToListAsync(cancellationToken);
+                _logger.LogInformation("Loaded {Count} payments", payments.Count);
 
-                _logger.LogInformation("Fetched {Count} ad keys from index.", keys.Count);
+                var subscriptions = await _subscriptioncontext.Subscriptions.ToListAsync(cancellationToken);
+                _logger.LogInformation("Loaded {Count} subscriptions", subscriptions.Count);
 
-                foreach (var key in keys)
+                var users = await _usercontext.Users.ToListAsync(cancellationToken);
+                _logger.LogInformation("Loaded {Count} users", users.Count);
+
+                var prelovedAds = await _context.Preloved.ToListAsync(cancellationToken);
+                _logger.LogInformation("Loaded {Count} preloved ads", prelovedAds.Count);
+
+                
+                var joined = from p in payments
+                             join s in subscriptions on p.PaymentId equals s.PaymentId
+                             join u in users on s.UserId equals u.Id.ToString() into userJoin
+                             from u in userJoin.DefaultIfEmpty()
+                             join pr in prelovedAds on p.AdId equals pr.Id into prelovedJoin
+                             from pr in prelovedJoin.DefaultIfEmpty()
+                             select new PrelovedAdPaymentSummaryDto
+                             {
+                                 AdId = p.AdId ?? 0,
+                                 SubscriptionType = "12 Months Super",
+                                 UserName = u?.UserName,
+                                 EmailAddress = u?.Email,
+                                 Mobile = u?.PhoneNumber,
+                                 WhatsappNumber = u?.PhoneNumber,
+                                 Amount = (double?)p.Fee,
+                                 Status = p.Status.ToString(),
+                                 StartDate = s.StartDate != DateTime.MinValue
+        ? s.StartDate.ToString("dd-MM-yyyy hh:mmtt")
+        : "N/A",
+                                 EndDate = s.EndDate != DateTime.MinValue
+        ? s.EndDate.ToString("dd-MM-yyyy hh:mmtt")
+        : "N/A",
+                                 OrderId = p.PaymentId.ToString()
+
+                             };
+
+                var result = joined.AsQueryable();
+
+                
+                if (!string.IsNullOrWhiteSpace(search))
                 {
-                    var ad = await _dapr.GetStateAsync<ClassifiedsPreloved>(
-                        ConstantValues.StateStoreNames.UnifiedStore,
-                        key,
-                        cancellationToken: cancellationToken);
-
-                    if (ad == null)
-                    {
-                        continue;
-                    }
-
-                    var dto = new PrelovedAdPaymentSummaryDto
-                    {
-                        AdId = ad.Id,
-                        SubscriptionType = "12 Months Super",
-                        UserName = ad.UserName,
-                        EmailAddress = ad.ContactEmail,
-                        Mobile = ad.ContactNumber,
-                        WhatsappNumber = ad.WhatsAppNumber,
-                        Amount = 250,
-                        Status = ad.Status.ToString(),
-                        StartDate = ad.PublishedDate.HasValue && ad.PublishedDate.Value != DateTime.MinValue
-                        ? ad.PublishedDate.Value.ToString("dd-MM-yyyy hh:mmtt")
-                        : "N/A",
-                        EndDate = ad.ExpiryDate.HasValue && ad.ExpiryDate.Value != DateTime.MinValue
-                        ? ad.ExpiryDate.Value.ToString("dd-MM-yyyy hh:mmtt")
-                        : "N/A",
-
-                        OrderId = ad.Id.ToString().Substring(0, 6)
-                    };
-
-                    if (string.IsNullOrWhiteSpace(search) ||
-                        dto.AdId.ToString().Contains(search, StringComparison.OrdinalIgnoreCase) == true ||
-                        dto.UserName?.Contains(search, StringComparison.OrdinalIgnoreCase) == true)
-                    {
-                        result.Add(dto);
-                    }
+                    var lower = search.ToLower();
+                    result = result.Where(dto =>
+                        dto.AdId.ToString().Contains(lower) ||
+                        (dto.UserName != null && dto.UserName.ToLower().Contains(lower)) ||
+                        (dto.EmailAddress != null && dto.EmailAddress.ToLower().Contains(lower)) ||
+                        (dto.Mobile != null && dto.Mobile.ToLower().Contains(lower))
+                    );
+                    _logger.LogInformation("Applied search filter: {Search}", search);
                 }
-                _logger.LogInformation("Total matched ads after filtering: {Count}", result.Count);
+
+                // Sorting
                 result = sortBy?.ToLower() switch
                 {
-                    "startdate" => result.OrderBy(x => x.StartDate).ToList(),
-                    "enddate" => result.OrderBy(x => x.EndDate).ToList(),
-                    _ => result.OrderByDescending(x => x.StartDate).ToList()
+                    "startdate" => result.OrderBy(x => x.StartDate),
+                    "enddate" => result.OrderBy(x => x.EndDate),
+                    "amount" => result.OrderByDescending(x => x.Amount),
+                    _ => result.OrderByDescending(x => x.StartDate)
                 };
 
-                var totalCount = result.Count;
+                // Pagination
+                var totalCount = result.Count();
                 int currentPage = pageNumber ?? 1;
                 int currentSize = pageSize ?? 12;
 
@@ -2029,7 +2040,10 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                     .Skip((currentPage - 1) * currentSize)
                     .Take(currentSize)
                     .ToList();
-                _logger.LogInformation("Returning {Count} items for page {Page} (pageSize={Size})", paginatedItems.Count, currentPage, currentSize);
+
+                _logger.LogInformation("Returning {Count} items for page {Page} (pageSize={Size})",
+                    paginatedItems.Count, currentPage, currentSize);
+
                 return new PaginatedResult<PrelovedAdPaymentSummaryDto>
                 {
                     TotalCount = totalCount,
@@ -2037,7 +2051,6 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                     PageSize = currentSize,
                     Items = paginatedItems
                 };
-
             }
             catch (Exception ex)
             {

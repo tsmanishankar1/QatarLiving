@@ -15,8 +15,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                  .MapServiceSearch()
                  .MapServiceCategoryEndpoints()
                  .MapServiceCategoryGetAllEndpoints()
-                
-                 
                  .MapServiceAdEndpoints()
                  .MapServiceAdUpdateEndpoints()
                  .MapServiceGetAllEndpoints()

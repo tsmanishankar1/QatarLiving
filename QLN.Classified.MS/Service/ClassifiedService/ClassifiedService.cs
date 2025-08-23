@@ -228,7 +228,7 @@ namespace QLN.Classified.MS.Service
         }
 
         public async Task<AdCreatedResponseDto> CreateClassifiedItemsAd(
-    Items dto, SaveIntent intent,
+    Items dto,
     CancellationToken cancellationToken = default)
         {
             if (dto == null)
@@ -259,7 +259,7 @@ namespace QLN.Classified.MS.Service
             {
                 _logger.LogInformation("Starting CreateClassifiedItemsAd for UserId={UserId}, Title='{Title}'", dto.UserId, dto.Title);
 
-                if (intent == SaveIntent.SaveAndSubmitForApproval)
+                if (dto.AdType == AdTypeEnum.Free)
                 {
                     dto.Status = AdStatus.PendingApproval;
                 }
@@ -269,7 +269,7 @@ namespace QLN.Classified.MS.Service
                 }
 
                 dto.CreatedAt = DateTime.UtcNow;
-                dto.UpdatedAt = DateTime.UtcNow;
+                dto.UpdatedAt = DateTime.MinValue;
 
                 _logger.LogDebug("Adding Items ad to EF context...");
                 _context.Item.Add(dto);
@@ -572,7 +572,7 @@ namespace QLN.Classified.MS.Service
         }
 
 
-        public async Task<AdCreatedResponseDto> CreateClassifiedCollectiblesAd(Collectibles dto, SaveIntent intent, CancellationToken cancellationToken = default)
+        public async Task<AdCreatedResponseDto> CreateClassifiedCollectiblesAd(Collectibles dto, CancellationToken cancellationToken = default)
         {
             if (dto == null) throw new ArgumentNullException(nameof(dto));
             if (dto.UserId == null) throw new ArgumentException("UserId is required.");
@@ -582,14 +582,7 @@ namespace QLN.Classified.MS.Service
             try
             {
 
-                if (intent == SaveIntent.SaveAndSubmitForApproval)
-                {
-                    dto.Status = AdStatus.PendingApproval;
-                }
-                else
-                {
-                    dto.Status = AdStatus.Draft;
-                }
+                dto.Status = AdStatus.Draft;
 
                 dto.CreatedAt = DateTime.UtcNow;
                 dto.UpdatedAt = DateTime.UtcNow;

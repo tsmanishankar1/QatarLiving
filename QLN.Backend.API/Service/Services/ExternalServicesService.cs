@@ -62,42 +62,6 @@ namespace QLN.Backend.API.Service.Services
                 throw;
             }
         }
-
-        public async Task<string> UpdateCategory(CategoryDto dto, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var url = "/api/service/updatecategory";
-                var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Put, ConstantValues.Services.ServiceAppId, url);
-                request.Content = new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
-
-                var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
-
-                if (!response.IsSuccessStatusCode)
-                {
-                    var errorJson = await response.Content.ReadAsStringAsync(cancellationToken);
-                    string errorMessage;
-                    try
-                    {
-                        var problem = JsonSerializer.Deserialize<ProblemDetails>(errorJson);
-                        errorMessage = problem?.Detail ?? "Unknown validation error.";
-                    }
-                    catch
-                    {
-                        errorMessage = errorJson;
-                    }
-
-                    throw new InvalidDataException(errorMessage);
-                }
-
-                return "Category updated successfully.";
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error updating category");
-                throw;
-            }
-        }
         public async Task<List<CategoryDto>> GetAllCategories(string? vertical, string? subVertical, CancellationToken cancellationToken = default)
         {
             try
@@ -124,31 +88,6 @@ namespace QLN.Backend.API.Service.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Unexpected error retrieving service categories");
-                throw;
-            }
-        }
-        public async Task<CategoryDto?> GetCategoryById(long id, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var url = $"/api/service/getbycategoryid/{id}";
-                return await _dapr.InvokeMethodAsync<object?, CategoryDto>(
-                    HttpMethod.Get,
-                    ConstantValues.Services.ServiceAppId,
-                    url,
-                    null,
-                    cancellationToken
-                );
-            }
-            catch (InvocationException ex) when (ex.InnerException is HttpRequestException httpEx &&
-                                          httpEx.StatusCode == System.Net.HttpStatusCode.NotFound)
-            {
-                _logger.LogWarning("Service ad not found for ID: {Id}", id);
-                return null;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Unexpected error retrieving service category by ID");
                 throw;
             }
         }
@@ -320,7 +259,6 @@ namespace QLN.Backend.API.Service.Services
                 throw;
             }
         }
-
         public async Task<string> DeleteServiceAdById(string userId, long id, CancellationToken cancellationToken = default)
         {
             try

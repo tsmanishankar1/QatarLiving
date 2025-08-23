@@ -10,8 +10,6 @@ using System.Threading.Tasks;
 
 namespace QLN.Common.Infrastructure.Model
 {
-    
-
     public class CategoryDropdowndto
     {
         public long? Id { get; set; }

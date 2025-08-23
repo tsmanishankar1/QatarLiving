@@ -12,6 +12,8 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
 using QLN.Common.DTO_s;
 using QLN.Common.DTO_s.Company;
+using QLN.Common.DTO_s.Payments;
+using QLN.Common.DTO_s.Subscription;
 using QLN.Common.DTOs;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.CustomException;
@@ -20,8 +22,10 @@ using QLN.Common.Infrastructure.EventLogger;
 using QLN.Common.Infrastructure.IService.IAuthService;
 using QLN.Common.Infrastructure.IService.ICompanyService;
 using QLN.Common.Infrastructure.IService.IEmailService;
+using QLN.Common.Infrastructure.IService.IProductService;
 using QLN.Common.Infrastructure.IService.ITokenService;
 using QLN.Common.Infrastructure.Model;
+using QLN.Common.Infrastructure.Subscriptions;
 using System.Data;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -44,6 +48,7 @@ namespace QLN.Common.Infrastructure.Service.AuthService
         private readonly IEventlogger _log;
         private readonly IWebHostEnvironment _env;
         private readonly IExternalSubscriptionService _subscriptionService;
+        private readonly IV2SubscriptionService _v2SubscriptionService;
         private readonly ICompanyProfileService _companyProfile;
         private readonly HttpClient _httpClient;
 
@@ -58,6 +63,7 @@ namespace QLN.Common.Infrastructure.Service.AuthService
             IHttpContextAccessor httpContextAccessor,
             IWebHostEnvironment env,
             IExternalSubscriptionService subscriptionService,
+            IV2SubscriptionService v2SubscriptionService,
             ICompanyProfileService companyProfile,
             IHttpClientFactory httpClientFactory
             )
@@ -72,6 +78,7 @@ namespace QLN.Common.Infrastructure.Service.AuthService
             _log = logger;
             _env = env;
             _subscriptionService = subscriptionService;
+            _v2SubscriptionService = v2SubscriptionService;
             _companyProfile = companyProfile;
             _httpClient = httpClientFactory.CreateClient();
         }
@@ -1365,6 +1372,269 @@ namespace QLN.Common.Infrastructure.Service.AuthService
                 _log.LogError($"Deserialization error: {ex.Message}");
                 return null;
             }
+        }
+        public async Task<Results<Ok<UseMeResponseDto>, BadRequest<ProblemDetails>, NotFound<ProblemDetails>, UnauthorizedHttpResult, ProblemHttpResult>> UseMe(Guid userId)
+        {
+            try
+            {
+                if (userId == Guid.Empty)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid User ID",
+                        Detail = "User ID is required and cannot be empty.",
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+
+                // Get user with related data
+                var user = await _userManager.Users
+                    .Include(u => u.Companies)
+                    .Include(u => u.Subscriptions)
+                    .FirstOrDefaultAsync(u => u.Id == userId);
+
+                if (user == null)
+                {
+                    return TypedResults.NotFound(new ProblemDetails
+                    {
+                        Title = "User Not Found",
+                        Detail = "User not found or inactive.",
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
+
+                // Get user roles
+                var userRoles = await _userManager.GetRolesAsync(user);
+
+                // Use your existing subscription service methods
+                var activeSubscriptions = await _v2SubscriptionService.GetAllActiveSubscriptionsAsync(user.Id.ToString());
+                var activeFreeSubscriptions = await _v2SubscriptionService.GetUserFreeSubscriptionsAsync(user.Id.ToString());
+                var activeAddons = await _v2SubscriptionService.GetUserAddonsAsync(user.Id.ToString());
+
+                // Group subscriptions by vertical
+                var subscriptionsByVertical = activeSubscriptions
+                    .Where(s => s.ProductType == ProductType.SUBSCRIPTION)
+                    .GroupBy(s => s.Vertical)
+                    .ToDictionary(g => g.Key, g => g.ToList());
+                var activeP2PSubscriptions = activeSubscriptions
+                            .Where(s => s.ProductType == ProductType.PUBLISH)
+                            .GroupBy(s => s.Vertical)
+                            .ToDictionary(g => g.Key, g => g.ToList());
+
+                var freeSubscriptionsByVertical = activeFreeSubscriptions
+                    .GroupBy(s => s.Vertical)
+                    .ToDictionary(g => g.Key, g => g.ToList());
+
+                var addonsByVertical = activeAddons
+                    .Where(a => a.IsActive)
+                    .GroupBy(a => a.Vertical)
+                    .ToDictionary(g => g.Key, g => g.ToList());
+
+                // Calculate usage summary
+                var usageSummary = CalculateOverallUsageSummary(activeSubscriptions, activeFreeSubscriptions, activeAddons);
+
+                // Get FREE ads category usage for all FREE subscriptions using your service
+                var freeAdsCategorySummary = new List<CategoryUsageSummaryDto>();
+                foreach (var freeSubscription in activeFreeSubscriptions)
+                {
+                    try
+                    {
+                        var categorySummary = await _v2SubscriptionService.GetFreeAdsUsageSummaryAsync(freeSubscription.Id);
+                        foreach (var category in categorySummary)
+                        {
+                            freeAdsCategorySummary.Add(new CategoryUsageSummaryDto
+                            {
+                                Category = ExtractCategoryFromPath(category.CategoryPath),
+                                L1Category = ExtractL1CategoryFromPath(category.CategoryPath),
+                                L2Category = ExtractL2CategoryFromPath(category.CategoryPath),
+                                CategoryPath = category.CategoryPath,
+                                AdsAllowed = category.FreeAdsAllowed,
+                                AdsUsed = category.FreeAdsUsed,
+                                AdsRemaining = category.FreeAdsRemaining,
+                                UsagePercentage = category.UsagePercentage
+                            });
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _log.LogError(ex, "Error getting FREE ads summary for subscription {Id}", freeSubscription.Id);
+                    }
+                }
+
+                usageSummary.FreeAdsCategories = freeAdsCategorySummary;
+
+                // Build response
+                var response = new UseMeResponseDto
+                {
+                    User = new UserDetailsDto
+                    {
+                        Id = user.Id,
+                        Username = user.UserName ?? string.Empty,
+                        FirstName = user.FirstName ?? string.Empty,
+                        LastName = user.LastName ?? string.Empty,
+                        Email = user.Email ?? string.Empty,
+                        PhoneNumber = user.PhoneNumber,
+                        Gender = user.Gender,
+                        DateOfBirth = user.DateOfBirth,
+                        LanguagePreferences = user.LanguagePreferences,
+                        Nationality = user.Nationality,
+                        MobileOperator = user.MobileOperator,
+                        PhoneNumberConfirmed = user.PhoneNumberConfirmed,
+                        EmailConfirmed = user.EmailConfirmed,
+                        TwoFactorEnabled = user.TwoFactorEnabled,
+                        CreatedAt = user.CreatedAt,
+                        UpdatedAt = user.UpdatedAt,
+                        Roles = userRoles.ToList(),
+                        Companies = user.Companies?.Select(c => new UserCompanyDto
+                        {
+                            Id = c.Id,
+                            DisplayName = c.DisplayName
+                        }).ToList() ?? new List<UserCompanyDto>(),
+                        LegacyData = user.LegacyData != null ? new UserLegacyDataDto
+                        {
+                            Uid = user.LegacyData.Uid,
+                            Alias = user.LegacyData.Alias ?? string.Empty,
+                            Email = user.LegacyData.Email ?? string.Empty,
+                            Name = user.LegacyData.Name ?? string.Empty,
+                            Phone = user.LegacyData.Phone,
+                            IsAdmin = user.LegacyData.IsAdmin,
+                            Language = user.LegacyData.Language,
+                            Roles = user.LegacyData.Roles
+                        } : null
+                    },
+                    Subscriptions = new UserSubscriptionSummaryDto
+                    {
+                        TotalActiveSubscriptions = activeSubscriptions.Count,
+                        TotalActiveFreeSubscriptions = activeFreeSubscriptions.Count,
+                        TotalActiveP2PSubscriptions = activeP2PSubscriptions.Count,
+                        TotalActiveAddons = activeAddons.Count(a => a.IsActive),
+                        ActiveSubscriptions = subscriptionsByVertical,
+                        ActiveFreeSubscriptions = freeSubscriptionsByVertical,
+                        ActiveP2PSubscriptions = activeP2PSubscriptions,
+                        ActiveAddons = addonsByVertical,
+                        UsageSummary = usageSummary,
+                        EarliestExpiryDate = GetEarliestExpiryDate(activeSubscriptions, activeFreeSubscriptions),
+                        LatestExpiryDate = GetLatestExpiryDate(activeSubscriptions, activeFreeSubscriptions)
+                    },
+                    LastUpdated = DateTime.UtcNow,
+                    ApiVersion = "V2"
+                };
+
+                return TypedResults.Ok(response);
+            }
+            catch (Exception ex)
+            {
+                _log.LogException(ex);
+                return TypedResults.Problem(
+                    title: "Internal Server Error",
+                    detail: "An unexpected error occurred while fetching user details.",
+                    statusCode: StatusCodes.Status500InternalServerError);
+            }
+        }
+
+        // Helper methods (add these to your AuthService class)
+        private OverallUsageSummaryDto CalculateOverallUsageSummary(
+            List<V2SubscriptionResponseDto> paidSubscriptions,
+            List<V2SubscriptionResponseDto> freeSubscriptions,
+            List<V2UserAddonResponseDto> addons)
+        {
+            var summary = new OverallUsageSummaryDto();
+
+            // Calculate totals from paid subscriptions
+            foreach (var subscription in paidSubscriptions)
+            {
+                if (subscription.Quota != null)
+                {
+                    summary.TotalAdsRemaining += Math.Max(0, (subscription.Quota.TotalAdsAllowed) - (subscription.Quota.AdsUsed));
+                    summary.TotalPromotionsRemaining += Math.Max(0, (subscription.Quota.TotalPromotionsAllowed) - (subscription.Quota.PromotionsUsed));
+                    summary.TotalFeaturesRemaining += Math.Max(0, (subscription.Quota.TotalFeaturesAllowed) - (subscription.Quota.FeaturesUsed));
+                    summary.TotalRefreshesRemaining += Math.Max(0, (subscription.Quota.DailyRefreshesAllowed) - (subscription.Quota.DailyRefreshesUsed));
+                }
+
+                // Set vertical flags
+                switch (subscription.Vertical)
+                {
+                    case Vertical.Classifieds:
+                        summary.HasActiveClassifieds = true;
+                        break;
+                    case Vertical.Properties:
+                        summary.HasActiveProperties = true;
+                        break;
+                    case Vertical.Services:
+                        summary.HasActiveServices = true;
+                        break;
+                    case Vertical.Rewards:
+                        summary.HasActiveRewards = true;
+                        break;
+                }
+            }
+
+            // Calculate totals from FREE subscriptions
+            foreach (var freeSubscription in freeSubscriptions)
+            {
+                if (freeSubscription.Quota != null)
+                {
+                    summary.TotalFreeAdsRemaining += Math.Max(0, (freeSubscription.Quota.TotalAdsAllowed) - (freeSubscription.Quota.AdsUsed));
+                }
+
+                // Set vertical flags
+                switch (freeSubscription.Vertical)
+                {
+                    case Vertical.Classifieds:
+                        summary.HasActiveClassifieds = true;
+                        break;
+                    case Vertical.Properties:
+                        summary.HasActiveProperties = true;
+                        break;
+                    case Vertical.Services:
+                        summary.HasActiveServices = true;
+                        break;
+                    case Vertical.Rewards:
+                        summary.HasActiveRewards = true;
+                        break;
+                }
+            }
+
+            return summary;
+        }
+
+        private DateTime? GetEarliestExpiryDate(List<V2SubscriptionResponseDto> paidSubscriptions, List<V2SubscriptionResponseDto> freeSubscriptions)
+        {
+            var allSubscriptions = paidSubscriptions.Concat(freeSubscriptions).Where(s => s.IsActive);
+            return allSubscriptions.Any() ? allSubscriptions.Min(s => s.EndDate) : null;
+        }
+
+        private DateTime? GetLatestExpiryDate(List<V2SubscriptionResponseDto> paidSubscriptions, List<V2SubscriptionResponseDto> freeSubscriptions)
+        {
+            var allSubscriptions = paidSubscriptions.Concat(freeSubscriptions).Where(s => s.IsActive);
+            return allSubscriptions.Any() ? allSubscriptions.Max(s => s.EndDate) : null;
+        }
+
+        private string GetCategoryPath(string category, string? l1Category, string? l2Category)
+        {
+            if (!string.IsNullOrEmpty(l2Category))
+                return $"{category} > {l1Category} > {l2Category}";
+            if (!string.IsNullOrEmpty(l1Category))
+                return $"{category} > {l1Category}";
+            return category;
+        }
+
+        // Helper methods to extract category parts from path
+        private string ExtractCategoryFromPath(string categoryPath)
+        {
+            return categoryPath.Split(" > ")[0];
+        }
+
+        private string? ExtractL1CategoryFromPath(string categoryPath)
+        {
+            var parts = categoryPath.Split(" > ");
+            return parts.Length > 1 ? parts[1] : null;
+        }
+
+        private string? ExtractL2CategoryFromPath(string categoryPath)
+        {
+            var parts = categoryPath.Split(" > ");
+            return parts.Length > 2 ? parts[2] : null;
         }
     }
 }

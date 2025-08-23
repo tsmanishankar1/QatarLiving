@@ -2771,7 +2771,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
 
             group.MapPost("items/admin/post-by-id", async Task<IResult> (
               Items dto,
-              SaveIntent intent,
               IClassifiedService service,
               CancellationToken token) =>
             {
@@ -2787,7 +2786,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                         });
                     }
 
-                    var response = await service.CreateClassifiedItemsAd(dto, intent, token);
+                    var response = await service.CreateClassifiedItemsAd(dto, token);
                     return TypedResults.Created($"/api/classifieds/items/admin/post-by-id/{response.AdId}", response);
 
                 }
@@ -2840,7 +2839,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
 
             group.MapPost("preloved/admin/post-by-id", async Task<IResult> (
                 Preloveds dto,
-                SaveIntent indent,
                 IClassifiedService service,
                 CancellationToken token) =>
             {
@@ -2917,7 +2915,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
            
             group.MapPost("collectibles/admin/post-by-id", async Task<IResult> (
                 Collectibles dto,
-                SaveIntent indent,
                 IClassifiedService service,
                 CancellationToken token) =>
             {
@@ -2933,7 +2930,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                         });
                     }
 
-                    var result = await service.CreateClassifiedCollectiblesAd(dto, indent, token);
+                    var result = await service.CreateClassifiedCollectiblesAd(dto,token);
 
                     return TypedResults.Created(
                         $"/api/classifieds/collectibles/admin/post-by-id/{result.AdId}", result);
