@@ -18,6 +18,7 @@ using QLN.Common.Infrastructure.CustomException;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService;
 using QLN.Common.Infrastructure.IService.IClassifiedBoService;
+using QLN.Common.Infrastructure.IService.IProductService;
 using QLN.Common.Infrastructure.IService.ISearchService;
 using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.Subscriptions;
@@ -824,6 +825,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 HttpContext httpContext,
                 [FromBody] ClassifiedsItemsDTO dto,
                 IClassifiedService service,
+                IV2SubscriptionService subscriptionService,
                 AuditLogger auditLogger,
                 CancellationToken token) =>
             {
@@ -835,6 +837,16 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                     uid = httpContext.User.FindFirst("sub")?.Value ?? "unknown";
                     var userName = httpContext.User.FindFirst("preferred_username")?.Value ?? "unknown";
                     var slug = SlugHelper.GenerateSlug(dto.Title, dto.Category, "Classifieds", Guid.NewGuid());
+                    var freeSub = (await subscriptionService.GetUserFreeSubscriptionsAsync(uid, token))
+                                                             .OrderBy(s => s.EndDate)
+                                                             .FirstOrDefault();
+                    var subscriptionId = Guid.Empty;
+                    var expiryDate = DateTime.MinValue;
+                    if (freeSub is not null)
+                    {
+                        subscriptionId = freeSub.Id;
+                        expiryDate = freeSub.EndDate;
+                    }
                     var request = new Items
                     {
                         UserId = uid,
@@ -867,7 +879,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         zone = dto.zone,
                         ContactNumberCountryCode = dto.ContactNumberCountryCode,
                         WhatsappNumberCountryCode = dto.WhatsappNumberCountryCode,
-                        ExpiryDate = null,
+                        ExpiryDate = expiryDate,
                         FeaturedExpiryDate = null,
                         IsFeatured = false,
                         IsPromoted = false,
@@ -875,7 +887,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         PromotedExpiryDate = null,
                         PublishedDate = null,
                         Status = AdStatus.Draft,
-                        SubscriptionId = null,
+                        SubscriptionId = subscriptionId,
                         IsActive = true,
                         CreatedBy = userName,
                         CreatedAt = DateTime.UtcNow,
@@ -951,16 +963,16 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                     );
                 }
             })
-    .WithName("PostItemsAdsaveintent")
-    .WithTags("Classified")
-    .WithSummary("Post classified items ad using authenticated user")
-    .WithDescription("Takes user ID from JWT token and creates the ad.")
-    .Produces<AdCreatedResponseDto>(StatusCodes.Status201Created)
-    .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-    .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
-    .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
-    .RequireAuthorization();
-                
+                .WithName("PostItemsAdsaveintent")
+                .WithTags("Classified")
+                .WithSummary("Post classified items ad using authenticated user")
+                .WithDescription("Takes user ID from JWT token and creates the ad.")
+                .Produces<AdCreatedResponseDto>(StatusCodes.Status201Created)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
+                .RequireAuthorization();
+
             group.MapPost("items/post-by-id", async Task<IResult> (
                 Items dto,
                 IClassifiedService service,
