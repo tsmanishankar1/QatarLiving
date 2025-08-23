@@ -131,16 +131,6 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.EditCompany
         }
 
 
-
-        protected bool SearchNatureOfBusiness(string searchText, int optionValue)
-        {
-            if (string.IsNullOrWhiteSpace(searchText))
-                return true;
-
-            var label = NatureOfBusinessOptions[optionValue];
-            return label.Contains(searchText, StringComparison.OrdinalIgnoreCase);
-        }
-
         protected void OnProfileValueChanged(string key, int newValue)
         {
             SelectedProfileValues[key] = newValue;
