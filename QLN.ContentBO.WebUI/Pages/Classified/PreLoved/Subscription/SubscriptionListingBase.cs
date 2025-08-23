@@ -120,6 +120,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.Subscription
             finally
             {
                 IsLoading = false;
+                StateHasChanged();
             }
         }
 

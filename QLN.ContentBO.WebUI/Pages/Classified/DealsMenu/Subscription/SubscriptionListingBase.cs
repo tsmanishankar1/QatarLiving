@@ -55,13 +55,6 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.Subscription
         protected int currentPage { get; set; } = 1;
         protected int pageSize { get; set; } = 12;
 
-        protected readonly List<string> Categories =
-        [
-            "12 Months Basic",
-            "12 Months Plus",
-            "12 Months Super"
-        ];
-
         public class DayTimeEntry
         {
             public DateTime Date { get; set; }
@@ -113,6 +106,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.Subscription
             finally
             {
                 IsLoading = false;
+                StateHasChanged();
             }
         }
 

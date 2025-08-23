@@ -85,7 +85,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.P2p
 
         protected List<string> SubscriptionTypes = [];
 
-        protected string SelectedSubscriptionType { get; set; } = null;
+        protected string SelectedSubscriptionType { get; set; } = string.Empty;
         // Date range logic
         protected DateRange _dateRange = new();
         protected DateRange _tempDateRange = new();
@@ -120,6 +120,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.P2p
             finally
             {
                 IsLoading = false;
+                StateHasChanged();
             }
         }
 
