@@ -77,15 +77,15 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewTransactions
             tempEndDate = dateEnd;
             showEndPopover = true;
         }
-
-        protected void CancelCreatedPopover() => showCreatedPopover = false;
-        protected void CancelPublishedPopover() => showPublishedPopover = false;
-        protected void CancelStartPopover() => showStartPopover = false;
-        protected void CancelEndPopover() => showEndPopover = false;
-
         protected async void ConfirmCreatedPopover()
         {
             dateCreated = tempCreatedDate;
+            showCreatedPopover = false;
+            await NotifyDateFilterChanged();
+        }
+        protected async void CancelCreatedPopover()
+        {
+            dateCreated = null;
             showCreatedPopover = false;
             await NotifyDateFilterChanged();
         }
@@ -96,6 +96,13 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewTransactions
             showPublishedPopover = false;
             await NotifyDateFilterChanged();
         }
+        protected async void CancelPublishedPopover()
+        {
+            datePublished = null;
+            showPublishedPopover = false;
+            await NotifyDateFilterChanged();
+        }
+
 
         protected async void ConfirmStartPopover()
         {
@@ -103,10 +110,23 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewTransactions
             showStartPopover = false;
             await NotifyDateFilterChanged();
         }
+        protected async void CancelStartPopover()
+        {
+            dateStart = null;
+            showStartPopover = false;
+            await NotifyDateFilterChanged();
+        }
+
 
         protected async void ConfirmEndPopover()
         {
             dateEnd = tempEndDate;
+            showEndPopover = false;
+            await NotifyDateFilterChanged();
+        }
+        protected async void CancelEndPopover()
+        {
+            dateEnd = null;
             showEndPopover = false;
             await NotifyDateFilterChanged();
         }

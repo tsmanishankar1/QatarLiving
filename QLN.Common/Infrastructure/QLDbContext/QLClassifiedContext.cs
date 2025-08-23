@@ -30,11 +30,10 @@ namespace QLN.Common.Infrastructure.QLDbContext
         public DbSet<Collectibles> Collectible { get; set; }
         public DbSet<StoreFlyers> StoreFlyer { get; set; }
         public DbSet<SeasonalPicks> SeasonalPicks { get; set; }
-
+        public DbSet<CategoryDropdown> CategoryDropdowns { get; set; }
         public DbSet<FeaturedStore> FeaturedStores { get; set; }
         public DbSet<FeaturedCategory> FeaturedCategories { get; set; }
         public DbSet<Services> Services { get; set; }
-        public DbSet<Category> Categories { get; set; }     
         public DbSet<StoresDashboardHeader> StoresDashboardHeaderItems { get; set; }
         public DbSet<StoresDashboardSummary> StoresDashboardSummaryItems { get; set; }
         public DbSet<Wishlist> Wishlists { get; set; }
@@ -66,13 +65,9 @@ namespace QLN.Common.Infrastructure.QLDbContext
                 .WithOne(a => a.StoreProduct)
                 .HasForeignKey(a => a.StoreProductId)
                 .OnDelete(DeleteBehavior.Cascade);
-            modelBuilder.Entity<Category>()
-
-                 .HasMany(sc => sc.CategoryFields)
-                 .WithOne(sc => sc.ParentCategory)
-                 .HasForeignKey(sc => sc.ParentId)
-                 .OnDelete(DeleteBehavior.Restrict);
-
+            modelBuilder.Entity<CategoryDropdown>()
+            .Property(c => c.Fields)
+           .HasColumnType("jsonb");
 
             modelBuilder.Entity<StoresDashboardHeader>(entity =>
             {

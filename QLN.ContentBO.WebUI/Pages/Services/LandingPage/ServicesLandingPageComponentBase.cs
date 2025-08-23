@@ -38,7 +38,6 @@ namespace QLN.ContentBO.WebUI.Pages.Services.LandingPage
         private List<Slot> featuredEventSlots = new();
         protected override async Task OnInitializedAsync()
         {
-            await AuthorizedPage();
             await base.OnInitializedAsync();
 
             if (Items != null && Items.Any())

@@ -9,6 +9,7 @@ using QLN.Common.Infrastructure.CustomException;
 using QLN.Common.Infrastructure.Auditlog;
 using QLN.Common.Infrastructure.Utilities;
 using Company = QLN.Common.Infrastructure.Model.Company;
+using System.Text.Json;
 
 namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
 {
@@ -672,24 +673,32 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
             {
                 string uid = "unknown";
                 string? userName = null;
-
                 try
                 {
-                    var (extractedUid, extractedUsername, subscriptions, roles) = await UserTokenHelper.ExtractUserAndSubscriptionDetailsAsync(httpContext);
-
-                    uid = extractedUid;
-                    if (string.IsNullOrEmpty(uid))
+                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                    if (string.IsNullOrEmpty(userClaim))
                     {
                         return TypedResults.Problem(new ProblemDetails
                         {
                             Title = "Unauthorized Access",
-                            Detail = "User ID or username could not be extracted from token.",
+                            Detail = "User information is missing or invalid in the token.",
+                            Status = StatusCodes.Status403Forbidden
+                        });
+                    }
+                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                    uid = userData.GetProperty("uid").GetString();
+                    if (uid == null)
+                    {
+                        return TypedResults.Problem(new ProblemDetails
+                        {
+                            Title = "Unauthorized Access",
+                            Detail = "User ID could not be extracted from token.",
                             Status = StatusCodes.Status403Forbidden
                         });
                     }
                     if (dto == null)
-                        throw new KeyNotFoundException($"Company with ID '{dto.CompanyId}' not found.");
-
+                        throw new KeyNotFoundException("Company payload is null.");
+                    
                     await service.ApproveCompany(uid, dto, cancellationToken);
                     await auditLogger.LogAuditAsync(
                         module: ModuleName,
@@ -1017,7 +1026,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
 
             return group;
         }
-
         public static RouteGroupBuilder MapGetAllCompanyProfiles(this RouteGroupBuilder group)
         {
             group.MapPost("/getallcompanies", async Task<IResult> (

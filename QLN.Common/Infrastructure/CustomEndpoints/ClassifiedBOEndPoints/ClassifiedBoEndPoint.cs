@@ -53,14 +53,9 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                         ) =>
             {
                 try
-                {
-                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                    if (string.IsNullOrEmpty(userClaim))
-                        return TypedResults.Forbid();
+                {                  
+                    var (userId, userName) = Utilities.UserTokenHelper.GetDrupalUser(httpContext);
 
-                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                    var userId = userData.GetProperty("uid").GetString();
-                    var userName = userData.GetProperty("name").GetString();
 
                     if (string.IsNullOrWhiteSpace(userId))
                         return TypedResults.Forbid();
@@ -214,18 +209,10 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
             {
                 try
                 {
-                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                    if (string.IsNullOrEmpty(userClaim)) return TypedResults.Forbid();
-
-                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                    var userId = userData.GetProperty("uid").GetString();
-                    if (string.IsNullOrWhiteSpace(userId)) return TypedResults.Forbid();
-
-                    var userName = userData.GetProperty("name").GetString();
-                    if (string.IsNullOrWhiteSpace(userName)) return TypedResults.Forbid();
+                    var (userId, userName) = Utilities.UserTokenHelper.GetDrupalUser(httpContext);
 
                     if (string.IsNullOrWhiteSpace(userId))
-                        throw new ArgumentException("UserId is required...");
+                        return TypedResults.Forbid();
 
                     var result = await service.ReorderFeaturedCategorySlots(userId, userName, request, cancellationToken);
                     return TypedResults.Ok(result);
@@ -301,18 +288,10 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
             {
                 try
                 {
-                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                    if (string.IsNullOrEmpty(userClaim))
-                        return TypedResults.Forbid();
-
-                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                    var userId = userData.GetProperty("uid").GetString();
-                    var userName = userData.GetProperty("name").GetString();
+                    var (userId, userName) = Utilities.UserTokenHelper.GetDrupalUser(httpContext);
 
                     if (string.IsNullOrWhiteSpace(userId))
                         return TypedResults.Forbid();
-
-
 
                     var result = await service.ReplaceFeaturedCategorySlots(userId, userName!, dto, cancellationToken);
                     return TypedResults.Ok(result);
@@ -397,14 +376,10 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
             {
                 try
                 {
-                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                    if (string.IsNullOrEmpty(userClaim)) return TypedResults.Forbid();
+                    var (userId, userName) = Utilities.UserTokenHelper.GetDrupalUser(httpContext);
 
-                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                    var userId = userData.GetProperty("uid").GetString();
-                    if (string.IsNullOrWhiteSpace(userId)) return TypedResults.Forbid();
-                    var userName = userData.GetProperty("name").GetString();
-                    if (string.IsNullOrWhiteSpace(userName)) return TypedResults.Forbid();
+                    if (string.IsNullOrWhiteSpace(userId))
+                        return TypedResults.Forbid();
 
                     if (string.IsNullOrWhiteSpace(categoryId))
                     {
@@ -581,16 +556,11 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
             {
                 try
                 {
-                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                    if (string.IsNullOrEmpty(userClaim))
-                        return TypedResults.Forbid();
-
-                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                    var userId = userData.GetProperty("uid").GetString();
-                    var userName = userData.GetProperty("name").GetString();
+                    var (userId, userName) = Utilities.UserTokenHelper.GetDrupalUser(httpContext);
 
                     if (string.IsNullOrWhiteSpace(userId))
                         return TypedResults.Forbid();
+                   
 
                     var result = await service.EditFeaturedCategory(userId, userName!, dto, cancellationToken);
                     return TypedResults.Ok(result);
@@ -715,20 +685,10 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
             {
                 try
                 {
-                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                    if (string.IsNullOrEmpty(userClaim))
-                    {
-                        return TypedResults.Forbid();
-                    }
-
-                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                    var userId = userData.GetProperty("uid").GetString();
-                    var userName = userData.GetProperty("name").GetString();
+                    var (userId, userName) = Utilities.UserTokenHelper.GetDrupalUser(httpContext);
 
                     if (string.IsNullOrWhiteSpace(userId))
-                    {
                         return TypedResults.Forbid();
-                    }
 
                     var result = await service.CreateSeasonalPick(userId, userName, dto, cancellationToken);
                     return TypedResults.Ok(result);
@@ -947,16 +907,9 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
             {
                 try
                 {
-                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                    if (string.IsNullOrEmpty(userClaim))
-                        return TypedResults.Forbid();
+                    var (userId, userName) = Utilities.UserTokenHelper.GetDrupalUser(httpContext);
 
-                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                    var userId = userData.GetProperty("uid").GetString();
                     if (string.IsNullOrWhiteSpace(userId))
-                        return TypedResults.Forbid();
-                    var userName = userData.GetProperty("name").GetString();
-                    if (string.IsNullOrWhiteSpace(userName))
                         return TypedResults.Forbid();
 
                     var result = await service.ReplaceSlotWithSeasonalPick(userId, userName, dto, cancellationToken);
@@ -1032,18 +985,10 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
             {
                 try
                 {
-                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                    if (string.IsNullOrEmpty(userClaim)) return TypedResults.Forbid();
-
-                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                    var userId = userData.GetProperty("uid").GetString();
-                    if (string.IsNullOrWhiteSpace(userId)) return TypedResults.Forbid();
-                    var userName = userData.GetProperty("name").GetString();
-                    if (string.IsNullOrWhiteSpace(userName))
-                        return TypedResults.Forbid();
+                    var (userId, userName) = Utilities.UserTokenHelper.GetDrupalUser(httpContext);
 
                     if (string.IsNullOrWhiteSpace(userId))
-                        throw new ArgumentException("UserId is required...");
+                        return TypedResults.Forbid();
 
                     var result = await service.ReorderSeasonalPickSlots(userId, userName, request, cancellationToken);
                     return TypedResults.Ok(result);
@@ -1119,14 +1064,9 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
             {
                 try
                 {
-                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                    if (string.IsNullOrEmpty(userClaim)) return TypedResults.Forbid();
+                    var (userId, userName) = Utilities.UserTokenHelper.GetDrupalUser(httpContext);
 
-                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                    var userId = userData.GetProperty("uid").GetString();
-                    if (string.IsNullOrWhiteSpace(userId)) return TypedResults.Forbid();
-                    var userName = userData.GetProperty("name").GetString();
-                    if (string.IsNullOrWhiteSpace(userName))
+                    if (string.IsNullOrWhiteSpace(userId))
                         return TypedResults.Forbid();
 
                     if (string.IsNullOrWhiteSpace(pickId))
@@ -1264,13 +1204,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
             {
                 try
                 {
-                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                    if (string.IsNullOrEmpty(userClaim))
-                        return TypedResults.Forbid();
-
-                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                    var userId = userData.GetProperty("uid").GetString();
-                    var userName = userData.GetProperty("name").GetString();
+                    var (userId, userName) = Utilities.UserTokenHelper.GetDrupalUser(httpContext);
 
                     if (string.IsNullOrWhiteSpace(userId))
                         return TypedResults.Forbid();
@@ -1398,20 +1332,10 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
             {
                 try
                 {
-                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                    if (string.IsNullOrEmpty(userClaim))
-                    {
-                        return TypedResults.Forbid();
-                    }
-
-                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                    var userId = userData.GetProperty("uid").GetString();
-                    var userName = userData.GetProperty("name").GetString();
+                    var (userId, userName) = Utilities.UserTokenHelper.GetDrupalUser(httpContext);
 
                     if (string.IsNullOrWhiteSpace(userId))
-                    {
                         return TypedResults.Forbid();
-                    }
 
                     var result = await service.CreateFeaturedStore(userId, userName, dto, cancellationToken);
                     return TypedResults.Ok(result);
@@ -1629,15 +1553,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
             {
                 try
                 {
-                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                    if (string.IsNullOrEmpty(userClaim))
-                        return TypedResults.Forbid();
-
-                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                    var userId = userData.GetProperty("uid").GetString();
-                    var userName = userData.GetProperty("name").GetString();
-                    if (string.IsNullOrWhiteSpace(userName))
-                        return TypedResults.Forbid();
+                    var (userId, userName) = Utilities.UserTokenHelper.GetDrupalUser(httpContext);
 
                     if (string.IsNullOrWhiteSpace(userId))
                         return TypedResults.Forbid();
@@ -1716,14 +1632,9 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
             {
                 try
                 {
-                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                    if (string.IsNullOrEmpty(userClaim)) return TypedResults.Forbid();
+                    var (userId, userName) = Utilities.UserTokenHelper.GetDrupalUser(httpContext);
 
-                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                    var userId = userData.GetProperty("uid").GetString();
-                    if (string.IsNullOrWhiteSpace(userId)) return TypedResults.Forbid();
-                    var userName = userData.GetProperty("name").GetString();
-                    if (string.IsNullOrWhiteSpace(userName))
+                    if (string.IsNullOrWhiteSpace(userId))
                         return TypedResults.Forbid();
 
                     var result = await service.ReorderFeaturedStoreSlots(userId, userName, request, cancellationToken);
@@ -1801,14 +1712,9 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
             {
                 try
                 {
-                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                    if (string.IsNullOrEmpty(userClaim)) return TypedResults.Forbid();
+                    var (userId, userName) = Utilities.UserTokenHelper.GetDrupalUser(httpContext);
 
-                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                    var userId = userData.GetProperty("uid").GetString();
-                    if (string.IsNullOrWhiteSpace(userId)) return TypedResults.Forbid();
-                    var userName = userData.GetProperty("name").GetString();
-                    if (string.IsNullOrWhiteSpace(userName))
+                    if (string.IsNullOrWhiteSpace(userId))
                         return TypedResults.Forbid();
 
                     if (string.IsNullOrWhiteSpace(storeId))
@@ -1989,13 +1895,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
             {
                 try
                 {
-                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                    if (string.IsNullOrEmpty(userClaim))
-                        return TypedResults.Forbid();
-
-                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                    var userId = userData.GetProperty("uid").GetString();
-                    var userName = userData.GetProperty("name").GetString();
+                    var (userId, userName) = Utilities.UserTokenHelper.GetDrupalUser(httpContext);
 
                     if (string.IsNullOrWhiteSpace(userId))
                         return TypedResults.Forbid();
@@ -2168,6 +2068,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 BadRequest<ProblemDetails>,
                 Conflict<ProblemDetails>,
                 NotFound<ProblemDetails>,
+                ForbidHttpResult,
                 ProblemHttpResult
                 >> (
                 BulkActionRequest req,
@@ -2176,16 +2077,17 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 CancellationToken ct
                 ) =>
             {
-                string uid = httpContext.User.FindFirst("sub")?.Value;
-                string userName = httpContext.User.FindFirst("preferred_username")?.Value;
+                var (userId, userName) = Utilities.UserTokenHelper.GetDrupalUser(httpContext);
+
+                if (string.IsNullOrWhiteSpace(userId))
+                    return TypedResults.Forbid();
 
                 if (!req.AdIds.Any())
                     return TypedResults.BadRequest(new ProblemDetails { Title = "No ads selected." });
 
                 if (req.Action == BulkActionEnum.Remove && string.IsNullOrWhiteSpace(req.Reason))
                     return TypedResults.BadRequest(new ProblemDetails { Title = "Reason required for removal." });
-
-                var userId = uid;
+                
                 try
                 {
                     var result = await service.BulkItemsAction(req, userId, userName, ct);
@@ -2303,6 +2205,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 BadRequest<ProblemDetails>,
                 Conflict<ProblemDetails>,
                 NotFound<ProblemDetails>,
+                ForbidHttpResult,
                 ProblemHttpResult
                 >> (
                 BulkActionRequest req,
@@ -2311,18 +2214,10 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 CancellationToken ct
                 ) =>
             {
-                var uid = httpContext.User.FindFirst("sub")?.Value ?? "unknown";
-                var userName = httpContext.User.FindFirst("preferred_username")?.Value ?? "unknown";
+                var (userId, userName) = Utilities.UserTokenHelper.GetDrupalUser(httpContext);
 
-                if (uid == null && userName == null)
-                {
-                    return TypedResults.Problem(new ProblemDetails
-                    {
-                        Title = "Unauthorized Access",
-                        Detail = "User ID or username could not be extracted from token.",
-                        Status = StatusCodes.Status403Forbidden
-                    });
-                }
+                if (string.IsNullOrWhiteSpace(userId))
+                    return TypedResults.Forbid();
 
                 if (!req.AdIds.Any())
                     return TypedResults.BadRequest(new ProblemDetails { Title = "No ads selected." });
@@ -2330,7 +2225,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 if (req.Action == BulkActionEnum.Remove && string.IsNullOrWhiteSpace(req.Reason))
                     return TypedResults.BadRequest(new ProblemDetails { Title = "Reason required for removal." });
 
-                var userId = uid;
                 try
                 {
                     var result = await service.BulkCollectiblesAction(req, userId, userName, ct);
@@ -2530,29 +2424,29 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             group.MapPost("/getall-preloved",
-     async Task<Results<Ok<ClassifiedsBoPrelovedResponseDto>, ProblemHttpResult>> (
-         [FromServices] IClassifiedBoLandingService service,
-         [FromBody] GetAllSearch request,
-         CancellationToken cancellationToken
-     ) =>
-     {
-         try
-         {
-             var result = await service.GetAllPrelovedBoAds(request, cancellationToken);
-             return TypedResults.Ok(result);
-         }
-         catch (Exception ex)
-         {
-             return TypedResults.Problem($"Internal Server Error: {ex.Message}");
-         }
-     })
-     .WithName("GetAllPrelovedAds")
-     .WithTags("ClassifiedBo")
-     .WithSummary("Get all classifieds ads")
-     .WithDescription("Retrieves all service ads from the system. " +
-                      "This endpoint returns a list of all available classifieds ads, including their details.")
-     .Produces<ClassifiedsBoPrelovedResponseDto>(StatusCodes.Status200OK)
-     .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+                async Task<Results<Ok<ClassifiedsBoPrelovedResponseDto>, ProblemHttpResult>> (
+                    [FromServices] IClassifiedBoLandingService service,
+                    [FromBody] GetAllSearch request,
+                    CancellationToken cancellationToken
+                    ) =>
+                {
+                    try
+                    {
+                        var result = await service.GetAllPrelovedBoAds(request, cancellationToken);
+                        return TypedResults.Ok(result);
+                    }
+                    catch (Exception ex)
+                    {
+                        return TypedResults.Problem($"Internal Server Error: {ex.Message}");
+                    }
+                })
+                .WithName("GetAllPrelovedAds")
+                .WithTags("ClassifiedBo")
+                .WithSummary("Get all classifieds ads")
+                .WithDescription("Retrieves all service ads from the system. " +
+                                 "This endpoint returns a list of all available classifieds ads, including their details.")
+                .Produces<ClassifiedsBoPrelovedResponseDto>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
 
 
@@ -2737,12 +2631,11 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
 
 
             group.MapPost("items", async Task<IResult> (
-    HttpContext httpContext,
-    ClassifiedsItemsDTO dto,
-    SaveIntent indent,
-    IClassifiedService service,
-    AuditLogger auditLogger,
-    CancellationToken token) =>
+                HttpContext httpContext,
+                ClassifiedsItemsDTO dto,
+                IClassifiedService service,
+                AuditLogger auditLogger,
+                CancellationToken token) =>
             {
                 string? uid = "unknown";
                 string? subId = null;
@@ -2861,7 +2754,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                             Status = StatusCodes.Status400BadRequest
                         });
                     }
-                    var response = await service.CreateClassifiedItemsAd(request, indent, token);
+                    var response = await service.CreateClassifiedItemsAd(request, token);
 
                     await auditLogger.LogAuditAsync(
                         module: "Classified",
@@ -2927,7 +2820,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
 
             group.MapPost("items/post-by-id", async Task<IResult> (
                 Items dto,
-                SaveIntent indent,
                 IClassifiedService service,
                 CancellationToken token) =>
             {
@@ -2943,7 +2835,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                         });
                     }
 
-                    var response = await service.CreateClassifiedItemsAd(dto, indent, token);
+                    var response = await service.CreateClassifiedItemsAd(dto, token);
                     return TypedResults.Created($"/api/classifieds/items/user-ads-by-id/{response.AdId}", response);
 
                 }
@@ -2999,6 +2891,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 BadRequest<ProblemDetails>,
                 Conflict<ProblemDetails>,
                 NotFound<ProblemDetails>,
+                ForbidHttpResult,
                 ProblemHttpResult
                 >> (
                 BulkActionRequest req,
@@ -3007,18 +2900,10 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 CancellationToken ct
                 ) =>
             {
-                var uid = httpContext.User.FindFirst("sub")?.Value ?? "unknown";
-                var userName = httpContext.User.FindFirst("preferred_username")?.Value ?? "unknown";
+                var (userId, userName) = Utilities.UserTokenHelper.GetDrupalUser(httpContext);
 
-                if (uid == null && userName == null)
-                {
-                    return TypedResults.Problem(new ProblemDetails
-                    {
-                        Title = "Unauthorized Access",
-                        Detail = "User ID or username could not be extracted from token.",
-                        Status = StatusCodes.Status403Forbidden
-                    });
-                }
+                if (string.IsNullOrWhiteSpace(userId))
+                    return TypedResults.Forbid();
 
                 if (!req.AdIds.Any())
                     return TypedResults.BadRequest(new ProblemDetails { Title = "No ads selected." });
@@ -3026,7 +2911,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 if (req.Action == BulkActionEnum.Remove && string.IsNullOrWhiteSpace(req.Reason))
                     return TypedResults.BadRequest(new ProblemDetails { Title = "Reason required for removal." });
 
-                var userId = uid;
                 try
                 {
                     var result = await service.BulkPrelovedAction(req, userId,userName, ct);
@@ -3139,12 +3023,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
 
-
-
-
             group.MapPost("items/admin/post-by-id", async Task<IResult> (
               Items dto,
-              SaveIntent intent,
               IClassifiedService service,
               CancellationToken token) =>
             {
@@ -3160,7 +3040,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                         });
                     }
 
-                    var response = await service.CreateClassifiedItemsAd(dto, intent, token);
+                    var response = await service.CreateClassifiedItemsAd(dto, token);
                     return TypedResults.Created($"/api/classifieds/items/admin/post-by-id/{response.AdId}", response);
 
                 }
@@ -3489,6 +3369,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 BadRequest<ProblemDetails>,
                 Conflict<ProblemDetails>,
                 NotFound<ProblemDetails>,
+                ForbidHttpResult,
                 ProblemHttpResult
                 >> (
                 BulkActionRequest req,
@@ -3497,8 +3378,10 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 CancellationToken ct
                 ) =>
             {
-                string uid = httpContext.User.FindFirst("sub")?.Value;
-                string userName = httpContext.User.FindFirst("preferred_username")?.Value;
+                var (userId, userName) = Utilities.UserTokenHelper.GetDrupalUser(httpContext);
+
+                if (string.IsNullOrWhiteSpace(userId))
+                    return TypedResults.Forbid();
 
                 if (!req.AdIds.Any())
                     return TypedResults.BadRequest(new ProblemDetails { Title = "No ads selected." });
@@ -3508,7 +3391,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
 
                 try
                 {
-                    var result = await service.BulkDealsAction(req, uid, userName, ct);
+                    var result = await service.BulkDealsAction(req, userId, userName, ct);
                     return TypedResults.Ok(result);
                 }
                 catch (ConflictException ex)

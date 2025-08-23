@@ -14,13 +14,11 @@ namespace QLN.Common.DTO_s.Payments
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int PaymentId { get; set; }
-
-        public ProductType ProductType { get; set; }
         public Guid? UserSubscriptionId { get; set; }
-        public Guid? UserAddonId { get; set; }
+        public List<Guid> UserAddonIds { get; set; } = new();
         public Vertical Vertical { get; set; }
         public SubVertical? SubVertical { get; set; }
-
+        public List<ProductDetails> Products { get; set; } = new ();
         public long? AdId { get; set; }
 
         public PaymentStatus Status { get; set; }
@@ -52,5 +50,12 @@ namespace QLN.Common.DTO_s.Payments
         [Column(TypeName = "decimal(10,1)")]
         [Required]
         public decimal? Points { get; set; } = 0.0m;
+    }
+    [NotMapped]
+    public class ProductDetails
+    {
+        public ProductType ProductType { get; set; }
+        public string ProductCode { get; set; } = string.Empty;
+        public decimal Price { get; set; }
     }
 }
