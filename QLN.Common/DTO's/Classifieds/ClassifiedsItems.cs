@@ -15,5 +15,9 @@ namespace QLN.Common.DTO_s
         public bool IsPromoted { get; set; }
         public bool IsRefreshed => LastRefreshedOn.HasValue && LastRefreshedOn.Value > DateTime.UtcNow;
     }
-
+    public class CategoryCountDto
+    {
+        public string Category { get; set; }
+        public int AdsCount { get; set; }
+    }
 }

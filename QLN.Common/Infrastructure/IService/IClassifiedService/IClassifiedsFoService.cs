@@ -14,8 +14,9 @@ namespace QLN.Common.Infrastructure.IService
 {
     public interface IClassifiedsFoService
     {
-        //Task<List<StoresDashboardManagementDto>> GetStoresDashboardManagement(string? userId, CancellationToken cancellationToken = default);
         Task<List<StoresDashboardHeaderDto>> GetStoresDashboardHeader(string? UserId, string? CompanyId,CancellationToken cancellationToken = default);
         Task<List<StoresDashboardSummaryDto>> GetStoresDashboardSummary(string? CompanyId,string? SubscriptionId,CancellationToken cancellationToken = default);
+        Task<string> GetFOProcessStoresCSV(string Url, string CsvPlatform, string? CompanyId, string? SubscriptionId,
+           string? UserId, string Domain, CancellationToken cancellationToken = default);
     }
 }

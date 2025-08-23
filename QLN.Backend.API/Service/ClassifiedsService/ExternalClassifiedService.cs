@@ -1,6 +1,7 @@
 ﻿using Dapr;
 using Dapr.Client;
 using Google.Apis.Auth.OAuth2;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Spatial;
 using QLN.Backend.API.Service.ProductService;
@@ -1880,7 +1881,46 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-        #endregion 
+        //public async Task<List<CategoryCountDto>> GetCategoryCountsAsync(CancellationToken cancellationToken)
+        //{
+            
+        //    try
+        //    {
+        //        var response = await _dapr.InvokeMethodAsync<List<CategoryCountDto>>(
+        //            HttpMethod.Get,
+        //            SERVICE_APP_ID,
+        //            $"/api/classifieds/get-category-count", cancellationToken);
+
+
+        //        return response;
+        //    }          
+        //    catch (Exception ex)
+        //    {
+        //        _log.LogError(ex, "Unexpected exception while retrieving count",1);
+        //        throw;
+        //    }
+        //}
+
+        public async Task<List<CategoryCountDto>> GetCategoryCountsAsync(CancellationToken cancellationToken) { 
+            try
+            {
+               
+                var response = await _dapr.InvokeMethodAsync<List<CategoryCountDto>>(
+                    HttpMethod.Get,
+                    SERVICE_APP_ID,
+
+                    $"api/classifieds/get-category-count",
+                    cancellationToken
+                );
+
+                return response ?? new List<CategoryCountDto>();
+            }
+            catch (Exception ex)
+            {
+                _log.LogError("Unexpected exception while retrieving count. :"+ex.Message);
+                throw new InvalidOperationException("Unexpected exception while retrieving count", ex);
+            }
+        }
     }
 }
 
