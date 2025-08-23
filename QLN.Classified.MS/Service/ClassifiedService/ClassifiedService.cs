@@ -2698,11 +2698,47 @@ namespace QLN.Classified.MS.Service
                 _logger.LogError(ex, "Bulk publish/unpublish failed.");
                 throw new InvalidOperationException("An error occurred while removing the wishlist item", ex);
             }
-        }       
+        }
 
         #endregion
 
 
+        #region payToPromote with addons for items
+
+        public async Task<Items> P2PromoteItems(ItemsPayToPromote promote, string uid, CancellationToken ct)
+        {
+            try
+            {
+                var itemsAd = await _context.Item.FirstOrDefaultAsync(i => i.Id == promote.ItemsAdId && i.IsActive, ct);
+
+                if(itemsAd == null)
+                {
+                    throw new KeyNotFoundException("items Ad not found.");
+                }
+
+                var subscription = await _subscriptionContext.Subscriptions
+               .FirstOrDefaultAsync();
+
+                itemsAd.IsPromoted = true;
+                itemsAd.PromotedExpiryDate = DateTime.UtcNow.AddDays(30);
+                itemsAd.UpdatedBy = uid;
+                itemsAd.UpdatedAt = DateTime.UtcNow;
+
+                await _context.SaveChangesAsync(ct);
+
+                await IndexItemsToAzureSearch(itemsAd, ct);
+
+                return itemsAd;
+            }
+            catch(Exception ex)
+            {
+                _logger.LogError(ex, "Item {AdId} promoted, but failed to reindex.");
+                throw;
+            }
+        }
+
+
+        #endregion
 
 
 

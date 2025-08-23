@@ -67,5 +67,7 @@ namespace QLN.Common.Infrastructure.IService
         Task<string> Favourite(WishlistCreateDto dto, string userId, CancellationToken cancellationToken);
         Task<List<Wishlist>> GetAllByUserFavouriteList(string userId, Vertical vertical, SubVertical subVertical, CancellationToken cancellationToken);
         Task<string> UnFavourite(string userId, Vertical vertical, SubVertical subVertical, long adId, CancellationToken cancellationToken);
+
+        Task<Items> P2PromoteItems(ItemsPayToPromote promote, string uid, CancellationToken ct);
     }
 }
