@@ -228,7 +228,7 @@ namespace QLN.Classified.MS.Service
         }
 
         public async Task<AdCreatedResponseDto> CreateClassifiedItemsAd(
-    Items dto, SaveIntent intent,
+    Items dto,
     CancellationToken cancellationToken = default)
         {
             if (dto == null)
@@ -259,7 +259,7 @@ namespace QLN.Classified.MS.Service
             {
                 _logger.LogInformation("Starting CreateClassifiedItemsAd for UserId={UserId}, Title='{Title}'", dto.UserId, dto.Title);
 
-                if (intent == SaveIntent.SaveAndSubmitForApproval)
+                if (dto.AdType == AdTypeEnum.Free)
                 {
                     dto.Status = AdStatus.PendingApproval;
                 }

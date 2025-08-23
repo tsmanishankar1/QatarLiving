@@ -124,13 +124,6 @@ namespace QLN.SearchService
              }
          }
                     },
-                    Suggesters =
-             {
-                 new SearchSuggester(
-                     name: "sg",
-                     sourceFields: new[] { "Title" }
-                 )
-             }
                 };
 
                 _logger.LogInformation("Creating index '{IndexName}' for vertical '{Vertical}'", indexName, vertical);

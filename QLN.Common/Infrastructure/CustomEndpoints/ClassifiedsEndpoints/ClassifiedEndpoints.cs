@@ -823,7 +823,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             group.MapPost("items", async Task<IResult> (
                 HttpContext httpContext,
                 [FromBody] ClassifiedsItemsDTO dto,
-                [FromQuery] SaveIntent intent,
                 IClassifiedService service,
                 AuditLogger auditLogger,
                 CancellationToken token) =>
@@ -945,7 +944,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                             Status = StatusCodes.Status400BadRequest
                         });
                     }
-                    var response = await service.CreateClassifiedItemsAd(request, intent, token);
+                    var response = await service.CreateClassifiedItemsAd(request, token);
 
                     await auditLogger.LogAuditAsync(
                         module: "Classified",
@@ -1027,7 +1026,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         });
                     }
 
-                    var response = await service.CreateClassifiedItemsAd(dto, intent, token);
+                    var response = await service.CreateClassifiedItemsAd(dto, token);
                     return TypedResults.Created($"/api/classifieds/items/user-ads-by-id/{response.AdId}", response);
 
                 }
