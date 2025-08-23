@@ -2622,7 +2622,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
             })
                 .ExcludeFromDescription()
                 .WithName("DealsSoftDeleteInternal")
-                .WithTags("ClassifiedBo")
+                .WithTags("Classified")
                 .WithSummary("Internal soft delete for deals")
                 .WithDescription("Soft deletes deals using Ad IDs and User ID from query.")
                 .Produces<string>(StatusCodes.Status200OK)
@@ -2878,7 +2878,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 }
             })
                 .WithName("PostItemsAdByIdBo")
-                .WithTags("Classified")
+                .WithTags("ClassifiedBO")
                 .WithSummary("Post classified items ad using provided UserId")
                 .WithDescription("For admin/service scenarios where the UserId is passed explicitly.")
                 .Produces<AdCreatedResponseDto>(StatusCodes.Status201Created)

@@ -1008,7 +1008,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
     .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
     .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
     .RequireAuthorization();
-
+                
             group.MapPost("items/post-by-id", async Task<IResult> (
                 Items dto,
                 [FromQuery] SaveIntent intent,
@@ -4779,11 +4779,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
 .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-
-
-
-
-
 
 
             group.MapPut("/promoted/{userId}/{adId}",
