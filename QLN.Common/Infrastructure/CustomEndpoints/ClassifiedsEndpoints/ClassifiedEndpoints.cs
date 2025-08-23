@@ -5559,6 +5559,32 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
             #endregion
 
+
+            group.MapGet("get-category-count", async Task<IResult> (
+                 IClassifiedService service,
+                 CancellationToken token) =>
+            {
+                try
+                {
+                    var result = await service.GetCategoryCountsAsync(token);
+                    return TypedResults.Ok(result);
+                }
+                catch (Exception ex)
+                {
+                    throw ex;
+                }
+            })
+.WithName("GetCategoryCount")
+.WithTags("Classified")
+.WithSummary("Get category count")
+.WithDescription("Get all published ads count based on category.")
+.AllowAnonymous()
+.Produces<List<SavedSearchResponseDto>>(StatusCodes.Status200OK)
+.Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+.Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+
+
             return group;
         }
         public static RouteGroupBuilder MapClassifiedsFeaturedItemEndpoint(this RouteGroupBuilder group)
