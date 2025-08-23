@@ -1,16 +1,17 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
-using QLN.ContentBO.WebUI.Models;
+using Microsoft.JSInterop;
+using MudBlazor;
+using MudExRichTextEditor;
 using PSC.Blazor.Components.MarkdownEditor;
 using PSC.Blazor.Components.MarkdownEditor.EventsArgs;
-using System.ComponentModel.DataAnnotations;
-using MudExRichTextEditor;
-using Microsoft.JSInterop;
-using System.Text.Json;
-using QLN.ContentBO.WebUI.Models;
-using System.Linq.Expressions;
-using MudBlazor;
 using QLN.ContentBO.WebUI.Components;
+using QLN.ContentBO.WebUI.Helpers;
+using QLN.ContentBO.WebUI.Models;
+using QLN.ContentBO.WebUI.Models;
+using System.ComponentModel.DataAnnotations;
+using System.Linq.Expressions;
+using System.Text.Json;
 
 namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.EditCompnay
 {
@@ -33,7 +34,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.EditCompnay
         {
             "Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"
         };
-        public Dictionary<int, string> NatureOfBusinessOptions { get; set; } = new();
+        public List<BusinessType> NatureOfBusinessOptions { get; set; } = [];
         protected TimeSpan? StartHourTime
         {
             get => TimeSpan.TryParse(Company.StartHour, out var t) ? t : (TimeSpan?)null;
@@ -53,7 +54,6 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.EditCompnay
             get => TimeSpan.TryParse(Company.EndHour, out var t) ? t : (TimeSpan?)null;
             set => Company.EndHour = value?.ToString(@"hh\:mm") ?? string.Empty;
         }
-        protected HashSet<int> NatureOfBusinesValues = new HashSet<int>();
         [Inject]
         protected NavigationManager Navigation { get; set; } = default!;
         protected string _value = "Nothing selected";
@@ -82,13 +82,11 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.EditCompnay
                 allCities = await LoadCitiesAsync();
                 filteredCities = allCities;
                 CompanyProfileOptions = new Dictionary<string, List<(int, string)>>()
-        {
-            { "Company Size", GetEnumOptions<CompanySize>() },
-            { "Company Type", GetEnumOptions<CompanyType>() }
-        };
-                NatureOfBusinessOptions = Enum.GetValues(typeof(NatureOfBusiness))
-                .Cast<NatureOfBusiness>()
-                .ToDictionary(e => (int)e, e => e.ToString());
+                {
+                    { "Company Size", GetEnumOptions<CompanySize>() },
+                    { "Company Type", GetEnumOptions<CompanyType>() }
+                };
+                NatureOfBusinessOptions = BusinessTypesProvider.GetAll();
 
                 foreach (var key in CompanyProfileOptions.Keys)
                 {
@@ -129,17 +127,6 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.EditCompnay
             filteredCities = allCities
                 .Where(c => c.Country_Id == selectedCountryObj?.Id)
                 .ToList();
-        }
-
-
-
-        protected bool SearchNatureOfBusiness(string searchText, int optionValue)
-        {
-            if (string.IsNullOrWhiteSpace(searchText))
-                return true;
-
-            var label = NatureOfBusinessOptions[optionValue];
-            return label.Contains(searchText, StringComparison.OrdinalIgnoreCase);
         }
 
         protected void OnProfileValueChanged(string key, int newValue)
@@ -468,6 +455,6 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.EditCompnay
         protected void onNavigationBack()
         {
             NavManager.NavigateTo("/manage/classified/stores");
-        }
+        }    
     }
 }

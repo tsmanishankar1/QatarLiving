@@ -14,10 +14,10 @@ logger.Debug("init main");
 try
 {
     var builder = WebApplication.CreateBuilder(args);
-    var BOAPIBaseUrl = builder.Configuration["ServiceUrlPaths:ContentBOAPI"];
-    if (string.IsNullOrWhiteSpace(BOAPIBaseUrl))
+    var contentBOAPIURL = builder.Configuration["ServiceUrlPaths:ContentBOAPI"];
+    if (string.IsNullOrWhiteSpace(contentBOAPIURL))
     {
-        throw new InvalidOperationException("Content Back Office API URL is missing in the configuration file.");
+        throw new InvalidOperationException("Back Office API URL is missing in the configuration file.");
     }
 
     // Add services to the container.
@@ -54,88 +54,90 @@ try
     builder.Configuration.GetSection("NavigationPath"));
 
     builder.Services.AddHttpClient<INewsService, NewsService>(client =>
-
     {
-
-        client.BaseAddress = new Uri(BOAPIBaseUrl);
-
+        client.BaseAddress = new Uri(contentBOAPIURL);
     }).AddHttpMessageHandler<JwtTokenHeaderHandler>();
 
     builder.Services.AddHttpClient<IEventsService, EventsService>(client =>
     {
-        client.BaseAddress = new Uri(BOAPIBaseUrl);
+        client.BaseAddress = new Uri(contentBOAPIURL);
     }).AddHttpMessageHandler<JwtTokenHeaderHandler>();
 
     builder.Services.AddHttpClient<ICommunityService, CommunityService>(client =>
     {
-        client.BaseAddress = new Uri(BOAPIBaseUrl);
+        client.BaseAddress = new Uri(contentBOAPIURL);
     }).AddHttpMessageHandler<JwtTokenHeaderHandler>();
 
     builder.Services.AddHttpClient<IReportService, ReportService>(client =>
     {
-        client.BaseAddress = new Uri(BOAPIBaseUrl);
+        client.BaseAddress = new Uri(contentBOAPIURL);
     }).AddHttpMessageHandler<JwtTokenHeaderHandler>();
 
 
     builder.Services.AddHttpClient<IDailyLivingService, DailyService>(client =>
     {
-        client.BaseAddress = new Uri(BOAPIBaseUrl);
+        client.BaseAddress = new Uri(contentBOAPIURL);
     }).AddHttpMessageHandler<JwtTokenHeaderHandler>();
 
     builder.Services.AddHttpClient<IBannerService, BannerService>(client =>
     {
-        client.BaseAddress = new Uri(BOAPIBaseUrl);
+        client.BaseAddress = new Uri(contentBOAPIURL);
     }).AddHttpMessageHandler<JwtTokenHeaderHandler>();
     builder.Services.AddHttpClient<IServiceBOService, ServicesBOService>(client =>
     {
-        client.BaseAddress = new Uri(BOAPIBaseUrl);
+        client.BaseAddress = new Uri(contentBOAPIURL);
     }).AddHttpMessageHandler<JwtTokenHeaderHandler>();
 
     builder.Services.AddHttpClient<IClassifiedService, ClassifiedService>(client =>
     {
-        client.BaseAddress = new Uri(BOAPIBaseUrl);
+        client.BaseAddress = new Uri(contentBOAPIURL);
     }).AddHttpMessageHandler<JwtTokenHeaderHandler>();
 
 
     builder.Services.AddHttpClient<IFileUploadService, FileUploadService>(client =>
     {
-        client.BaseAddress = new Uri(BOAPIBaseUrl);
+        client.BaseAddress = new Uri(contentBOAPIURL);
     }).AddHttpMessageHandler<JwtTokenHeaderHandler>();
 
     builder.Services.AddHttpClient<IDrupalUserService, DrupalUserService>(client =>
      {
-         client.BaseAddress = new Uri(BOAPIBaseUrl);
+         client.BaseAddress = new Uri(contentBOAPIURL);
      }).AddHttpMessageHandler<JwtTokenHeaderHandler>();
 
 
     builder.Services.AddHttpClient<IStoresService, StoresService>(client =>
     {
-        client.BaseAddress = new Uri(BOAPIBaseUrl);
+        client.BaseAddress = new Uri(contentBOAPIURL);
     }).AddHttpMessageHandler<JwtTokenHeaderHandler>();
 
     builder.Services.AddHttpClient<IPrelovedService, PrelovedService>(client =>
     {
-        client.BaseAddress = new Uri(BOAPIBaseUrl);
+        client.BaseAddress = new Uri(contentBOAPIURL);
     }).AddHttpMessageHandler<JwtTokenHeaderHandler>();
 
     builder.Services.AddHttpClient<IItemService, ItemService>(client =>
     {
-        client.BaseAddress = new Uri(BOAPIBaseUrl);
+        client.BaseAddress = new Uri(contentBOAPIURL);
     }).AddHttpMessageHandler<JwtTokenHeaderHandler>();
 
     builder.Services.AddHttpClient<ICollectiblesService, CollectiblesService>(client =>
     {
-        client.BaseAddress = new Uri(BOAPIBaseUrl);
+        client.BaseAddress = new Uri(contentBOAPIURL);
     }).AddHttpMessageHandler<JwtTokenHeaderHandler>();
 
     builder.Services.AddHttpClient<IDealsService, DealsService>(client =>
     {
-        client.BaseAddress = new Uri(BOAPIBaseUrl);
+        client.BaseAddress = new Uri(contentBOAPIURL);
     }).AddHttpMessageHandler<JwtTokenHeaderHandler>();
 
     builder.Services.AddHttpClient<ITokenService, TokenService>(client =>
     {
-        client.BaseAddress = new Uri(BOAPIBaseUrl);
+        client.BaseAddress = new Uri(contentBOAPIURL);
+    }).AddHttpMessageHandler<JwtTokenHeaderHandler>();
+
+    builder.Services.AddHttpClient<ISubscriptionService, SubscriptionService>(client =>
+    {
+        client.BaseAddress = new Uri(contentBOAPIURL);
     }).AddHttpMessageHandler<JwtTokenHeaderHandler>();
 
     var app = builder.Build();

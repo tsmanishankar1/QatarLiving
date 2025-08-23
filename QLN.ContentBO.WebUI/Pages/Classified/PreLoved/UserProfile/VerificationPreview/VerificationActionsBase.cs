@@ -15,9 +15,25 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.UserProfile.Verification
         public CompanyProfileItem CompanyDetails { get; set; } = new();
         public VerifiedStatus CurrentStatus
         {
-            get => (VerifiedStatus)CompanyDetails.CompanyVerificationStatus;
-            set => CompanyDetails.CompanyVerificationStatus = (int)value;
+            get
+            {
+                if (CompanyDetails?.CompanyVerificationStatus.HasValue == true &&
+                    Enum.IsDefined(typeof(VerifiedStatus), CompanyDetails.CompanyVerificationStatus.Value))
+                {
+                    return (VerifiedStatus)CompanyDetails.CompanyVerificationStatus.Value;
+                }
+
+                return VerifiedStatus.NotVerified;
+            }
+            set
+            {
+                if (CompanyDetails != null)
+                {
+                    CompanyDetails.CompanyVerificationStatus = (int)value;
+                }
+            }
         }
+
         protected void GoBack()
         {
             NavigationManager.NavigateTo("/manage/classified/collectibles/user/verification/profile");
