@@ -25,7 +25,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Landing
 
         protected override async Task OnInitializedAsync()
         {
-            await AuthorizedPage();
+            await base.OnInitializedAsync();
             await base.OnInitializedAsync();
         }
         private bool shouldInitializeSortable = false;

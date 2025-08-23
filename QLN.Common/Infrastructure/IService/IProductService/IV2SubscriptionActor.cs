@@ -121,5 +121,11 @@ namespace QLN.Common.Infrastructure.IService.IProductService
         Task<bool> UpdateEndDateAsync(DateTime newEndDate, CancellationToken cancellationToken = default);
         Task<bool> AdminCancelSubscriptionAsync(CancellationToken cancellationToken = default);
         Task<bool> MigrateSubscriptionAsync(V2SubscriptionDto request, CancellationToken cancellationToken = default);
+        Task<bool> CreateFreeAdsSubscriptionAsync(V2SubscriptionPurchaseRequestDto request, CancellationToken cancellationToken = default);
+        Task<bool> ValidateFreeAdsUsageAsync(string category, string? l1Category, string? l2Category, int requestedAmount, CancellationToken cancellationToken = default);
+        Task<bool> RecordFreeAdsUsageAsync(string category, string? l1Category, string? l2Category, int amount, CancellationToken cancellationToken = default);
+        Task<List<FreeAdsCategorySummary>> GetFreeAdsUsageSummaryAsync(CancellationToken cancellationToken = default);
+        Task<int> GetRemainingFreeAdsQuotaAsync(string category, string? l1Category, string? l2Category, CancellationToken cancellationToken = default);
+
     }
 }

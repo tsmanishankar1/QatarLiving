@@ -86,8 +86,8 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.Subscription
         ];
         protected string SelectedSubscriptionType { get; set; } = string.Empty;
         // Date range logic
-        protected DateRange _dateRange = new();
-        protected DateRange _tempDateRange = new();
+        protected DateRange? _dateRange = new();
+        protected DateRange? _tempDateRange = new();
         protected bool showDatePopover = false;
 
         protected List<DealsSubscriptionItem> Listings { get; set; } = [];
@@ -338,7 +338,10 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.Subscription
 
         protected void CancelDatePopover()
         {
+            // _dateRange = null;
+            // _tempDateRange = null;
             showDatePopover = false;
+            StateHasChanged();
         }
 
         protected void ApplyDatePopover()

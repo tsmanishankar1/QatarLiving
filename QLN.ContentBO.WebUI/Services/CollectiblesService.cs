@@ -75,32 +75,11 @@ namespace QLN.ContentBO.WebUI.Services
         {
             try
             {
-                var queryParams = new Dictionary<string, string?>
+                var jsonPayload = JsonSerializer.Serialize(itemTransactionRequest);
+                var request = new HttpRequestMessage(HttpMethod.Post, "/api/v2/classifiedbo/items/transactions")
                 {
-                    { "subVertical", itemTransactionRequest.SubVertical.ToString() },
-                    { "status", itemTransactionRequest.Status },
-                    { "createdDate", itemTransactionRequest.DateCreated },
-                    { "publishedDate", itemTransactionRequest.DatePublished },
-                    { "dateStart", itemTransactionRequest.DateStart },
-                    { "dateEnd", itemTransactionRequest.DateEnd },
-                    { "page", itemTransactionRequest.PageNumber.ToString() },
-                    { "pageSize", itemTransactionRequest.PageSize.ToString() },
-                    { "search", itemTransactionRequest.SearchText },
-                    { "productType", itemTransactionRequest.ProductType },
-                    { "paymentMethod", itemTransactionRequest.PaymentMethod },
-                    { "sortBy", itemTransactionRequest.SortBy },
-                    { "sortOrder", itemTransactionRequest.SortOrder }
+                    Content = new StringContent(jsonPayload, Encoding.UTF8, "application/json")
                 };
-
-                var queryString = string.Join("&",
-                    queryParams
-                        .Where(kvp => !string.IsNullOrWhiteSpace(kvp.Value))
-                        .Select(kvp => $"{kvp.Key}={Uri.EscapeDataString(kvp.Value!)}"));
-
-                var requestUrl = $"/api/v2/classifiedbo/items/transactions?{queryString}";
-
-                var request = new HttpRequestMessage(HttpMethod.Get, requestUrl);
-
                 return await _httpClient.SendAsync(request);
             }
             catch (Exception ex)
@@ -109,5 +88,6 @@ namespace QLN.ContentBO.WebUI.Services
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
+
     }
 }

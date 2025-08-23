@@ -1,15 +1,16 @@
 ﻿// File: QLN.SearchService.Repository/SearchRepository.cs
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using Azure;
 using Azure.Search.Documents;
+using Azure.Search.Documents.Indexes.Models;
 using Azure.Search.Documents.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.IRepository.ISearchServiceRepository;
 using QLN.SearchService.IndexModels;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace QLN.SearchService.Repository
 {
@@ -38,33 +39,171 @@ namespace QLN.SearchService.Repository
         }
 
         public async Task<AzureSearchResults<T>> SearchAsync<T>(
-            string IndexName,
-            SearchOptions options,
-            string searchText)
+     string indexName,
+     SearchOptions? options,
+     string? searchText)
         {
-            var client = GetClient(IndexName);
+            var client = GetClient(indexName);
+
             try
             {
-                _logger.LogInformation("Searching '{IndexName}' for '{Text}'", IndexName, searchText ?? "*");
-                var resp = await client.SearchAsync<T>(searchText ?? "*", options);
+                _logger.LogInformation(
+                    "Entered SearchAsync for Index: '{IndexName}' with SearchText: '{SearchText}'",
+                    indexName, searchText);
 
-                // pull out documents
-                var items = new List<T>();
-                await foreach (var r in resp.Value.GetResultsAsync())
-                    items.Add(r.Document!);
-
-                return new AzureSearchResults<T>
+                
+                if (!string.IsNullOrWhiteSpace(searchText) && searchText != "*")
                 {
-                    Items = items,
-                    TotalCount = resp.Value.TotalCount.GetValueOrDefault()
-                };
+                    _logger.LogInformation("Suggesting '{IndexName}' for '{Text}'", indexName, searchText);
+
+                    
+                    var suggestResp = await client.SuggestAsync<SearchDocument>(
+                        searchText,
+                        suggesterName: "sg",
+                        new SuggestOptions
+                        {
+                            Size = options?.Size ?? 10,
+                            UseFuzzyMatching = true,
+                            Select = { "Id" }
+                        }
+                    );
+
+                    var ids = suggestResp.Value.Results
+                                .Select(r => r.Document.GetString("Id"))
+                                .Where(id => !string.IsNullOrEmpty(id))
+                                .ToList();
+
+                    if (ids.Count == 0)
+                    {
+                        _logger.LogInformation("No suggestions found for '{Text}'", searchText);
+                        return new AzureSearchResults<T>
+                        {
+                            Items = new List<T>(),
+                            TotalCount = 0
+                        };
+                    }
+
+                    
+                    var filter = string.Join(" or ", ids.Select(id => $"Id eq '{id}'"));
+
+                    var searchOptions = options ?? new SearchOptions();
+                    searchOptions.IncludeTotalCount = true;
+                    searchOptions.Size = ids.Count;
+                    searchOptions.Filter = filter;
+
+                    _logger.LogInformation("Fetching full documents for suggested IDs: {Ids}", string.Join(",", ids));
+
+                    
+                    var resp = await client.SearchAsync<T>("*", searchOptions);
+
+                    var items = new List<T>();
+                    await foreach (var r in resp.Value.GetResultsAsync())
+                    {
+                        items.Add(r.Document!);
+                        _logger.LogInformation("Fetched document: {Document}", r.Document);
+                    }
+
+                    return new AzureSearchResults<T>
+                    {
+                        Items = items,
+                        TotalCount = resp.Value.TotalCount.GetValueOrDefault()
+                    };
+                }
+                else
+                {
+                    
+                    _logger.LogInformation("SearchText is '*' or empty. Using SearchAsync to fetch all data.");
+
+                    var searchOptions = options ?? new SearchOptions();
+                    searchOptions.IncludeTotalCount = true;
+                    searchOptions.Size = options?.Size ?? 100;
+
+                    if (!string.IsNullOrWhiteSpace(searchText) && searchText == "*")
+                    {
+                        _logger.LogInformation("Ignoring filters because searchText is '*'");
+                        searchOptions.Filter = null;
+                    }
+
+                    _logger.LogInformation(
+                        "SearchOptions: IncludeTotalCount={IncludeTotalCount}, Size={Size}, Filter={Filter}",
+                        searchOptions.IncludeTotalCount, searchOptions.Size, searchOptions.Filter);
+
+                    var resp = await client.SearchAsync<T>("*", searchOptions);
+
+                    var items = new List<T>();
+                    await foreach (var r in resp.Value.GetResultsAsync())
+                    {
+                        items.Add(r.Document!);
+                        _logger.LogInformation("Fetched document: {Document}", r.Document);
+                    }
+
+                    return new AzureSearchResults<T>
+                    {
+                        Items = items,
+                        TotalCount = resp.Value.TotalCount.GetValueOrDefault()
+                    };
+                }
             }
             catch (RequestFailedException ex)
             {
-                _logger.LogError(ex, "Azure Search failed for '{IndexName}'", IndexName);
+                _logger.LogError(ex, "Azure Search failed for '{IndexName}'", indexName);
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error in SearchAsync for '{IndexName}'", indexName);
                 throw;
             }
         }
+
+
+        private string GetDocumentKey<T>(T document)
+        {
+            
+            var idProperty = typeof(T).GetProperty("Id");
+            if (idProperty != null)
+            {
+                return idProperty.GetValue(document)?.ToString() ?? string.Empty;
+            }
+
+           
+            var keyProperty = typeof(T).GetProperty("Key");
+            if (keyProperty != null)
+            {
+                return keyProperty.GetValue(document)?.ToString() ?? string.Empty;
+            }
+
+            
+            if (document is IDictionary<string, object> dict)
+            {
+                if (dict.ContainsKey("id")) return dict["id"]?.ToString() ?? string.Empty;
+                if (dict.ContainsKey("Id")) return dict["Id"]?.ToString() ?? string.Empty;
+                if (dict.ContainsKey("key")) return dict["key"]?.ToString() ?? string.Empty;
+                if (dict.ContainsKey("Key")) return dict["Key"]?.ToString() ?? string.Empty;
+            }
+
+            _logger.LogWarning("Could not extract key from document of type {Type}", typeof(T).Name);
+            return string.Empty;
+        }
+
+        // Helper method to build filter for multiple keys
+        private string BuildFilterForKeys(List<string> keys)
+        {
+            if (keys.Count == 0) return string.Empty;
+
+            // Replace "id" with your actual key field name in the index
+            var keyFieldName = "id"; // Change this to match your index key field
+
+            if (keys.Count == 1)
+            {
+                return $"{keyFieldName} eq '{keys[0]}'";
+            }
+
+            // For multiple keys, use 'or' conditions
+            var filterConditions = keys.Select(key => $"{keyFieldName} eq '{key}'");
+            return string.Join(" or ", filterConditions);
+        }
+
 
         public async Task<string> UploadAsync<T>(string IndexName, T document)
         {

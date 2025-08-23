@@ -29,7 +29,7 @@ namespace QLN.ContentBO.WebUI.Components
 
         public string ClassifiedsBlobContainerName => NavigationPath.Value.ClassifiedsBlobContainerName;
 
-        protected async Task AuthorizedPage()
+        protected override async Task OnInitializedAsync()
         {
             try
             {
@@ -40,7 +40,6 @@ namespace QLN.ContentBO.WebUI.Components
                 }
 
                 var authState = await CookieAuthenticationStateProvider.GetAuthenticationStateAsync();
-                var destination = SetDestination();
 
                 var user = authState.User;
                 if (user.Identity != null && user.Identity.IsAuthenticated)
@@ -54,29 +53,16 @@ namespace QLN.ContentBO.WebUI.Components
                 else
                 {
                     IsLoggedIn = false;
-
-                    if (NavigationPath.Value.IsLocal)
-                    {
-                        NavManager.NavigateTo($"{NavigationPath.Value.Login}?destination={destination}", forceLoad: true);
-                    }
-                    else
-                    {
-                        NavManager.NavigateTo($"{NavigationPath.Value.Login}?destination={NavigationPath.Value.BORedirectPrefix}{destination}", forceLoad: true);
-                    }
                 }
             }
             catch (Exception ex)
             {
-                IsLoggedIn = false;
-                Logger.LogError(ex, "AuthorizedPage");
+                Logger.LogError(ex, "OnInitializedAsync");
             }
-        }
-
-        protected virtual string SetDestination()
-        {
-            var destination = new Uri(NavManager.Uri).AbsolutePath.Substring(1);
-
-            return destination;
+            finally
+            {
+                IsLoggedIn = false;
+            }
         }
 
         protected void SetContentWebURl()
