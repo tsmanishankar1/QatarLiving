@@ -93,6 +93,11 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.Subscription
         protected DateRange _tempDateRange = new();
         protected bool showDatePopover = false;
 
+        protected override async Task OnInitializedAsync()
+        {
+            await base.OnInitializedAsync();
+        }
+
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
             try

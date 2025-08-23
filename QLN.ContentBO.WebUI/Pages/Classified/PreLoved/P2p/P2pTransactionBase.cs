@@ -93,6 +93,11 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.P2p
 
         public bool IsSorted { get; set; } = false;
 
+        protected override async Task OnInitializedAsync()
+        {
+            await base.OnInitializedAsync();
+        }
+
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
             try

@@ -22,6 +22,11 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.ViewStores
         protected bool ascending = true;
         protected string SortIcon => ascending ? Icons.Material.Filled.FilterList : Icons.Material.Filled.FilterListOff;
 
+        protected override async Task OnInitializedAsync()
+        {
+            await base.OnInitializedAsync();
+        }
+
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
             try
