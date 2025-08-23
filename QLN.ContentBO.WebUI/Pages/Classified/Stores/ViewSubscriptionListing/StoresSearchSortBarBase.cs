@@ -49,6 +49,10 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.ViewSubscriptionListing
             {
                 Logger.LogError(ex, "OnAfterRenderAsync");
             }
+            finally
+            {
+                StateHasChanged();
+            }
         }
 
 

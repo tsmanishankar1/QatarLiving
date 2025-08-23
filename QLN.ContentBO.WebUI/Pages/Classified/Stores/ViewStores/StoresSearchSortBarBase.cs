@@ -44,6 +44,10 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.ViewStores
             {
                 Logger.LogError(ex, "OnAfterRenderAsync");
             }
+            finally
+            {
+                StateHasChanged();
+            }
         }
 
         protected async Task OnSearchChanged(ChangeEventArgs e)
