@@ -122,7 +122,7 @@ namespace QLN.Subscriptions.Actor.ActorClass
                 if (product == null)
                     throw new InvalidOperationException($"Addon product with code {request.ProductCode} not found or inactive");
 
-                var addonTypes = new[] { ProductType.ADDON_COMBO, ProductType.ADDON_FEATURE, ProductType.ADDON_REFRESH };
+                var addonTypes = new[] { ProductType.ADDON_COMBO, ProductType.ADDON_FEATURE, ProductType.ADDON_REFRESH, ProductType.ADDON_PROMOTE };
                 if (!addonTypes.Contains(product.ProductType))
                     throw new InvalidOperationException($"Product {request.ProductCode} is not an addon product");
 
