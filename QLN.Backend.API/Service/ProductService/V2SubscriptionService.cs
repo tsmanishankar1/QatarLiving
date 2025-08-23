@@ -973,6 +973,25 @@ namespace QLN.Backend.API.Service.ProductService
                 return 0;
             }
         }
+        public async Task<int> GetRemainingFreeAdsQuotaForUserAsync(string uId, string category, string? l1Category, string? l2Category, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var subscriptionId = await _context.Subscriptions
+                .Where(s => s.UserId == uId &&
+                           s.ProductType == ProductType.FREE &&
+                           s.Status == SubscriptionStatus.Active &&
+                           s.EndDate > DateTime.UtcNow)
+                .Select(s => s.SubscriptionId).FirstAsync();
+                var actor = GetV2SubscriptionActorProxy(subscriptionId);
+                return await actor.GetRemainingFreeAdsQuotaAsync(category, l1Category, l2Category, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting remaining FREE ads quota for user {UserId}", uId);
+                return 0;
+            }
+        }
 
         /// <summary>
         /// Get user's FREE subscriptions

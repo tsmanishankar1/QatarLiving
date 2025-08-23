@@ -284,6 +284,7 @@ namespace QLN.Common.Infrastructure.IService.IProductService
         Task<bool> RecordFreeAdsUsageAsync(Guid subscriptionId, string category, string? l1Category, string? l2Category, int amount, CancellationToken cancellationToken = default);
         Task<List<FreeAdsCategorySummary>> GetFreeAdsUsageSummaryAsync(Guid subscriptionId, CancellationToken cancellationToken = default);
         Task<int> GetRemainingFreeAdsQuotaAsync(Guid subscriptionId, string category, string? l1Category, string? l2Category, CancellationToken cancellationToken = default);
+        Task<int> GetRemainingFreeAdsQuotaForUserAsync(string userId, string category, string? l1Category, string? l2Category, CancellationToken cancellationToken = default);
         Task<List<V2SubscriptionResponseDto>> GetUserFreeSubscriptionsAsync(string userId, CancellationToken cancellationToken = default);
 
     }

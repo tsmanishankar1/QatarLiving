@@ -306,24 +306,25 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints
 
         public static RouteGroupBuilder MapV2GetRemainingFreeAdsQuota(this RouteGroupBuilder group)
         {
-            group.MapGet("/v2/free-ads/{subscriptionId}/remaining-quota", async Task<IResult> (
-                Guid subscriptionId,
+            group.MapGet("/v2/free-ads/remaining-quota", async Task<IResult> (
                 [FromQuery] string category,
                 [FromQuery] string? l1Category,
                 [FromQuery] string? l2Category,
                 [FromServices] IV2SubscriptionService service,
+                HttpContext httpContext,
                 CancellationToken cancellationToken) =>
             {
                 try
                 {
-                    var remainingQuota = await service.GetRemainingFreeAdsQuotaAsync(
-                        subscriptionId, category, l1Category, l2Category, cancellationToken);
+                    var (uid, userName) = UserTokenHelper.ExtractUserAsync(httpContext);
+                    var remainingQuota = await service.GetRemainingFreeAdsQuotaForUserAsync(
+                        uid, category, l1Category, l2Category, cancellationToken);
 
                     var categoryPath = BuildCategoryPath(category, l1Category, l2Category);
 
                     return Results.Ok(new
                     {
-                        SubscriptionId = subscriptionId,
+                        UserId = uid,
                         CategoryPath = categoryPath,
                         RemainingQuota = remainingQuota,
                         Version = "V2"
