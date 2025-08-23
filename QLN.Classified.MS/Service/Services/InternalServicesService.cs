@@ -195,7 +195,7 @@ namespace QLN.Classified.MS.Service.Services
                 }
                 dto.CategoryName = mainCategory.CategoryName;
 
-                var l1Category = await _dbContext.Categories
+                var l1Category = await _dbContext.CategoryDropdowns
                     .AsNoTracking()
                     .FirstOrDefaultAsync(c => c.Id == dto.L1CategoryId && c.ParentId == mainCategory.Id, cancellationToken);
 
@@ -205,7 +205,7 @@ namespace QLN.Classified.MS.Service.Services
                 }
                 dto.L1CategoryName = l1Category.CategoryName;
 
-                var l2Category = await _dbContext.Categories
+                var l2Category = await _dbContext.CategoryDropdowns
                     .AsNoTracking()
                     .FirstOrDefaultAsync(c => c.Id == dto.L2CategoryId && c.ParentId == l1Category.Id, cancellationToken);
 
@@ -384,7 +384,7 @@ namespace QLN.Classified.MS.Service.Services
                 }
                 dto.CategoryName = mainCategory.CategoryName;
 
-                var l1Category = await _dbContext.Categories
+                var l1Category = await _dbContext.CategoryDropdowns
                     .AsNoTracking()
                     .FirstOrDefaultAsync(c => c.Id == dto.L1CategoryId && c.ParentId == mainCategory.Id, cancellationToken);
 
@@ -394,7 +394,7 @@ namespace QLN.Classified.MS.Service.Services
                 }
                 dto.L1CategoryName = l1Category.CategoryName;
 
-                var l2Category = await _dbContext.Categories
+                var l2Category = await _dbContext.CategoryDropdowns
                     .AsNoTracking()
                     .FirstOrDefaultAsync(c => c.Id == dto.L2CategoryId && c.ParentId == l1Category.Id, cancellationToken);
 
@@ -1300,7 +1300,7 @@ namespace QLN.Classified.MS.Service.Services
                 .Select(g => new CategoryAdCountDto
                 {
                     CategoryId = (int)g.Key,
-                    CategoryName = _dbContext.Categories
+                    CategoryName = _dbContext.CategoryDropdowns
                                               .Where(c => c.Id == g.Key)
                                               .Select(c => c.CategoryName)
                                               .FirstOrDefault(),
