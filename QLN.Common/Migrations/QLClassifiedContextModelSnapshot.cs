@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using QLN.Common.DTO_s;
+using QLN.Common.DTO_s.Services;
 using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.QLDbContext;
 
@@ -1526,8 +1527,8 @@ namespace QLN.Common.Migrations
 
                     b.Property<string>("Description")
                         .IsRequired()
-                        .HasMaxLength(300)
-                        .HasColumnType("character varying(300)");
+                        .HasMaxLength(5000)
+                        .HasColumnType("character varying(5000)");
 
                     b.Property<string>("Duration")
                         .HasMaxLength(50)
@@ -1733,16 +1734,6 @@ namespace QLN.Common.Migrations
                     b.Navigation("StoreFlyer");
                 });
 
-            modelBuilder.Entity("QLN.Common.Infrastructure.Model.Category", b =>
-                {
-                    b.HasOne("QLN.Common.Infrastructure.Model.Category", "ParentCategory")
-                        .WithMany("CategoryFields")
-                        .HasForeignKey("ParentId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.Navigation("ParentCategory");
-                });
-
             modelBuilder.Entity("QLN.Common.DTO_s.ClassifiedsBo.StoreFlyers", b =>
                 {
                     b.Navigation("Products");
@@ -1753,11 +1744,6 @@ namespace QLN.Common.Migrations
                     b.Navigation("Features");
 
                     b.Navigation("Images");
-                });
-
-            modelBuilder.Entity("QLN.Common.Infrastructure.Model.Category", b =>
-                {
-                    b.Navigation("CategoryFields");
                 });
 #pragma warning restore 612, 618
         }
