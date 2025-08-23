@@ -4,6 +4,7 @@ using MudBlazor;
 using QLN.ContentBO.WebUI.Handlers;
 using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Models;
+using QLN.ContentBO.WebUI.Services;
 using System.Security.Claims;
 
 namespace QLN.ContentBO.WebUI.Components
@@ -16,6 +17,7 @@ namespace QLN.ContentBO.WebUI.Components
         [Inject] public IOptions<NavigationPath> NavigationPath { get; set; } = default!;
         [Inject] public ILogger<QLComponentBase> Logger { get; set; } = default!;
         [Inject] public IFileUploadService FileUploadService { get; set; } = default!;
+        [Inject] public ISubscriptionService SubscriptionService { get; set; } = default!;
 
         public string CurrentUserName { get; set; } = string.Empty;
         public string CurrentUserEmail { get; set; } = string.Empty;
@@ -70,6 +72,32 @@ namespace QLN.ContentBO.WebUI.Components
             ArticleDetailBaseURL = $"{NavigationPath.Value.ContentNewsDetail}";
             EventDetailBaseURL = $"{NavigationPath.Value.ContentEventDetail}";
             PostDetailBaseURL = $"{NavigationPath.Value.ContentPostDetail}";
+        }
+
+
+        protected async Task<List<Subscription>> GetSubscriptionProductsAsync(int? vertical = null, int? subvertical = null, int? productType = null)
+        {
+            try
+            {
+                var apiResponse = await SubscriptionService.GetAllSubscriptionProducts(vertical, subvertical, productType);
+
+                if (apiResponse is not null)
+                {
+                    if (apiResponse.IsSuccessStatusCode)
+                    {
+                        var subscriptions = await apiResponse.Content.ReadFromJsonAsync<List<Subscription>>();
+
+                        return subscriptions ?? [];
+                    }
+                }
+
+                return [];
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "GetSubscriptionProductsAsync");
+                return [];
+            }
         }
     }
 }

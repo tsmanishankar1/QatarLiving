@@ -1,16 +1,17 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
-using QLN.ContentBO.WebUI.Models;
+using Microsoft.JSInterop;
+using MudBlazor;
+using MudExRichTextEditor;
 using PSC.Blazor.Components.MarkdownEditor;
 using PSC.Blazor.Components.MarkdownEditor.EventsArgs;
-using System.ComponentModel.DataAnnotations;
-using MudExRichTextEditor;
-using Microsoft.JSInterop;
-using System.Text.Json;
-using QLN.ContentBO.WebUI.Models;
-using System.Linq.Expressions;
-using MudBlazor;
 using QLN.ContentBO.WebUI.Components;
+using QLN.ContentBO.WebUI.Helpers;
+using QLN.ContentBO.WebUI.Models;
+using QLN.ContentBO.WebUI.Models;
+using System.ComponentModel.DataAnnotations;
+using System.Linq.Expressions;
+using System.Text.Json;
 
 namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.EditCompany
 {
@@ -33,7 +34,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.EditCompany
         {
             "Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"
         };
-        public Dictionary<int, string> NatureOfBusinessOptions { get; set; } = new();
+        public List<BusinessType> NatureOfBusinessOptions { get; set; } = [];
         protected TimeSpan? StartHourTime
         {
             get => TimeSpan.TryParse(Company.StartHour, out var t) ? t : (TimeSpan?)null;
@@ -86,9 +87,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.EditCompany
             { "Company Size", GetEnumOptions<CompanySize>() },
             { "Company Type", GetEnumOptions<CompanyType>() }
         };
-                NatureOfBusinessOptions = Enum.GetValues(typeof(NatureOfBusiness))
-                .Cast<NatureOfBusiness>()
-                .ToDictionary(e => (int)e, e => e.ToString());
+                NatureOfBusinessOptions = BusinessTypesProvider.GetAll();
 
                 foreach (var key in CompanyProfileOptions.Keys)
                 {

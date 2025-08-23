@@ -4,15 +4,15 @@ using QLN.ContentBO.WebUI.Models;
 using Microsoft.JSInterop;
 using QLN.ContentBO.WebUI.Components.AutoSelectDialog;
 using QLN.ContentBO.WebUI.Components.ConfirmationDialog;
+using QLN.ContentBO.WebUI.Components;
 
 namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.ViewSubscriptionListing
 {
 
-    public class StoresSearchSortBarBase : ComponentBase
+    public class StoresSearchSortBarBase : QLComponentBase
     {
         [Inject] protected IDialogService DialogService { get; set; } = default!;
-        [Inject] protected NavigationManager NavManager { get; set; } = default!;
-         [Inject] protected IJSRuntime JS { get; set; } = default!;
+        [Inject] protected IJSRuntime JS { get; set; } = default!;
         [Parameter] public EventCallback<string> OnSearch { get; set; }
         [Parameter] public EventCallback<bool> OnSort { get; set; }
         [Inject] ISnackbar Snackbar { get; set; }
@@ -32,7 +32,28 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.ViewSubscriptionListing
             await OnSort.InvokeAsync(ascending);
         }
 
-
+        protected override async Task OnAfterRenderAsync(bool firstRender)
+        {
+            try
+            {
+                if (firstRender)
+                {
+                    var tListOfSubsctiptions = await GetSubscriptionProductsAsync((int)VerticalTypeEnum.Classifieds, (int)SubVerticalTypeEnum.Stores);
+                    if (tListOfSubsctiptions != null && tListOfSubsctiptions.Count != 0)
+                    {
+                        SubscriptionTypes = [.. tListOfSubsctiptions.Select(x => x.ProductName).ToList()];
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "OnAfterRenderAsync");
+            }
+            finally
+            {
+                StateHasChanged();
+            }
+        }
 
 
         // Date range logic
@@ -43,6 +64,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.ViewSubscriptionListing
         {
             _dateRange = new();
             _tempDateRange = new();
+            SelectedSubscriptionType = string.Empty;
         }
 
         protected bool showDatePopover = false;
@@ -84,7 +106,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.ViewSubscriptionListing
             { "OnSelect", EventCallback.Factory.Create<DropdownItem>(this, HandleSelect) }
         };
 
-            DialogService.Show<AutoSelectDialog>("", parameters);
+           await DialogService.ShowAsync<AutoSelectDialog>("", parameters);
         }
 
         protected Task HandleSelect(DropdownItem selected)
@@ -97,13 +119,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.ViewSubscriptionListing
 
             return Task.CompletedTask;
         }
-        protected List<string> SubscriptionTypes = new()
-        {
-            "Free",
-            "Basic",
-            "Pro",
-            "Enterprise"
-        };
+        protected List<string> SubscriptionTypes = [];
 
         protected string SelectedSubscriptionType { get; set; } = null;
 
@@ -129,7 +145,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.ViewSubscriptionListing
                 FullWidth = true
             };
 
-            var dialog = DialogService.Show<ConfirmationDialog>("", parameters, options);
+            var dialog = await DialogService.ShowAsync<ConfirmationDialog>("", parameters, options);
             var result = await dialog.Result;
         }
         private async Task ExportToExcel()
