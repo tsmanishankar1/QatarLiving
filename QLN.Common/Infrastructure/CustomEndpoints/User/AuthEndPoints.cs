@@ -847,5 +847,50 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.User
 
             return group;
         }
+        public static RouteGroupBuilder MapUseMeEndpoint(this RouteGroupBuilder group)
+        {
+            group.MapGet("/useMe", async Task<Results<
+                Ok<UseMeResponseDto>,
+                BadRequest<ProblemDetails>,
+                NotFound<ProblemDetails>,
+                UnauthorizedHttpResult,
+                ProblemHttpResult>> (
+                HttpContext context,
+                [FromServices] IAuthService authService,
+                [FromServices] IEventlogger log
+            ) =>
+            {
+                try
+                {
+                    var (userId, userName) = Utilities.UserTokenHelper.ExtractUserAsync(context);
+                    if (userId == null)
+                    {
+                        return TypedResults.Unauthorized();
+                    }
+
+                    return await authService.UseMe(Guid.Parse(userId));
+                }
+                catch (Exception ex)
+                {
+                    log.LogException(ex);
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: "An unexpected error occurred while fetching user details.",
+                        statusCode: StatusCodes.Status500InternalServerError);
+                }
+            })
+            .WithName("UseMe")
+            .WithTags("User Profile")
+            .WithSummary("Get current user details with subscription information")
+            .WithDescription("Returns comprehensive user profile data along with all active subscription details, quotas, and usage information.")
+            .Produces<UseMeResponseDto>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
+            .RequireAuthorization();
+
+            return group;
+        }
     }
 }
