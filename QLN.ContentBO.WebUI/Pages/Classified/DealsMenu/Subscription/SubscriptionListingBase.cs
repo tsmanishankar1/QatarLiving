@@ -102,14 +102,17 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.Subscription
                     var tListOfSubsctiptions = await GetSubscriptionProductsAsync((int)VerticalTypeEnum.Classifieds, (int)SubVerticalTypeEnum.Deals);
                     if (tListOfSubsctiptions != null && tListOfSubsctiptions.Count != 0)
                     {
-                        SubscriptionTypes = [.. tListOfSubsctiptions.Select(x => x.ProductName)];
-                    }
-                    IsLoading = false;
+                        SubscriptionTypes = [.. tListOfSubsctiptions.Select(x => x.ProductName).ToList()];
+                    } 
                 }
             }
             catch (Exception ex)
             {
                 Logger.LogError(ex, "OnAfterRenderAsync");
+            }
+            finally
+            {
+                IsLoading = false;
             }
         }
 

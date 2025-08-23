@@ -109,14 +109,17 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.P2p
                     var tListOfSubsctiptions = await GetSubscriptionProductsAsync((int)VerticalTypeEnum.Classifieds, (int)SubVerticalTypeEnum.Preloved);
                     if (tListOfSubsctiptions != null && tListOfSubsctiptions.Count != 0)
                     {
-                        SubscriptionTypes = [.. tListOfSubsctiptions.Select(x => x.ProductName)];
+                        SubscriptionTypes = [.. tListOfSubsctiptions.Select(x => x.ProductName).ToList()];
                     }
-                    IsLoading = false;
                 }
             }
             catch (Exception ex)
             {
                 Logger.LogError(ex, "OnAfterRenderAsync");
+            }
+            finally
+            {
+                IsLoading = false;
             }
         }
 
