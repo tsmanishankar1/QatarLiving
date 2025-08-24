@@ -7,6 +7,7 @@ using QLN.Common.DTO_s;
 using QLN.Common.DTO_s.Subscription;
 using QLN.Common.Infrastructure.IService.IProductService;
 using QLN.Common.Infrastructure.Subscriptions;
+using QLN.Common.Infrastructure.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Text.Json;
@@ -54,15 +55,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints
             {
                 try
                 {
-                    // Extract userId from JWT claim
-                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                    if (string.IsNullOrEmpty(userClaim))
-                    {
-                        return TypedResults.Unauthorized();
-                    }
-
-                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                    var uid = userData.GetProperty("uid").GetString();
+                    var (uid, userName) = UserTokenHelper.ExtractUserAsync(httpContext);
 
                     if (string.IsNullOrWhiteSpace(uid))
                     {
@@ -126,15 +119,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints
             {
                 try
                 {
-                    // Extract user id from token
-                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                    if (string.IsNullOrEmpty(userClaim))
-                    {
-                        return TypedResults.Unauthorized();
-                    }
-
-                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                    var uid = userData.GetProperty("uid").GetString();
+                    var (uid, userName) = UserTokenHelper.ExtractUserAsync(httpContext);
 
                     if (string.IsNullOrWhiteSpace(uid))
                     {
@@ -194,15 +179,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints
             {
                 try
                 {
-                    // Extract user id from token
-                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                    if (string.IsNullOrEmpty(userClaim))
-                    {
-                        return TypedResults.Unauthorized();
-                    }
-
-                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                    var uid = userData.GetProperty("uid").GetString();
+                    var (uid, userName) = UserTokenHelper.ExtractUserAsync(httpContext);
 
                     if (string.IsNullOrWhiteSpace(uid))
                     {
@@ -248,16 +225,9 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints
             {
                 try
                 {
-                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                    if (string.IsNullOrEmpty(userClaim))
-                    {
-                        return TypedResults.Unauthorized();
-                    }
+                    var (uid, userName) = UserTokenHelper.ExtractUserAsync(httpContext);
 
-                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                    var uidFromToken = userData.GetProperty("uid").GetString();
-
-                    if (string.IsNullOrWhiteSpace(uidFromToken))
+                    if (string.IsNullOrWhiteSpace(uid))
                     {
                         return TypedResults.BadRequest(new ProblemDetails
                         {
@@ -267,7 +237,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints
                         });
                     }
 
-                    var subscriptions = await service.GetAllActiveSubscriptionsAsync(uidFromToken, cancellationToken);
+                    var subscriptions = await service.GetAllActiveSubscriptionsAsync(uid, cancellationToken);
                     return TypedResults.Ok(subscriptions);
                 }
                 catch (Exception ex)
@@ -309,16 +279,9 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints
             {
                 try
                 {
-                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                    if (string.IsNullOrEmpty(userClaim))
-                    {
-                        return TypedResults.Unauthorized();
-                    }
+                    var (uid, userName) = UserTokenHelper.ExtractUserAsync(httpContext);
 
-                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                    var uidFromToken = userData.GetProperty("uid").GetString();
-
-                    if (string.IsNullOrWhiteSpace(uidFromToken))
+                    if (string.IsNullOrWhiteSpace(uid))
                     {
                         return TypedResults.BadRequest(new ProblemDetails
                         {
@@ -329,11 +292,11 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints
                     }
 
                     // Cancel subscription for that user
-                    var result = await service.CancelSubscriptionAsync(subscriptionId, uidFromToken, cancellationToken);
+                    var result = await service.CancelSubscriptionAsync(subscriptionId, uid, cancellationToken);
 
                     if (!result)
                     {
-                        return TypedResults.NotFound($"V2 Subscription with ID {subscriptionId} not found for user {uidFromToken}.");
+                        return TypedResults.NotFound($"V2 Subscription with ID {subscriptionId} not found for user {uid}.");
                     }
 
                     return TypedResults.Ok("V2 Subscription cancelled successfully.");
@@ -464,15 +427,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints
             {
                 try
                 {
-                   
-                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                    if (string.IsNullOrEmpty(userClaim))
-                    {
-                        return TypedResults.Unauthorized();
-                    }
 
-                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                    var uid = userData.GetProperty("uid").GetString();
+                    var (uid, userName) = UserTokenHelper.ExtractUserAsync(httpContext);
 
                     if (string.IsNullOrWhiteSpace(uid))
                     {
@@ -527,14 +483,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints
             {
                 try
                 {
-                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                    if (string.IsNullOrEmpty(userClaim))
-                    {
-                        return TypedResults.Unauthorized();
-                    }
-
-                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                    var uid = userData.GetProperty("uid").GetString();
+                    var (uid, userName) = UserTokenHelper.ExtractUserAsync(httpContext);
 
                     if (string.IsNullOrWhiteSpace(uid))
                     {
@@ -597,21 +546,9 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints
             {
                 try
                 {
-                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                    if (string.IsNullOrEmpty(userClaim))
-                    {
-                        return TypedResults.BadRequest(new ProblemDetails
-                        {
-                            Title = "User ID Missing",
-                            Detail = "User ID not found in token claims.",
-                            Status = StatusCodes.Status400BadRequest
-                        });
-                    }
+                    var (uid, userName) = UserTokenHelper.ExtractUserAsync(httpContext);
 
-                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                    var uidFromToken = userData.GetProperty("uid").GetString();
-
-                    if (string.IsNullOrWhiteSpace(uidFromToken))
+                    if (string.IsNullOrWhiteSpace(uid))
                     {
                         return TypedResults.BadRequest(new ProblemDetails
                         {
@@ -622,7 +559,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints
                     }
 
                     // Set the userId from the token
-                    request.UserId = uidFromToken;
+                    request.UserId = uid;
 
                     var addonId = await service.PurchaseAddonAsync(request, cancellationToken);
 
@@ -765,17 +702,9 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints
             {
                 try
                 {
-                    // Extract UserId from token
-                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                    if (string.IsNullOrEmpty(userClaim))
-                    {
-                        return TypedResults.Unauthorized();
-                    }
+                    var (uid, userName) = UserTokenHelper.ExtractUserAsync(httpContext);
 
-                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                    var uidFromToken = userData.GetProperty("uid").GetString();
-
-                    if (string.IsNullOrWhiteSpace(uidFromToken))
+                    if (string.IsNullOrWhiteSpace(uid))
                     {
                         return TypedResults.BadRequest(new ProblemDetails
                         {
@@ -785,7 +714,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints
                         });
                     }
 
-                    var addons = await service.GetUserAddonsAsync(uidFromToken, cancellationToken);
+                    var addons = await service.GetUserAddonsAsync(uid, cancellationToken);
                     return Results.Ok(addons);
                 }
                 catch (Exception ex)
