@@ -1965,63 +1965,74 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
         {
             try
             {
-                var result = new List<PrelovedAdPaymentSummaryDto>();
+                _logger.LogInformation("Starting GetAllPrelovedAdPaymentSummaries");
 
-                var keys = await _dapr.GetStateAsync<List<string>>(
-                    ConstantValues.StateStoreNames.UnifiedStore,
-                    ConstantValues.StateStoreNames.PrelovedIndexKey,
-                    cancellationToken: cancellationToken) ?? new();
+                
+                var payments = await _Paymentcontext.Payments.ToListAsync(cancellationToken);
+                _logger.LogInformation("Loaded {Count} payments", payments.Count);
 
-                _logger.LogInformation("Fetched {Count} ad keys from index.", keys.Count);
+                var subscriptions = await _subscriptioncontext.Subscriptions.ToListAsync(cancellationToken);
+                _logger.LogInformation("Loaded {Count} subscriptions", subscriptions.Count);
 
-                foreach (var key in keys)
+                var users = await _usercontext.Users.ToListAsync(cancellationToken);
+                _logger.LogInformation("Loaded {Count} users", users.Count);
+
+                var prelovedAds = await _context.Preloved.ToListAsync(cancellationToken);
+                _logger.LogInformation("Loaded {Count} preloved ads", prelovedAds.Count);
+
+                
+                var joined = from p in payments
+                             join s in subscriptions on p.PaymentId equals s.PaymentId
+                             join u in users on s.UserId equals u.Id.ToString() into userJoin
+                             from u in userJoin.DefaultIfEmpty()
+                             join pr in prelovedAds on p.AdId equals pr.Id into prelovedJoin
+                             from pr in prelovedJoin.DefaultIfEmpty()
+                             select new PrelovedAdPaymentSummaryDto
+                             {
+                                 AdId = p.AdId ?? 0,
+                                 SubscriptionType = "12 Months Super",
+                                 UserName = u?.UserName,
+                                 EmailAddress = u?.Email,
+                                 Mobile = u?.PhoneNumber,
+                                 WhatsappNumber = u?.PhoneNumber,
+                                 Amount = (double?)p.Fee,
+                                 Status = p.Status.ToString(),
+                                 StartDate = s.StartDate != DateTime.MinValue
+        ? s.StartDate.ToString("dd-MM-yyyy hh:mmtt")
+        : "N/A",
+                                 EndDate = s.EndDate != DateTime.MinValue
+        ? s.EndDate.ToString("dd-MM-yyyy hh:mmtt")
+        : "N/A",
+                                 OrderId = p.PaymentId.ToString()
+
+                             };
+
+                var result = joined.AsQueryable();
+
+                
+                if (!string.IsNullOrWhiteSpace(search))
                 {
-                    var ad = await _dapr.GetStateAsync<ClassifiedsPreloved>(
-                        ConstantValues.StateStoreNames.UnifiedStore,
-                        key,
-                        cancellationToken: cancellationToken);
-
-                    if (ad == null)
-                    {
-                        continue;
-                    }
-
-                    var dto = new PrelovedAdPaymentSummaryDto
-                    {
-                        AdId = ad.Id,
-                        SubscriptionType = "12 Months Super",
-                        UserName = ad.UserName,
-                        EmailAddress = ad.ContactEmail,
-                        Mobile = ad.ContactNumber,
-                        WhatsappNumber = ad.WhatsAppNumber,
-                        Amount = 250,
-                        Status = ad.Status.ToString(),
-                        StartDate = ad.PublishedDate.HasValue && ad.PublishedDate.Value != DateTime.MinValue
-                        ? ad.PublishedDate.Value.ToString("dd-MM-yyyy hh:mmtt")
-                        : "N/A",
-                        EndDate = ad.ExpiryDate.HasValue && ad.ExpiryDate.Value != DateTime.MinValue
-                        ? ad.ExpiryDate.Value.ToString("dd-MM-yyyy hh:mmtt")
-                        : "N/A",
-
-                        OrderId = ad.Id.ToString().Substring(0, 6)
-                    };
-
-                    if (string.IsNullOrWhiteSpace(search) ||
-                        dto.AdId.ToString().Contains(search, StringComparison.OrdinalIgnoreCase) == true ||
-                        dto.UserName?.Contains(search, StringComparison.OrdinalIgnoreCase) == true)
-                    {
-                        result.Add(dto);
-                    }
+                    var lower = search.ToLower();
+                    result = result.Where(dto =>
+                        dto.AdId.ToString().Contains(lower) ||
+                        (dto.UserName != null && dto.UserName.ToLower().Contains(lower)) ||
+                        (dto.EmailAddress != null && dto.EmailAddress.ToLower().Contains(lower)) ||
+                        (dto.Mobile != null && dto.Mobile.ToLower().Contains(lower))
+                    );
+                    _logger.LogInformation("Applied search filter: {Search}", search);
                 }
-                _logger.LogInformation("Total matched ads after filtering: {Count}", result.Count);
+
+                // Sorting
                 result = sortBy?.ToLower() switch
                 {
-                    "startdate" => result.OrderBy(x => x.StartDate).ToList(),
-                    "enddate" => result.OrderBy(x => x.EndDate).ToList(),
-                    _ => result.OrderByDescending(x => x.StartDate).ToList()
+                    "startdate" => result.OrderBy(x => x.StartDate),
+                    "enddate" => result.OrderBy(x => x.EndDate),
+                    "amount" => result.OrderByDescending(x => x.Amount),
+                    _ => result.OrderByDescending(x => x.StartDate)
                 };
 
-                var totalCount = result.Count;
+                // Pagination
+                var totalCount = result.Count();
                 int currentPage = pageNumber ?? 1;
                 int currentSize = pageSize ?? 12;
 
@@ -2029,7 +2040,10 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                     .Skip((currentPage - 1) * currentSize)
                     .Take(currentSize)
                     .ToList();
-                _logger.LogInformation("Returning {Count} items for page {Page} (pageSize={Size})", paginatedItems.Count, currentPage, currentSize);
+
+                _logger.LogInformation("Returning {Count} items for page {Page} (pageSize={Size})",
+                    paginatedItems.Count, currentPage, currentSize);
+
                 return new PaginatedResult<PrelovedAdPaymentSummaryDto>
                 {
                     TotalCount = totalCount,
@@ -2037,7 +2051,6 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                     PageSize = currentSize,
                     Items = paginatedItems
                 };
-
             }
             catch (Exception ex)
             {
@@ -2046,126 +2059,134 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
             }
         }
 
-        public async Task<PaginatedResult<PrelovedAdSummaryDto>> GetAllPrelovedBoAds(
-            string? sortBy = "CreationDate",
-            string? search = null,
-            DateTime? fromDate = null,
-            DateTime? toDate = null,
-            DateTime? publishedFrom = null,
-            DateTime? publishedTo = null,
-            int? status = null,
-            bool? isFeatured = null,
-            bool? isPromoted = null,
-            int pageNumber = 1,
-            int pageSize = 12,
-            CancellationToken cancellationToken = default)
+        public async Task<ClassifiedsBoPrelovedResponseDto> GetAllPrelovedBoAds(GetAllSearch request, CancellationToken ct)
         {
             try
             {
-                var keys = await _dapr.GetStateAsync<List<string>>(
-                    ConstantValues.StateStoreNames.UnifiedStore,
-                    ConstantValues.StateStoreNames.PrelovedIndexKey,
-                    cancellationToken: cancellationToken) ?? new();
+                _logger.LogInformation("Starting GetAllPreloved (DB version) with request: {Request}",
+                    System.Text.Json.JsonSerializer.Serialize(request));
 
-                var ads = new List<PrelovedAdSummaryDto>();
+                
+                var query = _context.Preloved
+                    .Where(pre => pre.IsActive)
+                    .AsQueryable();
 
-                foreach (var key in keys)
+                // Text search on Title or UserId
+                if (!string.IsNullOrWhiteSpace(request.Text) && request.Text.Trim() != "*")
                 {
-                    var ad = await _dapr.GetStateAsync<ClassifiedsPreloved>(
-                        ConstantValues.StateStoreNames.UnifiedStore,
-                        key,
-                        cancellationToken: cancellationToken);
+                    var text = request.Text.Trim().ToLower();
+                    query = query.Where(pre =>
+                        pre.Title.ToLower().Contains(text) ||
+                        pre.UserId.ToLower().Contains(text));
+                }
 
-                    if (ad == null) continue;
+                if (request.IsFeatured.HasValue)
+                {
+                    query = query.Where(pre => pre.IsFeatured == request.IsFeatured.Value);
+                }
 
-                    ads.Add(new PrelovedAdSummaryDto
+                if (request.IsPromoted.HasValue)
+                {
+                    query = query.Where(pre => pre.IsPromoted == request.IsPromoted.Value);
+                }
+
+                if (request.Status.HasValue)
+                {
+                    query = query.Where(pre => pre.Status == request.Status.Value);
+                }
+
+                if (request.CreatedAt.HasValue)
+                {
+                    var date = request.CreatedAt.Value.Date;
+                    query = query.Where(pre => pre.CreatedAt.Date == date);
+                }
+
+                if (request.PublishedDate.HasValue)
+                {
+                    var date = request.PublishedDate.Value.Date;
+                    query = query.Where(pre => pre.PublishedDate.HasValue && pre.PublishedDate.Value.Date == date);
+                }
+
+                if (request.AdType.HasValue)
+                {
+                    query = query.Where(pre => pre.AdType == request.AdType.Value);
+                }
+
+                _logger.LogInformation("Applied filters. Intermediate count: {Count}", await query.CountAsync(ct));
+
+                // Sorting
+                if (!string.IsNullOrWhiteSpace(request.OrderBy))
+                {
+                    try
                     {
-                        Id = ad.Id,
-                        UserId = ad.UserId,
-                        UserName = ad.UserName,
-                        AdTitle = ad.Title,
-                        Category = ad.Category,
-                        SubCategory = ad.L1Category,
-                        Status = ad.Status.ToString(),
-                        IsFeatured = ad.IsFeatured,
-                        IsPromoted = ad.IsPromoted,
-                        CreationDate = ad.CreatedAt,
-                        DatePublished = ad.PublishedDate,
-                        DateExpiry = ad.ExpiryDate,
-                        ImageUpload = ad.Images?.Select(img => new ImageDto
-                        {
-                            Url = img.Url,
-                        }).ToList(),
-                        OrderId = ad.Id.ToString().Substring(0, 6)
-                    });
+                        var parts = request.OrderBy.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                        var propertyName = parts[0];
+                        var direction = parts.Length > 1 ? parts[1].ToLower() : "asc";
+
+                        var param = Expression.Parameter(typeof(Preloveds), "x");
+                        var property = Expression.PropertyOrField(param, propertyName);
+                        var lambda = Expression.Lambda(property, param);
+
+                        var method = direction == "desc" ? "OrderByDescending" : "OrderBy";
+
+                        var orderByCall = Expression.Call(
+                            typeof(Queryable),
+                            method,
+                            new Type[] { typeof(Preloveds), property.Type },
+                            query.Expression,
+                            Expression.Quote(lambda)
+                        );
+
+                        query = query.Provider.CreateQuery<Preloveds>(orderByCall);
+
+                        _logger.LogInformation("Applied dynamic sorting: {OrderBy}", request.OrderBy);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error applying sorting using OrderBy: {OrderBy}", request.OrderBy);
+                    }
                 }
 
-                if (!string.IsNullOrWhiteSpace(search))
-                {
-                    var lowerSearch = search.ToLowerInvariant();
-                    ads = ads.Where(ad =>
-                        (!string.IsNullOrEmpty(ad.AdTitle) && ad.AdTitle.ToLowerInvariant().Contains(lowerSearch)) ||
-                        ad.Id.ToString().Contains(lowerSearch) ||
-                        (!string.IsNullOrEmpty(ad.UserId) && ad.UserId.ToLowerInvariant().Contains(lowerSearch)) ||
-                        (!string.IsNullOrEmpty(ad.UserName) && ad.UserName.ToLowerInvariant().Contains(lowerSearch))
-                    ).ToList();
-                }
+                
+                int page = Math.Max(1, request.PageNumber);
+                int pageSize = Math.Max(1, Math.Min(1000, request.PageSize));
 
-                if (fromDate.HasValue)
-                    ads = ads.Where(x => x.CreationDate >= fromDate.Value).ToList();
+                _logger.LogInformation("Pagination - Page: {Page}, PageSize: {PageSize}", page, pageSize);
 
-                if (toDate.HasValue)
-                    ads = ads.Where(x => x.CreationDate <= toDate.Value).ToList();
+                var totalCount = await query.CountAsync(ct);
 
-                if (publishedFrom.HasValue)
-                    ads = ads.Where(x => x.DatePublished.HasValue && x.DatePublished >= publishedFrom.Value).ToList();
-
-                if (publishedTo.HasValue)
-                    ads = ads.Where(x => x.DatePublished.HasValue && x.DatePublished <= publishedTo.Value).ToList();
-
-                if (status.HasValue && Enum.IsDefined(typeof(AdStatus), status.Value))
-                {
-                    var statusEnum = ((AdStatus)status.Value).ToString();
-                    ads = ads.Where(x => x.Status != null && x.Status.Equals(statusEnum, StringComparison.OrdinalIgnoreCase)).ToList();
-                }
-
-                if (isFeatured.HasValue)
-                    ads = ads.Where(x => x.IsFeatured == isFeatured.Value).ToList();
-
-                if (isPromoted.HasValue)
-                    ads = ads.Where(x => x.IsPromoted == isPromoted.Value).ToList();
-
-                sortBy = sortBy?.ToLowerInvariant();
-                ads = sortBy switch
-                {
-                    "title" => ads.OrderByDescending(x => x.AdTitle).ToList(),
-                    "username" => ads.OrderByDescending(x => x.UserName).ToList(),
-                    "status" => ads.OrderByDescending(x => x.Status).ToList(),
-                    "published" => ads.OrderByDescending(x => x.DatePublished).ToList(),
-                    _ => ads.OrderByDescending(x => x.CreationDate).ToList()
-                };
-
-                // Paginate
-                var totalCount = ads.Count;
-                var pagedItems = ads
-                    .Skip((pageNumber - 1) * pageSize)
+                var pagedEntities = await query
+                    .Skip((page - 1) * pageSize)
                     .Take(pageSize)
-                    .ToList();
+                    .ToListAsync(ct);
 
-                return new PaginatedResult<PrelovedAdSummaryDto>
+                _logger.LogInformation("Retrieved {Count} preloved items from DB", pagedEntities.Count);
+
+                
+                var result = pagedEntities;
+
+                _logger.LogInformation("Returning {ResultCount} preloved items out of {TotalCount}", result.Count, totalCount);
+
+                return new ClassifiedsBoPrelovedResponseDto
                 {
                     TotalCount = totalCount,
-                    PageNumber = pageNumber,
-                    PageSize = pageSize,
-                    Items = pagedItems
+                    ClassifiedsPreloved = result
                 };
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error fetching preloved ads.");
-                throw new InvalidOperationException("Failed to fetch preloved ads.", ex);
+                _logger.LogError(ex,
+                    "[GetAllPreloved] Unexpected error occurred. Request: {RequestJson}, Message: {ErrorMessage}, StackTrace: {StackTrace}, InnerException: {InnerException}",
+                    System.Text.Json.JsonSerializer.Serialize(request),
+                    ex.Message,
+                    ex.StackTrace,
+                    ex.InnerException?.ToString()
+                );
+
+                throw new Exception($"GetAllPreloved failed: {ex.Message}", ex);
             }
         }
+
 
         public async Task<PaginatedResult<DealsAdSummaryDto>> GetAllDeals(
      int? pageNumber = 1,
@@ -2926,9 +2947,6 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
             return transactions.OrderByDescending(t => ParseDate(t.CreationDate)).ToList();
 
         }
-
-
-
    
         public async Task<ClassifiedsBoItemsResponseDto> GetAllItems(GetAllSearch request, CancellationToken ct)
         {
@@ -3216,7 +3234,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                 _logger.LogInformation("Retrieved {Count} collectibles from DB", pagedEntities.Count);
 
                 
-                var result = pagedEntities.Select(c => new ClassifiedsCollectibles
+                var result = pagedEntities.Select(c => new Collectibles
                 {
                     Id = c.Id,
                     Title = c.Title,
@@ -3651,6 +3669,8 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                                 {
                                     ad.Status = AdStatus.Unpublished;
                                     shouldUpdate = true;
+                                    ad.IsFeatured = false;
+                                    ad.IsPromoted = false;
                                 }
                                 else failReason = $"Cannot unpublish ad with status '{ad.Status}'.";
                                 break;

@@ -4,12 +4,13 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using QLN.Common.DTO_s;
 using QLN.Common.DTO_s.Payments;
-using QLN.Common.DTO_s.Payments.QLN.Common.DTO_s.Payments;
+using QLN.Common.DTO_s.Services;
 using QLN.Common.DTO_s.Subscription;
 using QLN.Common.DTOs;
 using QLN.Common.Infrastructure.IService.IAuth;
 using QLN.Common.Infrastructure.IService.IPayments;
 using QLN.Common.Infrastructure.IService.IProductService;
+using QLN.Common.Infrastructure.IService.IService;
 using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.QLDbContext;
 using QLN.Common.Infrastructure.Subscriptions;
@@ -31,6 +32,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
         private readonly QLSubscriptionContext _subscriptionContext;
         private readonly QLApplicationContext _applicationDbContext;
         private readonly IV2SubscriptionService _subscriptionService;
+        private readonly IServices _services;
 
         public PaymentService(
             ILogger<PaymentService> logger,
@@ -40,8 +42,9 @@ namespace QLN.Common.Infrastructure.Service.Payments
             IConfiguration configuration,
             IV2SubscriptionService subscriptionService,
             QLSubscriptionContext subscriptionContext,
-            QLApplicationContext applicationDbContext
-            )
+            QLApplicationContext applicationDbContext,
+            IServices services
+        )
         {
             _logger = logger;
             _fatoraService = fatoraService;
@@ -51,223 +54,298 @@ namespace QLN.Common.Infrastructure.Service.Payments
             _subscriptionService = subscriptionService;
             _subscriptionContext = subscriptionContext;
             _applicationDbContext = applicationDbContext;
+            _services = services;
         }
 
         public async Task<PaymentResponse> PayAsync(ExternalPaymentRequest request, CancellationToken cancellationToken = default)
         {
-            var platform = "web";
+            const string platform = "web";
 
-            if (string.IsNullOrEmpty(request.User.UserName) || string.IsNullOrEmpty(request.User.UserId))
+            var validationResult = await ValidatePaymentRequestAsync(request, cancellationToken);
+            if (!validationResult.IsValid)
             {
-                _logger.LogError("Username is null or empty");
                 return new PaymentResponse
                 {
                     Status = "failure",
                     Error = new FaturaPaymentError
                     {
-                        ErrorCode = "400",
-                        Description = "Bad Request: User info cannot be null or empty."
+                        ErrorCode = "409",
+                        Description = validationResult.ErrorMessage
                     }
                 };
             }
 
-            if (string.IsNullOrEmpty(request.User.Email) && string.IsNullOrEmpty(request.User.Mobile))
+            _logger.LogInformation("Processing multi-product payment for User ID: {UserId} with {ProductCount} products",
+                request.User?.UserId, request.Products?.Count ?? 0);
+
+            try
             {
-                _logger.LogError("Both Email and Mobile are null or empty");
+                var totalAmount = request.Amount ?? await CalculateTotalAmountAsync(request.Products, cancellationToken);
+
+                var paymentEntity = new PaymentEntity
+                {
+                    Vertical = request.Vertical,
+                    SubVertical = request.SubVertical,
+                    AdId = request.AdId,
+                    Status = PaymentStatus.Pending,
+                    Fee = totalAmount,
+                    PaidByUid = request.User.UserId,
+                    Date = DateTime.UtcNow,
+                    Source = platform == "web" ? Source.Web : Source.Mobile,
+                    Gateway = Gateway.FATORA,
+                    TriggeredSource = platform == "web" ? TriggeredSource.Web : TriggeredSource.Cron,
+                    Products = request.Products.Select(p => new ProductDetails
+                    {
+                        ProductType = p.ProductType,
+                        ProductCode = p.ProductCode,
+                        Price = p.UnitPrice ?? 0
+                    }).ToList()
+                };
+
+                _dbContext.Payments.Add(paymentEntity);
+                await _dbContext.SaveChangesAsync(cancellationToken);
+
+                request.OrderId = paymentEntity.PaymentId;
+
+                _logger.LogInformation("Created PaymentEntity with ID: {PaymentId}, D365 Order ID: {D365OrderId}",
+                    paymentEntity.PaymentId, GenerateD365OrderId(paymentEntity));
+
+                var userAddonIds = new List<Guid>();
+                Guid? userSubscriptionId = null;
+
+                var orderedProducts = request.Products
+                    .OrderBy(p => p.ProductType == ProductType.SUBSCRIPTION || p.ProductType == ProductType.PUBLISH ? 0 : 1)
+                    .ToList();
+
+                bool bucketHasSubscription = orderedProducts.Any(p => p.ProductType == ProductType.SUBSCRIPTION || p.ProductType == ProductType.PUBLISH);
+                bool bucketHasAddon = orderedProducts.Any(p => p.ProductType == ProductType.ADDON_COMBO
+                                                            || p.ProductType == ProductType.ADDON_FEATURE
+                                                            || p.ProductType == ProductType.ADDON_REFRESH
+                                                            || p.ProductType == ProductType.ADDON_PROMOTE);
+
+                if (bucketHasAddon && !bucketHasSubscription && (!request.SubscriptionId.HasValue || request.SubscriptionId == Guid.Empty))
+                {
+                    request.SubscriptionId = await ResolveSubscriptionIdForAddonsAsync(
+                        request.Vertical,
+                        request.SubVertical,
+                        request.User.UserId,
+                        request.AdId,
+                        cancellationToken
+                    );
+                    _logger.LogInformation("Resolved subscription for addon-only purchase. SubscriptionId: {SubId}", request.SubscriptionId);
+                }
+
+                foreach (var product in orderedProducts)
+                {
+                    try
+                    {
+                        var result = await ProcessProductAsync(paymentEntity, product, request, cancellationToken);
+
+                        if (result.SubscriptionId.HasValue)
+                            userSubscriptionId = result.SubscriptionId.Value;
+
+                        if (result.AddonId.HasValue)
+                            userAddonIds.Add(result.AddonId.Value);
+
+                        if ((product.ProductType == ProductType.SUBSCRIPTION || product.ProductType == ProductType.PUBLISH)
+                            && userSubscriptionId.HasValue && userSubscriptionId.Value != Guid.Empty)
+                        {
+                            request.SubscriptionId = userSubscriptionId.Value;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error pre-provisioning product {ProductCode}", product.ProductCode);
+                    }
+                }
+
+                paymentEntity.UserSubscriptionId = userSubscriptionId;
+                paymentEntity.UserAddonIds = userAddonIds;
+
+                _dbContext.Update(paymentEntity);
+                await _dbContext.SaveChangesAsync(cancellationToken);
+
+                var fatoraRequest = CreateFatoraRequest(request, paymentEntity, platform);
+                var combinedProductCodes = string.Join(",", request.Products.Select(p => p.ProductCode));
+
+                return await _fatoraService.CreatePaymentAsync(
+                    fatoraRequest,
+                    request.User.UserName,
+                    combinedProductCodes,
+                    request.Vertical,
+                    request.SubVertical,
+                    request.User.Email,
+                    request.User.Mobile,
+                    platform,
+                    cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error processing multi-product payment for User ID: {UserId}", request.User?.UserId);
                 return new PaymentResponse
                 {
                     Status = "failure",
                     Error = new FaturaPaymentError
                     {
-                        ErrorCode = "400",
-                        Description = "Bad Request: Email and Mobile cannot be both null or empty."
+                        ErrorCode = "500",
+                        Description = "An internal error occurred while processing the payment"
                     }
                 };
             }
+        }
 
-            if (request.ProductType == null)
-            {
-                _logger.LogError("ProductType is null");
-                return new PaymentResponse
-                {
-                    Status = "failure",
-                    Error = new FaturaPaymentError
-                    {
-                        ErrorCode = "400",
-                        Description = "Bad Request: ProductType cannot be null."
-                    }
-                };
-            }
-
-            switch (request.ProductType)
+        private async Task<ProductProcessingResult> ProcessProductAsync(
+            PaymentEntity payment,
+            PaymentProductDto product,
+            ExternalPaymentRequest request,
+            CancellationToken cancellationToken)
+        {
+            switch (product.ProductType)
             {
                 case ProductType.SUBSCRIPTION:
-                    _logger.LogInformation("Processing subscription payment for User ID: {UserId}", request.User.UserId);
-
-                    var validationResult = await ValidateSubscriptionConstraintsAsync(request, cancellationToken);
-                    if (!validationResult.IsValid)
                     {
-                        _logger.LogWarning("Subscription validation failed for user {UserId}: {ErrorMessage}",
-                            request.User.UserId, validationResult.ErrorMessage);
-                        return new PaymentResponse
+                        var dto = new V2SubscriptionPurchaseRequestDto
                         {
-                            Status = "failure",
-                            Error = new FaturaPaymentError
-                            {
-                                ErrorCode = "409", 
-                                Description = validationResult.ErrorMessage
-                            }
+                            PaymentId = payment.PaymentId,
+                            ProductCode = product.ProductCode,
+                            UserId = payment.PaidByUid
                         };
+                        var subscriptionId = await _subscriptionService.PurchaseSubscriptionAsync(dto, cancellationToken);
+                        payment.UserSubscriptionId = subscriptionId;
+                        _dbContext.Update(payment);
+                        await _dbContext.SaveChangesAsync(cancellationToken);
+                        return new ProductProcessingResult { SubscriptionId = subscriptionId };
                     }
 
-                    var dbResult = _dbContext.Payments.Add(new PaymentEntity
-                    {
-                        ProductType = request.ProductType ?? ProductType.FREE,
-                        Status = PaymentStatus.Pending,
-                        Fee = request.Amount ?? 0,
-                        PaidByUid = request.User.UserId,
-                        Date = DateTime.UtcNow,
-                        Source = platform == "web" ? Source.Web : Source.Mobile,
-                        Gateway = Gateway.FATORA,
-                        Vertical = request.Vertical,
-                        TriggeredSource = platform == "web" ? TriggeredSource.Web : TriggeredSource.Cron,
-                    });
-
-                    _dbContext.SaveChanges();
-
-                    request.OrderId = dbResult.Entity.PaymentId;
-
-                    _logger.LogInformation("Created PaymentEntity with ID: {PaymentId}", dbResult.Entity.PaymentId);
-
-                    var subscriptionRequest = new V2SubscriptionPurchaseRequestDto
-                    {
-                        PaymentId = dbResult.Entity.PaymentId,
-                        ProductCode = request.ProductCode,
-                        UserId = request.User.UserId,
-                    };
-
-                    var subscriptionId = await _subscriptionService.PurchaseSubscriptionAsync(subscriptionRequest, cancellationToken);
-
-                    dbResult.Entity.UserSubscriptionId = subscriptionId;
-
-                    _dbContext.SaveChanges();
-
-                    return await _fatoraService.CreatePaymentAsync(request, request.User.UserName, request.ProductCode, request.Vertical, request.SubVertical, request.User.Email, request.User.Mobile, platform, cancellationToken);
-
                 case ProductType.PUBLISH:
-                    _logger.LogInformation("Processing Pay to Publish payment for Order ID: {OrderId}", request.OrderId);
-                    var publishDbResult = _dbContext.Payments.Add(new PaymentEntity
                     {
-                        AdId = request.AdId,
-                        SubVertical = request.SubVertical ?? null,
-                        ProductType = request.ProductType ?? ProductType.FREE,
-                        UserSubscriptionId = request.SubscriptionId,
-                        Status = PaymentStatus.Pending,
-                        Fee = request.Amount ?? 0,
-                        PaidByUid = request.User.UserId,
-                        Date = DateTime.UtcNow,
-                        Source = platform == "web" ? Source.Web : Source.Mobile,
-                        Gateway = Gateway.FATORA,
-                        Vertical = request.Vertical,
-                        TriggeredSource = platform == "web" ? TriggeredSource.Web : TriggeredSource.Cron,
-                    });
+                        var dto = new V2SubscriptionPurchaseRequestDto
+                        {
+                            PaymentId = payment.PaymentId,
+                            ProductCode = product.ProductCode,
+                            UserId = payment.PaidByUid,
+                            AdId = request.AdId,
+                        };
 
-                    _dbContext.SaveChanges();
-
-                    request.OrderId = publishDbResult.Entity.PaymentId;
-
-                    _logger.LogInformation("Created PaymentEntity with ID: {PaymentId}", publishDbResult.Entity.PaymentId);
-
-                    var publishRequest = new V2SubscriptionPurchaseRequestDto
-                    {
-                        PaymentId = publishDbResult.Entity.PaymentId,
-                        ProductCode = request.ProductCode,
-                        UserId = request.User.UserId,
-                        AdId = request.AdId,
-                    };
-
-                    var pubsubscriptionId = await _subscriptionService.PurchaseSubscriptionAsync(publishRequest, cancellationToken);
-
-                    publishDbResult.Entity.UserSubscriptionId = pubsubscriptionId;
-
-                    _dbContext.SaveChanges();
-
-                    return await _fatoraService.CreatePaymentAsync(request, request.User.UserName, request.ProductCode, request.Vertical, request.SubVertical, request.User.Email, request.User.Mobile, platform, cancellationToken);
+                        var subscriptionId = await _subscriptionService.PurchaseSubscriptionAsync(dto, cancellationToken);
+                        payment.UserSubscriptionId = subscriptionId;
+                        _dbContext.Update(payment);
+                        await _dbContext.SaveChangesAsync(cancellationToken);
+                        return new ProductProcessingResult { SubscriptionId = subscriptionId };
+                    }
 
                 case ProductType.ADDON_COMBO:
                 case ProductType.ADDON_FEATURE:
                 case ProductType.ADDON_REFRESH:
                 case ProductType.ADDON_PROMOTE:
-                    _logger.LogInformation("Processing Addon payment for Order ID: {OrderId}", request.OrderId);
-                    var addonDbResult = _dbContext.Payments.Add(new PaymentEntity
                     {
-                        AdId = request.AdId,
-                        ProductType = request.ProductType ?? ProductType.FREE,
-                        Status = PaymentStatus.Pending,
-                        UserSubscriptionId = request.SubscriptionId,
-                        Fee = request.Amount ?? 0,
-                        PaidByUid = request.User.UserId,
-                        Date = DateTime.UtcNow,
-                        Source = platform == "web" ? Source.Web : Source.Mobile,
-                        Gateway = Gateway.FATORA,
-                        Vertical = request.Vertical,
-                        SubVertical = request.SubVertical,
-                        TriggeredSource = platform == "web" ? TriggeredSource.Web : TriggeredSource.Cron,
-                    });
+                        var effectiveSubscriptionId = request.SubscriptionId;
+                        if (!effectiveSubscriptionId.HasValue || effectiveSubscriptionId == Guid.Empty)
+                        {
+                            effectiveSubscriptionId = await ResolveSubscriptionIdForAddonsAsync(
+                                payment.Vertical,
+                                payment.SubVertical,
+                                payment.PaidByUid,
+                                payment.AdId,
+                                cancellationToken
+                            );
+                        }
 
-                    _dbContext.SaveChanges();
+                        var dto = new V2UserAddonPurchaseRequestDto
+                        {
+                            PaymentId = payment.PaymentId,
+                            ProductCode = product.ProductCode,
+                            UserId = payment.PaidByUid,
+                            SubscriptionId = effectiveSubscriptionId ?? Guid.Empty
+                        };
 
-                    request.OrderId = addonDbResult.Entity.PaymentId;
-
-                    _logger.LogInformation("Created PaymentEntity with ID: {PaymentId}", addonDbResult.Entity.PaymentId);
-
-                    var addonRequest = new V2UserAddonPurchaseRequestDto
-                    {
-                        PaymentId = addonDbResult.Entity.PaymentId,
-                        ProductCode = request.ProductCode,
-                        UserId = request.User.UserId,
-                        SubscriptionId = request.SubscriptionId ?? Guid.Empty,
-                    };
-
-                    var addonId = await _subscriptionService.PurchaseAddonAsync(addonRequest, cancellationToken);
-
-                    addonDbResult.Entity.UserAddonId = addonId;
-
-                    _dbContext.SaveChanges();
-
-                    return await _fatoraService.CreatePaymentAsync(request, request.User.UserName, request.ProductCode, request.Vertical, request.SubVertical, request.User.Email, request.User.Mobile, platform, cancellationToken);
+                        var addonId = await _subscriptionService.PurchaseAddonAsync(dto, cancellationToken);
+                        return new ProductProcessingResult { AddonId = addonId };
+                    }
 
                 default:
-                    _logger.LogError("Unsupported ProductType: {ProductType}", request.ProductType);
-                    break;
+                    throw new ArgumentException($"Unsupported ProductType: {product.ProductType}");
+            }
+        }
+        private async Task<SubscriptionValidationResult> ValidatePaymentRequestAsync(
+            ExternalPaymentRequest request,
+            CancellationToken cancellationToken)
+        {
+            var errors = new List<string>();
+
+            if (request.User == null || string.IsNullOrWhiteSpace(request.User.UserId) || string.IsNullOrWhiteSpace(request.User.UserName))
+                errors.Add("User information cannot be null or empty.");
+
+            if (string.IsNullOrWhiteSpace(request.User?.Email) && string.IsNullOrWhiteSpace(request.User?.Mobile))
+                errors.Add("Either Email or Mobile must be provided.");
+
+            if (request.Products == null || request.Products.Count == 0)
+                errors.Add("At least one product must be specified.");
+
+            if (errors.Count > 0) return SubscriptionValidationResult.Failure(string.Join("; ", errors));
+
+            var codes = request.Products.Select(p => p.ProductCode).Distinct().ToList();
+            var master = await _subscriptionContext.Products
+                .Where(p => codes.Contains(p.ProductCode))
+                .Select(p => new
+                {
+                    p.ProductCode,
+                    p.ProductType,
+                    p.Vertical,
+                    p.SubVertical,
+                    p.Price
+                })
+                .ToListAsync(cancellationToken);
+
+            var masterMap = master.ToDictionary(x => x.ProductCode, x => x, StringComparer.OrdinalIgnoreCase);
+
+            foreach (var p in request.Products)
+            {
+                if (!masterMap.ContainsKey(p.ProductCode))
+                    errors.Add($"Unknown product code: {p.ProductCode}");
+
+                if (masterMap.TryGetValue(p.ProductCode, out var m))
+                {
+                    if (m.Vertical != request.Vertical)
+                        errors.Add($"Product {p.ProductCode} belongs to {m.Vertical} and cannot be purchased under {request.Vertical}.");
+
+                    if (m.SubVertical.HasValue && request.SubVertical.HasValue && m.SubVertical.Value != request.SubVertical.Value)
+                        errors.Add($"Product {p.ProductCode} is restricted to {m.SubVertical}.");
+                }
             }
 
-            return new PaymentResponse
+            var subsCount = request.Products.Count(p => p.ProductType == ProductType.SUBSCRIPTION || p.ProductType == ProductType.PUBLISH);
+            if (subsCount > 1)
+                errors.Add("Only one subscription/publish product can be purchased per payment.");
+
+            var hasAnyAddon = request.Products.Any(p =>
+                p.ProductType == ProductType.ADDON_COMBO ||
+                p.ProductType == ProductType.ADDON_FEATURE ||
+                p.ProductType == ProductType.ADDON_REFRESH ||
+                p.ProductType == ProductType.ADDON_PROMOTE);
+
+            if (hasAnyAddon)
             {
-                Status = "failure",
-                Error = new FaturaPaymentError
-                {
-                    ErrorCode = "400",
-                    Description = "Bad Request"
-                }
-            };
+                if (!request.AdId.HasValue)
+                    errors.Add("Add-ons require a valid AdId.");
+
+            }
+            if (request.Products.Any(p => p.ProductType == ProductType.SUBSCRIPTION || p.ProductType == ProductType.PUBLISH))
+            {
+                var constraints = await ValidateSubscriptionConstraintsAsync(request, cancellationToken);
+                if (!constraints.IsValid) errors.Add(constraints.ErrorMessage);
+            }
+
+            if (errors.Count > 0) return SubscriptionValidationResult.Failure(string.Join("; ", errors));
+            return SubscriptionValidationResult.Success();
         }
 
-        /// <summary>
-        /// Validates subscription constraints before allowing payment creation
-        /// </summary>
-        /// <param name="request">The payment request containing subscription details</param>
-        /// <param name="cancellationToken">Cancellation token</param>
-        /// <returns>Validation result indicating if the subscription can be created</returns>
         private async Task<SubscriptionValidationResult> ValidateSubscriptionConstraintsAsync(
             ExternalPaymentRequest request,
             CancellationToken cancellationToken)
         {
             try
             {
-                _logger.LogInformation("Validating subscription constraints for user {UserId}, vertical {Vertical}, subVertical {SubVertical}",
-                    request.User.UserId, request.Vertical, request.SubVertical);
-
                 var existingSubscriptions = await _subscriptionService.GetUserSubscriptionsAsync(
                     request.Vertical,
                     request.SubVertical,
@@ -275,11 +353,8 @@ namespace QLN.Common.Infrastructure.Service.Payments
                     cancellationToken);
 
                 var activeSubscriptions = existingSubscriptions
-                    .Where(s => s.IsActive && s.EndDate > DateTime.UtcNow && s.ProductType == request.ProductType)
+                    .Where(s => s.IsActive && s.EndDate > DateTime.UtcNow && s.StatusId == SubscriptionStatus.Active)
                     .ToList();
-
-                _logger.LogDebug("Found {Count} active subscriptions for user {UserId}",
-                    activeSubscriptions.Count, request.User.UserId);
 
                 switch (request.Vertical)
                 {
@@ -289,34 +364,26 @@ namespace QLN.Common.Infrastructure.Service.Payments
                     case Vertical.Services:
                         return ValidateServicesSubscription(activeSubscriptions);
 
-
                     default:
-                        _logger.LogWarning("Unknown vertical type: {Vertical}", request.Vertical);
                         return SubscriptionValidationResult.Success();
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error validating subscription constraints for user {UserId}", request.User.UserId);
+                _logger.LogError(ex, "Error validating subscription constraints for user {UserId}", request.User?.UserId);
                 return SubscriptionValidationResult.Failure("Unable to validate subscription constraints. Please try again.");
             }
         }
 
-        /// <summary>
-        /// Validates Classifieds subscription - one active subscription per SubVertical
-        /// </summary>
         private SubscriptionValidationResult ValidateClassifiedsSubscription(
             List<V2SubscriptionResponseDto> activeSubscriptions,
             SubVertical? requestedSubVertical)
         {
             if (!requestedSubVertical.HasValue)
-            {
                 return SubscriptionValidationResult.Failure("SubVertical is required for Classifieds subscriptions.");
-            }
 
-            // Check if user already has an active subscription for the same SubVertical
             var existingForSubVertical = activeSubscriptions
-                .Where(s => s.SubVertical == requestedSubVertical.Value)
+                .Where(s => s.SubVertical == requestedSubVertical.Value && s.ProductType == ProductType.SUBSCRIPTION)
                 .ToList();
 
             if (existingForSubVertical.Any())
@@ -324,38 +391,108 @@ namespace QLN.Common.Infrastructure.Service.Payments
                 var existingSub = existingForSubVertical.First();
                 var daysRemaining = (int)(existingSub.EndDate - DateTime.UtcNow).TotalDays;
 
-                _logger.LogWarning("User already has active Classifieds subscription for SubVertical {SubVertical}. " +
-                    "Subscription ID: {SubscriptionId}, Days remaining: {DaysRemaining}",
-                    requestedSubVertical, existingSub.Id, daysRemaining);
-
                 return SubscriptionValidationResult.Failure(
                     $"You already have an active {requestedSubVertical} subscription with {daysRemaining} days remaining. " +
-                    "Please wait for it to expire or cancel it before purchasing a new one.");
+                    "You can buy a new plan to start after expiry or contact support to cancel the current one.");
             }
 
             return SubscriptionValidationResult.Success();
         }
 
-        /// <summary>
-        /// Validates Services subscription - only one active subscription allowed
-        /// </summary>
         private SubscriptionValidationResult ValidateServicesSubscription(List<V2SubscriptionResponseDto> activeSubscriptions)
         {
             if (activeSubscriptions.Any())
             {
-                var existingSub = activeSubscriptions.First();
+                var existingSub = activeSubscriptions.Where
+                    (x=>x.ProductType == ProductType.SUBSCRIPTION).First();
                 var daysRemaining = (int)(existingSub.EndDate - DateTime.UtcNow).TotalDays;
-
-                _logger.LogWarning("User already has active Services subscription. " +
-                    "Subscription ID: {SubscriptionId}, Days remaining: {DaysRemaining}",
-                    existingSub.Id, daysRemaining);
 
                 return SubscriptionValidationResult.Failure(
                     $"You already have an active Services subscription with {daysRemaining} days remaining. " +
-                    "Please wait for it to expire or cancel it before purchasing a new one.");
+                    "You can queue a new plan to start after expiry or contact support to cancel the current one.");
             }
 
             return SubscriptionValidationResult.Success();
+        }
+        private async Task<decimal> CalculateTotalAmountAsync(List<PaymentProductDto> products, CancellationToken cancellationToken)
+        {
+            decimal total = 0;
+
+            if (products == null || products.Count == 0) return 0;
+
+            var codes = products.Select(p => p.ProductCode).Distinct().ToList();
+            var master = await _subscriptionContext.Products
+                .Where(p => codes.Contains(p.ProductCode))
+                .Select(p => new { p.ProductCode, p.Price })
+                .ToListAsync(cancellationToken);
+
+            var priceMap = master.ToDictionary(x => x.ProductCode, x => x.Price, StringComparer.OrdinalIgnoreCase);
+
+            foreach (var p in products)
+            {
+                if (p.UnitPrice.HasValue)
+                {
+                    total += p.UnitPrice.Value;
+                }
+                else if (priceMap.TryGetValue(p.ProductCode, out var dbPrice))
+                {
+                    total += dbPrice;
+                    p.UnitPrice = dbPrice; 
+                }
+                else
+                {
+                    _logger.LogWarning("Product not found in database (no price): {ProductCode}", p.ProductCode);
+                }
+            }
+
+            return total;
+        }
+
+        private string GenerateD365OrderId(PaymentEntity payment)
+        {
+            var prefix = "QLN";
+
+            if (payment.Products != null && payment.Products.Any())
+            {
+                var firstProductCode = payment.Products.First().ProductCode ?? string.Empty;
+                if (firstProductCode.StartsWith("QLC", StringComparison.OrdinalIgnoreCase)) prefix = "QLC";
+                else if (firstProductCode.StartsWith("QLS", StringComparison.OrdinalIgnoreCase)) prefix = "QLS";
+            }
+            else
+            {
+                prefix = payment.Vertical switch
+                {
+                    Vertical.Classifieds => "QLC",
+                    Vertical.Services => "QLS",
+                    _ => "QLN"
+                };
+            }
+
+            return $"{prefix}-{payment.PaymentId}";
+        }
+
+        private ExternalPaymentRequest CreateFatoraRequest(ExternalPaymentRequest originalRequest, PaymentEntity payment, string platform)
+        {
+            return new ExternalPaymentRequest
+            {
+                OrderId = payment.PaymentId,
+                Amount = payment.Fee,
+                User = originalRequest.User,
+                Vertical = originalRequest.Vertical,
+                SubVertical = originalRequest.SubVertical,
+                Products = originalRequest.Products
+            };
+        }
+
+        private static string BuildRedirect(string baseUrl, bool success, string? error = null)
+        {
+            var sep =baseUrl.Contains('?') ? "&" : "?";
+
+            var qs = $"paymentSuccess={(success ? "true" : "false")}";
+            if (!string.IsNullOrWhiteSpace(error))
+                qs += $"&error={Uri.EscapeDataString(error)}";
+
+            return $"{baseUrl}{sep}{qs}";
         }
 
         public async Task<string> PaymentFailureAsync(PaymentTransactionRequest request, CancellationToken cancellationToken = default)
@@ -363,51 +500,45 @@ namespace QLN.Common.Infrastructure.Service.Payments
             string baseRedirectUrl = GenerateRedirectURLBase(request.Vertical, request.SubVertical);
 
             if (!int.TryParse(request.OrderId, out var orderId))
-                return $"{baseRedirectUrl}?paymentSuccess=false&error=invalid_order_id";
+                return BuildRedirect(baseRedirectUrl, success: false, error: "invalid_order_id");
 
             _logger.LogDebug("Processing payment failure for Order ID: {OrderId}", orderId);
 
             try
             {
                 var payment = await _dbContext.Payments
+                    .Include(p => p.Products)
                     .FirstOrDefaultAsync(p => p.PaymentId == orderId || p.AttachedPaymentId == orderId, cancellationToken);
-
-                var subscription = await _subscriptionContext.Subscriptions
-                    .FirstOrDefaultAsync(s => s.PaymentId == orderId, cancellationToken);
-
-                _logger.LogDebug("Retrieved payment: {PaymentId}, subscription: {SubscriptionId}",
-                    payment?.PaymentId, subscription?.SubscriptionId);
 
                 if (payment == null)
                 {
                     _logger.LogError("Payment not found for Order ID: {OrderId}", orderId);
-                    return $"{baseRedirectUrl}?paymentSuccess=false&error=payment_not_found";
+                    return BuildRedirect(baseRedirectUrl, success: false, error: "payment_not_found");
                 }
 
                 payment.Status = PaymentStatus.Failure;
                 payment.TransactionId = request.TransactionId;
                 payment.TriggeredSource = TriggeredSource.Web;
 
-                if (subscription != null)
-                {
-                    subscription.Status = SubscriptionStatus.PaymentFailed;
-                    subscription.StartDate = DateTime.MinValue;
-                    subscription.EndDate = DateTime.MinValue;
-
-                    _logger.LogDebug("Subscription status updated to Failed for Order ID: {OrderId}", orderId);
-
-                    _subscriptionContext.Update(subscription);
-                    await _subscriptionContext.SaveChangesAsync(cancellationToken);
-                }
-                else
-                {
-                    _logger.LogWarning("No subscription found for failed payment Order ID: {OrderId}", orderId);
-                }
-
                 _dbContext.Update(payment);
                 await _dbContext.SaveChangesAsync(cancellationToken);
 
-                _logger.LogDebug("Payment status updated to Failure for Order ID: {OrderId}", orderId);
+                var subs = await _subscriptionContext.Subscriptions
+                    .Where(s => s.PaymentId == orderId)
+                    .ToListAsync(cancellationToken);
+
+                foreach (var s in subs)
+                {
+                    s.Status = SubscriptionStatus.PaymentFailed;
+                    s.StartDate = DateTime.MinValue;
+                    s.EndDate = DateTime.MinValue;
+                }
+
+                if (subs.Count > 0)
+                {
+                    _subscriptionContext.UpdateRange(subs);
+                    await _subscriptionContext.SaveChangesAsync(cancellationToken);
+                }
 
                 var d365Data = new D365Data
                 {
@@ -424,14 +555,12 @@ namespace QLN.Common.Infrastructure.Service.Payments
 
                 await _d365Service.SendPaymentInfoD365Async(d365Data, cancellationToken);
 
-                _logger.LogDebug("Payment failure information sent to D365 for Order ID: {OrderId}", orderId);
-
-                return $"{baseRedirectUrl}?paymentSuccess=false&error=payment_failed";
+                return BuildRedirect(baseRedirectUrl, success: false, error: "payment_failed");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error processing payment failure for Order ID: {OrderId}", orderId);
-                return $"{baseRedirectUrl}?paymentSuccess=false&error=processing_error";
+                return BuildRedirect(baseRedirectUrl, success: false, error: "processing_error");
             }
         }
 
@@ -440,53 +569,25 @@ namespace QLN.Common.Infrastructure.Service.Payments
             string baseRedirectUrl = GenerateRedirectURLBase(request.Vertical, request.SubVertical);
 
             if (!int.TryParse(request.OrderId, out var orderId))
-                return $"{baseRedirectUrl}?paymentSuccess=false";
+                return BuildRedirect(baseRedirectUrl, success: false);
 
             _logger.LogDebug("Processing payment success for Order ID: {OrderId}", orderId);
 
             var paymentConfirmation = await _fatoraService.VerifyPayment(request.OrderId, cancellationToken);
-
-            if (paymentConfirmation == null)
+            if (paymentConfirmation == null || !string.Equals(paymentConfirmation.Status, "SUCCESS", StringComparison.OrdinalIgnoreCase))
             {
-                _logger.LogError("Payment confirmation is null for Order ID: {OrderId}", request.OrderId);
-                return $"{baseRedirectUrl}?paymentSuccess=false";
-            }
-
-            if (paymentConfirmation.Status != "SUCCESS")
-            {
-                _logger.LogError("Payment verification failed for Order ID: {OrderId}. Status: {Status}",
-                request.OrderId, paymentConfirmation.Status);
-                return $"{baseRedirectUrl}?paymentSuccess=false";
+                _logger.LogError("Payment verification failed for Order ID {OrderId}. Status: {Status}",
+                    request.OrderId, paymentConfirmation?.Status ?? "null");
+                return BuildRedirect(baseRedirectUrl, success: false, error: "verification_failed");
             }
 
             var payment = await _dbContext.Payments
                 .FirstOrDefaultAsync(p => p.PaymentId == orderId || p.AttachedPaymentId == orderId, cancellationToken);
 
-            var subscription = await _subscriptionContext.Subscriptions
-                .FirstOrDefaultAsync(s => s.PaymentId == orderId, cancellationToken);
-
-            var product = await _subscriptionContext.Products
-                .FirstOrDefaultAsync(p => p.ProductCode == request.ProductCode, cancellationToken);
-
-            _logger.LogDebug("Retrieved payment: {PaymentId}, subscription: {SubscriptionId}, product: {ProductCode}",
-            payment?.PaymentId, subscription?.SubscriptionId, product?.ProductCode);
-
             if (payment == null)
             {
                 _logger.LogError("Payment not found for Order ID: {OrderId}", orderId);
-                return $"{baseRedirectUrl}?paymentSuccess=false";
-            }
-
-            if (subscription == null)
-            {
-                _logger.LogError("Subscription not found for Order ID: {OrderId}", orderId);
-                return $"{baseRedirectUrl}?paymentSuccess=false";
-            }
-
-            if (product == null)
-            {
-                _logger.LogError("Product not found for ProductCode: {ProductCode}", request.ProductCode);
-                return $"{baseRedirectUrl}?paymentSuccess=false";
+                return BuildRedirect(baseRedirectUrl, success: false, error: "payment_not_found");
             }
 
             try
@@ -497,14 +598,22 @@ namespace QLN.Common.Infrastructure.Service.Payments
                 _dbContext.Update(payment);
                 await _dbContext.SaveChangesAsync(cancellationToken);
 
-                // Use the IV2SubscriptionService to update the subscription status and dates
-                await _subscriptionService.UpdateSubscriptionStatusAsync(subscription.SubscriptionId, SubscriptionStatus.Active, cancellationToken);
+                if (payment.UserSubscriptionId.HasValue && payment.UserSubscriptionId.Value != Guid.Empty)
+                {
+                    await _subscriptionService.UpdateSubscriptionStatusAsync(payment.UserSubscriptionId.Value, SubscriptionStatus.Active, cancellationToken);
 
-                // Update user subscription with retry logic for concurrency handling
-                await UpdateUserSubscriptionAsync(subscription, orderId, cancellationToken);
+                    var sub = await _subscriptionContext.Subscriptions.AsNoTracking()
+                        .FirstOrDefaultAsync(s => s.SubscriptionId == payment.UserSubscriptionId.Value, cancellationToken);
+                    if (sub != null)
+                    {
+                        await UpdateUserSubscriptionAsync(sub, orderId, cancellationToken);
+                    }
+                }
 
-                // Save subscription context changes
-                await _subscriptionContext.SaveChangesAsync(cancellationToken);
+                if (payment.Vertical == Vertical.Services && payment.Products != null && payment.Products.Any())
+                {
+                    await ProcessServicesAddonsAsync(payment, cancellationToken);
+                }
 
                 var d365Data = new D365Data
                 {
@@ -521,17 +630,150 @@ namespace QLN.Common.Infrastructure.Service.Payments
 
                 await _d365Service.SendPaymentInfoD365Async(d365Data, cancellationToken);
 
-                _logger.LogDebug("Payment information sent to D365 for Order ID: {OrderId}", orderId);
-
-                return $"{baseRedirectUrl}?paymentSuccess=true";
+                return BuildRedirect(baseRedirectUrl, success: true);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error updating payment and subscription for Order ID: {OrderId}", orderId);
-                return $"{baseRedirectUrl}?paymentSuccess=false";
+                _logger.LogError(ex, "Error updating payment/subscriptions for Order ID: {OrderId}", orderId);
+                return BuildRedirect(baseRedirectUrl, success: false, error: "processing_error");
             }
         }
 
+        private async Task ProcessServicesAddonsAsync(PaymentEntity payment, CancellationToken cancellationToken)
+        {
+            try
+            {
+                if (!payment.AdId.HasValue || payment.AdId.Value <= 0)
+                {
+                    _logger.LogWarning("Cannot process services addons - AdId is missing or invalid for Payment ID: {PaymentId}", payment.PaymentId);
+                    return;
+                }
+
+                var addonMappings = await GetAddonIdsByProductTypeAsync(payment, cancellationToken);
+
+                foreach (var product in payment.Products)
+                {
+                    switch (product.ProductType)
+                    {
+                        case ProductType.ADDON_PROMOTE:
+                            {
+                                if (!addonMappings.TryGetValue(ProductType.ADDON_PROMOTE, out var addonId) || addonId == Guid.Empty)
+                                {
+                                    _logger.LogError("Cannot process P2Promote - AddonId for PROMOTE not found for Payment ID: {PaymentId}", payment.PaymentId);
+                                    continue;
+                                }
+
+                                var promoteRequest = new PayToPromote
+                                {
+                                    ServiceId = payment.AdId.Value,
+                                    AddonId = addonId,
+                                };
+
+                                await _services.P2PromoteService(promoteRequest, payment.PaidByUid, addonId, cancellationToken);
+                                _logger.LogInformation("Successfully processed P2Promote for Service ID: {ServiceId}, AddonId: {AddonId}, Payment ID: {PaymentId}",
+                                    payment.AdId.Value, addonId, payment.PaymentId);
+                                break;
+                            }
+
+                        case ProductType.ADDON_FEATURE:
+                            {
+                                if (!addonMappings.TryGetValue(ProductType.ADDON_FEATURE, out var addonId) || addonId == Guid.Empty)
+                                {
+                                    _logger.LogError("Cannot process P2Feature - AddonId for FEATURE not found for Payment ID: {PaymentId}", payment.PaymentId);
+                                    continue;
+                                }
+
+                                var featureRequest = new PayToFeature
+                                {
+                                    ServiceId = payment.AdId.Value,
+                                    AddonId = addonId
+                                };
+
+                                await _services.P2FeatureService(featureRequest, payment.PaidByUid, addonId, cancellationToken);
+                                _logger.LogInformation("Successfully processed P2Feature for Service ID: {ServiceId}, AddonId: {AddonId}, Payment ID: {PaymentId}",
+                                    payment.AdId.Value, addonId, payment.PaymentId);
+                                break;
+                            }
+
+                        case ProductType.PUBLISH:
+                            {
+                                var subscriptionId = payment.UserSubscriptionId ?? Guid.Empty;
+
+                                if (subscriptionId == Guid.Empty)
+                                {
+                                    _logger.LogError("Cannot process P2Publish - SubscriptionId is missing for Payment ID: {PaymentId}", payment.PaymentId);
+                                    continue;
+                                }
+
+                                var publishRequest = new PayToPublish
+                                {
+                                    ServiceId = payment.AdId.Value,
+                                    SubscriptionId = subscriptionId
+                                };
+
+                                await _services.P2PublishService(publishRequest, payment.PaidByUid, subscriptionId, cancellationToken);
+                                _logger.LogInformation("Successfully processed P2Publish for Service ID: {ServiceId}, SubscriptionId: {SubscriptionId}, Payment ID: {PaymentId}",
+                                    payment.AdId.Value, subscriptionId, payment.PaymentId);
+                                break;
+                            }
+
+                        default:
+
+                            break;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error processing services addons for Payment ID: {PaymentId}", payment.PaymentId);
+            }
+        }
+
+        private async Task<Dictionary<ProductType, Guid>> GetAddonIdsByProductTypeAsync(PaymentEntity payment, CancellationToken cancellationToken)
+        {
+            var addonMappings = new Dictionary<ProductType, Guid>();
+
+            if (payment.UserAddonIds == null || !payment.UserAddonIds.Any())
+            {
+                _logger.LogWarning("No addon IDs found for Payment ID: {PaymentId}", payment.PaymentId);
+                return addonMappings;
+            }
+
+            try
+            {
+                var addons = await _subscriptionContext.UserAddOns
+                    .Where(ua => payment.UserAddonIds.Contains(ua.UserAddOnId) && ua.PaymentId == payment.PaymentId)
+                    .Select(ua => new { ua.UserAddOnId, ua.ProductType })
+                    .ToListAsync(cancellationToken);
+
+                if (!addons.Any())
+                {
+                    _logger.LogWarning("No addon records found in database for Payment ID: {PaymentId}", payment.PaymentId);
+                    return addonMappings;
+                }
+
+                foreach (var addon in addons)
+                {
+                    if (addon.ProductType.HasValue)
+                    {
+                        addonMappings[addon.ProductType.Value] = addon.UserAddOnId;
+                        _logger.LogDebug("Mapped AddonId {AddonId} to ProductType {ProductType} for Payment ID: {PaymentId}",
+                            addon.UserAddOnId, addon.ProductType.Value, payment.PaymentId);
+                    }
+                    else
+                    {
+                        _logger.LogWarning("ProductType is null for AddonId {AddonId} in Payment ID: {PaymentId}",
+                            addon.UserAddOnId, payment.PaymentId);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error mapping addon IDs to product types for Payment ID: {PaymentId}", payment.PaymentId);
+            }
+
+            return addonMappings;
+        }
         private async Task UpdateUserSubscriptionAsync(Subscription subscription, int orderId, CancellationToken cancellationToken)
         {
             try
@@ -552,9 +794,6 @@ namespace QLN.Common.Infrastructure.Service.Payments
                     existingUserSubscription.EndDate = subscription.EndDate;
 
                     _applicationDbContext.UserSubscriptions.Update(existingUserSubscription);
-
-                    _logger.LogDebug("Updated existing user subscription {SubscriptionId} for user {UserId}",
-                        subscription.SubscriptionId, subscription.UserId);
                 }
                 else
                 {
@@ -572,9 +811,6 @@ namespace QLN.Common.Infrastructure.Service.Payments
                     };
 
                     _applicationDbContext.UserSubscriptions.Add(userSubscription);
-
-                    _logger.LogDebug("Added new user subscription {SubscriptionId} for user {UserId}",
-                        subscription.SubscriptionId, subscription.UserId);
                 }
 
                 await _applicationDbContext.SaveChangesAsync(cancellationToken);
@@ -586,6 +822,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
                 throw;
             }
         }
+
         private string GenerateRedirectURLBase(Vertical vertical, SubVertical? subVertical)
         {
             var baseUrls = _configuration.GetSection("BaseUrl").GetChildren()
@@ -597,10 +834,9 @@ namespace QLN.Common.Infrastructure.Service.Payments
             {
                 if (vertical == Vertical.Classifieds && subVertical.HasValue)
                 {
-                    var subVerticalKey = subVertical.ToString();
                     var classifiedBaseUrls = _configuration.GetSection("BaseUrl:Classifieds").GetChildren()
                                                           .ToDictionary(x => x.Key, x => x.Value);
-                    if (classifiedBaseUrls.TryGetValue(subVerticalKey, out var subVerticalUrl))
+                    if (classifiedBaseUrls.TryGetValue(subVertical.ToString(), out var subVerticalUrl))
                     {
                         return subVerticalUrl;
                     }
@@ -611,8 +847,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
                 }
                 else if (vertical == Vertical.Services)
                 {
-                    var servicesBaseUrls = _configuration.GetSection("BaseUrl:Services").Value;
-                    baseRedirectUrl = servicesBaseUrls;
+                    baseRedirectUrl = _configuration.GetSection("BaseUrl:Services").Value ?? verticalBaseUrl;
                 }
             }
             else
@@ -622,22 +857,58 @@ namespace QLN.Common.Infrastructure.Service.Payments
 
             return baseRedirectUrl;
         }
-    }
-
-    /// <summary>
-    /// Result of subscription validation
-    /// </summary>
-    public class SubscriptionValidationResult
-    {
-        public bool IsValid { get; set; }
-        public string ErrorMessage { get; set; } = string.Empty;
-
-        public static SubscriptionValidationResult Success() => new() { IsValid = true };
-
-        public static SubscriptionValidationResult Failure(string errorMessage) => new()
+        private async Task<Guid?> ResolveSubscriptionIdForAddonsAsync(
+    Vertical vertical,
+    SubVertical? subVertical,
+    string userId,
+    long? adId,
+    CancellationToken ct)
         {
-            IsValid = false,
-            ErrorMessage = errorMessage
-        };
+            if (adId.HasValue && adId != null && adId > 0)
+            {
+                var subByAd = await _subscriptionContext.Subscriptions
+                    .AsNoTracking()
+                    .Where(s =>
+                        s.UserId == userId &&
+                        s.Vertical == vertical &&
+                        (!subVertical.HasValue || s.SubVertical == subVertical.Value) &&
+                        s.Status == SubscriptionStatus.Active &&
+                        s.EndDate > DateTime.UtcNow &&
+                        s.AdId == adId) 
+                    .OrderByDescending(s => s.EndDate)
+                    .FirstOrDefaultAsync(ct);
+
+                if (subByAd != null)
+                    return subByAd.SubscriptionId;
+            }
+            var freeSub = await _subscriptionContext.Subscriptions
+                .AsNoTracking()
+                .Where(s =>
+                    s.UserId == userId &&
+                    s.Vertical == vertical &&
+                    (!subVertical.HasValue || s.SubVertical == subVertical.Value) &&
+                    s.Status == SubscriptionStatus.Active &&
+                    s.EndDate > DateTime.UtcNow &&
+                    (s.ProductType == ProductType.FREE))
+                .OrderByDescending(s => s.EndDate)
+                .FirstOrDefaultAsync(ct);
+
+            if (freeSub != null)
+                return freeSub.SubscriptionId;
+
+            var anyActive = await _subscriptionContext.Subscriptions
+                .AsNoTracking()
+                .Where(s =>
+                    s.UserId == userId &&
+                    s.Vertical == vertical &&
+                    (!subVertical.HasValue || s.SubVertical == subVertical.Value) &&
+                    s.Status == SubscriptionStatus.Active &&
+                    s.EndDate > DateTime.UtcNow)
+                .OrderByDescending(s => s.EndDate)
+                .FirstOrDefaultAsync(ct);
+
+            return anyActive?.SubscriptionId;
+        }
+
     }
 }

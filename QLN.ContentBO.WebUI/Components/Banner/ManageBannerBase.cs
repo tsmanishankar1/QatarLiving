@@ -28,7 +28,7 @@ namespace QLN.ContentBO.WebUI.Components.Banner
         {
             try
             {
-                await AuthorizedPage();
+                await base.OnInitializedAsync();
             }
             catch (Exception ex)
             {

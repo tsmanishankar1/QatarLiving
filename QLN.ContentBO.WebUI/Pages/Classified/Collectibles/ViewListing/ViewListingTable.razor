@@ -2,6 +2,7 @@
 @inject NavigationManager NavigationManager
 @using QLN.ContentBO.WebUI.Components.ToggleTabs
 @using QLN.ContentBO.WebUI.Components.TableSkeleton
+@using QLN.ContentBO.WebUI.Models;
 @using QLN.ContentBO.WebUI.Components.EmptyCardWithButton
 @using MudBlazor
 @using QLN.ContentBO.WebUI.Components.PaginationFooter
@@ -109,7 +110,7 @@ else
               Class="mud-table event-custom-table">
 
         <HeaderContent>
-            <MudTh class="header-cell">Item image</MudTh>
+            <MudTh class="header-cell">Images</MudTh>
             <MudTh class="header-cell">Ad ID</MudTh>
             <MudTh class="header-cell">Ad Type</MudTh>
             <MudTh class="header-cell">Ad Title</MudTh>
@@ -118,7 +119,7 @@ else
             <MudTh class="header-cell">Category</MudTh>
             <MudTh class="header-cell">Sub Category</MudTh>
             <MudTh class="header-cell">Section</MudTh>
-            <MudTh class="header-cell">Creation Date</MudTh>
+            <MudTh class="header-cell">Date Created</MudTh>
             <MudTh class="header-cell">Date Published</MudTh>
             <MudTh class="header-cell">Date Expiry</MudTh>
             <MudTh class="header-cell">Actions</MudTh>
@@ -129,7 +130,10 @@ else
             <img src="@context.Images?.FirstOrDefault()?.Url" style="width: 136px; height: 61px; border-radius: 6px;" />
         </MudTd>
         <MudTd Class="truncate-text hover-title">@context.Id</MudTd>
-        <MudTd title="@(context.AdType == 0 ? "-" : context.AdType)" Class="truncate-text hover-title">@context.AdType</MudTd>
+        <MudTd class="truncate-text hover-title"
+            title="@((AdTypeEnum)context.AdType)">
+            @((AdTypeEnum)context.AdType)
+        </MudTd>
         <MudTd title="@(string.IsNullOrWhiteSpace(context.Title) ? "-" : context.Title)" Class="truncate-text hover-title">@context.Title</MudTd>
         <MudTd title="@(string.IsNullOrWhiteSpace(context.UserId) ? "-" : context.UserId)" Class="truncate-text">@context.UserId</MudTd>
         <MudTd title="@(string.IsNullOrWhiteSpace(context.UserName) ? "-" : context.UserName)" Class="truncate-text">@context.UserName</MudTd>

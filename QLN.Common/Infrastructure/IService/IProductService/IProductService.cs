@@ -22,5 +22,7 @@ namespace QLN.Common.Infrastructure.IService.IProductService
         Task<ProductResponseDto> CreateProductAsync(CreateProductDto dto, CancellationToken cancellationToken = default);
         Task<ProductResponseDto> UpdateProductAsync(string productCode, UpdateProductDto dto, CancellationToken cancellationToken = default);
         Task<bool> DeleteProductAsync(string productCode, CancellationToken cancellationToken = default);
+        Task<ProductResponseDto> CreateFreeAdsProductAsync(CreateFreeAdsProductDto dto, CancellationToken cancellationToken = default);
+        FreeAdsSubscriptionQuota BuildFreeAdsSubscriptionQuotaFromProduct(Product product);
     }
 }

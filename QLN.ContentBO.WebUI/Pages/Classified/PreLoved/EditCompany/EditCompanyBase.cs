@@ -4,7 +4,7 @@ using QLN.ContentBO.WebUI.Models;
 using QLN.ContentBO.WebUI.Components.SuccessModal;
 using Microsoft.AspNetCore.Components.Forms;
 using QLN.ContentBO.WebUI.Interfaces;
-using System.Net;   
+using System.Net;
 using System.Text.Json;
 using System.Net.Http;
 using MudBlazor;
@@ -186,7 +186,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.EditCompany
                     Severity.Success
                 );
                 Navigation.NavigateTo($"/manage/classified/stores/view/stores");
-                
+
             }
             else
             {

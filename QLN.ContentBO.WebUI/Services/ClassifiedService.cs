@@ -806,7 +806,6 @@ namespace QLN.ContentBO.WebUI.Services
                 var jsonPayload = JsonSerializer.Serialize(payload, serializeOptions);
 
                 // Print the exact JSON that will be sent
-                Console.WriteLine("Payload JSON Sent: " + jsonPayload);
 
                 using var request = new HttpRequestMessage(HttpMethod.Post, endpoint)
                 {
@@ -853,7 +852,6 @@ namespace QLN.ContentBO.WebUI.Services
                 var jsonPayload = JsonSerializer.Serialize(payload, serializeOptions);
 
                 // Print the exact JSON that will be sent
-                Console.WriteLine("Payload JSON Sent: " + jsonPayload);
 
                 using var request = new HttpRequestMessage(HttpMethod.Post, endpoint)
                 {
@@ -1093,7 +1091,7 @@ namespace QLN.ContentBO.WebUI.Services
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
-        public async Task<HttpResponseMessage?> GetDealsByIdAsync(string vertical, long? adId)
+        public async Task<HttpResponseMessage?> GetDealsByIdAsync(long? adId)
         {
             try
             {

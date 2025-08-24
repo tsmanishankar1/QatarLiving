@@ -92,8 +92,8 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
         protected override async Task OnInitializedAsync()
         {
             try
-            {
-                await AuthorizedPage();
+            {   
+                await base.OnInitializedAsync();
             }
             catch (Exception ex)
             {

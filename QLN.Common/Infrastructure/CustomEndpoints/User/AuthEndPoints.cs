@@ -564,7 +564,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.User
              BadRequest<ProblemDetails>,
              ProblemHttpResult,
              UnauthorizedHttpResult>> 
-             ( [FromBody] RefreshTokenRequest request,
+             ( [FromHeader] string refreshToken,
                [FromServices] IAuthService authService,
                [FromServices] IEventlogger log,
                HttpContext context
@@ -572,8 +572,40 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.User
             {
                 try
                 {
-                    var userId = context.User.GetId();
-                    return await authService.RefreshToken(userId, request);
+                    var drupalUser = context.User.GetDrupalUserInfo();
+                    if (drupalUser == null)
+                    {
+                        return TypedResults.Unauthorized();
+                    }
+
+                    string? userId =
+                    context.User.FindFirst("sub")?.Value ??
+                    context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+/*
+                    if (string.IsNullOrWhiteSpace(userId))
+                    {
+                        var legacyUserJson = context.User.FindFirst("user")?.Value;
+                        if (!string.IsNullOrWhiteSpace(legacyUserJson))
+                        {
+                            try
+                            {
+                                using var doc = JsonDocument.Parse(legacyUserJson);
+                                //if (doc.RootElement.TryGetProperty("uid", out var uidProp))
+                                //{
+                                //    userId = uidProp.GetString();
+                                //}
+                            }
+                            catch
+                            {                             
+                            }
+                        }
+                    }*/
+
+                    if (!Guid.TryParse(userId, out var uid))
+                    {
+                        return TypedResults.Unauthorized();
+                    }
+                    return await authService.RefreshToken(uid,drupalUser, refreshToken);
                 }
                 catch (Exception ex)
                 {
@@ -810,6 +842,51 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.User
             .Produces<string>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
+            .RequireAuthorization();
+
+            return group;
+        }
+        public static RouteGroupBuilder MapUseMeEndpoint(this RouteGroupBuilder group)
+        {
+            group.MapGet("/useMe", async Task<Results<
+                Ok<UseMeResponseDto>,
+                BadRequest<ProblemDetails>,
+                NotFound<ProblemDetails>,
+                UnauthorizedHttpResult,
+                ProblemHttpResult>> (
+                HttpContext context,
+                [FromServices] IAuthService authService,
+                [FromServices] IEventlogger log
+            ) =>
+            {
+                try
+                {
+                    var (userId, userName) = Utilities.UserTokenHelper.ExtractUserAsync(context);
+                    if (userId == null)
+                    {
+                        return TypedResults.Unauthorized();
+                    }
+
+                    return await authService.UseMe(Guid.Parse(userId));
+                }
+                catch (Exception ex)
+                {
+                    log.LogException(ex);
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: "An unexpected error occurred while fetching user details.",
+                        statusCode: StatusCodes.Status500InternalServerError);
+                }
+            })
+            .WithName("UseMe")
+            .WithTags("User Profile")
+            .WithSummary("Get current user details with subscription information")
+            .WithDescription("Returns comprehensive user profile data along with all active subscription details, quotas, and usage information.")
+            .Produces<UseMeResponseDto>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
             .RequireAuthorization();
 

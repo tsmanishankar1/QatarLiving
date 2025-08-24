@@ -5,11 +5,11 @@ using Microsoft.AspNetCore.Routing;
 using QLN.Common.Infrastructure.IService.ICompanyService;
 using Microsoft.AspNetCore.Builder;
 using QLN.Common.DTO_s.Company;
-using System.Text.Json;
 using QLN.Common.Infrastructure.CustomException;
-using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.Auditlog;
 using QLN.Common.Infrastructure.Utilities;
+using Company = QLN.Common.Infrastructure.Model.Company;
+using System.Text.Json;
 
 namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
 {
@@ -36,11 +36,31 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
 
                 try
                 {
-                    var (extractedUid, extractedUserName, subscriptionId, expiryDate) =
-                        await UserTokenHelper.ExtractUserAndSubscriptionDetailsAsync(httpContext, vertical: (int)dto.Vertical);
+                    var (extractedUid, extractedUsername, subscriptions, roles) = await UserTokenHelper.ExtractUserAndSubscriptionDetailsAsync(httpContext);
+                    bool requiresSubscription = UserTokenHelper.RequiresSubscription(dto.Vertical, dto.SubVertical);
 
+                    if (requiresSubscription)
+                    {
+                        var now = DateTime.UtcNow;
+                        var activeSub = subscriptions.FirstOrDefault(s =>
+                            (int)s.Vertical == (int)dto.Vertical &&
+                            (!dto.SubVertical.HasValue || (int)s.SubVertical == (int)dto.SubVertical) &&
+                            s.StartDate <= now && s.EndDate >= now
+                        );
+
+                        if (activeSub == null)
+                        {
+                            return TypedResults.Problem(new ProblemDetails
+                            {
+                                Title = "Subscription Required",
+                                Detail = $"No active subscription found for Vertical {dto.Vertical} and SubVertical {dto.SubVertical}.",
+                                Status = StatusCodes.Status403Forbidden
+                            });
+                        }
+                    }
                     uid = extractedUid;
-                    userName = extractedUserName;
+                    userName = extractedUsername;
+
                     if (string.IsNullOrEmpty(uid))
                     {
                         return TypedResults.Problem(new ProblemDetails
@@ -50,8 +70,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
                             Status = StatusCodes.Status403Forbidden
                         });
                     }
-                    //var isSubcriber = userData.GetProperty("roles").EnumerateArray()
-                    //    .Any(r => r.GetString() == "subscription");
                     var result = await service.CreateCompany(uid, userName, dto, cancellationToken);
                     await auditLogger.LogAuditAsync(
                     module: ModuleName,
@@ -334,10 +352,35 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
                 string? userName = null;
                 try
                 {
-                    var (extractedUid, extractedUserName, subscriptionId, expiryDate) =
-                        await UserTokenHelper.ExtractUserAndSubscriptionDetailsAsync(httpContext, vertical: 4);
+                    var (extractedUid, extractedUsername, subscriptions, roles) = await UserTokenHelper.ExtractUserAndSubscriptionDetailsAsync(httpContext);
+                    bool requiresSubscription = UserTokenHelper.RequiresSubscription(dto.Vertical, dto.SubVertical);
 
+                    if (requiresSubscription)
+                    {
+                        var now = DateTime.UtcNow;
+
+                        var activeSub = subscriptions.FirstOrDefault(s =>
+                            s.Vertical == (int)dto.Vertical &&
+                            (
+                                !dto.SubVertical.HasValue
+                                || (s.SubVertical.HasValue && s.SubVertical.Value == (int)dto.SubVertical.Value)
+                            ) &&
+                            s.StartDate <= now && s.EndDate >= now
+                        );
+
+                        if (activeSub == null)
+                        {
+                            return TypedResults.Problem(new ProblemDetails
+                            {
+                                Title = "Subscription Required",
+                                Detail = $"No active subscription found for Vertical {dto.Vertical} and SubVertical {dto.SubVertical}.",
+                                Status = StatusCodes.Status403Forbidden
+                            });
+                        }
+                    }
                     uid = extractedUid;
+                    userName = extractedUsername;
+
                     if (string.IsNullOrEmpty(uid))
                     {
                         return TypedResults.Problem(new ProblemDetails
@@ -347,10 +390,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
                             Status = StatusCodes.Status403Forbidden
                         });
                     }
-
-                    //var isSubcriber = userData.GetProperty("roles").EnumerateArray()
-                    //    .Any(r => r.GetString() == "subscription");
-
                     var existingCompany = await service.GetCompanyById(dto.Id, cancellationToken);
                     if (existingCompany == null)
                     {
@@ -362,11 +401,11 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
                         });
                     }
 
-                    //if (existingCompany.UserId != uid)
-                    //    return TypedResults.Forbid();
+                    if (existingCompany.UserId != uid)
+                        return TypedResults.Forbid();
 
-                    dto.UserId = extractedUid;
-                    dto.UserName = extractedUserName;
+                    dto.UserId = uid;
+                    dto.UserName = userName;
                     var updated = await service.UpdateCompany(dto, cancellationToken);
                     await auditLogger.LogAuditAsync(
                        module: ModuleName,
@@ -502,19 +541,26 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
 
                 try
                 {
-                    var (extractedUid, extractedUserName, subscriptionId, expiryDate) =
-                        await UserTokenHelper.ExtractUserAndSubscriptionDetailsAsync(httpContext, vertical: 4);
+                    var (extractedUid, extractedUsername, subscriptions, roles) = await UserTokenHelper.ExtractUserAndSubscriptionDetailsAsync(httpContext);
 
-                    uid = extractedUid;
-                    if (string.IsNullOrEmpty(uid))
+                    if (roles.Contains("Admin"))
+                    {
+                        
+                    }
+                    var now = DateTime.UtcNow;
+                    var hasValidSubscription = subscriptions.Any(s =>
+                        s.StartDate <= now && s.EndDate >= now);
+
+                    if (!hasValidSubscription)
                     {
                         return TypedResults.Problem(new ProblemDetails
                         {
-                            Title = "Unauthorized Access",
-                            Detail = "User ID or username could not be extracted from token.",
+                            Title = "Unauthorized",
+                            Detail = "You must be an active subscriber to delete a company profile.",
                             Status = StatusCodes.Status403Forbidden
                         });
                     }
+
                     var result = await service.GetCompanyById(id, cancellationToken);
                     if (result == null)
                         throw new KeyNotFoundException($"Company with ID '{id}' not found.");
@@ -636,25 +682,32 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
             {
                 string uid = "unknown";
                 string? userName = null;
-
                 try
                 {
-                    var (extractedUid, extractedUserName, subscriptionId, expiryDate) =
-                        await UserTokenHelper.ExtractUserAndSubscriptionDetailsAsync(httpContext, vertical: 4);
-
-                    uid = extractedUid;
-                    if (string.IsNullOrEmpty(uid))
+                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                    if (string.IsNullOrEmpty(userClaim))
                     {
                         return TypedResults.Problem(new ProblemDetails
                         {
                             Title = "Unauthorized Access",
-                            Detail = "User ID or username could not be extracted from token.",
+                            Detail = "User information is missing or invalid in the token.",
+                            Status = StatusCodes.Status403Forbidden
+                        });
+                    }
+                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                    uid = userData.GetProperty("uid").GetString();
+                    if (uid == null)
+                    {
+                        return TypedResults.Problem(new ProblemDetails
+                        {
+                            Title = "Unauthorized Access",
+                            Detail = "User ID could not be extracted from token.",
                             Status = StatusCodes.Status403Forbidden
                         });
                     }
                     if (dto == null)
-                        throw new KeyNotFoundException($"Company with ID '{dto.CompanyId}' not found.");
-
+                        throw new KeyNotFoundException("Company payload is null.");
+                    
                     await service.ApproveCompany(uid, dto, cancellationToken);
                     await auditLogger.LogAuditAsync(
                         module: ModuleName,
@@ -779,8 +832,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
                 string? userName = null;
                 try
                 {
-                    var (extractedUid, extractedUserName, subscriptionId, expiryDate) =
-                        await UserTokenHelper.ExtractUserAndSubscriptionDetailsAsync(httpContext, vertical: 4);
+                    var (extractedUid, extractedUsername, subscriptions, roles) = await UserTokenHelper.ExtractUserAndSubscriptionDetailsAsync(httpContext);
 
                     uid = extractedUid;
                     if (string.IsNullOrEmpty(uid))
@@ -866,6 +918,113 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
                 }
             })
             .WithName("GetCompaniesByUserId")
+            .WithTags("Company")
+            .WithSummary("Get companies by user ID")
+            .WithDescription("Used internally by Dapr or system components.")
+            .ExcludeFromDescription()
+            .Produces<List<Company>>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            return group;
+        }
+        public static RouteGroupBuilder MapGetCompanyProfilesByToken(this RouteGroupBuilder group)
+        {
+            group.MapGet("/getcompanies", async Task<IResult> (
+                HttpContext httpContext,
+                [FromServices] ICompanyProfileService service,
+                CancellationToken cancellationToken = default) =>
+            {
+                string uid = "unknown";
+                string? userName = null;
+                try
+                {
+                    var (extractedUid, extractedUsername, subscriptions, roles) = await UserTokenHelper.ExtractUserAndSubscriptionDetailsAsync(httpContext);
+
+                    uid = extractedUid;
+                    if (string.IsNullOrEmpty(uid))
+                    {
+                        return TypedResults.Problem(new ProblemDetails
+                        {
+                            Title = "Unauthorized Access",
+                            Detail = "User ID or username could not be extracted from token.",
+                            Status = StatusCodes.Status403Forbidden
+                        });
+                    }
+                    var allCompanies = await service.GetCompaniesByToken(uid, cancellationToken);
+                    var userCompanies = allCompanies
+                        .Where(c => c.UserId == uid)
+                        .ToList();
+                    if (userCompanies.Count == 0)
+                        throw new KeyNotFoundException("No company profiles found for the current user.");
+
+                    return TypedResults.Ok(userCompanies);
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    return TypedResults.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+            .WithName("GetCompanyProfilesByToken")
+            .WithTags("Company")
+            .WithSummary("Get company profiles for logged-in user")
+            .WithDescription("Fetches all companies owned by the current token user")
+            .Produces<List<Company>>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapGet("/getcompanieswithsubscription", async Task<IResult> (
+            [FromQuery] string userId,
+            ICompanyProfileService service,
+            CancellationToken cancellationToken) =>
+            {
+                try
+                {
+                    if (userId == string.Empty)
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "UserId is required.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    var companies = await service.GetCompaniesByToken(userId, cancellationToken);
+                    return TypedResults.Ok(companies);
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    return TypedResults.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+            .WithName("GetCompaniesUserId")
             .WithTags("Company")
             .WithSummary("Get companies by user ID")
             .WithDescription("Used internally by Dapr or system components.")

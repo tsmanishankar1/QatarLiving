@@ -91,6 +91,10 @@ namespace QLN.Common.Infrastructure.EventLogger
         {
             _logger.LogError(ex, message, id);
         }
+        public void LogError(Exception ex, string message, Guid id)
+        {
+            _logger.LogError(ex, message, id);
+        }
 
         public void LogWarning(string message, long id)
         {

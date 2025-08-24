@@ -20,7 +20,7 @@ namespace QLN.Common.Infrastructure.Model
         public string Title { get; set; } = string.Empty;
         [MaxLength(200)]
         public string? Slug { get; set; }
-        [MaxLength(255)]
+        [MaxLength(5000)]
         public string? Description { get; set; }
         public double? Price { get; set; }
         [MaxLength(50)]
@@ -82,5 +82,6 @@ namespace QLN.Common.Infrastructure.Model
         public string? UpdatedBy { get; set; }
         public DateTime? UpdatedAt { get; set; }
         public Guid? SubscriptionId { get; set; }
+        public bool? IsSold { get; set; } = false;
     }
 }

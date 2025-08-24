@@ -170,5 +170,5 @@ namespace QLN.SearchService
             return type;
         }
     }
-    
+
 }

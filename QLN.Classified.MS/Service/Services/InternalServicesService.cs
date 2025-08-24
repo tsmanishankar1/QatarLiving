@@ -1,6 +1,7 @@
 ﻿using Dapr.Client;
 using Microsoft.EntityFrameworkCore;
 using QLN.Common.DTO_s;
+using QLN.Common.DTO_s.Services;
 using QLN.Common.Infrastructure.Auditlog;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.CustomException;
@@ -28,115 +29,49 @@ namespace QLN.Classified.MS.Service.Services
             _dbContext = dbContext;
             _qLSubscriptionContext = qLSubscriptionContext;
         }
-        //public async Task<List<CategoryDto>> GetAllCategories(string? vertical, string? subVertical, CancellationToken cancellationToken = default)
-        //{
-        //    var query = _dbContext.Categories.AsQueryable();
+        public async Task<List<CategoryDto>> GetAllCategories(
+            string? vertical,
+            string? subVertical,
+            CancellationToken cancellationToken = default)
+        {
+            var query = _dbContext.CategoryDropdowns.AsNoTracking().AsQueryable();
 
-        //    if (!string.IsNullOrEmpty(vertical))
-        //    {
-        //        if (!Enum.TryParse<Vertical>(vertical, ignoreCase: true, out var verticalEnum))
-        //        {
-        //            return new List<CategoryDto>();
-        //        }
-        //        query = query.Where(c => c.Vertical == verticalEnum);
-        //    }
+            if (!string.IsNullOrEmpty(vertical))
+            {
+                if (!Enum.TryParse<Vertical>(vertical, true, out var verticalEnum))
+                    return new List<CategoryDto>();
 
-        //    if (!string.IsNullOrEmpty(subVertical))
-        //    {
-        //        if (!Enum.TryParse<SubVertical>(subVertical, ignoreCase: true, out var subVerticalEnum))
-        //        {
-        //            return new List<CategoryDto>();
-        //        }
-        //        query = query.Where(c => c.SubVertical == subVerticalEnum);
-        //    }
+                query = query.Where(c => c.Vertical == verticalEnum);
+            }
 
-        //    var allCategories = await query
-        //        .AsNoTracking()
-        //        .OrderBy(c => c.Id)
-        //        .ToListAsync(cancellationToken);
+            if (!string.IsNullOrEmpty(subVertical))
+            {
+                if (!Enum.TryParse<SubVertical>(subVertical, true, out var subVerticalEnum))
+                    return new List<CategoryDto>();
 
-        //    var rootCategories = allCategories
-        //        .Where(c => c.ParentId == null)
-        //        .Select(c => MapCategoryRecursive(c, allCategories))
-        //        .ToList();
+                query = query.Where(c => c.SubVertical == subVerticalEnum);
+            }
 
-        //    return rootCategories;
-        //}
-        //private CategoryDto MapCategoryRecursive(Category category, List<Category> allCategories)
-        //{
-        //    return new CategoryDto
-        //    {
-        //        Id = category.Id,
-        //        CategoryName = category.CategoryName,
-        //        Vertical = category.Vertical.ToString(),
-        //        SubVertical = category.SubVertical?.ToString() ?? string.Empty,
-        //        ParentId = category.ParentId,
-        //        Fields = allCategories
-        //            .Where(child => child.ParentId == category.Id)
-        //            .Select(child => MapFieldRecursive(child, allCategories))
-        //            .ToList()
-        //    };
-        //}
-        //private FieldDto MapFieldRecursive(Category field, List<Category> allCategories)
-        //{
-        //    return new FieldDto
-        //    {
-        //        Id = field.Id,
-        //        CategoryName = field.CategoryName,
-        //        Type = field.Type,
-        //        Options = field.Options,
-        //        Fields = allCategories
-        //            .Where(c => c.ParentId == field.Id)
-        //            .Select(c => MapFieldRecursive(c, allCategories))
-        //            .ToList()
-        //    };
-        //}
-        // public async Task<CategoryDto?> GetCategoryById(long id, CancellationToken cancellationToken = default)
-        //{
-        //    var allCategories = await _dbContext.Categories
-        //        .AsNoTracking()
-        //        .ToListAsync(cancellationToken);
+            var categories = await query
+                .OrderBy(c => c.Id)
+                .ToListAsync(cancellationToken);
 
-        //    var category = allCategories.FirstOrDefault(c => c.Id == id);
-        //    if (category == null)
-        //        return null;
+            var result = categories.Select(c => new CategoryDto
+            {
+                Id = c.Id,
+                CategoryName = c.CategoryName,
+                Vertical = c.Vertical.ToString(),
+                SubVertical = c.SubVertical?.ToString() ?? string.Empty,
+                ParentId = c.ParentId,
+                Fields = c.Fields ?? new List<FieldDto>()
+            }).ToList();
 
-        //    return MapCategoryRecursive(category, allCategories);
-        //}
-        //public async Task<string> UpdateCategory(CategoryDto dto, CancellationToken cancellationToken = default)
-        //{
-        //    var category = await _dbContext.Categories
-        //        .FirstOrDefaultAsync(c => c.Id == dto.Id, cancellationToken);
-
-        //    if (category == null)
-        //        return "Category not found";
-
-        //    category.CategoryName = dto.CategoryName;
-        //    category.Vertical = Enum.Parse<Vertical>(dto.Vertical);
-        //    category.SubVertical = Enum.TryParse<SubVertical>(dto.SubVertical, out var sub) ? sub : null;
-
-        //    var allFieldDtos = FlattenFields(dto.Fields);
-
-        //    foreach (var fieldDto in allFieldDtos)
-        //    {
-        //        var existingField = await _dbContext.Categories
-        //            .FirstOrDefaultAsync(c => c.Id == fieldDto.Id, cancellationToken);
-
-        //        if (existingField != null)
-        //        {
-        //            existingField.CategoryName = fieldDto.CategoryName;
-        //            existingField.Type = fieldDto.Type;
-        //            existingField.Options = fieldDto.Options;
-        //        }
-        //    }
-
-        //    await _dbContext.SaveChangesAsync(cancellationToken);
-        //    return "Category Updated Successfully";
-        //}
-        //private List<FieldDto> FlattenFields(List<FieldDto>? fields)
-        //{
-        //    var list = new List<FieldDto>();
-        //    if (fields == null) return list;
+            return result;
+        }       
+        private List<FieldDto> FlattenFields(List<FieldDto>? fields)
+        {
+            var list = new List<FieldDto>();
+            if (fields == null) return list;
 
         //    foreach (var field in fields)
         //    {
@@ -145,8 +80,9 @@ namespace QLN.Classified.MS.Service.Services
         //            list.AddRange(FlattenFields(field.Fields));
         //    }
 
-        //    return list;
-        //}
+            return list;
+        }
+
         public async Task<string> CreateCategory(CategoryDto dto, CancellationToken cancellationToken)
         {
             try
@@ -162,8 +98,9 @@ namespace QLN.Classified.MS.Service.Services
                     else
                         return "Invalid sub-vertical value";
                 }
+
                 long lastUsedId = await GetLastIdFromJsonFieldsAsync();
-                long nextCategoryId = lastUsedId + 1;
+                long nextCategoryId = dto.Id ?? (lastUsedId + 1);
                 long currentFieldId = nextCategoryId;
                 AssignIds(dto.Fields, ref currentFieldId);
 
@@ -171,9 +108,10 @@ namespace QLN.Classified.MS.Service.Services
                 {
                     Id = nextCategoryId,
                     CategoryName = dto.CategoryName,
+                    ParentId = dto.ParentId,
                     Vertical = verticalEnum,
                     SubVertical = subVerticalEnum,
-                    Fields = dto.Fields 
+                    Fields = dto.Fields
                 };
 
                 _dbContext.CategoryDropdowns.Add(category);
@@ -185,6 +123,8 @@ namespace QLN.Classified.MS.Service.Services
             {
                 return $"Error: {ex.Message}";
             }
+
+            return maxId;
         }
 
         private async Task<long> GetLastIdFromJsonFieldsAsync()
@@ -195,18 +135,15 @@ namespace QLN.Classified.MS.Service.Services
 
             long maxId = 0;
             if (allCategories.Any())
-            {
                 maxId = allCategories.Max(c => c.Id);
-            }
+
             foreach (var category in allCategories)
             {
                 if (category.Fields != null)
                 {
                     var fieldIds = ExtractAllFieldIds(category.Fields);
                     if (fieldIds.Any())
-                    {
                         maxId = Math.Max(maxId, fieldIds.Max());
-                    }
                 }
             }
 
@@ -222,18 +159,8 @@ namespace QLN.Classified.MS.Service.Services
                 if (field.Id.HasValue && field.Id > 0)
                     ids.Add(field.Id.Value);
 
-                // Check for nested fields in Options
-                if (field.Options != null && field.Options.ContainsKey("fields"))
-                {
-                    if (field.Options["fields"] is Newtonsoft.Json.Linq.JArray nestedArray)
-                    {
-                        var nestedFields = nestedArray.ToObject<List<FieldDto>>();
-                        if (nestedFields != null)
-                        {
-                            ids.AddRange(ExtractAllFieldIds(nestedFields));
-                        }
-                    }
-                }
+                if (field.Fields != null && field.Fields.Any())
+                    ids.AddRange(ExtractAllFieldIds(field.Fields));
             }
 
             return ids;
@@ -245,116 +172,17 @@ namespace QLN.Classified.MS.Service.Services
 
             foreach (var field in fields)
             {
-                // Assign new ID if not present or invalid
                 if (field.Id == null || field.Id <= 0)
                     field.Id = ++lastFieldId;
 
-                // Check if Options contains nested "fields"
-                if (field.Options != null && field.Options.ContainsKey("fields"))
-                {
-                    if (field.Options["fields"] is Newtonsoft.Json.Linq.JArray nestedArray)
-                    {
-                        // Deserialize nested array to List<FieldDto>
-                        var nestedFields = nestedArray.ToObject<List<FieldDto>>();
-                        if (nestedFields != null)
-                        {
-                            AssignIds(nestedFields, ref lastFieldId);
-                            // Serialize back to JArray
-                            field.Options["fields"] = Newtonsoft.Json.Linq.JArray.FromObject(nestedFields);
-                        }
-                    }
-                }
+                if (field.Fields != null && field.Fields.Any())
+                    AssignIds(field.Fields, ref lastFieldId);
             }
         }
-
-
-
-
-
-        //private async Task SaveFieldRecursive(FieldDto fieldDto, long parentId, Vertical vertical, SubVertical? subVertical, CancellationToken cancellationToken)
-        //{
-        //    var category = new Category
-        //    {
-        //        CategoryName = fieldDto.CategoryName,
-        //        Type = fieldDto.Type,
-        //        Options = fieldDto.Options,
-        //        ParentId = parentId,
-        //        Vertical = vertical,
-        //        SubVertical = subVertical
-        //    };
-
-        //    _dbContext.Categories.Add(category);
-        //    await _dbContext.SaveChangesAsync(cancellationToken);
-
-        //    if (fieldDto.Fields != null && fieldDto.Fields.Any())
-        //    {
-        //        foreach (var childField in fieldDto.Fields)
-        //        {
-        //            await SaveFieldRecursive(childField, category.Id, vertical, subVertical, cancellationToken);
-        //        }
-        //    }
-        //}
-        //private Category MapField(FieldDto dto, Category parent, Vertical verticalEnum, SubVertical? subVerticalEnum)
-        //{
-        //    var category = new Category
-        //    {
-        //        CategoryName = dto.CategoryName,
-        //        Type = dto.Type,
-        //        Options = dto.Options,
-        //        ParentCategory = parent,
-        //        Vertical = verticalEnum,
-        //        SubVertical = subVerticalEnum
-        //    };
-
-        //    if (dto.Fields != null && dto.Fields.Any())
-        //    {
-        //        foreach (var childDto in dto.Fields)
-        //        {
-        //            var childCategory = MapField(childDto, category, verticalEnum, subVerticalEnum);
-        //            category.CategoryFields.Add(childCategory);
-        //        }
-        //    }
-
-        //    return category;
-        //}
         public async Task<string> CreateServiceAd(string uid, string userName, string subscriptionId, ServiceDto dto, CancellationToken cancellationToken = default)
         {
             try
             {
-                string? categoryName = null;
-                string? l1CategoryName = null;
-                string? l2CategoryName = null;
-
-                var mainCategory = await _dbContext.Categories
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(c => c.Id == dto.CategoryId && c.ParentId == null, cancellationToken);
-
-                if (mainCategory == null)
-                {
-                    throw new ArgumentException($"Invalid CategoryId: {dto.CategoryId}. No matching main category found.");
-                }
-                dto.CategoryName = mainCategory.CategoryName;
-
-                var l1Category = await _dbContext.Categories
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(c => c.Id == dto.L1CategoryId && c.ParentId == mainCategory.Id, cancellationToken);
-
-                if (l1Category == null)
-                {
-                    throw new ArgumentException($"Invalid L1CategoryId: {dto.L1CategoryId}. Not found under main category '{mainCategory.CategoryName}'.");
-                }
-                dto.L1CategoryName = l1Category.CategoryName;
-
-                var l2Category = await _dbContext.Categories
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(c => c.Id == dto.L2CategoryId && c.ParentId == l1Category.Id, cancellationToken);
-
-                if (l2Category == null)
-                {
-                    throw new ArgumentException($"Invalid L2CategoryId: {dto.L2CategoryId}. Not found under L1 category '{l1Category.CategoryName}'.");
-                }
-                dto.L2CategoryName = l2Category.CategoryName;
-
                 var hasActiveAd = await _dbContext.Services
                     .AnyAsync(s =>
                         s.CreatedBy == uid &&
@@ -509,40 +337,6 @@ namespace QLN.Classified.MS.Service.Services
 
                 if (existing == null)
                     throw new ArgumentException("Service Ad not found for update.");
-
-                string? categoryName = null;
-                string? l1CategoryName = null;
-                string? l2CategoryName = null;
-
-                var mainCategory = await _dbContext.Categories
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(c => c.Id == dto.CategoryId && c.ParentId == null, cancellationToken);
-
-                if (mainCategory == null)
-                {
-                    throw new ArgumentException($"Invalid CategoryId: {dto.CategoryId}. No matching main category found.");
-                }
-                dto.CategoryName = mainCategory.CategoryName;
-
-                var l1Category = await _dbContext.Categories
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(c => c.Id == dto.L1CategoryId && c.ParentId == mainCategory.Id, cancellationToken);
-
-                if (l1Category == null)
-                {
-                    throw new ArgumentException($"Invalid L1CategoryId: {dto.L1CategoryId}. Not found under main category '{mainCategory.CategoryName}'.");
-                }
-                dto.L1CategoryName = l1Category.CategoryName;
-
-                var l2Category = await _dbContext.Categories
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(c => c.Id == dto.L2CategoryId && c.ParentId == l1Category.Id, cancellationToken);
-
-                if (l2Category == null)
-                {
-                    throw new ArgumentException($"Invalid L2CategoryId: {dto.L2CategoryId}. Not found under L1 category '{l1Category.CategoryName}'.");
-                }
-                dto.L2CategoryName = l2Category.CategoryName;
 
                 var hasActiveAd = await _dbContext.Services.AnyAsync(ad =>
                     ad.CreatedBy == userId &&
@@ -1068,10 +862,6 @@ namespace QLN.Classified.MS.Service.Services
 
                 if (subscription == null)
                     throw new InvalidDataException("Active subscription not found for this service.");
-                serviceAd.PromotedExpiryDate = effectiveExpiryDate;
-                serviceAd.FeaturedExpiryDate = effectiveExpiryDate;
-                serviceAd.IsFeatured = true;
-                serviceAd.IsPromoted = true;
                 serviceAd.Status = ServiceStatus.Published;
                 serviceAd.PublishedDate = DateTime.UtcNow;
             }
@@ -1079,10 +869,6 @@ namespace QLN.Classified.MS.Service.Services
             {
                 if (serviceAd.Status == ServiceStatus.Unpublished)
                     throw new InvalidDataException("Service is already unpublished.");
-                serviceAd.IsPromoted = false;
-                serviceAd.IsFeatured = false;
-                serviceAd.PromotedExpiryDate = null;
-                serviceAd.FeaturedExpiryDate = null;
                 serviceAd.Status = ServiceStatus.Unpublished;
                 serviceAd.PublishedDate = null;
             }
@@ -1173,10 +959,6 @@ namespace QLN.Classified.MS.Service.Services
                         case BulkModerationAction.Publish:
                             if (ad.Status == ServiceStatus.Unpublished)
                             {
-                                ad.IsPromoted = true;
-                                ad.PromotedExpiryDate = effectiveExpiryDate;
-                                ad.IsFeatured = true;
-                                ad.FeaturedExpiryDate = effectiveExpiryDate;
                                 ad.Status = ServiceStatus.Published;
                                 ad.PublishedDate = DateTime.UtcNow;
                                 shouldUpdate = true;
@@ -1187,10 +969,6 @@ namespace QLN.Classified.MS.Service.Services
                         case BulkModerationAction.Unpublish:
                             if (ad.Status == ServiceStatus.Published)
                             {
-                                ad.IsPromoted = false;
-                                ad.PromotedExpiryDate = null;
-                                ad.IsFeatured = false;
-                                ad.FeaturedExpiryDate = null;
                                 ad.Status = ServiceStatus.Unpublished;
                                 ad.PublishedDate = null;
                                 shouldUpdate = true;
@@ -1451,11 +1229,12 @@ namespace QLN.Classified.MS.Service.Services
         public async Task<List<CategoryAdCountDto>> GetCategoryAdCount(CancellationToken ct = default)
         {
             return await _dbContext.Services
+                .Where(s => s.Status == ServiceStatus.Published && s.IsActive)
                 .GroupBy(s => s.CategoryId)
                 .Select(g => new CategoryAdCountDto
                 {
                     CategoryId = (int)g.Key,
-                    CategoryName = _dbContext.Categories
+                    CategoryName = _dbContext.CategoryDropdowns
                                               .Where(c => c.Id == g.Key)
                                               .Select(c => c.CategoryName)
                                               .FirstOrDefault(),
@@ -1463,7 +1242,6 @@ namespace QLN.Classified.MS.Service.Services
                 })
                 .ToListAsync(ct);
         }
-
         public async Task<string> MigrateServiceAd(Common.Infrastructure.Model.Services dto, CancellationToken cancellationToken = default)
         {
             try
@@ -1474,7 +1252,7 @@ namespace QLN.Classified.MS.Service.Services
                 var existing = await _dbContext.Services.FirstOrDefaultAsync(s => s.Id == dto.Id, cancellationToken);
 
                 var slug = SlugHelper.GenerateSlug(dto.Title, dto.CategoryName, "Services", Guid.NewGuid()); // leave this here for now - not sure if required ?
-                
+
                 dto.Slug = slug;
 
                 if (existing != null)
@@ -1486,7 +1264,7 @@ namespace QLN.Classified.MS.Service.Services
                 {
                     _dbContext.Services.Add(dto);
                 }
-                
+
                 await _dbContext.SaveChangesAsync(cancellationToken);
 
                 var upsertRequest = await IndexServiceToAzureSearch(existing, cancellationToken);
@@ -1514,6 +1292,120 @@ namespace QLN.Classified.MS.Service.Services
             {
                 throw new Exception("Error updating service ad", ex);
             }
+        }
+        public async Task<Common.Infrastructure.Model.Services> P2PromoteService(PayToPromote request, string uid, Guid addonId, CancellationToken ct)
+        {
+            var serviceAd = await _dbContext.Services
+                .FirstOrDefaultAsync(s => s.Id == request.ServiceId && s.IsActive, ct);
+
+            if (serviceAd == null)
+                throw new KeyNotFoundException("Service Ad not found.");
+
+            var subscription = await _qLSubscriptionContext.Subscriptions
+                .FirstOrDefaultAsync();
+            serviceAd.IsPromoted = true;
+            serviceAd.PromotedExpiryDate = subscription.EndDate;
+            serviceAd.UpdatedBy = uid;
+            serviceAd.UpdatedAt = DateTime.UtcNow;
+
+            await _dbContext.SaveChangesAsync(ct);
+
+            var upsertRequest = await IndexServiceToAzureSearch(serviceAd, ct);
+
+            if (upsertRequest != null)
+            {
+                var message = new IndexMessage
+                {
+                    Action = "Upsert",
+                    Vertical = ConstantValues.IndexNames.ServicesIndex,
+                    UpsertRequest = upsertRequest
+                };
+
+                await _dapr.PublishEventAsync(
+                    pubsubName: ConstantValues.PubSubName,
+                    topicName: ConstantValues.PubSubTopics.IndexUpdates,
+                    data: message,
+                    cancellationToken: ct
+                );
+            }
+
+            return serviceAd;
+        }
+        public async Task<Common.Infrastructure.Model.Services> P2FeatureService(PayToFeature request, string uid, Guid addonId, CancellationToken ct)
+        {
+            var serviceAd = await _dbContext.Services
+                .FirstOrDefaultAsync(s => s.Id == request.ServiceId && s.IsActive, ct);
+
+            if (serviceAd == null)
+                throw new KeyNotFoundException("Service Ad not found.");
+
+            var subscription = await _qLSubscriptionContext.Subscriptions
+                .FirstOrDefaultAsync();
+            serviceAd.IsFeatured = true;
+            serviceAd.FeaturedExpiryDate = subscription.EndDate;
+            serviceAd.UpdatedBy = uid;
+            serviceAd.UpdatedAt = DateTime.UtcNow;
+
+            await _dbContext.SaveChangesAsync(ct);
+
+            var upsertRequest = await IndexServiceToAzureSearch(serviceAd, ct);
+
+            if (upsertRequest != null)
+            {
+                var message = new IndexMessage
+                {
+                    Action = "Upsert",
+                    Vertical = ConstantValues.IndexNames.ServicesIndex,
+                    UpsertRequest = upsertRequest
+                };
+
+                await _dapr.PublishEventAsync(
+                    pubsubName: ConstantValues.PubSubName,
+                    topicName: ConstantValues.PubSubTopics.IndexUpdates,
+                    data: message,
+                    cancellationToken: ct
+                );
+            }
+
+            return serviceAd;
+        }
+        public async Task<Common.Infrastructure.Model.Services> P2PublishService(PayToPublish request, string uid, Guid subscriptionId, CancellationToken ct)
+        {
+            var serviceAd = await _dbContext.Services
+                .FirstOrDefaultAsync(s => s.Id == request.ServiceId && s.IsActive, ct);
+
+            if (serviceAd == null)
+                throw new KeyNotFoundException("Service Ad not found.");
+
+            var subscription = await _qLSubscriptionContext.Subscriptions
+                .FirstOrDefaultAsync();
+            serviceAd.Status = ServiceStatus.PendingApproval;
+            serviceAd.AdType = ServiceAdType.PayToPublish;
+            serviceAd.UpdatedBy = uid;
+            serviceAd.UpdatedAt = DateTime.UtcNow;
+
+            await _dbContext.SaveChangesAsync(ct);
+
+            var upsertRequest = await IndexServiceToAzureSearch(serviceAd, ct);
+
+            if (upsertRequest != null)
+            {
+                var message = new IndexMessage
+                {
+                    Action = "Upsert",
+                    Vertical = ConstantValues.IndexNames.ServicesIndex,
+                    UpsertRequest = upsertRequest
+                };
+
+                await _dapr.PublishEventAsync(
+                    pubsubName: ConstantValues.PubSubName,
+                    topicName: ConstantValues.PubSubTopics.IndexUpdates,
+                    data: message,
+                    cancellationToken: ct
+                );
+            }
+
+            return serviceAd;
         }
     }
 }

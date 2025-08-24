@@ -1,6 +1,5 @@
 ﻿using QLN.Common.DTO_s;
 using QLN.Common.DTO_s.Classifieds;
-using QLN.Common.DTO_s.ClassifiedsBo;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.Subscriptions;
@@ -18,7 +17,7 @@ namespace QLN.Common.Infrastructure.IService
         Task<List<SavedSearchResponseDto>> GetSearches(string userId, Vertical vertical, SubVertical? subVertical = null, CancellationToken cancellationToken = default);
         Task<bool> SaveSearch(SaveSearchRequestDto dto, string userId, CancellationToken cancellationToken = default);
         Task<bool> SaveSearchById(SaveSearchRequestByIdDto dto, CancellationToken cancellationToken = default);
-        Task<AdCreatedResponseDto> CreateClassifiedItemsAd(Items dto, SaveIntent intent, CancellationToken cancellationToken = default);
+        Task<AdCreatedResponseDto> CreateClassifiedItemsAd(Items dto, CancellationToken cancellationToken = default);
         Task<string> MigrateClassifiedItemsAd(Items dto, CancellationToken cancellationToken = default);
         Task<AdCreatedResponseDto> RefreshClassifiedItemsAd(
       SubVertical subVertical,
@@ -26,10 +25,10 @@ namespace QLN.Common.Infrastructure.IService
       string userId,
       Guid subscriptionId,
       CancellationToken cancellationToken);
-        Task<AdCreatedResponseDto> CreateClassifiedPrelovedAd(Preloveds dto, SaveIntent intent, CancellationToken cancellationToken = default);
-        Task<AdCreatedResponseDto> CreateClassifiedCollectiblesAd(Collectibles dto, SaveIntent intent, CancellationToken cancellationToken = default);
+        Task<AdCreatedResponseDto> CreateClassifiedPrelovedAd(Preloveds dto, CancellationToken cancellationToken = default);
+        Task<AdCreatedResponseDto> CreateClassifiedCollectiblesAd(Collectibles dto, CancellationToken cancellationToken = default);
         Task<string> MigrateClassifiedCollectiblesAd(Collectibles dto, CancellationToken cancellationToken = default);
-        Task<AdCreatedResponseDto> CreateClassifiedDealsAd(Deals dto, SaveIntent intent, CancellationToken cancellationToken = default);       
+        Task<AdCreatedResponseDto> CreateClassifiedDealsAd(Deals dto, CancellationToken cancellationToken = default);       
         Task<DeleteAdResponseDto> DeleteClassifiedAd(SubVertical subVertical, long adId, string userId, CancellationToken cancellationToken = default);
         Task<Items> GetItemAdById(long adId, CancellationToken cancellationToken = default);
         Task<Items> GetItemAdBySlug(string slug, CancellationToken cancellationToken = default);
@@ -68,5 +67,9 @@ namespace QLN.Common.Infrastructure.IService
         Task<string> Favourite(WishlistCreateDto dto, string userId, CancellationToken cancellationToken);
         Task<List<Wishlist>> GetAllByUserFavouriteList(string userId, Vertical vertical, SubVertical subVertical, CancellationToken cancellationToken);
         Task<string> UnFavourite(string userId, Vertical vertical, SubVertical subVertical, long adId, CancellationToken cancellationToken);
+
+        Task<Items> P2PromoteItems(ItemsPayToPromote promote, string uid, CancellationToken ct);
+        Task<List<CategoryCountDto>> GetCategoryCountsAsync(CancellationToken cancellationToken);
+
     }
 }

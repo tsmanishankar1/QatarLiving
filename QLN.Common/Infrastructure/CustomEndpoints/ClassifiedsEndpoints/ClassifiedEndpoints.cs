@@ -18,6 +18,7 @@ using QLN.Common.Infrastructure.CustomException;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService;
 using QLN.Common.Infrastructure.IService.IClassifiedBoService;
+using QLN.Common.Infrastructure.IService.IProductService;
 using QLN.Common.Infrastructure.IService.ISearchService;
 using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.Subscriptions;
@@ -156,8 +157,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         "items" => (ConstantValues.IndexNames.ClassifiedsItemsIndex, typeof(ClassifiedsItemsIndex)),
                         "preloved" => (ConstantValues.IndexNames.ClassifiedsPrelovedIndex, typeof(ClassifiedsPrelovedIndex)),
                         "collectibles" => (ConstantValues.IndexNames.ClassifiedsCollectiblesIndex, typeof(ClassifiedsCollectiblesIndex)),
-                        "deals" => (ConstantValues.IndexNames.ClassifiedsDealsIndex,typeof(ClassifiedsDealsIndex)),
-                        "stores" => (ConstantValues.IndexNames.ClassifiedStoresIndex,typeof(ClassifiedStoresIndex)),
+                        "deals" => (ConstantValues.IndexNames.ClassifiedsDealsIndex, typeof(ClassifiedsDealsIndex)),
+                        "stores" => (ConstantValues.IndexNames.ClassifiedStoresIndex, typeof(ClassifiedStoresIndex)),
                         _ => (null, null)
                     };
 
@@ -655,7 +656,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 ProblemHttpResult>>
             (
                 [Required][FromQuery] string userId,
-                [Required][FromQuery] Vertical vertical,  
+                [Required][FromQuery] Vertical vertical,
                 [FromQuery] SubVertical? subVertical,
                 IClassifiedService service,
                 HttpContext context
@@ -671,7 +672,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         Instance = context.Request.Path
                     });
                 }
-                
+
                 if (subVertical.HasValue)
                 {
                     var isValid = vertical switch
@@ -823,8 +824,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             group.MapPost("items", async Task<IResult> (
                 HttpContext httpContext,
                 [FromBody] ClassifiedsItemsDTO dto,
-                [FromQuery] SaveIntent intent,
                 IClassifiedService service,
+                IV2SubscriptionService subscriptionService,
                 AuditLogger auditLogger,
                 CancellationToken token) =>
             {
@@ -835,54 +836,17 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 {
                     uid = httpContext.User.FindFirst("sub")?.Value ?? "unknown";
                     var userName = httpContext.User.FindFirst("preferred_username")?.Value ?? "unknown";
-
-                    // Get all subscription claims
-                    var subscriptionClaims = httpContext.User.FindAll("subscriptions").ToList();
-                    Guid? subscriptionId = null;
-                    DateTime? expiryDate = null;
-
-                    // Find items subscription (Vertical=3 and SubVertical=4)
-                    foreach (var claim in subscriptionClaims)
-                    {
-                        try
-                        {
-                            using (var doc = JsonDocument.Parse(claim.Value))
-                            {
-                                var subscription = doc.RootElement;
-
-                                if (subscription.TryGetProperty("Vertical", out var verticalProp) &&
-                                    verticalProp.GetInt32() == 3 &&
-                                    subscription.TryGetProperty("SubVertical", out var subVerticalProp) &&
-                                    subVerticalProp.GetInt32() == 1)
-                                {
-
-                                    if (subscription.TryGetProperty("EndDate", out var endDateProp) &&
-                                    endDateProp.ValueKind == JsonValueKind.String)
-                                    {
-                                        // Parse to DateTime and ensure UTC
-                                        expiryDate = DateTime.Parse(endDateProp.GetString()).ToUniversalTime();
-                                        subscriptionId = Guid.Parse(subscription.GetProperty("Id").GetString());
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-                        catch
-                        {
-                            continue;
-                        }
-                    }
-
-                    if (subscriptionId == null)
-                    {
-                        return TypedResults.BadRequest(new ProblemDetails
-                        {
-                            Title = "Subscription Required",
-                            Detail = "No items subscription found for this user.",
-                            Status = StatusCodes.Status400BadRequest
-                        });
-                    }
                     var slug = SlugHelper.GenerateSlug(dto.Title, dto.Category, "Classifieds", Guid.NewGuid());
+                    var freeSub = (await subscriptionService.GetUserFreeSubscriptionsAsync(uid, token))
+                                                             .OrderBy(s => s.EndDate)
+                                                             .FirstOrDefault();
+                    var subscriptionId = Guid.Empty;
+                    var expiryDate = DateTime.MinValue;
+                    if (freeSub is not null)
+                    {
+                        subscriptionId = freeSub.Id;
+                        expiryDate = freeSub.EndDate;
+                    }
                     var request = new Items
                     {
                         UserId = uid,
@@ -945,7 +909,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                             Status = StatusCodes.Status400BadRequest
                         });
                     }
-                    var response = await service.CreateClassifiedItemsAd(request, intent, token);
+                    var response = await service.CreateClassifiedItemsAd(request, token);
 
                     await auditLogger.LogAuditAsync(
                         module: "Classified",
@@ -999,7 +963,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                     );
                 }
             })
-                .WithName("PostItemsAd")
+                .WithName("PostItemsAdsaveintent")
                 .WithTags("Classified")
                 .WithSummary("Post classified items ad using authenticated user")
                 .WithDescription("Takes user ID from JWT token and creates the ad.")
@@ -1011,7 +975,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
             group.MapPost("items/post-by-id", async Task<IResult> (
                 Items dto,
-                [FromQuery] SaveIntent intent,
                 IClassifiedService service,
                 CancellationToken token) =>
             {
@@ -1027,7 +990,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         });
                     }
 
-                    var response = await service.CreateClassifiedItemsAd(dto, intent, token);
+                    var response = await service.CreateClassifiedItemsAd(dto, token);
                     return TypedResults.Created($"/api/classifieds/items/user-ads-by-id/{response.AdId}", response);
 
                 }
@@ -1083,7 +1046,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 [FromQuery] long adId,
                 IClassifiedService service,
                 AuditLogger auditLogger,
-                CancellationToken token) =>      
+                CancellationToken token) =>
             {
                 string? uid = "unknown";
                 string? subId = null;
@@ -1097,7 +1060,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                     Guid? subscriptionId = null;
                     DateTime? expiryDate = null;
 
-                   
+
                     foreach (var claim in subscriptionClaims)
                     {
                         try
@@ -1176,7 +1139,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 string userId,
                 long adId,
                 [FromQuery] SubVertical subVertical,
-                Guid subscriptionId,       
+                Guid subscriptionId,
                 IClassifiedService service,
                 CancellationToken token) =>
             {
@@ -1229,8 +1192,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
             group.MapPost("preloved", async Task<IResult> (
      HttpContext httpContext,
-     [FromBody]ClassifiedsPrelovedDTO dto,
-     [FromQuery]SaveIntent intent,
+     [FromBody] ClassifiedsPrelovedDTO dto,
      IClassifiedService service,
      AuditLogger auditLogger,
      CancellationToken token) =>
@@ -1238,7 +1200,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 string? uid = "unknown";
                 string? subId = null;
                 string? name = null;
-                try                
+                try
                 {
                     uid = httpContext.User.FindFirst("sub")?.Value ?? "unknown";
                     var userName = httpContext.User.FindFirst("preferred_username")?.Value ?? "unknown";
@@ -1295,8 +1257,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                     var slug = SlugHelper.GenerateSlug(dto.Title, dto.Category, "Classifieds", Guid.NewGuid());
                     var request = new Preloveds
                     {
-                        UserId = uid,                    
-                        AuthenticityCertificateUrl=dto.AuthenticityCertificateUrl,
+                        UserId = uid,
+                        AuthenticityCertificateUrl = dto.AuthenticityCertificateUrl,
                         HasAuthenticityCertificate = dto.HasAuthenticityCertificate,
                         L2CategoryId = dto.L2CategoryId,
                         BuildingNumber = dto.BuildingNumber,
@@ -1325,7 +1287,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         StreetNumber = dto.StreetNumber,
                         ContactNumberCountryCode = dto.ContactNumberCountryCode,
                         WhatsappNumberCountryCode = dto.WhatsappNumberCountryCode,
-                        ExpiryDate = expiryDate,                        
+                        ExpiryDate = expiryDate,
                         FeaturedExpiryDate = null,
                         IsFeatured = false,
                         IsPromoted = false,
@@ -1348,7 +1310,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         Attributes = dto.Attributes,
                     };
 
-                    var result = await service.CreateClassifiedPrelovedAd(request, intent, token);
+                    var result = await service.CreateClassifiedPrelovedAd(request, token);
 
                     await auditLogger.LogAuditAsync(
                         module: "Classified",
@@ -1385,14 +1347,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
             group.MapPost("preloved/post-by-id", async Task<IResult> (
                 Preloveds dto,
-                [FromQuery] SaveIntent intent,
                 IClassifiedService service,
                 CancellationToken token) =>
             {
                 try
                 {
                     if (dto.UserId == null)
-                    {   
+                    {
                         return TypedResults.BadRequest(new ProblemDetails
                         {
                             Title = "Validation Error",
@@ -1401,7 +1362,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         });
                     }
 
-                    var result = await service.CreateClassifiedPrelovedAd(dto, intent, token);
+                    var result = await service.CreateClassifiedPrelovedAd(dto, token);
 
                     return TypedResults.Created(
            $"/api/classifieds/preloved/user-ads-by-id/{result.AdId}", result);
@@ -1684,7 +1645,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                                     verticalProp.GetInt32() == 3 &&
                                     subscription.TryGetProperty("SubVertical", out var subVerticalProp) &&
                                     subVerticalProp.GetInt32() == 4)
-                                {                                    
+                                {
                                     if (subscription.TryGetProperty("EndDate", out var endDateProp) &&
                                     endDateProp.ValueKind == JsonValueKind.String)
                                     {
@@ -2312,8 +2273,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
             group.MapPost("collectibles", async Task<IResult> (
                 HttpContext httpContext,
-                [FromBody]ClassifiedsCollectablesDTO dto,
-                [FromQuery] SaveIntent intent,
+                [FromBody] ClassifiedsCollectablesDTO dto,                
                 IClassifiedService service,
                 AuditLogger auditLogger,
                 CancellationToken token) =>
@@ -2345,7 +2305,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                                     subscription.TryGetProperty("SubVertical", out var subVerticalProp) &&
                                     subVerticalProp.GetInt32() == 4)
                                 {
-                                   
+
                                     if (subscription.TryGetProperty("EndDate", out var endDateProp) &&
                                     endDateProp.ValueKind == JsonValueKind.String)
                                     {
@@ -2373,7 +2333,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         });
                     }
 
-                    var slug = SlugHelper.GenerateSlug(dto.Title, dto.Category, "Classifieds", Guid.NewGuid());                    
+                    var slug = SlugHelper.GenerateSlug(dto.Title, dto.Category, "Classifieds", Guid.NewGuid());
                     var request = new Collectibles
                     {
                         UserId = uid,
@@ -2431,8 +2391,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         Attributes = dto.Attributes,
 
                     };
-                   
-                    var result = await service.CreateClassifiedCollectiblesAd(request, intent, token);
+
+                    var result = await service.CreateClassifiedCollectiblesAd(request, token);
 
                     await auditLogger.LogAuditAsync(
                         module: "Classified",
@@ -2487,7 +2447,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             group.MapPost("collectibles/post-by-id", async Task<IResult> (
                 Collectibles dto,
                 IClassifiedService service,
-                [FromQuery] SaveIntent intent,
                 CancellationToken token) =>
             {
                 try
@@ -2502,7 +2461,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         });
                     }
 
-                    var result = await service.CreateClassifiedCollectiblesAd(dto, intent, token);
+                    var result = await service.CreateClassifiedCollectiblesAd(dto, token);
 
                     return TypedResults.Created(
                         $"/api/classifieds/collectibles/user-ads-by-id/{result.AdId}", result);
@@ -2547,7 +2506,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             group.MapPost("deals", async Task<IResult> (
                 HttpContext httpContext,
                 [FromBody] ClassifiedsDealsDTO dto,
-                [FromQuery] SaveIntent intent,
                 IClassifiedService service,
                 AuditLogger auditLogger,
                 CancellationToken token) =>
@@ -2609,17 +2567,18 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
                     var slug = SlugHelper.GenerateSlug(dto.Offertitle, dto.StartDate.ToString(), "Classifieds", Guid.NewGuid());
 
-                    var request = new Deals {
-                        UserId = uid,                        
-                        Description = dto.Description,      
+                    var request = new Deals
+                    {
+                        UserId = uid,
+                        Description = dto.Description,
                         Slug = slug,
                         IsActive = true,
                         CreatedBy = userName,
                         CreatedAt = DateTime.UtcNow,
-                        FlyerFileUrl = dto.FlyerFileUrl,   
+                        FlyerFileUrl = dto.FlyerFileUrl,
                         StartDate = dto.StartDate,
-                        EndDate= dto.EndDate,
-                        DataFeedUrl=dto.DataFeedUrl,
+                        EndDate = dto.EndDate,
+                        DataFeedUrl = dto.DataFeedUrl,
                         WebsiteUrl = dto.WebsiteUrl,
                         ContactNumber = dto.ContactNumber,
                         WhatsappNumber = dto.WhatsAppNumber,
@@ -2633,11 +2592,11 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         SubscriptionId = subscriptionId,
                         XMLlink = dto.XMLlink,
                         Offertitle = dto.Offertitle,
-                    }; 
-                    
+                    };
+
 
                     //dto.UserId = uid;
-                    var result = await service.CreateClassifiedDealsAd(request, intent, token);
+                    var result = await service.CreateClassifiedDealsAd(request, token);
 
                     await auditLogger.LogAuditAsync(
                         module: "Classified",
@@ -2712,7 +2671,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
             group.MapPost("deals/post-by-id", async Task<IResult> (
                 Deals dto,
-                [FromQuery] SaveIntent intent,
                 IClassifiedService service,
                 CancellationToken token) =>
             {
@@ -2728,7 +2686,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         });
                     }
 
-                    var result = await service.CreateClassifiedDealsAd(dto, intent, token);
+                    var result = await service.CreateClassifiedDealsAd(dto, token);
 
                     return TypedResults.Created($"/api/classifieds/deals/user-ads-by-id/{result.AdId}", result);
 
@@ -2778,7 +2736,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
                 .ExcludeFromDescription();
-           
+
 
             group.MapDelete("/classified/{subVertical}/{adId:long}", async Task<Results<
                 Ok<DeleteAdResponseDto>,
@@ -2806,7 +2764,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         Status = StatusCodes.Status400BadRequest,
                         Instance = context.Request.Path
                     });
-                }                
+                }
 
                 try
                 {
@@ -2920,7 +2878,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         Status = StatusCodes.Status400BadRequest,
                         Instance = context.Request.Path
                     });
-                }               
+                }
 
                 try
                 {
@@ -3138,7 +3096,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
                 .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-            
+
             group.MapGet("/preloved/slug/{slug}", async Task<IResult> (
                 string slug,
                 IClassifiedService service,
@@ -3214,8 +3172,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .Produces<Preloveds>(StatusCodes.Status200OK)
                 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
                 .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
-                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);            
-            
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
             group.MapGet("/collectibles/slug/{slug}", async Task<IResult> (
                 string slug,
                 IClassifiedService service,
@@ -3292,7 +3250,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
                 .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-            
+
             group.MapGet("/deals/slug/{slug}", async Task<IResult> (
                 string slug,
                 IClassifiedService service,
@@ -3389,7 +3347,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                     string userName = context.User.FindFirst("preferred_username")?.Value ?? "unknown";
 
                     var ads = await service.GetAllItemsAdByUser(uid, cancellationToken);
-                    
+
                     return TypedResults.Ok(ads);
                 }
                 catch (KeyNotFoundException ex)
@@ -4466,7 +4424,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                     }
 
                     return TypedResults.Ok(result);
-                }               
+                }
                 catch (Exception ex)
                 {
                     if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
@@ -4584,7 +4542,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 IClassifiedService service,
                 CancellationToken token) =>
                     {
-                       var uid = context.User.FindFirst("sub")?.Value ?? "unknown";
+                        var uid = context.User.FindFirst("sub")?.Value ?? "unknown";
                         var userName = context.User.FindFirst("preferred_username")?.Value ?? "unknown";
 
                         if (uid == null)
@@ -4595,7 +4553,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                                 Detail = "Authenticated user ID is missing or invalid.",
                                 Status = StatusCodes.Status400BadRequest
                             });
-                        }                        
+                        }
 
                         try
                         {
@@ -4649,7 +4607,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         Detail = "Authenticated user ID is missing or invalid.",
                         Status = StatusCodes.Status400BadRequest
                     });
-                }                
+                }
 
                 try
                 {
@@ -4722,7 +4680,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                                     if (subscription.TryGetProperty("EndDate", out var endDateProp) &&
                                     endDateProp.ValueKind == JsonValueKind.String)
                                     {
-                                        
+
                                         expiryDate = DateTime.Parse(endDateProp.GetString()).ToUniversalTime();
                                         subscriptionId = Guid.Parse(subscription.GetProperty("Id").GetString());
                                         break;
@@ -4783,11 +4741,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
 .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-
-
-
-
-
 
 
             group.MapPut("/promoted/{userId}/{adId}",
@@ -4860,7 +4813,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
 
 
-        
+
 
 
             group.MapPut("/items/feature", async Task<IResult> (
@@ -5009,7 +4962,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                             Status = StatusCodes.Status400BadRequest
                         });
                     }
-                    await service.FeatureClassifiedAd(dto, userId, subscriptionid ,token);
+                    await service.FeatureClassifiedAd(dto, userId, subscriptionid, token);
                     return TypedResults.Ok(new
                     {
                         AdId = dto.AdId,
@@ -5062,7 +5015,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-          
+
 
 
             group.MapPost("user-dashboard/bulk-action", async Task<IResult> (
@@ -5132,8 +5085,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                             var result = await service.BulkUpdateAdPublishStatusAsync(
                                 subVertical,
                                 uid,
-                                adIds, 
-                                isPublished,subscriptionId.Value,token);
+                                adIds,
+                                isPublished, subscriptionId.Value, token);
 
                             await auditLogger.LogAuditAsync(
                                 module: "Classified",
@@ -5611,6 +5564,32 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
             #endregion
 
+
+            group.MapGet("get-category-count", async Task<IResult> (
+                 IClassifiedService service,
+                 CancellationToken token) =>
+            {
+                try
+                {
+                    var result = await service.GetCategoryCountsAsync(token);
+                    return TypedResults.Ok(result);
+                }
+                catch (Exception ex)
+                {
+                    throw ex;
+                }
+            })
+.WithName("GetCategoryCount")
+.WithTags("Classified")
+.WithSummary("Get category count")
+.WithDescription("Get all published ads count based on category.")
+.AllowAnonymous()
+.Produces<List<SavedSearchResponseDto>>(StatusCodes.Status200OK)
+.Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+.Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+
+
             return group;
         }
         public static RouteGroupBuilder MapClassifiedsFeaturedItemEndpoint(this RouteGroupBuilder group)
@@ -5664,7 +5643,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             .WithDescription("Fetches every ClassifiedsIndex document where IsFeatured = true.")
             .Produces<IEnumerable<ClassifiedsIndex>>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);        
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
             return group;
         }
 
@@ -5700,10 +5679,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 {
                     Text = req.Text,
                     Filters = req.Filters,
-                    OrderBy = req.OrderBy
-                    ,
-                    PageNumber = req.PageNumber,
-                    PageSize = req.PageSize
+                    OrderBy = ""
                 };
                 if (indexName == null)
                 {
@@ -5766,32 +5742,62 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                     ProductDescription = g.ProductDescription,
                     Features = g.Features,
                     Images = g.Images,
-                    ProductSlug = g.ProductSlug
+                    ProductSlug = g.ProductSlug,
+                    ProductCategory = g.ProductCategory,
+                    ProductUrl = g.ProductUrl
                 }).ToList()
             };
         })
         .ToList()
                         };
 
+                        if (req.OrderBy == "desc")
+                        {
+                            foreach (var store in response.Stores)
+                            {
+                                store.Products = store.Products
+                                    .OrderByDescending(p => p.ProductPrice)
+                                    .ToList();
+                            }
+                        }
+                        else
+                        {
+                            foreach (var store in response.Stores)
+                            {
+                                store.Products = store.Products
+                                    .OrderBy(p => p.ProductPrice)
+                                    .ToList();
+                            }
+                        }
 
+                        // Pagination
+                        int page = Math.Max(1, req.PageNumber);
+                        int pageSize = Math.Max(1, Math.Min(100, req.PageSize));
+                        var totalCount = response.Stores.Count;
+                        int totalPages = (int)Math.Ceiling((double)totalCount / pageSize);
 
+                        if (page > totalPages && totalPages > 0)
+                            page = totalPages;
 
-
+                        var pagedEntities = response.Stores
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                   .ToList();
 
 
                         return Results.Ok(new ClassifiedBOPageResponse<StoresGroup>
-                        {
-                            Page = req.PageNumber,
-                            PerPage = req.PageSize,
-                            TotalCount = results.TotalCount??0,
-                            Items = response.Stores
+                            {
+                                Page = page,
+                                PerPage = pageSize,
+                                TotalCount = totalCount,
+                                Items = pagedEntities
                         });
                     }
                     else
                     {
                         return Results.NotFound();
                     }
-                   
+
                 }
                 catch (ArgumentException ex)
                 {
@@ -5856,9 +5862,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 {
                     Text = req.Text,
                     Filters = req.Filters,
-                    OrderBy = req.OrderBy,
-                    PageNumber = req.PageNumber,
-                    PageSize = req.PageSize
+                    OrderBy = ""
                 };
                 if (indexName == null)
                 {
@@ -5884,7 +5888,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                                         .Where(x =>
                                             (string.IsNullOrEmpty(CompanyId) || x.CompanyId == CompanyId) &&
                                              (string.IsNullOrEmpty(ProductName) || x.ProductName.ToLower().Contains(ProductName.ToLower()))
-                                       
+
                                         )
                                         .ToList()
                         };
@@ -5893,7 +5897,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         {
                             "desc" => response.Products.OrderByDescending(t => t.ProductPrice).ToList(),
                             "asc" => response.Products.OrderBy(t => t.ProductPrice).ToList(),
-                            _ => response.Products.OrderBy(t => t.ProductPrice).ToList() 
+                            _ => response.Products.OrderBy(t => t.ProductPrice).ToList()
                         };
 
                         int currentPage = Math.Max(1, req.PageNumber);
@@ -5955,15 +5959,53 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             .Produces(StatusCodes.Status404NotFound)
             .ProducesProblem(StatusCodes.Status500InternalServerError);
 
+            group.MapPost("/stores-search-category-list/{StoreSlug}", async Task<IResult> (
+    [FromRoute] string? StoreSlug,
+    [FromServices] ISearchService svc
+) =>
+            {
+                string indexName = ConstantValues.IndexNames.ClassifiedStoresIndex;
 
-            
+                var request = new CommonSearchRequest
+                {
+                    Text = "*",
+                    Filters = null,
+                    //  OrderBy = req.OrderBy,
+                    PageNumber = 1,
+                    PageSize = 100,
+
+                };
+                var results = await svc.GetAllAsync(indexName, request); // You may need to pass indexName/request appropriately
+
+                if (results?.ClassifiedStores == null)
+                    return Results.NoContent();
+
+                var categories = results.ClassifiedStores
+                    .Where(s => s.StoreSlug == StoreSlug && !string.IsNullOrEmpty(s.ProductCategory))
+                    .Select(s => s.ProductCategory)
+                    .Distinct()
+                    .ToList();
+
+                if (!categories.Any())
+                    return Results.NoContent();
+
+                return Results.Ok(new { Categories = categories });
+
+            }).WithName("StoreCategory")
+.WithTags("Classified")
+.WithSummary("List the categories")
+.WithDescription("List the categories from stores")
+.Produces<string>(StatusCodes.Status200OK)
+.Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+.Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             group.MapPost("/stores-search-product-list/{StoreSlug}", async (
                 [FromRoute] string? StoreSlug,
-    
        [FromQuery] string? OrderBy,
        [FromQuery] int PageNumber,
        [FromQuery] int PageSize,
+       [FromQuery] string? SearchProduct,
+       [FromQuery] string? Category,
      [FromServices] ISearchService svc,
      [FromServices] ILoggerFactory logFac
  ) =>
@@ -5975,7 +6017,11 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                     Filters = new Dictionary<string, object>()
     {
          { "StoreSlug", StoreSlug }
-    }, OrderBy=OrderBy, PageNumber=PageNumber,PageSize=PageSize,SubVertical="stores"
+    },
+                    OrderBy = OrderBy,
+                    PageNumber = PageNumber,
+                    PageSize = PageSize,
+                    SubVertical = "stores"
                 };
                 var logger = logFac.CreateLogger("ClassifiedStoresEndpoints");
 
@@ -6000,10 +6046,10 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 var request = new CommonSearchRequest
                 {
                     Text = req.Text,
-                    Filters = req.Filters,
+                    Filters = req.Filters
                   //  OrderBy = req.OrderBy,
-                    PageNumber = req.PageNumber,
-                    PageSize = req.PageSize,
+                    //PageNumber = req.PageNumber,
+                    //PageSize = req.PageSize,
                     
                 };
                 if (indexName == null)
@@ -6028,24 +6074,41 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         {
                             Products = results.ClassifiedStores
                                         .Where(x =>
-                                            (string.IsNullOrEmpty(StoreSlug) || x.StoreSlug.ToLower().Contains(StoreSlug.ToLower()))
+                                            (string.IsNullOrEmpty(StoreSlug) || x.StoreSlug.ToLower().Contains(StoreSlug.ToLower())) &&
+                                            (string.IsNullOrEmpty(SearchProduct) || x.ProductName.ToLower().Contains(SearchProduct.ToLower())) &&
+                                            (string.IsNullOrEmpty(Category) || x.ProductCategory.ToLower().Contains(Category.ToLower()))
                                         )
                                         .ToList()
                         };
 
-                        response.Products = req.OrderBy?.ToLower() switch
+                        response.Products = OrderBy?.ToLower() switch
                         {
                             "desc" => response.Products.OrderByDescending(t => t.ProductPrice).ToList(),
                             "asc" => response.Products.OrderBy(t => t.ProductPrice).ToList(),
                             _ => response.Products.OrderBy(t => t.ProductPrice).ToList()
                         };
 
+                        // Pagination
+                        int page = Math.Max(1, req.PageNumber);
+                        int pageSize = Math.Max(1, Math.Min(100, req.PageSize));
+                        var totalCount = response.Products.Count;
+                        int totalPages = (int)Math.Ceiling((double)totalCount / pageSize);
+
+                        if (page > totalPages && totalPages > 0)
+                            page = totalPages;
+
+                        var pagedEntities = response.Products
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                   .ToList();
+
+
                         return Results.Ok(new ClassifiedBOPageResponse<ClassifiedStoresIndex>
                         {
-                            Page = req.PageNumber,
-                            PerPage = req.PageSize,
-                            TotalCount = response.Products.Count,
-                            Items = response.Products
+                            Page = page,
+                            PerPage = pageSize,
+                            TotalCount = totalCount,
+                            Items = pagedEntities
                         });
                     }
                     else
@@ -6085,7 +6148,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
            .Produces(StatusCodes.Status404NotFound)
            .ProducesProblem(StatusCodes.Status500InternalServerError);
 
-            group.MapPost("/stores-search-product-details/{ProductSlug}", async ( 
+            group.MapPost("/stores-search-product-details/{ProductSlug}", async (
       [FromRoute] string ProductSlug,
       [FromQuery] string? OrderBy,
       [FromQuery] int PageNumber,
@@ -6163,14 +6226,14 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                                         .ToList()
                         };
 
-                        response.Products = req.OrderBy?.ToLower() switch
+                        response.Products = OrderBy?.ToLower() switch
                         {
                             "desc" => response.Products.OrderByDescending(t => t.ProductPrice).ToList(),
                             "asc" => response.Products.OrderBy(t => t.ProductPrice).ToList(),
                             _ => response.Products.OrderBy(t => t.ProductPrice).ToList()
                         };
 
-                        
+
                         return Results.Ok(new ClassifiedBOPageResponse<ClassifiedStoresIndex>
                         {
                             Page = req.PageNumber,
@@ -6223,7 +6286,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
           BadRequest<ProblemDetails>,
           ProblemHttpResult>>
           (
-          [FromServices]IClassifiedsFoService service,
+          [FromServices] IClassifiedsFoService service,
           HttpContext context,
            string? CompanyId,
           CancellationToken cancellationToken
@@ -6257,8 +6320,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                     {
                         return TypedResults.Forbid();
                     }
-                
-                    
+
+
                 }
                 catch (Exception ex)
                 {
@@ -6306,7 +6369,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 }
             })
                     .WithName("StoresDashboardHeaders")
-                   .ExcludeFromDescription()              
+                   .ExcludeFromDescription()
                     .WithTags("Classified")
                     .WithSummary("To display the stores dashboard header information.")
                     .WithDescription("Fetches all stores dashboard header information.")
@@ -6353,7 +6416,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         return TypedResults.Forbid();
                     }
 
-                   
+
 
                 }
                 catch (Exception ex)
@@ -6410,7 +6473,286 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
+            #region payToPromote with addons for items
+
+            group.MapPost("/items/paytopromote", async Task<IResult> (
+                [FromBody] ItemsPayToPromote request,
+                HttpContext httpContext,
+                AuditLogger auditLogger,
+                IClassifiedService service,
+                CancellationToken cancellationToken) =>
+            {
+                string uid = "unknown";
+                string username = "unknown";
+
+                try
+                {
+                    (uid, username) = UserTokenHelper.ExtractUserAsync(httpContext);
+
+
+                    if (string.IsNullOrWhiteSpace(uid))
+                    {
+                        return Results.Problem(
+                            detail: "User ID could not be extracted from token.",
+                            statusCode: StatusCodes.Status403Forbidden,
+                            title: "Unauthorized Access");
+                    }
+
+                    if (request is null || request.ItemsAdId <= 0)
+                    {
+                        return Results.BadRequest(new ProblemDetails
+                        {
+                            Title = "Invalid Request",
+                            Detail = "Invalid request data. ItemsAdId must be a positive number.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    var result = await service.P2PromoteItems(request, uid, cancellationToken);
+
+                    await auditLogger.LogAuditAsync(
+                        module: "Items",
+                        httpMethod: "POST",
+                        apiEndpoint: "/api/classifieds/itemspaytopromote",
+                        message: $"Items ad {request.ItemsAdId} promoted successfully",
+                        createdBy: uid,
+                        payload: request,
+                        cancellationToken: cancellationToken
+                    );
+
+                    return Results.Ok(result);
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    await auditLogger.LogExceptionAsync("Items", "/api/items/paytopromote", ex, uid, cancellationToken);
+                    return Results.Problem(
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status404NotFound,
+                        title: "Invalid Request");
+                }
+                catch (InvalidDataException ex)
+                {
+                    await auditLogger.LogExceptionAsync("Items", "/api/items/paytopromote", ex, uid, cancellationToken);
+                    return Results.Problem(
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status400BadRequest,
+                        title: "Invalid Request");
+                }
+                catch (Exception ex)
+                {
+                    await auditLogger.LogExceptionAsync("Items", "/api/items/paytopromote", ex, uid, cancellationToken);
+                    return Results.Problem(
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        title: "Internal Server Error");
+                }
+            })
+                .WithName("P2PromoteItems")
+                .WithTags("Classified")
+                .WithSummary("Promote an Items ad")
+                .WithDescription("Promotes an Items ad (pay to promote). Requires a valid ItemsAdId.")
+                .Produces<Items>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
+                .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapPost("/items/p2promotebyuserid", async Task<IResult> (
+                [FromBody] ItemsPayToPromote request,
+                [FromQuery] string uid,    
+                IClassifiedService service,
+                CancellationToken cancellationToken) =>
+            {
+                try
+                {
+                    if (string.IsNullOrWhiteSpace(uid))
+                    {
+                        return Results.Problem(
+                            detail: "User id (uid) is required.",
+                            statusCode: StatusCodes.Status400BadRequest,
+                            title: "Invalid Request");
+                    }
+
+                    if (request is null || request.ItemsAdId <= 0)
+                    {
+                        return Results.BadRequest(new ProblemDetails
+                        {
+                            Title = "Invalid Request",
+                            Detail = "Invalid request data. ItemsAdId must be a positive number.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    var result = await service.P2PromoteItems(request, uid, cancellationToken);
+                    return Results.Ok(result);
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    return Results.Problem(
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status404NotFound,
+                        title: "Invalid Request");
+                }
+                catch (InvalidDataException ex)
+                {
+                    return Results.Problem(
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status400BadRequest,
+                        title: "Invalid Request");
+                }
+                catch (Exception ex)
+                {
+                    return Results.Problem(
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        title: "Internal Server Error");
+                }
+            })
+                .ExcludeFromDescription()
+                .WithName("P2PromoteItemsByUserId")
+                .WithTags("Classified")
+                .WithSummary("Promote an Items ad (by user id)")
+                .WithDescription("Promotes an Items ad by user id. Requires a valid ItemsAdId and uid.")
+                .Produces<Items>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            #endregion
+
+            group.MapGet("/stores-dashboard-process-csv",
+   async Task<Results<Ok<string>, BadRequest<ProblemDetails>, ForbidHttpResult, ProblemHttpResult>> (
+       string Url,
+       string CsvPlatform,
+       string CompanyId,
+       string SubscriptionId,
+       string Domain,
+       [FromServices] IClassifiedsFoService service,
+       HttpContext context,
+       CancellationToken cancellationToken
+   ) =>
+   {
+       try
+       {
+           var (userId, error) = GenericClaimsHelper.GetValidUserId(context.User);
+           if (!string.IsNullOrEmpty(error))
+           {
+               return TypedResults.Problem(
+               title: "Subscription issue in token.",
+               detail: error,
+               statusCode: StatusCodes.Status500InternalServerError,
+               instance: context.Request.Path
+               );
+           }
+
+           if (string.IsNullOrEmpty(userId))
+           {
+               return TypedResults.Forbid();
+           }
+
+           var result = await service.GetFOProcessStoresCSV(Url, CsvPlatform, CompanyId, SubscriptionId, userId?.ToString(), Domain, cancellationToken);
+
+           switch (result?.ToString())
+           {
+               case "created":
+                   return TypedResults.Ok("Products have been successfully created at the specified store(s).");
+
+               case "No products":
+                   return TypedResults.BadRequest(new ProblemDetails
+                   {
+                       Title = "No Products Found",
+                       Detail = "The CSV did not contain any valid products to process.",
+                       Status = StatusCodes.Status400BadRequest
+                   });
+
+               case "Insufficient quota":
+                   return TypedResults.BadRequest(new ProblemDetails
+                   {
+                       Title = "Insufficient quota",
+                       Detail = "The CSV did not contain any valid quota to process.",
+                       Status = StatusCodes.Status400BadRequest
+                   });
+
+               case "Fail to reserve quota":
+                   return TypedResults.BadRequest(new ProblemDetails
+                   {
+                       Title = "Fail to reserve quota",
+                       Detail = "The CSV fail to reserve quota to process.",
+                       Status = StatusCodes.Status400BadRequest
+                   });
+
+               default:
+                   return TypedResults.BadRequest(new ProblemDetails
+                   {
+                       Title = "Store Processing Failed",
+                       Detail = result?.ToString() ?? "Unknown error occurred.",
+                       Status = StatusCodes.Status400BadRequest
+                   });
+           }
+       }
+       catch (Exception ex)
+       {
+           return TypedResults.Problem(
+               title: "Internal Server Error",
+               detail: ex.Message,
+               statusCode: StatusCodes.Status500InternalServerError,
+               instance: context.Request.Path
+           );
+       }
+   })
+               .WithName("GetDashboardProcessStoresCSV")
+               .WithTags("Classified")
+               .WithSummary("Process the csv file.")
+               .WithDescription("Processing the uploaded csv.Storing the products into data layer.")
+               .Produces<string>(StatusCodes.Status200OK)
+               .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+               .Produces(StatusCodes.Status403Forbidden)
+               .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapGet("/stores-dashboard-processing-csv",
+   async Task<Results<Ok<string>, BadRequest<ProblemDetails>, ForbidHttpResult, ProblemHttpResult>> (
+       string Url,
+        string CsvPlatform,
+       string CompanyId,
+       string SubscriptionId,
+       string UserId,
+       string Domain,
+       [FromServices] IClassifiedsFoService service,
+       HttpContext context,
+       CancellationToken cancellationToken
+   ) =>
+   {
+       try
+       {
+           var result = await service.GetFOProcessStoresCSV(Url, CsvPlatform, CompanyId, SubscriptionId, UserId, Domain, cancellationToken);
+           return TypedResults.Ok(result);
+
+       }
+       catch (Exception ex)
+       {
+           return TypedResults.Problem(
+               title: "Internal Server Error",
+               detail: ex.Message,
+               statusCode: StatusCodes.Status500InternalServerError,
+               instance: context.Request.Path
+           );
+       }
+   })
+               .ExcludeFromDescription()
+               //.AllowAnonymous()
+               .WithName("GetDashboardProcessStoreCSV")
+               .WithTags("Classified")
+               .WithSummary("Processing the csv.")
+               .WithDescription("Processing the uploaded csv.Storing the products into data layer.")
+               .Produces<string>(StatusCodes.Status200OK)
+               .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+               .Produces(StatusCodes.Status403Forbidden)
+               .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
             return group;
+
+
+           
         }
 
     }

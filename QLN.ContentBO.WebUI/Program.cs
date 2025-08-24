@@ -17,7 +17,7 @@ try
     var contentBOAPIURL = builder.Configuration["ServiceUrlPaths:ContentBOAPI"];
     if (string.IsNullOrWhiteSpace(contentBOAPIURL))
     {
-        throw new InvalidOperationException("Content Back Office API URL is missing in the configuration file.");
+        throw new InvalidOperationException("Back Office API URL is missing in the configuration file.");
     }
 
     // Add services to the container.
@@ -42,7 +42,10 @@ try
 
     builder.Services.AddCascadingAuthenticationState();
 
-    builder.Services.AddAuthorizationCore();
+    builder.Services.AddAuthorizationCore(options =>
+    {
+        options.AddPolicy("AdminOnly", policy => policy.RequireRole("business_account")); // just a placeholder role
+    });
 
     builder.Services.AddTransient<JwtTokenHeaderHandler>();
 
@@ -51,11 +54,8 @@ try
     builder.Configuration.GetSection("NavigationPath"));
 
     builder.Services.AddHttpClient<INewsService, NewsService>(client =>
-
     {
-
         client.BaseAddress = new Uri(contentBOAPIURL);
-
     }).AddHttpMessageHandler<JwtTokenHeaderHandler>();
 
     builder.Services.AddHttpClient<IEventsService, EventsService>(client =>
@@ -89,9 +89,9 @@ try
     }).AddHttpMessageHandler<JwtTokenHeaderHandler>();
 
     builder.Services.AddHttpClient<IClassifiedService, ClassifiedService>(client =>
- {
-     client.BaseAddress = new Uri(contentBOAPIURL);
- }).AddHttpMessageHandler<JwtTokenHeaderHandler>();
+    {
+        client.BaseAddress = new Uri(contentBOAPIURL);
+    }).AddHttpMessageHandler<JwtTokenHeaderHandler>();
 
 
     builder.Services.AddHttpClient<IFileUploadService, FileUploadService>(client =>
@@ -126,6 +126,16 @@ try
     }).AddHttpMessageHandler<JwtTokenHeaderHandler>();
 
     builder.Services.AddHttpClient<IDealsService, DealsService>(client =>
+    {
+        client.BaseAddress = new Uri(contentBOAPIURL);
+    }).AddHttpMessageHandler<JwtTokenHeaderHandler>();
+
+    builder.Services.AddHttpClient<ITokenService, TokenService>(client =>
+    {
+        client.BaseAddress = new Uri(contentBOAPIURL);
+    }).AddHttpMessageHandler<JwtTokenHeaderHandler>();
+
+    builder.Services.AddHttpClient<ISubscriptionService, SubscriptionService>(client =>
     {
         client.BaseAddress = new Uri(contentBOAPIURL);
     }).AddHttpMessageHandler<JwtTokenHeaderHandler>();

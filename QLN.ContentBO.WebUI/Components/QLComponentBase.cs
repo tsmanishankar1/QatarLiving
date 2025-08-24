@@ -4,6 +4,7 @@ using MudBlazor;
 using QLN.ContentBO.WebUI.Handlers;
 using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Models;
+using QLN.ContentBO.WebUI.Services;
 using System.Security.Claims;
 
 namespace QLN.ContentBO.WebUI.Components
@@ -16,6 +17,7 @@ namespace QLN.ContentBO.WebUI.Components
         [Inject] public IOptions<NavigationPath> NavigationPath { get; set; } = default!;
         [Inject] public ILogger<QLComponentBase> Logger { get; set; } = default!;
         [Inject] public IFileUploadService FileUploadService { get; set; } = default!;
+        [Inject] public ISubscriptionService SubscriptionService { get; set; } = default!;
 
         public string CurrentUserName { get; set; } = string.Empty;
         public string CurrentUserEmail { get; set; } = string.Empty;
@@ -29,7 +31,7 @@ namespace QLN.ContentBO.WebUI.Components
 
         public string ClassifiedsBlobContainerName => NavigationPath.Value.ClassifiedsBlobContainerName;
 
-        protected async Task AuthorizedPage()
+        protected override async Task OnInitializedAsync()
         {
             try
             {
@@ -40,7 +42,6 @@ namespace QLN.ContentBO.WebUI.Components
                 }
 
                 var authState = await CookieAuthenticationStateProvider.GetAuthenticationStateAsync();
-                var destination = SetDestination();
 
                 var user = authState.User;
                 if (user.Identity != null && user.Identity.IsAuthenticated)
@@ -54,29 +55,16 @@ namespace QLN.ContentBO.WebUI.Components
                 else
                 {
                     IsLoggedIn = false;
-
-                    if (NavigationPath.Value.IsLocal)
-                    {
-                        NavManager.NavigateTo($"{NavigationPath.Value.Login}?destination={destination}", forceLoad: true);
-                    }
-                    else
-                    {
-                        NavManager.NavigateTo($"{NavigationPath.Value.Login}?destination={NavigationPath.Value.BORedirectPrefix}{destination}", forceLoad: true);
-                    }
                 }
             }
             catch (Exception ex)
             {
-                IsLoggedIn = false;
-                Logger.LogError(ex, "AuthorizedPage");
+                Logger.LogError(ex, "OnInitializedAsync");
             }
-        }
-
-        protected virtual string SetDestination()
-        {
-            var destination = new Uri(NavManager.Uri).AbsolutePath.Substring(1);
-
-            return destination;
+            finally
+            {
+                IsLoggedIn = false;
+            }
         }
 
         protected void SetContentWebURl()
@@ -84,6 +72,32 @@ namespace QLN.ContentBO.WebUI.Components
             ArticleDetailBaseURL = $"{NavigationPath.Value.ContentNewsDetail}";
             EventDetailBaseURL = $"{NavigationPath.Value.ContentEventDetail}";
             PostDetailBaseURL = $"{NavigationPath.Value.ContentPostDetail}";
+        }
+
+
+        protected async Task<List<Subscription>> GetSubscriptionProductsAsync(int? vertical = null, int? subvertical = null, int? productType = null)
+        {
+            try
+            {
+                var apiResponse = await SubscriptionService.GetAllSubscriptionProducts(vertical, subvertical, productType);
+
+                if (apiResponse is not null)
+                {
+                    if (apiResponse.IsSuccessStatusCode)
+                    {
+                        var subscriptions = await apiResponse.Content.ReadFromJsonAsync<List<Subscription>>();
+
+                        return subscriptions ?? [];
+                    }
+                }
+
+                return [];
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "GetSubscriptionProductsAsync");
+                return [];
+            }
         }
     }
 }

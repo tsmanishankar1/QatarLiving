@@ -77,7 +77,7 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
             try
             {
                 isTabLoading = true;
-                await AuthorizedPage();
+                await base.OnInitializedAsync();
                 Categories = await GetNewsCategories() ?? [];
                 Slots = await GetSlots();
                 isTabLoading = false;

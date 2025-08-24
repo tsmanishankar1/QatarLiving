@@ -105,13 +105,9 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.ViewTransactions
 
                     if (result != null)
                     {
-                        Transactions = result.Items;
+                        Transactions = result.Records;
                         TotalRecords = result.TotalRecords;
                     }
-                }
-                else
-                {
-                    Console.WriteLine($"API call failed: {response.StatusCode}");
                 }
             }
             catch (Exception ex)

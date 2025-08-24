@@ -1032,9 +1032,9 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
 
 
         public async Task<BulkAdActionResponseitems> BulkItemsAction(
-    BulkActionRequest request,
-    string userId, string userName,
-    CancellationToken cancellationToken = default)
+            BulkActionRequest request,
+            string userId, string userName,
+            CancellationToken cancellationToken = default)
         {
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
@@ -1045,14 +1045,10 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
             var failedIds = new List<long>();
             var succeededIds = new List<long>();
 
-
-
-                _logger.LogInformation("Started Bulk Items Action. Request: {Action} for {Count} Ads.", request.Action, request.AdIds?.Count);
+            _logger.LogInformation("Started Bulk Items Action. Request: {Action} for {Count} Ads.", request.Action, request.AdIds?.Count);
 
             try
             {
-                _logger.LogInformation("Started Bulk Items Action. Request: {Action} for {Count} Ads.", request.Action, request.AdIds?.Count);
-
                 var ads = await Task.WhenAll(request.AdIds.Select(id => _classifiedService.GetItemAdById(id, cancellationToken)));
                 _logger.LogInformation("{Count} Ads retrieved.", ads.Length);
 
@@ -1109,27 +1105,62 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
 
                     if (requiresQuota)
                     {
-                        _logger.LogInformation("Checking subscription usage for {ActionName} action.", actionName);
-                        var canUse = await _subscriptionContext.ValidateSubscriptionUsageAsync(
-                            subscriptionId,
-                            actionName,
-                            usageCount,
-                            cancellationToken
-                        );
+                        var sampleAd = group.First();
+                        bool canUse = false;
+                        bool reserved = false;
 
-                        if (!canUse)
+                        if (sampleAd.AdType == AdTypeEnum.Free)
                         {
-                            _logger.LogWarning("Subscription {SubscriptionId} cannot perform {ActionName}. Insufficient quota.", subscriptionId, actionName);
-                            failedIds.AddRange(group.Select(x => x.Id));
-                            continue;
-                        }
+                            // Validate FREE ads
+                            canUse = await _subscriptionContext.ValidateFreeAdsUsageAsync(
+                                subscriptionId,
+                                sampleAd.Category,
+                                sampleAd.L1Category,
+                                sampleAd.L2Category,
+                                usageCount,
+                                cancellationToken
+                            );
 
-                        var reserved = await _subscriptionContext.RecordSubscriptionUsageAsync(
-                            subscriptionId,
-                            actionName,
-                            usageCount,
-                            cancellationToken
-                        );
+                            if (!canUse)
+                            {
+                                _logger.LogWarning("FREE Ads quota exceeded for Subscription {SubscriptionId}.", subscriptionId);
+                                failedIds.AddRange(group.Select(x => x.Id));
+                                continue;
+                            }
+
+                            reserved = await _subscriptionContext.RecordFreeAdsUsageAsync(
+                                subscriptionId,
+                                sampleAd.Category,
+                                sampleAd.L1Category,
+                                sampleAd.L2Category,
+                                usageCount,
+                                cancellationToken
+                            );
+                        }
+                        else
+                        {
+                            // Validate Subscription/Publish Ads
+                            canUse = await _subscriptionContext.ValidateSubscriptionUsageAsync(
+                                subscriptionId,
+                                actionName,
+                                usageCount,
+                                cancellationToken
+                            );
+
+                            if (!canUse)
+                            {
+                                _logger.LogWarning("Subscription {SubscriptionId} cannot perform {ActionName}. Insufficient quota.", subscriptionId, actionName);
+                                failedIds.AddRange(group.Select(x => x.Id));
+                                continue;
+                            }
+
+                            reserved = await _subscriptionContext.RecordSubscriptionUsageAsync(
+                                subscriptionId,
+                                actionName,
+                                usageCount,
+                                cancellationToken
+                            );
+                        }
 
                         if (!reserved)
                         {
@@ -1155,17 +1186,8 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
                             var failReason = ExtractErrorMessage(errorJson);
                             _logger.LogError("External service failed for action {ActionName}. Reason: {FailReason}", actionName, failReason);
 
-                            if (requiresQuota)
-                            {
-                                await _subscriptionContext.RecordSubscriptionUsageAsync(
-                                    subscriptionId,
-                                    actionName,
-                                    usageCount,
-                                    cancellationToken
-                                );
-                            }
-
-                            throw new InvalidOperationException($"Bulk action failed for {actionName}. Reason: {failReason}");
+                            failedIds.AddRange(group.Select(x => x.Id));
+                            continue;
                         }
 
                         _logger.LogInformation("External service completed successfully for {ActionName}.", actionName);
@@ -1174,15 +1196,6 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
                     catch (Exception ex)
                     {
                         _logger.LogError(ex, "Error invoking external service for {ActionName}. SubscriptionId: {SubscriptionId}", actionName, subscriptionId);
-                        if (requiresQuota)
-                        {
-                            await _subscriptionContext.RecordSubscriptionUsageAsync(
-                                subscriptionId,
-                                actionName,
-                                usageCount,
-                                cancellationToken
-                            );
-                        }
                         failedIds.AddRange(group.Select(x => x.Id));
                         continue;
                     }
@@ -1210,8 +1223,6 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
                 throw;
             }
         }
-
-
 
 
         private string ExtractErrorMessage(string errorJson)
@@ -1503,94 +1514,58 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
             }
         }
 
-        public async Task<PaginatedResult<PrelovedAdSummaryDto>> GetAllPrelovedBoAds(
-            string? sortBy = "CreationDate",
-            string? search = null,
-            DateTime? fromDate = null,
-            DateTime? toDate = null,
-            DateTime? publishedFrom = null,
-            DateTime? publishedTo = null,
-            int? status = null,
-            bool? isFeatured = null,
-            bool? isPromoted = null,
-            int pageNumber = 1,
-            int pageSize = 12,
-            CancellationToken cancellationToken = default)
+        public async Task<ClassifiedsBoPrelovedResponseDto> GetAllPrelovedBoAds(GetAllSearch request, CancellationToken cancellationToken = default)
         {
-            var queryParams = new List<string>
-            {
-                $"pageNumber={pageNumber}",
-                $"pageSize={pageSize}"
-            };
-
-            if (!string.IsNullOrWhiteSpace(sortBy))
-                queryParams.Add($"sortBy={Uri.EscapeDataString(sortBy)}");
-
-            if (!string.IsNullOrWhiteSpace(search))
-                queryParams.Add($"search={Uri.EscapeDataString(search)}");
-
-            if (fromDate.HasValue)
-                queryParams.Add($"fromDate={Uri.EscapeDataString(fromDate.Value.ToString("o"))}");
-
-            if (toDate.HasValue)
-                queryParams.Add($"toDate={Uri.EscapeDataString(toDate.Value.ToString("o"))}");
-
-            if (publishedFrom.HasValue)
-                queryParams.Add($"publishedFrom={Uri.EscapeDataString(publishedFrom.Value.ToString("o"))}");
-
-            if (publishedTo.HasValue)
-                queryParams.Add($"publishedTo={Uri.EscapeDataString(publishedTo.Value.ToString("o"))}");
-
-            if (status.HasValue)
-                queryParams.Add($"status={status.Value}");
-
-            if (isFeatured.HasValue)
-                queryParams.Add($"isFeatured={isFeatured.Value.ToString().ToLowerInvariant()}");
-
-            if (isPromoted.HasValue)
-                queryParams.Add($"isPromoted={isPromoted.Value.ToString().ToLowerInvariant()}");
-
-            var url = $"/api/v2/classifiedbo/getallprelovedads?{string.Join("&", queryParams)}";
-
             try
             {
-                var request = _dapr.CreateInvokeMethodRequest(
-                    HttpMethod.Get,
+                var url = "api/v2/classifiedbo/getall-preloved";
+
+                var response = await _dapr.InvokeMethodAsync<GetAllSearch, ClassifiedsBoPrelovedResponseDto>(
+                    HttpMethod.Post,
                     SERVICE_APP_ID,
-                    url);
+                    url,
+                    request,
+                    cancellationToken
+                );
 
-                var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
-
-                if (!response.IsSuccessStatusCode)
-                {
-                    var errorJson = await response.Content.ReadAsStringAsync(cancellationToken);
-                    var error = JsonSerializer.Deserialize<ProblemDetails>(errorJson);
-                    throw new InvalidOperationException(error?.Detail ?? errorJson);
-                }
-
-                var content = await response.Content.ReadAsStringAsync(cancellationToken);
-
-                var result = JsonSerializer.Deserialize<PaginatedResult<PrelovedAdSummaryDto>>(
-                    content,
-                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
-                if (result == null)
-                {
-                    throw new InvalidOperationException("Failed to deserialize response content to PaginatedResult.");
-                }
-
-                return result;
+                return response ?? new ClassifiedsBoPrelovedResponseDto();
             }
-            catch (JsonException jsonEx)
+            catch (DaprException daprEx)
             {
-                throw new InvalidOperationException("Failed to parse response JSON.", jsonEx);
+                _logger.LogError(daprEx, "Dapr error occurred while calling BulkPreloved. StatusCode: {StatusCode}", daprEx.Data["StatusCode"]);
+
+                if (daprEx.Data.Contains("StatusCode"))
+                {
+                    var statusCode = daprEx.Data["StatusCode"]?.ToString();
+                    if (statusCode == "409")
+                    {
+                        throw new ConflictException(daprEx.Message);
+                    }
+                    else if (statusCode == "404")
+                    {
+                        throw new KeyNotFoundException(daprEx.Message);
+                    }
+                }
+
+                throw new Exception($"Service communication error: {daprEx.Message}", daprEx);
+            }
+            catch (HttpRequestException httpEx)
+            {
+                _logger.LogError(httpEx, "HTTP error occurred while calling BulkPreloved");
+                throw new Exception($"Network error: {httpEx.Message}", httpEx);
+            }
+            catch (TaskCanceledException tcEx) when (tcEx.InnerException is TimeoutException)
+            {
+                _logger.LogError(tcEx, "Timeout occurred while calling BulkPreloved");
+                throw new Exception("Request timed out", tcEx);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error fetching preloved ad summaries.");
-                throw new InvalidOperationException("Error fetching preloved ad summaries.", ex);
+                _logger.LogError(ex, "Unexpected error occurred while calling BulkPreloved");
+                throw new Exception($"Unexpected error: {ex.Message}", ex);
             }
         }
+
 
         public async Task<PaginatedResult<DealsAdSummaryDto>> GetAllDeals(
             int? pageNumber = 1,
@@ -2078,6 +2053,9 @@ CancellationToken cancellationToken = default)
                 throw new Exception($"Unexpected error: {ex.Message}", ex);
             }
         }
+
+      
+
 
         public async Task<ClassifiedsBoCollectiblesResponseDto> GetAllCollectibles(GetAllSearch request, CancellationToken cancellationToken = default)
         {

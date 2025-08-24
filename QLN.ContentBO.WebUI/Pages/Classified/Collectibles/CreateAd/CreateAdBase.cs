@@ -83,7 +83,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.CreateAd
                                         new List<ClassifiedsCategoryField>();
         protected string[] ExcludedFields => new[]
         {
-                "L2 Category" // Add any other fields you want to hide here
+                "L2Category" 
 
         };
 
@@ -106,9 +106,12 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.CreateAd
             foreach (var field in AvailableFields.Where(f => !ExcludedFields.Contains(f.CategoryName)))
 
             {
-                if (string.IsNullOrWhiteSpace(adPostModel.DynamicFields.GetValueOrDefault(field.CategoryName)))
+                if (field.Type == "dropdown" || field.Type == "Dropdown" || field.Type == "string")
                 {
-                    messageStore.Add(new FieldIdentifier(adPostModel.DynamicFields, field.CategoryName), $"{field.CategoryName} is required.");
+                    if (string.IsNullOrWhiteSpace(adPostModel.DynamicFields.GetValueOrDefault(field.CategoryName)))
+                    {
+                        messageStore.Add(new FieldIdentifier(adPostModel.DynamicFields, field.CategoryName), $"{field.CategoryName} is required.");
+                    }
                 }
             }
         }
@@ -134,8 +137,12 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.CreateAd
 
             if (SelectedSubcategory?.Fields?.Any() == true && string.IsNullOrEmpty(adPostModel.SelectedSubSubcategoryId))
             {
-                messageStore.Add(() => adPostModel.SelectedSubSubcategoryId, "Section is required.");
-                isValid = false;
+                 var firstField = SelectedSubcategory.Fields.FirstOrDefault();
+                if (firstField != null && firstField.Type == "L2Category")
+                {
+                    messageStore.Add(() => adPostModel.SelectedSubSubcategoryId, "Section is required.");
+                    isValid = false;
+                }
             }
             int imagesWithUrlCount = adPostModel.Images.Count(i => !string.IsNullOrEmpty(i.Url));
 
@@ -150,19 +157,29 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.CreateAd
                 isValid = false;
             }
 
-            // Manual validation: Dynamic fields
             foreach (var field in AvailableFields.Where(f => !ExcludedFields.Contains(f.CategoryName)))
-
             {
-                var value = adPostModel.DynamicFields.ContainsKey(field.CategoryName) ? adPostModel.DynamicFields[field.CategoryName] : null;
 
-                if (string.IsNullOrWhiteSpace(value))
+                if (field.Type.Equals("dropdown", StringComparison.OrdinalIgnoreCase) ||
+                    field.Type.Equals("string", StringComparison.OrdinalIgnoreCase))
                 {
-                    messageStore.Add(new FieldIdentifier(adPostModel.DynamicFields, field.CategoryName), $"{field.CategoryName} is required.");
-                    if (!DynamicFieldErrors.ContainsKey(field.CategoryName))
-                        DynamicFieldErrors[field.CategoryName] = new List<string>();
-                    DynamicFieldErrors[field.CategoryName].Add($"{field.CategoryName} is required.");
-                    isValid = false;
+                    var value = adPostModel.DynamicFields.ContainsKey(field.CategoryName)
+                        ? adPostModel.DynamicFields[field.CategoryName]
+                        : null;
+                
+                    if (string.IsNullOrWhiteSpace(value))
+                    {
+                        messageStore.Add(
+                            new FieldIdentifier(adPostModel.DynamicFields, field.CategoryName),
+                            $"{field.CategoryName} is required."
+                        );
+
+                        if (!DynamicFieldErrors.ContainsKey(field.CategoryName))
+                            DynamicFieldErrors[field.CategoryName] = new List<string>();
+
+                        DynamicFieldErrors[field.CategoryName].Add($"{field.CategoryName} is required.");
+                        isValid = false;
+                    }
                 }
             }
 

@@ -16,7 +16,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.Subscription
         [Inject] protected IDealsService DealsService { get; set; } = default!;
         [Parameter] public EventCallback<(string from, string to)> OnDateChanged { get; set; }
         [Inject] protected IDialogService DialogService { get; set; } = default!;
-         [Inject] protected IJSRuntime JS { get; set; } = default!;
+        [Inject] protected IJSRuntime JS { get; set; } = default!;
         protected string SearchText { get; set; } = string.Empty;
         protected string SortIcon { get; set; } = Icons.Material.Filled.Sort;
 
@@ -55,13 +55,6 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.Subscription
         protected int currentPage { get; set; } = 1;
         protected int pageSize { get; set; } = 12;
 
-        protected readonly List<string> Categories =
-        [
-            "12 Months Basic",
-            "12 Months Plus",
-            "12 Months Super"
-        ];
-
         public class DayTimeEntry
         {
             public DateTime Date { get; set; }
@@ -77,24 +70,44 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.Subscription
 
         protected ElementReference _popoverDiv;
 
-        protected List<string> SubscriptionTypes =
-        [
-            "Free",
-            "Basic",
-            "Pro",
-            "Enterprise"
-        ];
+        protected List<string> SubscriptionTypes = [];
         protected string SelectedSubscriptionType { get; set; } = string.Empty;
         // Date range logic
-        protected DateRange _dateRange = new();
-        protected DateRange _tempDateRange = new();
+        protected DateRange? _dateRange = new();
+        protected DateRange? _tempDateRange = new();
         protected bool showDatePopover = false;
 
         protected List<DealsSubscriptionItem> Listings { get; set; } = [];
 
         protected override async Task OnInitializedAsync()
         {
-            await LoadDealsAsync();
+            await base.OnInitializedAsync();
+        }
+
+        protected override async Task OnAfterRenderAsync(bool firstRender)
+        {
+            try
+            {
+                if (firstRender)
+                {
+                    IsLoading = true;
+                    await LoadDealsAsync();
+                    var tListOfSubsctiptions = await GetSubscriptionProductsAsync((int)VerticalTypeEnum.Classifieds, (int)SubVerticalTypeEnum.Deals);
+                    if (tListOfSubsctiptions != null && tListOfSubsctiptions.Count != 0)
+                    {
+                        SubscriptionTypes = [.. tListOfSubsctiptions.Select(x => x.ProductName).ToList()];
+                    } 
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "OnAfterRenderAsync");
+            }
+            finally
+            {
+                IsLoading = false;
+                StateHasChanged();
+            }
         }
 
         private async Task LoadDealsAsync()
@@ -138,6 +151,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.Subscription
                 IsLoading = false;
             }
         }
+
         protected async Task ShowConfirmationExport()
         {
             var parameters = new DialogParameters
@@ -155,9 +169,10 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.Subscription
                 FullWidth = true
             };
 
-            var dialog = DialogService.Show<ConfirmationDialog>("", parameters, options);
+            var dialog = await DialogService.ShowAsync<ConfirmationDialog>("", parameters, options);
             var result = await dialog.Result;
         }
+
         private async Task ExportToExcel()
         {
             try
@@ -172,13 +187,13 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.Subscription
                     ["S.No."] = index + 1,
                     ["Order ID"] = x.OrderId,
                     ["Subscription Type"] = string.IsNullOrWhiteSpace(x.SubscriptionType) ? "-" : x.SubscriptionType,
-                     ["User Name"] = string.IsNullOrWhiteSpace(x.UserName) ? "-" : x.UserName,
-                     ["Email"] = string.IsNullOrWhiteSpace(x.Email) ? "-" : x.Email,
+                    ["User Name"] = string.IsNullOrWhiteSpace(x.UserName) ? "-" : x.UserName,
+                    ["Email"] = string.IsNullOrWhiteSpace(x.Email) ? "-" : x.Email,
                     ["Mobile"] = string.IsNullOrWhiteSpace(x.ContactNumber) ? "-" : x.ContactNumber,
                     ["Whatsapp"] = string.IsNullOrWhiteSpace(x.WhatsappNumber) ? "-" : x.WhatsappNumber,
                     ["Amount"] = x.Price == null ? "-" : x.Price,
                     ["Status"] = string.IsNullOrWhiteSpace(x.Status) ? "-" : x.Status,
-                     ["Start Date"] = x.StartDate ?? "-",
+                    ["Start Date"] = x.StartDate ?? "-",
                     ["Expiry Date"] = x.EndDate ?? "-",
                     ["Web Clicks"] = x.WhatsAppLeads,
                     ["Views"] = x.PhoneLeads,
@@ -263,6 +278,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.Subscription
             SearchText = string.Empty;
             _dateRange = new();
             _tempDateRange = new();
+            SelectedSubscriptionType = string.Empty;
         }
 
         protected async void CancelDatePicker()
@@ -338,7 +354,10 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.Subscription
 
         protected void CancelDatePopover()
         {
+            // _dateRange = null;
+            // _tempDateRange = null;
             showDatePopover = false;
+            StateHasChanged();
         }
 
         protected void ApplyDatePopover()
