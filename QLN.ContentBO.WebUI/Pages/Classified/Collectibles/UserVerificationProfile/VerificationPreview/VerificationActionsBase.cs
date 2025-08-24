@@ -25,7 +25,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.UserVerificationProf
 
         protected void GoBack()
         {
-            NavigationManager.NavigateTo("/manage/classified/items/user/verification/profile");
+            NavigationManager.NavigateTo("/manage/classified/collectibles/user/verification/profile");
         }
         protected async Task ApproveAsync()
         {
