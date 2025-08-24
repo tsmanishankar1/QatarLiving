@@ -159,7 +159,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
         }
         public static RouteGroupBuilder MapServiceAdEndpoints(this RouteGroupBuilder group)
         {
-            group.MapPost("/create", async Task<Results<Ok<string>, BadRequest<ProblemDetails>, ProblemHttpResult>> (
+            group.MapPost("/create", async Task<Results<Ok<ResponseDto>, BadRequest<ProblemDetails>, ProblemHttpResult>> (
                 ServiceDto dto,
                 IServices service,
                 AuditLogger auditLogger,
@@ -229,12 +229,12 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
             .WithSummary("Create a new service ad")
             .WithDescription("Creates a new service ad with the provided details. " +
                              "The ad must include a valid category and description.")
-            .Produces<string>(StatusCodes.Status200OK)
+            .Produces<ResponseDto>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
             .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-            group.MapPost("/createbyuserid", async Task<Results<Ok<string>, BadRequest<ProblemDetails>, ProblemHttpResult>> (
+            group.MapPost("/createbyuserid", async Task<Results<Ok<ResponseDto>, BadRequest<ProblemDetails>, ProblemHttpResult>> (
             ServiceRequest dto,
             [FromQuery] string uid,
             [FromQuery] string userName,
@@ -278,7 +278,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
             .WithSummary("Create a new service ad")
             .WithDescription("Creates a new service ad with the provided details. " +
                                  "The ad must include a valid category and description.")
-            .Produces<string>(StatusCodes.Status200OK)
+            .Produces<ResponseDto>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
             .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
