@@ -5564,6 +5564,32 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
             #endregion
 
+
+            group.MapGet("get-category-count", async Task<IResult> (
+                 IClassifiedService service,
+                 CancellationToken token) =>
+            {
+                try
+                {
+                    var result = await service.GetCategoryCountsAsync(token);
+                    return TypedResults.Ok(result);
+                }
+                catch (Exception ex)
+                {
+                    throw ex;
+                }
+            })
+.WithName("GetCategoryCount")
+.WithTags("Classified")
+.WithSummary("Get category count")
+.WithDescription("Get all published ads count based on category.")
+.AllowAnonymous()
+.Produces<List<SavedSearchResponseDto>>(StatusCodes.Status200OK)
+.Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+.Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+
+
             return group;
         }
         public static RouteGroupBuilder MapClassifiedsFeaturedItemEndpoint(this RouteGroupBuilder group)
@@ -5653,9 +5679,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 {
                     Text = req.Text,
                     Filters = req.Filters,
-                    OrderBy = "",
-                    PageNumber = req.PageNumber,
-                    PageSize = req.PageSize
+                    OrderBy = ""
                 };
                 if (indexName == null)
                 {
@@ -5746,14 +5770,27 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                             }
                         }
 
+                        // Pagination
+                        int page = Math.Max(1, req.PageNumber);
+                        int pageSize = Math.Max(1, Math.Min(100, req.PageSize));
+                        var totalCount = response.Stores.Count;
+                        int totalPages = (int)Math.Ceiling((double)totalCount / pageSize);
+
+                        if (page > totalPages && totalPages > 0)
+                            page = totalPages;
+
+                        var pagedEntities = response.Stores
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                   .ToList();
 
 
                         return Results.Ok(new ClassifiedBOPageResponse<StoresGroup>
-                        {
-                            Page = req.PageNumber,
-                            PerPage = req.PageSize,
-                            TotalCount = response.Stores.Count,
-                            Items = response.Stores
+                            {
+                                Page = page,
+                                PerPage = pageSize,
+                                TotalCount = totalCount,
+                                Items = pagedEntities
                         });
                     }
                     else
@@ -5825,9 +5862,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 {
                     Text = req.Text,
                     Filters = req.Filters,
-                    OrderBy = "",
-                    PageNumber = req.PageNumber,
-                    PageSize = req.PageSize
+                    OrderBy = ""
                 };
                 if (indexName == null)
                 {
@@ -6011,11 +6046,11 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 var request = new CommonSearchRequest
                 {
                     Text = req.Text,
-                    Filters = req.Filters,
-                    //  OrderBy = req.OrderBy,
-                    PageNumber = req.PageNumber,
-                    PageSize = req.PageSize,
-
+                    Filters = req.Filters
+                  //  OrderBy = req.OrderBy,
+                    //PageNumber = req.PageNumber,
+                    //PageSize = req.PageSize,
+                    
                 };
                 if (indexName == null)
                 {
@@ -6053,12 +6088,27 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                             _ => response.Products.OrderBy(t => t.ProductPrice).ToList()
                         };
 
+                        // Pagination
+                        int page = Math.Max(1, req.PageNumber);
+                        int pageSize = Math.Max(1, Math.Min(100, req.PageSize));
+                        var totalCount = response.Products.Count;
+                        int totalPages = (int)Math.Ceiling((double)totalCount / pageSize);
+
+                        if (page > totalPages && totalPages > 0)
+                            page = totalPages;
+
+                        var pagedEntities = response.Products
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                   .ToList();
+
+
                         return Results.Ok(new ClassifiedBOPageResponse<ClassifiedStoresIndex>
                         {
-                            Page = req.PageNumber,
-                            PerPage = req.PageSize,
-                            TotalCount = response.Products.Count,
-                            Items = response.Products
+                            Page = page,
+                            PerPage = pageSize,
+                            TotalCount = totalCount,
+                            Items = pagedEntities
                         });
                     }
                     else
@@ -6728,6 +6778,134 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
             #endregion
 
+            group.MapGet("/stores-dashboard-process-csv",
+   async Task<Results<Ok<string>, BadRequest<ProblemDetails>, ForbidHttpResult, ProblemHttpResult>> (
+       string Url,
+       string CsvPlatform,
+       string CompanyId,
+       string SubscriptionId,
+       string Domain,
+       [FromServices] IClassifiedsFoService service,
+       HttpContext context,
+       CancellationToken cancellationToken
+   ) =>
+   {
+       try
+       {
+           var (userId, error) = GenericClaimsHelper.GetValidUserId(context.User);
+           if (!string.IsNullOrEmpty(error))
+           {
+               return TypedResults.Problem(
+               title: "Subscription issue in token.",
+               detail: error,
+               statusCode: StatusCodes.Status500InternalServerError,
+               instance: context.Request.Path
+               );
+           }
+
+           if (string.IsNullOrEmpty(userId))
+           {
+               return TypedResults.Forbid();
+           }
+
+           var result = await service.GetFOProcessStoresCSV(Url, CsvPlatform, CompanyId, SubscriptionId, userId?.ToString(), Domain, cancellationToken);
+
+           switch (result?.ToString())
+           {
+               case "created":
+                   return TypedResults.Ok("Products have been successfully created at the specified store(s).");
+
+               case "No products":
+                   return TypedResults.BadRequest(new ProblemDetails
+                   {
+                       Title = "No Products Found",
+                       Detail = "The CSV did not contain any valid products to process.",
+                       Status = StatusCodes.Status400BadRequest
+                   });
+
+               case "Insufficient quota":
+                   return TypedResults.BadRequest(new ProblemDetails
+                   {
+                       Title = "Insufficient quota",
+                       Detail = "The CSV did not contain any valid quota to process.",
+                       Status = StatusCodes.Status400BadRequest
+                   });
+
+               case "Fail to reserve quota":
+                   return TypedResults.BadRequest(new ProblemDetails
+                   {
+                       Title = "Fail to reserve quota",
+                       Detail = "The CSV fail to reserve quota to process.",
+                       Status = StatusCodes.Status400BadRequest
+                   });
+
+               default:
+                   return TypedResults.BadRequest(new ProblemDetails
+                   {
+                       Title = "Store Processing Failed",
+                       Detail = result?.ToString() ?? "Unknown error occurred.",
+                       Status = StatusCodes.Status400BadRequest
+                   });
+           }
+       }
+       catch (Exception ex)
+       {
+           return TypedResults.Problem(
+               title: "Internal Server Error",
+               detail: ex.Message,
+               statusCode: StatusCodes.Status500InternalServerError,
+               instance: context.Request.Path
+           );
+       }
+   })
+               .WithName("GetDashboardProcessStoresCSV")
+               .WithTags("Classified")
+               .WithSummary("Process the csv file.")
+               .WithDescription("Processing the uploaded csv.Storing the products into data layer.")
+               .Produces<string>(StatusCodes.Status200OK)
+               .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+               .Produces(StatusCodes.Status403Forbidden)
+               .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapGet("/stores-dashboard-processing-csv",
+   async Task<Results<Ok<string>, BadRequest<ProblemDetails>, ForbidHttpResult, ProblemHttpResult>> (
+       string Url,
+        string CsvPlatform,
+       string CompanyId,
+       string SubscriptionId,
+       string UserId,
+       string Domain,
+       [FromServices] IClassifiedsFoService service,
+       HttpContext context,
+       CancellationToken cancellationToken
+   ) =>
+   {
+       try
+       {
+           var result = await service.GetFOProcessStoresCSV(Url, CsvPlatform, CompanyId, SubscriptionId, UserId, Domain, cancellationToken);
+           return TypedResults.Ok(result);
+
+       }
+       catch (Exception ex)
+       {
+           return TypedResults.Problem(
+               title: "Internal Server Error",
+               detail: ex.Message,
+               statusCode: StatusCodes.Status500InternalServerError,
+               instance: context.Request.Path
+           );
+       }
+   })
+               .ExcludeFromDescription()
+               //.AllowAnonymous()
+               .WithName("GetDashboardProcessStoreCSV")
+               .WithTags("Classified")
+               .WithSummary("Processing the csv.")
+               .WithDescription("Processing the uploaded csv.Storing the products into data layer.")
+               .Produces<string>(StatusCodes.Status200OK)
+               .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+               .Produces(StatusCodes.Status403Forbidden)
+               .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             return group;
 

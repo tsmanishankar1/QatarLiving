@@ -146,4 +146,161 @@ namespace QLN.Common.DTO_s.ClassifiedsBo
 
         public string? Status { get; set; }
     }
+  
+    public class WooCommerceProduct
+    {
+        [Name("ID")]
+        public int ID { get; set; }
+
+        [Name("Type")]
+        public string? Type { get; set; }
+
+        [Name("SKU")]
+        public string? SKU { get; set; }
+
+        [Name("Name")]
+        public string? Name { get; set; }
+
+        [Name("Published")]
+        public bool Published { get; set; }
+
+        [Name("Is featured?")]
+        public bool IsFeatured { get; set; }
+
+        [Name("Visibility in catalog")]
+        public string? VisibilityInCatalog { get; set; }
+
+        [Name("Short description")]
+        public string? ShortDescription { get; set; }
+
+        [Name("Description")]
+        public string? Description { get; set; }
+
+        [Name("Date sale price starts")]
+        public DateTime? DateSalePriceStarts { get; set; }
+
+        [Name("Date sale price ends")]
+        public DateTime? DateSalePriceEnds { get; set; }
+
+        [Name("Tax status")]
+        public string? TaxStatus { get; set; }
+
+        [Name("Tax class")]
+        public string? TaxClass { get; set; }
+
+        [Name("In stock?")]
+        public bool InStock { get; set; }
+
+        [Name("Stock")]
+        public int? Stock { get; set; }
+
+        [Name("Backorders allowed?")]
+        public bool BackordersAllowed { get; set; }
+
+        [Name("Sold individually?")]
+        public bool SoldIndividually { get; set; }
+
+        [Name("Weight (lbs)")]
+        public decimal? WeightLbs { get; set; }
+
+        [Name("Length (in)")]
+        public decimal? LengthIn { get; set; }
+
+        [Name("Width (in)")]
+        public decimal? WidthIn { get; set; }
+
+        [Name("Height (in)")]
+        public decimal? HeightIn { get; set; }
+
+        [Name("Allow customer reviews?")]
+        public bool AllowCustomerReviews { get; set; }
+
+        [Name("Purchase note")]
+        public string? PurchaseNote { get; set; }
+
+        [Name("Sale price")]
+        public decimal? SalePrice { get; set; }
+
+        [Name("Regular price")]
+        public decimal? RegularPrice { get; set; }
+
+        [Name("Categories")]
+        public string? Categories { get; set; }
+
+        [Name("Tags")]
+        public string? Tags { get; set; }
+
+        [Name("Shipping class")]
+        public string? ShippingClass { get; set; }
+
+        [Name("Images")]
+        public string? Images { get; set; }
+
+        [Name("Download limit")]
+        public int? DownloadLimit { get; set; }
+
+        [Name("Download expiry days")]
+        public int? DownloadExpiryDays { get; set; }
+
+        [Name("Parent")]
+        public string? Parent { get; set; }
+
+        [Name("Grouped products")]
+        public string? GroupedProducts { get; set; }
+
+        [Name("Upsells")]
+        public string? Upsells { get; set; }
+
+        [Name("Cross-sells")]
+        public string? CrossSells { get; set; }
+
+        [Name("External URL")]
+        public string? ExternalURL { get; set; }
+
+        [Name("Button text")]
+        public string? ButtonText { get; set; }
+
+        [Name("Position")]
+        public int Position { get; set; }
+
+        [Name("Attribute 1 name")]
+        public string? Attribute1Name { get; set; }
+
+        [Name("Attribute 1 value(s)")]
+        public string? Attribute1Values { get; set; }
+
+        [Name("Attribute 1 visible")]
+        public bool Attribute1Visible { get; set; }
+
+        [Name("Attribute 1 global")]
+        public bool Attribute1Global { get; set; }
+
+        [Name("Attribute 2 name")]
+        public string? Attribute2Name { get; set; }
+
+        [Name("Attribute 2 value(s)")]
+        public string? Attribute2Values { get; set; }
+
+        [Name("Attribute 2 visible")]
+        public bool Attribute2Visible { get; set; }
+
+        [Name("Attribute 2 global")]
+        public bool Attribute2Global { get; set; }
+
+        [Name("Meta: _wpcom_is_markdown")]
+        public bool MetaWpcomIsMarkdown { get; set; }
+
+        [Name("Download 1 name")]
+        public string? Download1Name { get; set; }
+
+        [Name("Download 1 URL")]
+        public string? Download1URL { get; set; }
+
+        [Name("Download 2 name")]
+        public string? Download2Name { get; set; }
+
+        [Name("Download 2 URL")]
+        public string? Download2URL { get; set; }
+    }
+
 }

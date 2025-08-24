@@ -73,12 +73,12 @@ namespace QLN.Classified.MS.Service.Services
             var list = new List<FieldDto>();
             if (fields == null) return list;
 
-            foreach (var field in fields)
-            {
-                list.Add(field);
-                if (field.Fields != null)
-                    list.AddRange(FlattenFields(field.Fields));
-            }
+        //    foreach (var field in fields)
+        //    {
+        //        list.Add(field);
+        //        if (field.Fields != null)
+        //            list.AddRange(FlattenFields(field.Fields));
+        //    }
 
             return list;
         }

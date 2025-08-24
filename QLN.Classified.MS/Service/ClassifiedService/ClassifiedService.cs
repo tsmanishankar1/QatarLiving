@@ -2733,6 +2733,18 @@ namespace QLN.Classified.MS.Service
 
         #endregion
 
+        public async Task<List<CategoryCountDto>> GetCategoryCountsAsync(CancellationToken cancellationToken)
+        {
+            return await _context.Item
+                .Where(i => i.Status == AdStatus.Published)
+                .GroupBy(i => i.Category)
+                .Select(g => new CategoryCountDto
+                {
+                    Category = g.Key,
+                    AdsCount = g.Count()
+                })
+                .ToListAsync();
+        }
         #region payToFeature with addons for all subverticals
 
         public async Task<string> P2PFeature(
