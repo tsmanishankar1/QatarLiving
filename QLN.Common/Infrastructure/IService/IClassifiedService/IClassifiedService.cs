@@ -69,5 +69,11 @@ namespace QLN.Common.Infrastructure.IService
         Task<string> UnFavourite(string userId, Vertical vertical, SubVertical subVertical, long adId, CancellationToken cancellationToken);
 
         Task<Items> P2PromoteItems(ItemsPayToPromote promote, string uid, CancellationToken ct);
+
+        Task<string> P2PFeature(
+    ClassifiedsPayToFeature dto,
+    string userId,
+    Guid addonId,
+    CancellationToken cancellationToken = default);
     }
 }

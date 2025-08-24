@@ -825,7 +825,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 HttpContext httpContext,
                 [FromBody] ClassifiedsItemsDTO dto,
                 IClassifiedService service,
-                IV2SubscriptionService subscriptionService,
+                [FromServices]IV2SubscriptionService subscriptionService,
                 AuditLogger auditLogger,
                 CancellationToken token) =>
             {
@@ -6567,8 +6567,167 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
                 .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+            #endregion
+            #region payToFeature with addons for items
+            group.MapPut("/classifiedsfeature", async Task<IResult> (
+    HttpContext httpContext,
+    ClassifiedsPayToFeature dto,
+    AuditLogger auditLogger,
+    IClassifiedService service,
+    CancellationToken token) =>
+            {
+                string uid = "unknown";
+                string username = "unknown";
+
+                try
+                {
+                    (uid, username) = UserTokenHelper.ExtractUserAsync(httpContext);
+
+                    if (uid == null)
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Subscription Required",
+                            Detail = "No valid subscription found for this user.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    await service.P2PFeature(dto, uid,dto.AddonId, token);
+
+                    await auditLogger.LogAuditAsync(
+                        module: "Classified",
+                        httpMethod: "PUT",
+                        apiEndpoint: "/api/classifieds/items/feature",
+                        message: $"Featured classified ad with ID {dto.AdId}",
+                        createdBy: uid,
+                        payload: dto,
+                        cancellationToken: token
+                    );
+
+                    return TypedResults.Ok(new
+                    {
+                        AdId = dto.AdId,
+                        Message = "The ad has been successfully marked as featured."
+                    });
+                }
+                catch (Exception ex)
+                {
+                    await auditLogger.LogExceptionAsync("Classified", "/api/classifieds/items/feature", ex, uid, token);
+
+                    return ex switch
+                    {
+                        ArgumentException => TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = ex.Message,
+                            Status = StatusCodes.Status400BadRequest
+                        }),
+                        InvalidOperationException => TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Bad Request",
+                            Detail = ex.Message,
+                            Status = StatusCodes.Status400BadRequest
+                        }),
+                        KeyNotFoundException => TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Not Found",
+                            Detail = ex.Message,
+                            Status = StatusCodes.Status404NotFound
+                        }),
+                        _ => TypedResults.Problem(
+                            title: "Internal Server Error",
+                            detail: ex.Message,
+                            statusCode: StatusCodes.Status500InternalServerError
+                        )
+                    };
+                }
+            })
+.RequireAuthorization()
+    .WithName("FeatureItemsAd")  
+    .WithTags("Classified")
+    .WithSummary("Feature the ad (public)")
+    .WithDescription("Marks the ad as featured after validating subscription from user claims.")
+    .Produces(StatusCodes.Status200OK)
+    .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+    .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+    .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapPut("/classifiedsfeaturedid", async Task<IResult> (
+                [FromQuery] int adId,
+                [FromQuery] int subVertical,
+                [FromQuery] string userId,
+                [FromQuery] Guid addonId,
+                IClassifiedService service,
+                CancellationToken token) =>
+            {
+                try
+                {
+                    if (adId <= 0)
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "AdId is required.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    var dto = new ClassifiedsPayToFeature { AdId = adId, SubVertical = (SubVertical)subVertical };
+
+                    await service.P2PFeature(dto, userId, addonId, token);
+
+                    return TypedResults.Ok(new
+                    {
+                        AdId = adId,
+                        Message = $"The ad has been successfully featured in subVertical {subVertical}."
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return ex switch
+                    {
+                        ArgumentException => TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = ex.Message,
+                            Status = StatusCodes.Status400BadRequest
+                        }),
+                        InvalidOperationException => TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Bad Request",
+                            Detail = ex.Message,
+                            Status = StatusCodes.Status400BadRequest
+                        }),
+                        KeyNotFoundException => TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Not Found",
+                            Detail = ex.Message,
+                            Status = StatusCodes.Status404NotFound
+                        }),
+                        _ => TypedResults.Problem(
+                            title: "Internal Server Error",
+                            detail: ex.Message,
+                            statusCode: StatusCodes.Status500InternalServerError
+                        )
+                    };
+                }
+            })
+            .ExcludeFromDescription()   
+    .WithName("FeatureInternalAd") 
+    .WithTags("Classified")
+    .WithSummary("Feature the ad (internal)")
+    .WithDescription("Endpoint used by external service to feature an ad directly.")
+    .Produces(StatusCodes.Status200OK)
+    .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+    .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+    .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+
+
 
             #endregion
+
 
             return group;
 

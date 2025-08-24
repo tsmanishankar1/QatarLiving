@@ -283,19 +283,13 @@ namespace QLN.DataMigration.Services
             throw new NotImplementedException();
         }
 
-        //public Task<AdCreatedResponseDto> CreateClassifiedItemsAd(Items dto, SaveIntent intent, CancellationToken cancellationToken = default)
-        //{
-        //    throw new NotImplementedException();
-        //}
+       
 
-        //public Task<AdCreatedResponseDto> CreateClassifiedPrelovedAd(Preloveds dto, CancellationToken cancellationToken = default)
-        //{
-        //    throw new NotImplementedException();
-        //}
+        public Task<string> P2PFeature(ClassifiedsPayToFeature dto, string userId, Guid addonId, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
 
-        //public Task<AdCreatedResponseDto> CreateClassifiedDealsAd(Deals dto, CancellationToken cancellationToken = default)
-        //{
-        //    throw new NotImplementedException();
-        //}
+       
     }
 }
