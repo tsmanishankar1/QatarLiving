@@ -319,7 +319,6 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.CreateAd
 
                     // New Fields and properties
                     subVertical = SubVerticalTypeEnum.Items,
-                    status = AdStatusEnum.PendingApproval,
                     createdBy = UserId,
                     isSold = false,
                     isFeatured = false,
