@@ -43,6 +43,7 @@ namespace QLN.Common.DTO_s.Subscription
         public Guid Id { get; set; }
         public string ProductCode { get; set; } = string.Empty;
         public string ProductName { get; set; } = string.Empty;
+        public ProductType ProductType { get; set; }
         public string UserId { get; set; } = string.Empty;
         public Guid? CompanyId { get; set; }
         public Guid SubscriptionId { get; set; }
