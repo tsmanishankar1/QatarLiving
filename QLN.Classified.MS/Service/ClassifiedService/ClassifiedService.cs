@@ -8,6 +8,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using Dapr;
 using Dapr.Client;
+using Grpc.Core;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -16,6 +17,7 @@ using Microsoft.Extensions.Logging;
 using QLN.Common.DTO_s;
 using QLN.Common.DTO_s.Classifieds;
 using QLN.Common.DTO_s.ClassifiedsBo;
+using QLN.Common.DTO_s.Services;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.CustomException;
 using QLN.Common.Infrastructure.DTO_s;
@@ -2698,38 +2700,205 @@ namespace QLN.Classified.MS.Service
 
         #region payToPromote with addons for items
 
-        public async Task<Items> P2PromoteItems(ItemsPayToPromote promote, string uid, CancellationToken ct)
+        //public async Task<Items> P2Promote(PayToPromote promote, string uid, CancellationToken ct)
+        //{
+        //    try
+        //    {
+        //        var itemsAd = await _context.Item.FirstOrDefaultAsync(i => i.Id == promote.AdId && i.IsActive, ct);
+
+        //        if(itemsAd == null)
+        //        {
+        //            throw new KeyNotFoundException("items Ad not found.");
+        //        }
+
+        //        var subscription = await _subscriptionContext.Subscriptions
+        //       .FirstOrDefaultAsync();
+
+        //        itemsAd.IsPromoted = true;
+        //        itemsAd.PromotedExpiryDate = DateTime.UtcNow.AddDays(30);
+        //        itemsAd.UpdatedBy = uid;
+        //        itemsAd.UpdatedAt = DateTime.UtcNow;
+
+        //        await _context.SaveChangesAsync(ct);
+
+        //        await IndexItemsToAzureSearch(itemsAd, ct);
+
+        //        return itemsAd;
+        //    }
+        //    catch(Exception ex)
+        //    {
+        //        _logger.LogError(ex, "Item {AdId} promoted, but failed to reindex.");
+        //        throw;
+        //    }
+        //}
+
+        public async Task<object> P2Promote(ClassifiedsPayToPromote promote, string uid, CancellationToken ct)
         {
             try
             {
-                var itemsAd = await _context.Item.FirstOrDefaultAsync(i => i.Id == promote.ItemsAdId && i.IsActive, ct);
-
-                if(itemsAd == null)
+                if (promote.Vertical != Vertical.Classifieds)
                 {
-                    throw new KeyNotFoundException("items Ad not found.");
+                    throw new NotSupportedException(
+                        $"Promotion is only supported for Classifieds. Provided vertical: {promote.Vertical}");
                 }
 
-                var subscription = await _subscriptionContext.Subscriptions
-               .FirstOrDefaultAsync();
+                object promotedEntity = null;
 
-                itemsAd.IsPromoted = true;
-                itemsAd.PromotedExpiryDate = DateTime.UtcNow.AddDays(30);
-                itemsAd.UpdatedBy = uid;
-                itemsAd.UpdatedAt = DateTime.UtcNow;
+                switch (promote.SubVertical)
+                {
+                    case SubVertical.Items:
+                        var itemsAd = await _context.Item
+                            .FirstOrDefaultAsync(i => i.Id == promote.AdId && i.IsActive, ct);
 
-                await _context.SaveChangesAsync(ct);
+                        if (itemsAd == null)
+                            throw new KeyNotFoundException("Item Ad not found.");
 
-                await IndexItemsToAzureSearch(itemsAd, ct);
+                        itemsAd.IsPromoted = true;
+                        itemsAd.PromotedExpiryDate = DateTime.UtcNow.AddDays(30);
+                        itemsAd.UpdatedBy = uid;
+                        itemsAd.UpdatedAt = DateTime.UtcNow;
 
-                return itemsAd;
+                        await _context.SaveChangesAsync(ct);
+                        await IndexItemsToAzureSearch(itemsAd, ct);
+
+                        promotedEntity = itemsAd;
+                        break;
+
+                    case SubVertical.Preloved:
+                        var prelovedAd = await _context.Preloved
+                            .FirstOrDefaultAsync(p => p.Id == promote.AdId && p.IsActive, ct);
+
+                        if (prelovedAd == null)
+                            throw new KeyNotFoundException("Preloved Ad not found.");
+
+                        prelovedAd.IsPromoted = true;
+                        prelovedAd.PromotedExpiryDate = DateTime.UtcNow.AddDays(30);
+                        prelovedAd.UpdatedBy = uid;
+                        prelovedAd.UpdatedAt = DateTime.UtcNow;
+
+                        await _context.SaveChangesAsync(ct);
+                        await IndexPrelovedToAzureSearch(prelovedAd, ct);
+
+                        promotedEntity = prelovedAd;
+                        break;
+
+                    case SubVertical.Collectibles:
+                        var collectiblesAd = await _context.Collectible
+                            .FirstOrDefaultAsync(c => c.Id == promote.AdId && c.IsActive, ct);
+
+                        if (collectiblesAd == null)
+                            throw new KeyNotFoundException("Collectible Ad not found.");
+
+                        collectiblesAd.IsPromoted = true;
+                        collectiblesAd.PromotedExpiryDate = DateTime.UtcNow.AddDays(30);
+                        collectiblesAd.UpdatedBy = uid;
+                        collectiblesAd.UpdatedAt = DateTime.UtcNow;
+
+                        await _context.SaveChangesAsync(ct);
+                        await IndexCollectiblesToAzureSearch(collectiblesAd, ct);
+
+                        promotedEntity = collectiblesAd;
+                        break;
+
+                    default:
+                        throw new NotSupportedException($"Promotion for sub-vertical {promote.SubVertical} is not implemented yet.");
+                }
+
+                return promotedEntity;
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
-                _logger.LogError(ex, "Item {AdId} promoted, but failed to reindex.");
+                _logger.LogError(ex, "Failed to promote Ad {AdId}", promote.AdId);
                 throw;
             }
         }
 
+        public async Task<object> P2Publish(ClassifiedsPayToPublish publish, string uid, CancellationToken ct)
+        {
+            try
+            {
+                if (publish.Vertical != Vertical.Classifieds)
+                {
+                    throw new NotSupportedException(
+                        $"Publishing is only supported for {Vertical.Classifieds}. Provided vertical: {publish.Vertical}");
+                }
+
+                if (publish.AdId <= 0)
+                {
+                    throw new ArgumentException("Invalid AdId. Must be a positive number.");
+                }
+
+                object entity = null;
+
+                switch (publish.SubVertical)
+                {
+                    case SubVertical.Items:
+                        var itemsAd = await _context.Item
+                            .FirstOrDefaultAsync(i => i.Id == publish.AdId && i.IsActive, ct);
+
+                        if (itemsAd == null)
+                            throw new KeyNotFoundException("Item Ad not found.");
+
+
+                        itemsAd.Status = AdStatus.PendingApproval;
+                        itemsAd.AdType = AdTypeEnum.P2P;
+                        itemsAd.UpdatedBy = uid;
+                        itemsAd.UpdatedAt = DateTime.UtcNow;
+
+                        await _context.SaveChangesAsync(ct);
+                        
+                        await IndexItemsToAzureSearch(itemsAd, ct);
+
+                        entity = itemsAd;
+                        break;
+
+                    case SubVertical.Preloved:
+                        var prelovedAd = await _context.Preloved
+                            .FirstOrDefaultAsync(p => p.Id == publish.AdId && p.IsActive, ct);
+
+                        if (prelovedAd == null)
+                            throw new KeyNotFoundException("Preloved Ad not found.");
+
+                        prelovedAd.Status = AdStatus.PendingApproval;
+                        prelovedAd.AdType = AdTypeEnum.P2P;
+                        prelovedAd.UpdatedBy = uid;
+                        prelovedAd.UpdatedAt = DateTime.UtcNow;
+
+                        await _context.SaveChangesAsync(ct);
+                        await IndexPrelovedToAzureSearch(prelovedAd, ct);
+
+                        entity = prelovedAd;
+                        break;
+
+                    case SubVertical.Collectibles:
+                        var collectibleAd = await _context.Collectible
+                            .FirstOrDefaultAsync(c => c.Id == publish.AdId && c.IsActive, ct);
+
+                        if (collectibleAd == null)
+                            throw new KeyNotFoundException("Collectible Ad not found.");
+
+                        collectibleAd.Status = AdStatus.PendingApproval;
+                        collectibleAd.AdType = AdTypeEnum.P2P;
+                        collectibleAd.UpdatedBy = uid;
+                        collectibleAd.UpdatedAt = DateTime.UtcNow;
+
+                        await _context.SaveChangesAsync(ct);
+                        await IndexCollectiblesToAzureSearch(collectibleAd, ct);
+
+                        entity = collectibleAd;
+                        break;
+
+                    default:
+                        throw new NotSupportedException($"Promotion for sub-vertical {publish.SubVertical} is not implemented yet.");
+                }
+                return entity;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to publish Ad {AdId}", publish.AdId);
+                throw new InvalidOperationException("An error occurred while publishing the ad.", ex);
+            }
+        }
 
         #endregion
 
