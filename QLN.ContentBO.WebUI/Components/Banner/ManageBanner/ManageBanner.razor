@@ -35,7 +35,13 @@
                 Filters</MudButton>
         </MudItem>
     </MudGrid>
-    @if (bannerPageTypes == null || !bannerPageTypes.Any())
+    @if(IsLoading){
+        <div style="display: flex; justify-content: center; align-items: center; height: 60vh;">
+
+        <MudProgressCircular Color="Color.Warning" Size="Size.Medium" Class="my-3" Style="display: block" Indeterminate="true"/>
+        </div>
+    }
+    else if (bannerPageTypes == null || !bannerPageTypes.Any())
     {
          <div>
                 <EmptyCard Title="No Banners Added" Subtitle="Please check back later or explore other Verticals" />
@@ -55,11 +61,14 @@
                         <MudItem xs="12">
                             <div class="d-flex align-center flex-wrap">
                                 <MudText Typo="Typo.subtitle1" Style="font-weight:600;">@Page.BannerTypeName</MudText>
+                                @if (location?.SubVerticalId.HasValue == true)
+                                {
                                 <MudChip T="string" Color="Color.Primary" Variant="Variant.Text">
                                 @(location.SubVerticalId.HasValue
                                 ? ((SubVertical)location.SubVerticalId.Value).ToString() 
                                 : string.Empty)
                                 </MudChip>
+                                }
                                 <MudChip T="string" Color="Color.Primary" Variant="Variant.Filled" Class="ml-2 px-3"
                                 Size="Size.Medium">
                                 @{

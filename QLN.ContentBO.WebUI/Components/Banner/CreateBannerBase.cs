@@ -16,6 +16,7 @@ namespace QLN.ContentBO.WebUI.Components.Banner
     public class CreateBannerBase : QLComponentBase
     {
         [Inject] public ISnackbar Snackbar { get; set; } = default!;
+        [Parameter] public EventCallback OnBannerCreated { get; set; }
         protected BannerDTO bannerModel = new();
         [Parameter]
         public Guid? BannerTypeId { get; set; }
@@ -168,7 +169,9 @@ namespace QLN.ContentBO.WebUI.Components.Banner
                 FullWidth = true
             };
 
-            await DialogService.ShowAsync<SuccessModal.SuccessModal>("", parameters, options);
+            var dialog = await DialogService.ShowAsync<SuccessModal.SuccessModal>("", parameters, options);
+            var result = await dialog.Result;
+            await OnBannerCreated.InvokeAsync();
         }
 
 
