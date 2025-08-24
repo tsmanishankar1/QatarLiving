@@ -299,6 +299,14 @@ namespace QLN.DataMigration.Services
             throw new NotImplementedException();
         }
 
-       
+        Task<object> IClassifiedService.P2Promote(ClassifiedsPayToPromote promote, string uid, CancellationToken ct)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<object> P2Publish(ClassifiedsPayToPublish publish, string uid, CancellationToken ct)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

@@ -95,5 +95,8 @@ namespace QLN.Common.DTO_s
         [SimpleField(IsFilterable = true)]
         public Guid? SubscriptionId { get; set; }
         public List<string> Locations { get; set; } = new List<string>();
+
+        [SimpleField(IsFilterable = true)]
+        public bool? IsSold { get; set; } = false;
     }
 }
