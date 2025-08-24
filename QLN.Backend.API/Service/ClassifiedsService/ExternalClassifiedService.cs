@@ -1916,74 +1916,232 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
         #region payToPromote with addons for items
 
-        public async Task<Items> P2PromoteItems(ItemsPayToPromote promote, string uid, CancellationToken ct)
+        //public async Task<object> P2Promote(PayToPromote promote, string uid, CancellationToken ct)
+        //{
+        //    try
+        //    {
+        //        var quotaAction = ActionTypes.Promote;
+
+        //        var result = await _subscriptionContext.ValidateAddonUsageAsync(
+        //            promote.AddonId,
+        //            quotaAction,
+        //            1,
+        //            ct);
+
+        //        if (!result)
+        //        {
+        //            throw new InvalidDataException($"Insufficient addon quota for {quotaAction.ToLower()}.");
+        //        }
+
+        //        var url = $"/api/classifieds/p2promotebyuserid?uid={uid}&addonId={promote.AddonId}";
+
+        //        var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, SERVICE_APP_ID, url);
+
+        //        request.Content = new StringContent(JsonSerializer.Serialize(promote), Encoding.UTF8, "application/json");
+
+        //        var response = await _dapr.InvokeMethodWithResponseAsync(request, ct);
+
+        //        if (response.StatusCode == HttpStatusCode.OK)
+        //        {
+        //            var json = await response.Content.ReadAsStringAsync(ct);
+        //            var itemsDto = JsonSerializer.Deserialize<Items>(json, new JsonSerializerOptions
+        //            {
+        //                PropertyNameCaseInsensitive = true
+        //            });
+
+        //            if (itemsDto is null)
+        //                throw new InvalidDataException("Invalid data returned from items.");
+
+        //            if (itemsDto.SubscriptionId != Guid.Empty)
+        //            {
+        //                var success = await _subscriptionContext.RecordAddonUsageAsync(
+        //                    promote.AddonId,
+        //                    quotaAction,
+        //                    1,
+        //                    ct
+        //                );
+
+        //                if (!success)
+        //                {
+        //                    throw new Exception("Failed to record subscription usage for Addon {AddonId}");
+        //                }
+        //            }
+
+
+        //            return itemsDto;
+        //        }
+        //        else if (response.StatusCode == HttpStatusCode.NotFound)
+        //        {
+        //            throw new KeyNotFoundException("Service not found");
+        //        }
+        //        else
+        //        {
+        //            var errorJson = await response.Content.ReadAsStringAsync(ct);
+        //            throw new InvalidDataException(errorJson);
+        //        }
+
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        throw new Exception("Error promoting items");
+        //    }
+        //}
+
+        public async Task<Object> P2Promote(ClassifiedsPayToPromote promote, string uid, CancellationToken ct)
         {
             try
             {
+                if (promote == null || promote.AdId <= 0)
+                {
+                    throw new ArgumentException("Invalid request. AdId must be a positive number.");
+                }
+
+                if (string.IsNullOrWhiteSpace(uid))
+                {
+                    throw new ArgumentException("User id (uid) is required.");
+                }
+
+                switch (promote.SubVertical)
+                {
+                    case SubVertical.Items:
+                    case SubVertical.Preloved:
+                    case SubVertical.Collectibles:
+                        break;
+
+                    default:
+                        throw new NotSupportedException(
+                            $"Promotion is not supported for sub-vertical: {promote.SubVertical}");
+                }
+
                 var quotaAction = ActionTypes.Promote;
 
-                var result = await _subscriptionContext.ValidateAddonUsageAsync(
+                var hasQuota = await _subscriptionContext.ValidateAddonUsageAsync(
                     promote.AddonId,
                     quotaAction,
                     1,
                     ct);
 
-                if (!result)
+                if (!hasQuota)
                 {
                     throw new InvalidDataException($"Insufficient addon quota for {quotaAction.ToLower()}.");
                 }
 
-                var url = $"/api/classifieds/items/p2promotebyuserid?uid={uid}&addonId={promote.AddonId}";
+                var url = $"/api/classifieds/classifiedsp2promotebyuserid?uid={uid}";
 
                 var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, SERVICE_APP_ID, url);
-
-                request.Content = new StringContent(JsonSerializer.Serialize(promote), Encoding.UTF8, "application/json");
+                request.Content = new StringContent(
+                    JsonSerializer.Serialize(promote),
+                    Encoding.UTF8,
+                    "application/json");
 
                 var response = await _dapr.InvokeMethodWithResponseAsync(request, ct);
 
                 if (response.StatusCode == HttpStatusCode.OK)
                 {
                     var json = await response.Content.ReadAsStringAsync(ct);
-                    var itemsDto = JsonSerializer.Deserialize<Items>(json, new JsonSerializerOptions
+
+                    object promotedEntity = promote.SubVertical switch
                     {
-                        PropertyNameCaseInsensitive = true
-                    });
+                        SubVertical.Items => JsonSerializer.Deserialize<Items>(json, new JsonSerializerOptions
+                        {
+                            PropertyNameCaseInsensitive = true
+                        }),
+                        SubVertical.Preloved => JsonSerializer.Deserialize<Preloveds>(json, new JsonSerializerOptions
+                        {
+                            PropertyNameCaseInsensitive = true
+                        }),
+                        SubVertical.Collectibles => JsonSerializer.Deserialize<Collectibles>(json, new JsonSerializerOptions
+                        {
+                            PropertyNameCaseInsensitive = true
+                        }),
+                        _ => throw new NotSupportedException(
+                                $"Deserialization for sub-vertical {promote.SubVertical} not supported")
+                    };
 
-                    if (itemsDto is null)
-                        throw new InvalidDataException("Invalid data returned from items.");
+                    if (promotedEntity == null)
+                    {
+                        throw new InvalidDataException("Invalid data returned from classifieds service.");
+                    }
 
-                    if (itemsDto.SubscriptionId != Guid.Empty)
+                    if (promote.AddonId != Guid.Empty)
                     {
                         var success = await _subscriptionContext.RecordAddonUsageAsync(
                             promote.AddonId,
                             quotaAction,
                             1,
-                            ct
-                        );
+                            ct);
 
                         if (!success)
                         {
-                            throw new Exception("Failed to record subscription usage for Addon {AddonId}");
-                        }                        
+                            throw new Exception(
+                                $"Failed to record addon usage for Addon {promote.AddonId}");
+                        }
                     }
 
-
-                    return itemsDto;
+                    return promotedEntity;
                 }
                 else if (response.StatusCode == HttpStatusCode.NotFound)
                 {
-                    throw new KeyNotFoundException("Service not found");
+                    throw new KeyNotFoundException("Ad not found in classifieds service.");
+                }
+                else
+                {
+                    var errorJson = await response.Content.ReadAsStringAsync(ct);
+                    throw new InvalidDataException($"Service returned error: {errorJson}");
+                }
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
+        }
+
+        public async Task<object> P2Publish(ClassifiedsPayToPublish request, string uid, CancellationToken ct)
+        {
+            try
+            {
+                var url = $"/api/classifieds/classifiedspaytopublishbyuserid?uid={uid}";
+                var serviceRequest = _dapr.CreateInvokeMethodRequest(
+                    HttpMethod.Post,
+                    ConstantValues.Services.ServiceAppId, // External Service App Id for Classifieds
+                    url
+                );
+
+                serviceRequest.Content = new StringContent(
+                    JsonSerializer.Serialize(request),
+                    Encoding.UTF8,
+                    "application/json"
+                );
+
+                var response = await _dapr.InvokeMethodWithResponseAsync(serviceRequest, ct);
+
+                if (response.StatusCode == HttpStatusCode.OK)
+                {
+                    var json = await response.Content.ReadAsStringAsync(ct);
+                  
+                    var result = JsonSerializer.Deserialize<object>(json, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+
+                    if (result is null)
+                        throw new InvalidDataException("Invalid data returned from classifieds service.");
+
+                    return result;
+                }
+                else if (response.StatusCode == HttpStatusCode.NotFound)
+                {
+                    throw new KeyNotFoundException("Classifieds service not found");
                 }
                 else
                 {
                     var errorJson = await response.Content.ReadAsStringAsync(ct);
                     throw new InvalidDataException(errorJson);
                 }
-
             }
             catch (Exception ex)
-            {
-                throw new Exception("Error promoting items");
+            {               
+                throw;
             }
         }
 

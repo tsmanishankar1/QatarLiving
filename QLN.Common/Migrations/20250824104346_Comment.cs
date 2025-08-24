@@ -7,7 +7,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace QLN.Common.Migrations.ClassifiedDev
 {
     /// <inheritdoc />
-    public partial class Commentsv1 : Migration
+    public partial class Comment : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -18,12 +18,13 @@ namespace QLN.Common.Migrations.ClassifiedDev
                 {
                     Id = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    AdId = table.Column<long>(type: "bigint", nullable: false),
+                    AdId = table.Column<long>(type: "bigint", nullable: true),
+                    CompanyId = table.Column<Guid>(type: "uuid", nullable: true),
                     Vertical = table.Column<int>(type: "integer", nullable: false),
-                    SubVertical = table.Column<int>(type: "integer", nullable: false),
+                    SubVertical = table.Column<int>(type: "integer", nullable: true),
                     Action = table.Column<string>(type: "text", nullable: false),
-                    Reason = table.Column<string>(type: "text", nullable: false),
-                    Comments = table.Column<string>(type: "text", nullable: false),
+                    Reason = table.Column<string>(type: "text", nullable: true),
+                    Comments = table.Column<string>(type: "text", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     CreatedUserId = table.Column<string>(type: "text", nullable: false),
                     CreatedUserName = table.Column<string>(type: "text", nullable: false),

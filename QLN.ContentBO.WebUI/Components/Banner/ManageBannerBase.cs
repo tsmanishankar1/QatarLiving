@@ -2,6 +2,7 @@
 using QLN.ContentBO.WebUI.Models;
 using QLN.ContentBO.WebUI.Pages.EventsPage;
 using QLN.ContentBO.WebUI.Services;
+using MudBlazor;
 using static QLN.ContentBO.WebUI.Components.ToggleTabs.ToggleTabs;
 
 namespace QLN.ContentBO.WebUI.Components.Banner
@@ -11,6 +12,7 @@ namespace QLN.ContentBO.WebUI.Components.Banner
         protected int activeIndex = 0;
         public Guid BannerId { get; set; }
         protected string selectedTab = "daily";
+        protected MudTabs mudTabs;
         protected ManageBannerTab SelectedTab => (ManageBannerTab)activeIndex;
         public class BannerSlot
         {
@@ -24,6 +26,11 @@ namespace QLN.ContentBO.WebUI.Components.Banner
         {
             BannerId = id;
         }
+        protected void SwitchToFirstTab()
+    {
+        mudTabs.ActivatePanel(0); 
+    }
+
         protected override async Task OnInitializedAsync()
         {
             try

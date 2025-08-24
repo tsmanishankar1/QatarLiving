@@ -17,6 +17,7 @@ namespace QLN.Common.DTO_s
     }
     public class CategoryCountDto
     {
+        public long CategoryId { get; set; }
         public string Category { get; set; }
         public int AdsCount { get; set; }
     }

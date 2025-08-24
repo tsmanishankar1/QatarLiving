@@ -67,22 +67,21 @@ namespace QLN.Classified.MS.Service.Services
             }).ToList();
 
             return result;
-        }       
+        }
         private List<FieldDto> FlattenFields(List<FieldDto>? fields)
         {
             var list = new List<FieldDto>();
             if (fields == null) return list;
 
-        //    foreach (var field in fields)
-        //    {
-        //        list.Add(field);
-        //        if (field.Fields != null)
-        //            list.AddRange(FlattenFields(field.Fields));
-        //    }
+            foreach (var field in fields)
+            {
+                list.Add(field);
+                if (field.Fields != null)
+                    list.AddRange(FlattenFields(field.Fields));
+            }
 
             return list;
         }
-
         public async Task<string> CreateCategory(CategoryDto dto, CancellationToken cancellationToken)
         {
             try
@@ -124,7 +123,6 @@ namespace QLN.Classified.MS.Service.Services
                 return $"Error: {ex.Message}";
             }
         }
-
         private async Task<long> GetLastIdFromJsonFieldsAsync()
         {
             var allCategories = await _dbContext.CategoryDropdowns
@@ -147,7 +145,6 @@ namespace QLN.Classified.MS.Service.Services
 
             return maxId;
         }
-
         private List<long> ExtractAllFieldIds(List<FieldDto> fields)
         {
             var ids = new List<long>();
@@ -163,7 +160,6 @@ namespace QLN.Classified.MS.Service.Services
 
             return ids;
         }
-
         private void AssignIds(List<FieldDto>? fields, ref long lastFieldId)
         {
             if (fields == null) return;
@@ -177,7 +173,8 @@ namespace QLN.Classified.MS.Service.Services
                     AssignIds(field.Fields, ref lastFieldId);
             }
         }
-        public async Task<string> CreateServiceAd(string uid, string userName, string subscriptionId, ServiceDto dto, CancellationToken cancellationToken = default)
+
+        public async Task<ResponseDto> CreateServiceAd(string uid, string userName, Guid subscriptionId, ServiceDto dto, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -222,7 +219,7 @@ namespace QLN.Classified.MS.Service.Services
                     Availability = dto.Availability,
                     Duration = dto.Duration,
                     Reservation = dto.Reservation,
-                    SubscriptionId = Guid.Parse(subscriptionId),
+                    SubscriptionId = subscriptionId,
                     ZoneId = dto.ZoneId,
                     Longitude = dto.Longitude,
                     Lattitude = dto.Lattitude,
@@ -257,7 +254,12 @@ namespace QLN.Classified.MS.Service.Services
                         cancellationToken: cancellationToken
                     );
                 }
-                return "Service Ad Created Successfully";
+                return new ResponseDto
+                {
+                    AdId = entity.Id,
+                    Title = entity.Title,
+                    Message = "Service Ad Created Successfully"
+                };
             }
             catch (ConflictException)
             {
@@ -274,14 +276,17 @@ namespace QLN.Classified.MS.Service.Services
         }
         private ServiceStatus GetAdStatus(string l1CategoryName, ServiceAdType adType)
         {
-            if (adType == ServiceAdType.Subscription)
-                return ServiceStatus.Published;
+            if (string.Equals(l1CategoryName, "Therapeutic Services", StringComparison.OrdinalIgnoreCase) && adType == ServiceAdType.PayToPublish)
+                return ServiceStatus.Draft;
 
-            if (string.Equals(l1CategoryName, "Therapeutic Services", StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(l1CategoryName, "Therapeutic Services", StringComparison.OrdinalIgnoreCase) && adType == ServiceAdType.Subscription)
                 return ServiceStatus.PendingApproval;
 
             if (adType == ServiceAdType.PayToPublish)
-                return ServiceStatus.PendingApproval;
+                return ServiceStatus.Draft;
+
+            if (adType == ServiceAdType.Subscription)
+                return ServiceStatus.Published;
 
             throw new ArgumentException("Invalid ServiceAdType.");
         }
@@ -524,7 +529,7 @@ namespace QLN.Classified.MS.Service.Services
             try
             {
                 var query = _dbContext.Services
-                    .Where(s => s.IsActive);
+                    .Where(s => s.IsActive && s.Status != ServiceStatus.Draft);
 
                 if (!string.IsNullOrWhiteSpace(dto?.Title))
                 {
@@ -665,7 +670,7 @@ namespace QLN.Classified.MS.Service.Services
                 throw new Exception("An error occurred while fetching all services.", ex);
             }
         }
-        public async Task<Common.Infrastructure.Model.Services> PromoteService(PromoteServiceRequest request, string? uid, string? subscriptionId, CancellationToken ct)
+        public async Task<Common.Infrastructure.Model.Services> PromoteService(PromoteServiceRequest request, string uid, Guid? subscriptionId, CancellationToken ct)
         {
             var serviceAd = await _dbContext.Services
                 .FirstOrDefaultAsync(s => s.Id == request.ServiceId && s.IsActive, ct);
@@ -715,7 +720,7 @@ namespace QLN.Classified.MS.Service.Services
 
             return serviceAd;
         }
-        public async Task<Common.Infrastructure.Model.Services> FeatureService(FeatureServiceRequest request, string? uid, string? subscriptionId, CancellationToken ct)
+        public async Task<Common.Infrastructure.Model.Services> FeatureService(FeatureServiceRequest request, string uid, Guid? subscriptionId, CancellationToken ct)
         {
             var serviceAd = await _dbContext.Services
                 .FirstOrDefaultAsync(s => s.Id == request.ServiceId && s.IsActive, ct);
@@ -767,7 +772,7 @@ namespace QLN.Classified.MS.Service.Services
 
             return serviceAd;
         }
-        public async Task<Common.Infrastructure.Model.Services> RefreshService(RefreshServiceRequest request, string? uid, string? subscriptionId, CancellationToken ct)
+        public async Task<Common.Infrastructure.Model.Services> RefreshService(RefreshServiceRequest request, string uid, Guid? subscriptionId, CancellationToken ct)
         {
             var serviceAd = await _dbContext.Services
                 .FirstOrDefaultAsync(s => s.Id == request.ServiceId && s.IsActive, ct);
@@ -822,7 +827,7 @@ namespace QLN.Classified.MS.Service.Services
 
             return serviceAd;
         }
-        public async Task<Common.Infrastructure.Model.Services> PublishService(PublishServiceRequest request, string? uid, string? subscriptionId, CancellationToken ct)
+        public async Task<Common.Infrastructure.Model.Services> PublishService(PublishServiceRequest request, string uid, Guid? subscriptionId, CancellationToken ct)
         {
             var serviceAd = await _dbContext.Services
                 .FirstOrDefaultAsync(s => s.Id == request.ServiceId && s.IsActive, ct);
@@ -830,8 +835,14 @@ namespace QLN.Classified.MS.Service.Services
             if (serviceAd == null)
                 throw new KeyNotFoundException("Service Ad not found.");
 
+            if (serviceAd.Status == ServiceStatus.Draft)
+                throw new InvalidDataException("Draft services cannot be published/unpublished directly.");
+
             if (request.Status == ServiceStatus.Published)
             {
+                if (serviceAd.Status == ServiceStatus.Published)
+                    throw new InvalidDataException("Service is already published.");
+
                 var conflictExists = await _dbContext.Services.AnyAsync(s =>
                     s.Id != request.ServiceId &&
                     s.CreatedBy == serviceAd.CreatedBy &&
@@ -846,20 +857,14 @@ namespace QLN.Classified.MS.Service.Services
                     );
                 }
 
-                if (serviceAd.Status == ServiceStatus.Published)
-                    throw new InvalidDataException("Service is already published.");
-
                 var subscription = await _qLSubscriptionContext.Subscriptions
                 .FirstOrDefaultAsync(sub =>
-                sub.SubscriptionId == Guid.Parse(subscriptionId) &&
+                sub.SubscriptionId == (Guid)subscriptionId &&
                 (int)sub.Status == (int)SubscriptionStatus.Active, ct);
 
                 if (subscription == null)
                     throw new InvalidOperationException("Active subscription not found for this service.");
                 var effectiveExpiryDate = subscription.EndDate;
-
-                if (subscription == null)
-                    throw new InvalidDataException("Active subscription not found for this service.");
                 serviceAd.Status = ServiceStatus.Published;
                 serviceAd.PublishedDate = DateTime.UtcNow;
             }

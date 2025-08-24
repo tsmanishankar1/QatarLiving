@@ -245,5 +245,10 @@ namespace QLN.DataMigration.Services
         {
             throw new NotImplementedException();
         }
+
+        public Task<int> RefundFreeAdsUsageAsync(Guid subscriptionId, string category, string? l1Category, string? l2Category, int amount, CancellationToken ct = default)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

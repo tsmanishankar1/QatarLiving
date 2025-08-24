@@ -278,7 +278,7 @@ namespace QLN.DataMigration.Services
             throw new NotImplementedException();
         }
 
-        public Task<Items> P2PromoteItems(ItemsPayToPromote promote, string uid, CancellationToken ct)
+        public Task<P2PromoteResponseDto> P2Promote(ClassifiedsPayToPromote promote, string uid, CancellationToken ct)
         {
             throw new NotImplementedException();
         }
@@ -299,6 +299,14 @@ namespace QLN.DataMigration.Services
             throw new NotImplementedException();
         }
 
-       
+        Task<object> IClassifiedService.P2Promote(ClassifiedsPayToPromote promote, string uid, CancellationToken ct)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<object> P2Publish(ClassifiedsPayToPublish publish, string uid, CancellationToken ct)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
