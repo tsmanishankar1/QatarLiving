@@ -278,7 +278,12 @@ namespace QLN.DataMigration.Services
             throw new NotImplementedException();
         }
 
-        public Task<Items> P2PromoteItems(ItemsPayToPromote promote, string uid, CancellationToken ct)
+        public Task<P2PromoteResponseDto> P2Promote(ClassifiedsPayToPromote promote, string uid, CancellationToken ct)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<List<CategoryCountDto>> GetCategoryCountsAsync(CancellationToken cancellationToken)
         {
             throw new NotImplementedException();
         }
@@ -287,15 +292,13 @@ namespace QLN.DataMigration.Services
         //{
         //    throw new NotImplementedException();
         //}
+       
 
-        //public Task<AdCreatedResponseDto> CreateClassifiedPrelovedAd(Preloveds dto, CancellationToken cancellationToken = default)
-        //{
-        //    throw new NotImplementedException();
-        //}
+        public Task<string> P2PFeature(ClassifiedsPayToFeature dto, string userId, Guid addonId, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
 
-        //public Task<AdCreatedResponseDto> CreateClassifiedDealsAd(Deals dto, CancellationToken cancellationToken = default)
-        //{
-        //    throw new NotImplementedException();
-        //}
+       
     }
 }

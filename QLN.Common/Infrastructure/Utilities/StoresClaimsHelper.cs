@@ -59,5 +59,22 @@ namespace QLN.Common.Infrastructure.Utilities
             }
         }
 
+        public static (string?UserId,string? Error) GetValidUserId(ClaimsPrincipal user) {
+            try
+            {
+                var userId = user.FindFirst("sub")?.Value;
+
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return (null, "User ID not found in token.");
+                }
+                return (userId, null);
+            }
+            catch (Exception ex)
+            {
+                return (null,  $"Unexpected error: {ex.Message}");
+            }
+        }
+    
     }
 }

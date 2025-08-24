@@ -20,11 +20,11 @@ namespace QLN.Backend.API.Service.Services
         private readonly DaprClient _dapr;
         private readonly ILogger<ExternalServicesService> _logger;
         private readonly IV2SubscriptionService _v2SubscriptionService;
-        public ExternalServicesService(DaprClient dapr, ILogger<ExternalServicesService> logger,IV2SubscriptionService v2SubscriptionService)
+        public ExternalServicesService(DaprClient dapr, ILogger<ExternalServicesService> logger, IV2SubscriptionService v2SubscriptionService)
         {
             _dapr = dapr;
             _logger = logger;
-            _v2SubscriptionService=v2SubscriptionService;
+            _v2SubscriptionService = v2SubscriptionService;
         }
         public async Task<string> CreateCategory(CategoryDto dto, CancellationToken cancellationToken)
         {
@@ -98,7 +98,7 @@ namespace QLN.Backend.API.Service.Services
                 if (dto.AdType == ServiceAdType.Subscription)
                 {
                     var subscription = new V2SubscriptionResponseDto();
-                    if(subscriptionId != null)
+                    if (subscriptionId != null)
                         subscription = await _v2SubscriptionService.GetSubscriptionByIdAsync(Guid.Parse(subscriptionId), cancellationToken);
 
                     if (subscription == null)
@@ -109,7 +109,7 @@ namespace QLN.Backend.API.Service.Services
 
                     var canUse = await _v2SubscriptionService.ValidateSubscriptionUsageAsync(
                         Guid.Parse(subscriptionId),
-                        ActionTypes.Publish, 
+                        ActionTypes.Publish,
                         1,
                         cancellationToken
                     );
@@ -143,7 +143,7 @@ namespace QLN.Backend.API.Service.Services
                     }
                     if (response.StatusCode == HttpStatusCode.BadRequest)
                     {
-                        throw new InvalidDataException(errorMessage); 
+                        throw new InvalidDataException(errorMessage);
                     }
                     throw new Exception(errorMessage);
                 }
@@ -341,7 +341,7 @@ namespace QLN.Backend.API.Service.Services
                     {
                         _logger.LogWarning(
                             "Subscription {SubscriptionId} has insufficient quota for {QuotaAction}.",
-                            subscriptionId, 
+                            subscriptionId,
                             quotaAction
                         );
                         throw new InvalidDataException($"Insufficient subscription quota for {quotaAction.ToLower()}.");
@@ -506,7 +506,7 @@ namespace QLN.Backend.API.Service.Services
                     {
                         _logger.LogWarning(
                             "Subscription {SubscriptionId} has insufficient quota for {QuotaAction}.",
-                            subscriptionId, 
+                            subscriptionId,
                             quotaAction
                         );
                         throw new InvalidDataException($"Insufficient subscription quota for {quotaAction.ToLower()}.");
@@ -650,10 +650,10 @@ namespace QLN.Backend.API.Service.Services
                 BulkModerationAction.UnFeature => new[] { ActionTypes.UnFeature },
 
                 BulkModerationAction.Publish or BulkModerationAction.Approve
-                    => new[] { ActionTypes.Publish},
+                    => new[] { ActionTypes.Publish },
 
                 BulkModerationAction.Unpublish
-                    => new[] { ActionTypes.UnPublish},
+                    => new[] { ActionTypes.UnPublish },
 
                 _ => Array.Empty<string>()
             };
@@ -808,7 +808,7 @@ namespace QLN.Backend.API.Service.Services
                 {
                     SubscriptionId = subscriptionIdFromToken,
                     VerticalId = verticalId,
-                    SubVerticalId = subverticalId 
+                    SubVerticalId = subverticalId
                 };
 
                 var response = await _dapr.InvokeMethodAsync<object, SubscriptionBudgetDto>(
