@@ -6184,6 +6184,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
           ProblemHttpResult>>
           (
           [FromServices] IClassifiedsFoService service,
+           [FromServices] IV2SubscriptionService subsService,
           HttpContext context,
            string? CompanyId,
           CancellationToken cancellationToken
@@ -6192,23 +6193,21 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 try
                 {
 
-                    var (userId, validSubscriptions, error) = GenericClaimsHelper.GetValidSubscriptions(context.User, (int)Vertical.Classifieds, (int)SubVertical.Stores);
-                    if (!string.IsNullOrEmpty(error))
-                    {
-                        return TypedResults.Problem(
-                        title: "Subscription issue in token.",
-                        detail: error,
-                        statusCode: StatusCodes.Status500InternalServerError,
-                        instance: context.Request.Path
-                        );
-                    }
+                    var (userId, userName) = UserTokenHelper.ExtractUserAsync(context);
 
-                    if (string.IsNullOrEmpty(userId))
+                    if (string.IsNullOrWhiteSpace(userId))
                     {
                         return TypedResults.Forbid();
                     }
 
-                    if (validSubscriptions != null && validSubscriptions.Any())
+                    var subscriptions = await subsService.GetActiveSubscriptionsAsync(
+                       userId,
+                       (int)Vertical.Classifieds,
+                       (int)SubVertical.Stores,
+                       cancellationToken
+                   );
+
+                    if (subscriptions != null && subscriptions.Any())
                     {
                         var result = await service.GetStoresDashboardHeader(userId, CompanyId, cancellationToken);
                         return TypedResults.Ok(result);
@@ -6281,6 +6280,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
           ProblemHttpResult>>
           (
           [FromServices] IClassifiedsFoService service,
+           [FromServices] IV2SubscriptionService subsService,
           HttpContext context,
             string? CompanyId, string? SubscriptionId,
           CancellationToken cancellationToken
@@ -6288,22 +6288,21 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             {
                 try
                 {
-                    var (userId, validSubscriptions, error) = GenericClaimsHelper.GetValidSubscriptions(context.User, (int)Vertical.Classifieds, (int)SubVertical.Stores);
-                    if (!string.IsNullOrEmpty(error))
-                    {
-                        return TypedResults.Problem(
-                        title: "Subscription issue in token.",
-                        detail: error,
-                        statusCode: StatusCodes.Status500InternalServerError,
-                        instance: context.Request.Path
-                        );
-                    }
+                    var (userId, userName) = UserTokenHelper.ExtractUserAsync(context);
 
-                    if (string.IsNullOrEmpty(userId))
+                    if (string.IsNullOrWhiteSpace(userId))
                     {
                         return TypedResults.Forbid();
                     }
-                    if (validSubscriptions != null && validSubscriptions.Any())
+
+                    var subscriptions = await subsService.GetActiveSubscriptionsAsync(
+                       userId,
+                       (int)Vertical.Classifieds,
+                       (int)SubVertical.Stores,
+                       cancellationToken
+                   );
+
+                    if (subscriptions != null && subscriptions.Any())
                     {
                         var result = await service.GetStoresDashboardSummary(CompanyId, SubscriptionId, cancellationToken);
                         return TypedResults.Ok(result);
