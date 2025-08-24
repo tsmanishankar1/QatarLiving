@@ -7,5 +7,6 @@ namespace QLN.ContentBO.WebUI.Interfaces
         Task<HttpResponseMessage?> GetAllListing(ItemsRequest itemsRequest);
         Task<HttpResponseMessage?> GetTransactionListing(ItemTransactionRequest itemTransactionRequest);
         Task<HttpResponseMessage?> BulkActionAsync(List<long?> adIds, int action, string? reason = null, string? comments = null);
+        Task<HttpResponseMessage?> CreateAd(object payload);
     }
 }

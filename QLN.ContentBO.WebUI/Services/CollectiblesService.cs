@@ -18,11 +18,10 @@ namespace QLN.ContentBO.WebUI.Services
             _logger = Logger;
         }
 
-        public async Task<HttpResponseMessage?> BulkActionAsync(
-    List<long?> adIds,
-    int action,
-    string? reason = null,
-    string? comments = null)
+        public async Task<HttpResponseMessage?> BulkActionAsync(List<long?> adIds,
+                                                                int action,
+                                                                string? reason = null,
+                                                                string? comments = null)
         {
             try
             {
@@ -30,14 +29,14 @@ namespace QLN.ContentBO.WebUI.Services
                 {
                     AdIds = adIds,
                     Action = action,
-                    Reason = "reason", 
+                    Reason = "reason",
                     Comments = "comments"
                 };
 
                 // Serialize separately so we can log
                 var jsonPayload = JsonSerializer.Serialize(payload, new JsonSerializerOptions
                 {
-                    WriteIndented = true 
+                    WriteIndented = true
                 });
 
                 // Print/log JSON
@@ -85,6 +84,32 @@ namespace QLN.ContentBO.WebUI.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "GetTransactionListing");
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+
+        public async Task<HttpResponseMessage?> CreateAd(object payload)
+        {
+            try
+            {
+                var endpoint = "/api/v2/classifiedbo/collectibles/admin/post-by-id";
+                var serializeOptions = new JsonSerializerOptions
+                {
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                    WriteIndented = true
+                };
+                var jsonPayload = JsonSerializer.Serialize(payload, serializeOptions);
+                using var request = new HttpRequestMessage(HttpMethod.Post, endpoint)
+                {
+                    Content = new StringContent(jsonPayload, Encoding.UTF8, "application/json")
+                };
+                var response = await _httpClient.SendAsync(request);
+                var responseContent = await response.Content.ReadAsStringAsync();
+                return response;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("PostCollectiblesAdAsync Exception: " + ex);
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }

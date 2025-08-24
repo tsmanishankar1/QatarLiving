@@ -1,14 +1,11 @@
-using Nextended.Core.Extensions;
+
 using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Models;
 using QLN.ContentBO.WebUI.Services.Base;
 using System.Net;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.Net.Http;
 using System.Text;
-using System.Text.Json;
-using static QLN.Common.Infrastructure.Constants.ConstantValues;
 
 namespace QLN.ContentBO.WebUI.Services
 {
@@ -672,17 +669,6 @@ namespace QLN.ContentBO.WebUI.Services
                     queryParams.Add("isFeatured=true");
                 }
 
-
-                //if (!string.IsNullOrEmpty(request.SortField))
-                //{
-                //    queryParams.Add($"sortField={request.SortField}");
-                //}
-
-                //if (!string.IsNullOrEmpty(request.SortDirection))
-                //{
-                //    queryParams.Add($"sortDirection={request.SortDirection}");
-                //}
-
                 if (queryParams.Count > 0)
                 {
                     url += "?" + string.Join("&", queryParams);
@@ -790,47 +776,7 @@ namespace QLN.ContentBO.WebUI.Services
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
-        public async Task<HttpResponseMessage?> PostAdAsync(string vertical, object payload)
-        {
-            try
-            {
-                var endpoint = $"/api/classified/items";
 
-                var serializeOptions = new JsonSerializerOptions
-                {
-                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                    WriteIndented = false
-                };
-                var jsonPayload = JsonSerializer.Serialize(payload, serializeOptions);
-                using var request = new HttpRequestMessage(HttpMethod.Post, endpoint)
-                {
-                    Content = new StringContent(jsonPayload, Encoding.UTF8, "application/json")
-                };
-
-                var response = await _httpClient.SendAsync(request);
-
-                // Print full response for debugging
-                var responseContent = await response.Content.ReadAsStringAsync();
-                Console.WriteLine("API Response (" + response.StatusCode + "): " + responseContent);
-
-                return response;
-            }
-            catch (HttpRequestException ex)
-            {
-                _logger.LogError("PostAdAsync " + ex);
-                return new HttpResponseMessage(HttpStatusCode.BadGateway);
-            }
-            catch (TaskCanceledException ex) when (!ex.CancellationToken.IsCancellationRequested)
-            {
-                _logger.LogError("PostAdAsync " + ex);
-                return new HttpResponseMessage(HttpStatusCode.RequestTimeout);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError("PostAdAsync " + ex);
-                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
-            }
-        }
         public async Task<HttpResponseMessage?> PostCollectiblesAdAsync(object payload)
         {
             try
