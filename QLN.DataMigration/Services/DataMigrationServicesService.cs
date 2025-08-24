@@ -205,5 +205,10 @@ namespace QLN.DataMigration.Services
         {
             throw new NotImplementedException();
         }
+
+        Task<ResponseDto> IServices.CreateServiceAd(string uid, string userName, string subscriptionId, ServiceDto dto, CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
