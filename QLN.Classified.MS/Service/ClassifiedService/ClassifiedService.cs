@@ -2735,17 +2735,25 @@ namespace QLN.Classified.MS.Service
 
         public async Task<List<CategoryCountDto>> GetCategoryCountsAsync(CancellationToken cancellationToken)
         {
-            return await _context.Item
-                .Where(i => i.Status == AdStatus.Published)
-                .GroupBy(i => i.Category)
-                .Select(g => new CategoryCountDto
+            var query =
+                from c in _context.CategoryDropdowns
+                where c.Vertical == Vertical.Classifieds && c.SubVertical == SubVertical.Items
+                join i in (
+                    from item in _context.Item
+                    where item.Status == AdStatus.Published
+                    group item by item.Category into g
+                    select new { Category = g.Key, AdsCount = (int?)g.Count() }
+                )
+                on c.CategoryName.ToLower() equals i.Category.ToLower() into gj
+                from i in gj.DefaultIfEmpty()
+                select new CategoryCountDto
                 {
-                    Category = g.Key,
-                    AdsCount = g.Count()
-                })
-                .ToListAsync();
-        }
+                    Category = c.CategoryName,
+                    AdsCount = i.AdsCount ?? 0
+                };
 
+            return await query.ToListAsync(cancellationToken);
+        }
 
     }
 }
