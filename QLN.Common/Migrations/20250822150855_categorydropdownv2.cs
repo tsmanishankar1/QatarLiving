@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
+using QLN.Common.DTO_s.Services;
 using QLN.Common.Infrastructure.Model;
 
 #nullable disable

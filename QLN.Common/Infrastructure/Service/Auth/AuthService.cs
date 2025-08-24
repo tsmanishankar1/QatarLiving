@@ -1526,9 +1526,9 @@ namespace QLN.Common.Infrastructure.Service.AuthService
                         TotalActiveP2PSubscriptions = activeP2PSubscriptions.Count,
                         TotalActiveAddons = activeAddons.Count(a => a.IsActive),
                         ActiveSubscriptions = subscriptionsByVertical,
-                        ActiveFreeSubscriptions = freeSubscriptionsByVertical,
-                        ActiveP2PSubscriptions = activeP2PSubscriptions,
-                        ActiveAddons = addonsByVertical,
+                        //ActiveFreeSubscriptions = freeSubscriptionsByVertical,
+                        //ActiveP2PSubscriptions = activeP2PSubscriptions,
+                        //ActiveAddons = addonsByVertical,
                         UsageSummary = usageSummary,
                         EarliestExpiryDate = GetEarliestExpiryDate(activeSubscriptions, activeFreeSubscriptions),
                         LatestExpiryDate = GetLatestExpiryDate(activeSubscriptions, activeFreeSubscriptions)

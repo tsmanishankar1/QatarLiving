@@ -17,8 +17,8 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.P2p
         [Inject] protected ILogger<P2pTransactionBase> Logger { get; set; } = default!;
         [Parameter] public EventCallback<(string from, string to)> OnDateChanged { get; set; }
         [Inject] protected IJSRuntime JS { get; set; } = default!;
-         [Inject] protected IDialogService DialogService { get; set; } = default!;
-        protected string? SearchText { get; set; } 
+        [Inject] protected IDialogService DialogService { get; set; } = default!;
+        protected string SearchText { get; set; } = string.Empty;
 
         protected string SortIcon { get; set; } = Icons.Material.Filled.Sort;
 
@@ -83,15 +83,9 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.P2p
 
         protected List<PrelovedP2PTransactionItem> Listings { get; set; } = [];
 
-        protected List<string> SubscriptionTypes =
-        [
-            "Free",
-            "Basic",
-            "Pro",
-            "Enterprise"
-        ];
+        protected List<string> SubscriptionTypes = [];
 
-        protected string SelectedSubscriptionType { get; set; } = null;
+        protected string SelectedSubscriptionType { get; set; } = string.Empty;
         // Date range logic
         protected DateRange _dateRange = new();
         protected DateRange _tempDateRange = new();
@@ -101,7 +95,33 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.P2p
 
         protected override async Task OnInitializedAsync()
         {
-            await LoadPrelovedListingsAsync();
+            await base.OnInitializedAsync();
+        }
+
+        protected override async Task OnAfterRenderAsync(bool firstRender)
+        {
+            try
+            {
+                if (firstRender)
+                {
+                    IsLoading = true;
+                    await LoadPrelovedListingsAsync();
+                    var tListOfSubsctiptions = await GetSubscriptionProductsAsync((int)VerticalTypeEnum.Classifieds, (int)SubVerticalTypeEnum.Preloved);
+                    if (tListOfSubsctiptions != null && tListOfSubsctiptions.Count != 0)
+                    {
+                        SubscriptionTypes = [.. tListOfSubsctiptions.Select(x => x.ProductName).ToList()];
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "OnAfterRenderAsync");
+            }
+            finally
+            {
+                IsLoading = false;
+                StateHasChanged();
+            }
         }
 
         private async Task LoadPrelovedListingsAsync()
@@ -215,6 +235,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.P2p
             SearchText = string.Empty;
             _dateRange = new();
             _tempDateRange = new();
+            SelectedSubscriptionType = string.Empty;
         }
         protected async void CancelDatePicker()
         {

@@ -16,46 +16,47 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.InstagramService
         public static RouteGroupBuilder MapInstagramEndpoints(this RouteGroupBuilder group)
         {
             group.MapGet("/latest-posts",
-                async Task<Results<Ok<List<InstagramPost>>,
-                                   ProblemHttpResult>> (
-                    [FromServices] IInstaService instagramService,
-                    [FromServices] IEventlogger log,
-                    CancellationToken cancellationToken
-                ) =>
-                {
-                    try
-                    {
-                        var posts = await instagramService.GetLatestPostsAsync(10, cancellationToken);
+       async Task<Results<Ok<List<InstagramPost>>,
+                          ProblemHttpResult>> (
+           [FromServices] IInstaService instagramService,
+           [FromServices] IEventlogger log,
+           CancellationToken cancellationToken
+       ) =>
+       {
+           try
+           {
+               var posts = await instagramService.GetLatestPostsAsync(10, cancellationToken);
 
-                        if (posts == null || posts.Count == 0)
-                        {
-                            log.LogTrace("No Instagram posts found.");
-                            return TypedResults.Problem(
-                                title: "No Posts Found",
-                                detail: "No Instagram posts were returned.",
-                                statusCode: StatusCodes.Status404NotFound);
-                        }
+               if (posts == null || posts.Count == 0)
+               {
+                   log.LogTrace("No Instagram posts found.");
+                   return TypedResults.Problem(
+                       title: "No Posts Found",
+                       detail: "No Instagram posts were returned.",
+                       statusCode: StatusCodes.Status404NotFound);
+               }
 
-                        log.LogTrace($"Fetched {posts.Count} Instagram posts successfully.");
-                        return TypedResults.Ok(posts);
-                    }
-                    catch (Exception ex)
-                    {
-                        log.LogException(ex);
-                        return TypedResults.Problem(
-                            title: "Instagram API Error",
-                            detail: "An error occurred while fetching Instagram posts.",
-                            statusCode: StatusCodes.Status500InternalServerError);
-                    }
-                })
-                .WithName("GetLatestInstagramPosts")
-                .WithTags("Instagram")
-                .WithSummary("Fetches the latest Instagram posts.")
-                .WithDescription("Fetches the latest Instagram posts (excluding reels) from the configured account.")
-                .Produces<List<InstagramPost>>(StatusCodes.Status200OK)
-                .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
-                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
-                .RequireAuthorization();
+               log.LogTrace($"Fetched {posts.Count} Instagram posts successfully.");
+               return TypedResults.Ok(posts);
+           }
+           catch (Exception ex)
+           {
+               log.LogException(ex);
+               return TypedResults.Problem(
+                   title: "Instagram API Error",
+                   detail: "An error occurred while fetching Instagram posts.",
+                   statusCode: StatusCodes.Status500InternalServerError);
+           }
+       })
+       .WithName("GetLatestInstagramPosts")
+       .WithTags("Instagram")
+       .WithSummary("Fetches the latest Instagram posts.")
+       .WithDescription("Fetches the latest Instagram posts (excluding reels) from the configured account.")
+       .Produces<List<InstagramPost>>(StatusCodes.Status200OK)
+       .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+       .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+            
+
 
             return group;
         }

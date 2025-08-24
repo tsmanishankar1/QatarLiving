@@ -7,39 +7,39 @@
     <EditForm Model="Company" OnValidSubmit="SubmitForm">
         <DataAnnotationsValidator />
         <MudTextField Class="white-bg mt-4" Variant="Variant.Outlined" T="string" Label="Company Name"
-            @bind-Value="Company.CompanyName" For="@(() => Company.CompanyName)" FullWidth="true" />
+                      @bind-Value="Company.CompanyName" For="@(() => Company.CompanyName)" FullWidth="true" />
 
-       <MudSelect T="string"
-              Class="white-bg mt-2"
-           Label="Select Country"
-           Variant="Variant.Outlined"
-           Value="@selectedCountry"
-           ValueChanged="OnCountryChanged"
-           Searchable="true"
-           SearchFunc="@((string searchTerm) =>
-               countries
-                   .Where(c => string.IsNullOrWhiteSpace(searchTerm) 
-                            || c.Country_Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
-                   .Select(c => c.Country_Name)
-           )">
-        @foreach (var country in countries)
-        {
-            <MudSelectItem Value="@country.Country_Name">@country.Country_Name</MudSelectItem>
-        }
+        <MudSelect T="string"
+                   Class="white-bg mt-2"
+                   Label="Select Country"
+                   Variant="Variant.Outlined"
+                   Value="@selectedCountry"
+                   ValueChanged="OnCountryChanged"
+                   Searchable="true"
+                   SearchFunc="@((string searchTerm) =>
+                                  countries
+                                      .Where(c => string.IsNullOrWhiteSpace(searchTerm)
+                                               || c.Country_Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
+                                      .Select(c => c.Country_Name)
+                      )">
+            @foreach (var country in countries)
+            {
+                <MudSelectItem Value="@country.Country_Name">@country.Country_Name</MudSelectItem>
+            }
         </MudSelect>
 
-        <MudSelect Class="white-bg mt-2" T="string" Variant="Variant.Outlined"  Label="Select City" Value="@selectedCity" Disabled="@(!filteredCities.Any())">
-        @foreach (var city in filteredCities)
-        {
-             <MudSelectItem Value="@city.City">@city.City</MudSelectItem>
-        }
+        <MudSelect Class="white-bg mt-2" T="string" Variant="Variant.Outlined" Label="Select City" Value="@selectedCity" Disabled="@(!filteredCities.Any())">
+            @foreach (var city in filteredCities)
+            {
+                <MudSelectItem Value="@city.City">@city.City</MudSelectItem>
+            }
         </MudSelect>
 
 
 
 
         <MudFileUpload T="IBrowserFile" Accept="image/png,image/jpeg" Class="py-3"
-            OnFilesChanged="@(e => HandleFilesChanged(e))" MaximumFileCount="1">
+                       OnFilesChanged="@(e => HandleFilesChanged(e))" MaximumFileCount="1">
             <ActivatorContent>
                 <div class="cover-upload-wrapper">
                     <div class="cover-upload-box">
@@ -76,28 +76,28 @@
         <div class="form-group mt-2">
             <!-- Phone -->
             <PhoneNumberInput DefaultCountryCode="@Company.PhoneNumberCountryCode"
-                SelectedCountry="@SelectedPhoneCountry" Placeholder="Phone Number*"
-                SelectedCountryChanged="@OnPhoneCountryChanged" PhoneNumber="@Company.PhoneNumber"
-                PhoneNumberChanged="@OnPhoneChanged" />
+                              SelectedCountry="@SelectedPhoneCountry" Placeholder="Phone Number*"
+                              SelectedCountryChanged="@OnPhoneCountryChanged" PhoneNumber="@Company.PhoneNumber"
+                              PhoneNumberChanged="@OnPhoneChanged" />
         </div>
         <div class="form-group mt-2">
             <!-- WhatsApp -->
             <PhoneNumberInput DefaultCountryCode="@Company.WhatsAppCountryCode"
-                SelectedCountry="@SelectedWhatsappCountry" Placeholder="WhatsApp Number"
-                SelectedCountryChanged="@OnWhatsappCountryChanged" PhoneNumber="@Company.WhatsAppNumber"
-                PhoneNumberChanged="@OnWhatsappChanged" />
+                              SelectedCountry="@SelectedWhatsappCountry" Placeholder="WhatsApp Number"
+                              SelectedCountryChanged="@OnWhatsappCountryChanged" PhoneNumber="@Company.WhatsAppNumber"
+                              PhoneNumberChanged="@OnWhatsappChanged" />
         </div>
         <MudTextField Class="white-bg mt-2" Variant="Variant.Outlined" T="string" Label="Email"
-            @bind-Value="Company.Email" For="@(() => Company.Email)" FullWidth="true" />
+                      @bind-Value="Company.Email" For="@(() => Company.Email)" FullWidth="true" />
 
         <MudTextField Class="white-bg mt-2" Variant="Variant.Outlined" T="string" Label="Website URL"
-            @bind-Value="Company.WebsiteUrl" For="@(() => Company.WebsiteUrl)" FullWidth="true" />
+                      @bind-Value="Company.WebsiteUrl" For="@(() => Company.WebsiteUrl)" FullWidth="true" />
 
         <MudTextField Class="white-bg mt-2" Variant="Variant.Outlined" T="string" Label="Facebook URL"
-            @bind-Value="Company.FacebookUrl" For="@(() => Company.FacebookUrl)" FullWidth="true" />
+                      @bind-Value="Company.FacebookUrl" For="@(() => Company.FacebookUrl)" FullWidth="true" />
 
         <MudTextField Class="white-bg mt-2" Variant="Variant.Outlined" T="string" Label="Instagram URL"
-            @bind-Value="Company.InstagramUrl" For="@(() => Company.InstagramUrl)" FullWidth="true" />
+                      @bind-Value="Company.InstagramUrl" For="@(() => Company.InstagramUrl)" FullWidth="true" />
 
         <h3 class="form-heading form-padding">Operating Hours</h3>
         <MudGrid GutterSize="8px" Class="compact-grid">
@@ -123,21 +123,21 @@
             <!-- Start Hour -->
             <MudItem xs="12" md="6">
                 <MudTimePicker Label="Start hour" @bind-Time="StartHourTime" Class="white-bg" Variant="Variant.Outlined"
-                    AmPm="true" />
+                               AmPm="true" />
             </MudItem>
 
             <!-- End Hour -->
             <MudItem xs="12" md="6">
                 <MudTimePicker Label="End hour" @bind-Time="EndHourTime" Class="white-bg" Variant="Variant.Outlined"
-                    AmPm="true" />
+                               AmPm="true" />
             </MudItem>
         </MudGrid>
-       
+
         @foreach (var field in CompanyProfileOptions)
         {
             <MudSelect T="int" Class="white-bg" Variant="Variant.Outlined" Label="@field.Key"
-                Value="@SelectedProfileValues[field.Key]"
-                ValueChanged="@(value => OnProfileValueChanged(field.Key, value))">
+                       Value="@SelectedProfileValues[field.Key]"
+                       ValueChanged="@(value => OnProfileValueChanged(field.Key, value))">
                 @foreach (var option in field.Value)
                 {
                     <MudSelectItem T="int" Value="@option.Value">@option.Label</MudSelectItem>
@@ -145,39 +145,53 @@
             </MudSelect>
         }
 
+        <MudSelect T="int"
+                   Class="white-bg"
+                   Variant="Variant.Outlined"
+                   Label="Nature Of Business"
+                   MultiSelection="true"
+                   SelectedValues="Company.NatureOfBusiness"
+                   SelectedValuesChanged="@(values => Company.NatureOfBusiness = values.ToList())"
+                   ToStringFunc="@(id => NatureOfBusinessOptions.FirstOrDefault(x => x.Id == id)?.NameOfBusiness)">
+
+            @foreach (var option in NatureOfBusinessOptions)
+            {
+                <MudSelectItem T="int" Value="@option.Id">@option.NameOfBusiness</MudSelectItem>
+            }
+        </MudSelect>
 
         <MudTextField Class="white-bg" Variant="Variant.Outlined" T="string" Label="User Designation*"
-            @bind-Value="Company.UserDesignation" For="@(() => Company.UserDesignation)" FullWidth="true" />
+                      @bind-Value="Company.UserDesignation" For="@(() => Company.UserDesignation)" FullWidth="true" />
 
 
         <MarkdownEditor @bind-Value="@Company.BusinessDescription" Placeholder="Start Typing" HideIcons="@HiddenIcons"
-            CustomButtonClicked="@OnCustomButtonClicked" @ref="MarkdownEditorRef">
+                        CustomButtonClicked="@OnCustomButtonClicked" @ref="MarkdownEditorRef">
             <Toolbar>
                 <MarkdownToolbarButton Action="MarkdownAction.Bold" Icon="fa fa-bold" Title="Bold" />
                 <MarkdownToolbarButton Action="MarkdownAction.Italic" Icon="fa fa-italic" Title="Italic" />
                 <MarkdownToolbarButton Action="MarkdownAction.Heading" Icon="fa fa-header" Title="Heading" />
                 <MarkdownToolbarButton Action="MarkdownAction.Strikethrough" Icon="fa fa-strikethrough"
-                    Title="Strikethrough" />
+                                       Title="Strikethrough" />
 
                 <MarkdownToolbarButton Separator Action="MarkdownAction.Code" Icon="fa fa-code" Title="Code Block" />
                 <MarkdownToolbarButton Action="MarkdownAction.Quote" Icon="fa fa-quote-right" Title="Quote" />
                 <MarkdownToolbarButton Action="MarkdownAction.HorizontalRule" Icon="fa fa-minus"
-                    Title="Horizontal Rule" />
+                                       Title="Horizontal Rule" />
                 <MarkdownToolbarButton Action="MarkdownAction.UnorderedList" Icon="fa fa-list-ul"
-                    Title="Unordered List" />
+                                       Title="Unordered List" />
                 <MarkdownToolbarButton Action="MarkdownAction.OrderedList" Icon="fa fa-list-ol" Title="Ordered List" />
 
                 <MarkdownToolbarButton Separator Action="MarkdownAction.Link" Icon="fa fa-link" Title="Link" />
                 <MarkdownToolbarButton Action="MarkdownAction.Custom" Name="@UploadImageButtonName" Icon="fa fa-upload"
-                    Title="Upload Image" />
+                                       Title="Upload Image" />
                 <MarkdownToolbarButton Action="MarkdownAction.Image" Icon="fa fa-image" Title="Image" />
 
                 <MarkdownToolbarButton Separator Action="MarkdownAction.Custom" Name="CustomPreview"
-                    Icon="fa fa-eye no-disable" Title="Toggle Preview (Ctrl-P)" />
+                                       Icon="fa fa-eye no-disable" Title="Toggle Preview (Ctrl-P)" />
                 <MarkdownToolbarButton Action="MarkdownAction.SideBySide" Icon="fa fa-columns no-disable no-mobile"
-                    Title="Side by Side" />
+                                       Title="Side by Side" />
                 <MarkdownToolbarButton Action="MarkdownAction.Guide" Icon="fa fa-question-circle"
-                    Title="Markdown Guide" />
+                                       Title="Markdown Guide" />
             </Toolbar>
         </MarkdownEditor>
         <MudText Typo="Typo.caption" Color="Color.Error">
@@ -185,7 +199,7 @@
         </MudText>
         <h3 class="form-heading">License & Visibility</h3>
         <MudTextField Class="white-bg" Variant="Variant.Outlined" T="long" Label="CR Number"
-            @bind-Value="Company.CrNumber" For="@(() => Company.CrNumber)" FullWidth="true" />
+                      @bind-Value="Company.CrNumber" For="@(() => Company.CrNumber)" FullWidth="true" />
         <MudPaper Class="catification-upload-section">
             <div class="catification-upload-info">
                 <h3 class="catification-upload-label">Certificate / Warranty*</h3>
@@ -197,13 +211,13 @@
                             @ShortFileName(Company.TherapeuticCertificate, 10)
                         </span>
                         <MudIconButton Icon="@Icons.Material.Outlined.Close" Size="Size.Small" Color="Color.Error"
-                            OnClick="ClearFile" />
+                                       OnClick="ClearFile" />
                     </div>
                 }
             </div>
 
             <MudFileUpload T="IBrowserFile" Accept=".pdf,.png,.jpg,.jpeg" MaxFileSize="10485760"
-                FilesChanged="OnCrFileSelected">
+                           FilesChanged="OnCrFileSelected">
                 <ActivatorContent>
                     <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="catification-upload-button">
                         Upload
@@ -218,7 +232,8 @@
 
         <MudStack Row Justify="Justify.SpaceBetween" Class="mt-4" Style="width:100%">
             <MudButton Variant="Variant.Filled" Color="Color.Primary" ButtonType="ButtonType.Submit" OnClick="SubmitForm" Style="width:100%">
-                Submit</MudButton>
+                Submit
+            </MudButton>
         </MudStack>
     </EditForm>
 </div>

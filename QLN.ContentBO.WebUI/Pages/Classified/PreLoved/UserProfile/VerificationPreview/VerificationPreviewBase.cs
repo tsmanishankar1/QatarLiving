@@ -11,18 +11,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.UserProfile.Verification
         protected CompanyProfileItem CompanyDetails { get; set; } = new();
          [Inject]
         protected NavigationManager Navigation { get; set; }
-        protected VerifiedStatus CurrentStatus
-        {
-            get
-            {
-                if (CompanyDetails != null && Enum.IsDefined(typeof(VerifiedStatus), CompanyDetails.CompanyVerificationStatus))
-                {
-                    return (VerifiedStatus)CompanyDetails.CompanyVerificationStatus;
-                }
-                return VerifiedStatus.NotVerified;
-            }
-        }
-
+        protected VerifiedStatus CurrentStatus { get; set; } = VerifiedStatus.NotVerified;
         [Inject] public ILogger<VerificationPreviewBase> Logger { get; set; }
          [Inject] ISnackbar Snackbar { get; set; }
         [Inject]
@@ -36,6 +25,15 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.UserProfile.Verification
             else
             {
                 CompanyDetails = new CompanyProfileItem();
+            }
+            if (CompanyDetails?.CompanyVerificationStatus.HasValue == true &&
+                Enum.IsDefined(typeof(VerifiedStatus), CompanyDetails.CompanyVerificationStatus.Value))
+            {
+                CurrentStatus = (VerifiedStatus)CompanyDetails.CompanyVerificationStatus.Value;
+            }
+            else
+            {
+                CurrentStatus = VerifiedStatus.NotVerified;
             }
         }
         private async Task<CompanyProfileItem> GetCompanyById()
