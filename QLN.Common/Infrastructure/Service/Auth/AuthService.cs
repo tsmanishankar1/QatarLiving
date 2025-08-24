@@ -1332,7 +1332,9 @@ namespace QLN.Common.Infrastructure.Service.AuthService
                     AccessToken = accessToken,
                     RefreshToken = refreshToken,
                     IsTwoFactorEnabled = false,
-                    ActiveSubscriptions = subscriptionsByVertical
+                    ActiveSubscriptions = subscriptionsByVertical,
+                    Companies = companiesByVertical
+
                 });
             }
             catch (Exception ex)
