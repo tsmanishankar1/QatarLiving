@@ -24,9 +24,10 @@ namespace QLN.Common.Infrastructure.Model
         [Required]
         [MaxLength(100)]
         public string ProductName { get; set; } = string.Empty;
+
         public ProductType? ProductType { get; set; }
 
-        [MaxLength(30)]
+        [MaxLength(100)]
         public string? UserId { get; set; }
 
         public Guid? CompanyId { get; set; }
@@ -55,5 +56,10 @@ namespace QLN.Common.Infrastructure.Model
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         public DateTime? UpdatedAt { get; set; }
+
+        [ForeignKey(nameof(ProductCode))]
+        public virtual Product Product { get; set; } = null!;
+
+        public virtual ICollection<UserAddOn> UserAddOns { get; set; } = new List<UserAddOn>();
     }
 }
