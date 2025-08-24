@@ -1285,7 +1285,24 @@ namespace QLN.Common.Infrastructure.Service.AuthService
                 {
                     _log.LogError(ex, "Error fetching active subscriptions for user {UserId}", user.Id);
                 }
+                var companiesByVertical = new Dictionary<Vertical, List<CompanyWithSubscriptionDto>>();
+                try
+                {
+                    var userCompanies = await _companyProfile.GetCompaniesByToken(user.Id.ToString());
 
+                    if (userCompanies != null && userCompanies.Any())
+                    {
+                        var companiesGrouped = userCompanies
+                            .GroupBy(c => MapVerticalTypeToVertical(c.Vertical))
+                            .ToDictionary(g => g.Key, g => g.ToList());
+
+                        companiesByVertical = companiesGrouped;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _log.LogError(ex, "Error fetching companies for user {UserId}", user.Id);
+                }
                 var subscriptionsByVertical = activeSubscriptions
                     .GroupBy(s => s.Vertical)
                     .ToDictionary(g => g.Key, g => g.ToList());
@@ -1327,7 +1344,16 @@ namespace QLN.Common.Infrastructure.Service.AuthService
                     statusCode: StatusCodes.Status500InternalServerError);
             }
         }
-
+        private Vertical MapVerticalTypeToVertical(VerticalType verticalType)
+        {
+            return verticalType switch
+            {
+                VerticalType.Classifieds => Vertical.Classifieds,
+                VerticalType.Properties => Vertical.Properties,
+                VerticalType.Services => Vertical.Services,
+                _ => Vertical.Classifieds
+            };
+        }
         private string GenerateRandomPassword()
         {
             const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
