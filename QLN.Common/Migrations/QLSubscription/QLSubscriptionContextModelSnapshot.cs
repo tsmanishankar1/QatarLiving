@@ -116,8 +116,8 @@ namespace QLN.Common.Migrations.QLSubscription
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("UserId")
-                        .HasMaxLength(30)
-                        .HasColumnType("character varying(30)");
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.Property<int>("Vertical")
                         .HasColumnType("integer");
@@ -164,6 +164,9 @@ namespace QLN.Common.Migrations.QLSubscription
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
+                    b.Property<int?>("ProductType")
+                        .HasColumnType("integer");
+
                     b.Property<DateTime>("StartDate")
                         .HasColumnType("timestamp with time zone");
 
@@ -180,8 +183,8 @@ namespace QLN.Common.Migrations.QLSubscription
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("UserId")
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.Property<int>("Vertical")
                         .HasColumnType("integer");
@@ -252,6 +255,47 @@ namespace QLN.Common.Migrations.QLSubscription
 
                             b1.WithOwner()
                                 .HasForeignKey("ProductCode");
+
+                            b1.OwnsMany("QLN.Common.DTO_s.Subscription.CategoryQuota", "CategoryQuotas", b2 =>
+                                {
+                                    b2.Property<string>("ProductConstraintsProductCode")
+                                        .HasColumnType("character varying(50)");
+
+                                    b2.Property<int>("Id")
+                                        .ValueGeneratedOnAdd()
+                                        .HasColumnType("integer");
+
+                                    b2.Property<int>("AdsBudget")
+                                        .HasColumnType("integer");
+
+                                    b2.Property<string>("Category")
+                                        .IsRequired()
+                                        .HasColumnType("text");
+
+                                    b2.Property<int>("FeaturedBudget")
+                                        .HasColumnType("integer");
+
+                                    b2.Property<string>("L1Category")
+                                        .HasColumnType("text");
+
+                                    b2.Property<string>("L2Category")
+                                        .HasColumnType("text");
+
+                                    b2.Property<int>("PromotedBudget")
+                                        .HasColumnType("integer");
+
+                                    b2.Property<int>("RefreshBudget")
+                                        .HasColumnType("integer");
+
+                                    b2.HasKey("ProductConstraintsProductCode", "Id");
+
+                                    b2.ToTable("Products");
+
+                                    b2.WithOwner()
+                                        .HasForeignKey("ProductConstraintsProductCode");
+                                });
+
+                            b1.Navigation("CategoryQuotas");
                         });
 
                     b.Navigation("Constraints");
@@ -259,6 +303,12 @@ namespace QLN.Common.Migrations.QLSubscription
 
             modelBuilder.Entity("QLN.Common.Infrastructure.Model.Subscription", b =>
                 {
+                    b.HasOne("QLN.Common.Infrastructure.Model.Product", "Product")
+                        .WithMany("Subscriptions")
+                        .HasForeignKey("ProductCode")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.OwnsOne("QLN.Common.DTO_s.Subscription.SubscriptionQuota", "Quota", b1 =>
                         {
                             b1.Property<Guid>("SubscriptionId")
@@ -360,6 +410,41 @@ namespace QLN.Common.Migrations.QLSubscription
                             b1.WithOwner()
                                 .HasForeignKey("SubscriptionId");
 
+                            b1.OwnsMany("QLN.Common.DTO_s.Subscription.SubscriptionQuota+CategoryQuotaUsage", "CategoryQuotas", b2 =>
+                                {
+                                    b2.Property<Guid>("SubscriptionQuotaSubscriptionId")
+                                        .HasColumnType("uuid");
+
+                                    b2.Property<int>("Id")
+                                        .ValueGeneratedOnAdd()
+                                        .HasColumnType("integer");
+
+                                    b2.Property<int>("AdsAllowed")
+                                        .HasColumnType("integer");
+
+                                    b2.Property<int>("AdsUsed")
+                                        .HasColumnType("integer");
+
+                                    b2.Property<string>("Category")
+                                        .IsRequired()
+                                        .HasColumnType("text");
+
+                                    b2.Property<string>("L1Category")
+                                        .HasColumnType("text");
+
+                                    b2.Property<string>("L2Category")
+                                        .HasColumnType("text");
+
+                                    b2.HasKey("SubscriptionQuotaSubscriptionId", "Id");
+
+                                    b2.ToTable("Subscriptions");
+
+                                    b2.ToJson("CategoryQuotas");
+
+                                    b2.WithOwner()
+                                        .HasForeignKey("SubscriptionQuotaSubscriptionId");
+                                });
+
                             b1.OwnsOne("QLN.Common.DTO_s.Subscription.SocialMediaQuota", "SocialMedia", b2 =>
                                 {
                                     b2.Property<Guid>("SubscriptionQuotaSubscriptionId")
@@ -381,8 +466,12 @@ namespace QLN.Common.Migrations.QLSubscription
                                         .HasForeignKey("SubscriptionQuotaSubscriptionId");
                                 });
 
+                            b1.Navigation("CategoryQuotas");
+
                             b1.Navigation("SocialMedia");
                         });
+
+                    b.Navigation("Product");
 
                     b.Navigation("Quota")
                         .IsRequired();
@@ -390,6 +479,18 @@ namespace QLN.Common.Migrations.QLSubscription
 
             modelBuilder.Entity("QLN.Common.Infrastructure.Model.UserAddOn", b =>
                 {
+                    b.HasOne("QLN.Common.Infrastructure.Model.Product", "Product")
+                        .WithMany("UserAddOns")
+                        .HasForeignKey("ProductCode")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("QLN.Common.Infrastructure.Model.Subscription", "Subscription")
+                        .WithMany("UserAddOns")
+                        .HasForeignKey("SubscriptionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.OwnsOne("QLN.Common.DTO_s.Subscription.SubscriptionQuota", "Quota", b1 =>
                         {
                             b1.Property<Guid>("UserAddOnId")
@@ -491,6 +592,41 @@ namespace QLN.Common.Migrations.QLSubscription
                             b1.WithOwner()
                                 .HasForeignKey("UserAddOnId");
 
+                            b1.OwnsMany("QLN.Common.DTO_s.Subscription.SubscriptionQuota+CategoryQuotaUsage", "CategoryQuotas", b2 =>
+                                {
+                                    b2.Property<Guid>("SubscriptionQuotaUserAddOnId")
+                                        .HasColumnType("uuid");
+
+                                    b2.Property<int>("Id")
+                                        .ValueGeneratedOnAdd()
+                                        .HasColumnType("integer");
+
+                                    b2.Property<int>("AdsAllowed")
+                                        .HasColumnType("integer");
+
+                                    b2.Property<int>("AdsUsed")
+                                        .HasColumnType("integer");
+
+                                    b2.Property<string>("Category")
+                                        .IsRequired()
+                                        .HasColumnType("text");
+
+                                    b2.Property<string>("L1Category")
+                                        .HasColumnType("text");
+
+                                    b2.Property<string>("L2Category")
+                                        .HasColumnType("text");
+
+                                    b2.HasKey("SubscriptionQuotaUserAddOnId", "Id");
+
+                                    b2.ToTable("UserAddOns");
+
+                                    b2.ToJson("CategoryQuotas");
+
+                                    b2.WithOwner()
+                                        .HasForeignKey("SubscriptionQuotaUserAddOnId");
+                                });
+
                             b1.OwnsOne("QLN.Common.DTO_s.Subscription.SocialMediaQuota", "SocialMedia", b2 =>
                                 {
                                     b2.Property<Guid>("SubscriptionQuotaUserAddOnId")
@@ -512,11 +648,29 @@ namespace QLN.Common.Migrations.QLSubscription
                                         .HasForeignKey("SubscriptionQuotaUserAddOnId");
                                 });
 
+                            b1.Navigation("CategoryQuotas");
+
                             b1.Navigation("SocialMedia");
                         });
 
+                    b.Navigation("Product");
+
                     b.Navigation("Quota")
                         .IsRequired();
+
+                    b.Navigation("Subscription");
+                });
+
+            modelBuilder.Entity("QLN.Common.Infrastructure.Model.Product", b =>
+                {
+                    b.Navigation("Subscriptions");
+
+                    b.Navigation("UserAddOns");
+                });
+
+            modelBuilder.Entity("QLN.Common.Infrastructure.Model.Subscription", b =>
+                {
+                    b.Navigation("UserAddOns");
                 });
 #pragma warning restore 612, 618
         }
