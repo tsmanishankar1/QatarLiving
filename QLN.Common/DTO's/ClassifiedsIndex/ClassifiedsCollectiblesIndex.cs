@@ -37,6 +37,7 @@ namespace QLN.Common.DTO_s
         public bool IsHandmade { get; set; }
         [SearchableField(IsFilterable = true, IsSortable = true)]
         public string? YearOrEra { get; set; }
+        
 
     }
 }
