@@ -2917,6 +2917,7 @@ namespace QLN.Classified.MS.Service
                 from i in gj.DefaultIfEmpty()
                 select new CategoryCountDto
                 {
+                    CategoryId = c.Id,
                     Category = c.CategoryName,
                     AdsCount = i.AdsCount ?? 0
                 };

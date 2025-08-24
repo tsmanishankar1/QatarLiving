@@ -8,6 +8,7 @@ using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService.ICompanyService;
 using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.QLDbContext;
+using QLN.Common.Infrastructure.Subscriptions;
 using QLN.Common.Infrastructure.Utilities;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -20,12 +21,14 @@ namespace QLN.Company.MS.Service
         private readonly QLCompanyContext _context;
         private readonly QLSubscriptionContext _dbContext;
         private readonly DaprClient _dapr;
-        public InternalCompanyProfileService(ILogger<InternalCompanyProfileService> logger, QLCompanyContext context, QLSubscriptionContext dbContext, DaprClient dapr)
+        private readonly QLClassifiedContext _classContext;
+        public InternalCompanyProfileService(ILogger<InternalCompanyProfileService> logger, QLCompanyContext context, QLSubscriptionContext dbContext, DaprClient dapr, QLClassifiedContext classContext)
         {
             _logger = logger;
             _context = context;
             _dbContext = dbContext;
             _dapr = dapr;
+            _classContext = classContext;
         }
 
         public async Task<string> CreateCompany(string uid, string userName, CompanyProfile dto, CancellationToken cancellationToken = default)
@@ -563,19 +566,58 @@ namespace QLN.Company.MS.Service
 
                 if (company == null)
                     throw new KeyNotFoundException($"Company with ID {dto.CompanyId} not found.");
-
-                if (!company.IsActive && dto.Status != VerifiedStatus.Removed)
-                    throw new InvalidOperationException("Cannot approve an inactive company profile.");
-
-                company.Status = dto.Status;
-                company.CompanyVerificationStatus = dto.CompanyVerificationStatus;
-                if (dto.Status == VerifiedStatus.Removed || dto.CompanyVerificationStatus == VerifiedStatus.Removed)
+                if (company.IsBasicProfile == true && (dto.Status == VerifiedStatus.Approved || dto.CompanyVerificationStatus == VerifiedStatus.Approved))
                 {
-                    company.IsActive = false;
+                    throw new InvalidOperationException("Cannot approve a company profile while it is still marked as Basic.");
                 }
+                if (!company.IsActive && dto.Status != VerifiedStatus.Removed && dto.CompanyVerificationStatus != VerifiedStatus.Removed)
+                    throw new InvalidOperationException("Cannot update an inactive company profile.");
+
+                if (company.Status != dto.Status)
+                {
+                    if (dto.Status == VerifiedStatus.Removed || dto.Status == VerifiedStatus.Rejected)
+                    {
+                        company.IsActive = false;
+                    }
+                    company.Status = dto.Status;
+                    dto.CompanyVerificationStatus = company.CompanyVerificationStatus;
+                }
+
+                if (company.CompanyVerificationStatus != dto.CompanyVerificationStatus)
+                {
+                    if (dto.CompanyVerificationStatus == VerifiedStatus.Removed || dto.CompanyVerificationStatus == VerifiedStatus.Rejected)
+                    {
+                        company.IsActive = false;
+                    }
+                    company.CompanyVerificationStatus = dto.CompanyVerificationStatus;
+                    dto.Status = company.Status;
+                }
+
                 company.UpdatedUtc = DateTime.UtcNow;
                 company.UpdatedBy = userId;
-                dto.Reason = dto.Reason;
+                if (dto.Status == VerifiedStatus.Removed || dto.Status == VerifiedStatus.Rejected ||
+                            dto.Status == VerifiedStatus.NeedChanges ||
+                            dto.Status == VerifiedStatus.OnHold || dto.CompanyVerificationStatus == VerifiedStatus.Removed || dto.CompanyVerificationStatus == VerifiedStatus.Rejected
+                            || dto.CompanyVerificationStatus == VerifiedStatus.NeedChanges || dto.CompanyVerificationStatus == VerifiedStatus.OnHold)
+                {
+                    var comment = new Comment
+                    {
+                        CompanyId = dto.CompanyId,               
+                        Action = $"Company {dto.Status} || {dto.CompanyVerificationStatus}", 
+                        Reason = dto.Reason ?? string.Empty,
+                        Comments = dto.Comments,
+                        Vertical = (Vertical)company.Vertical,
+                        SubVertical = company.SubVertical.HasValue ? company.SubVertical.Value : null,
+                        CreatedAt = DateTime.UtcNow,
+                        CreatedUserId = company.CreatedBy,
+                        CreatedUserName = company.UserName,
+                        UpdatedUserId = userId,
+                        UpdatedUserName = company.UserName
+                    };
+
+                    await _classContext.Comments.AddAsync(comment, cancellationToken);
+                    await _classContext.SaveChangesAsync(cancellationToken);
+                }
                 await _context.SaveChangesAsync(cancellationToken);
                 var upsertRequest = await IndexServiceToAzureSearch(company, cancellationToken);
                 if (upsertRequest != null)

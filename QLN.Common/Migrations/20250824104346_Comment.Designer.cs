@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using QLN.Common.DTO_s;
+using QLN.Common.DTO_s.Services;
 using QLN.Common.Infrastructure.QLDbContext;
 
 #nullable disable
@@ -14,8 +15,8 @@ using QLN.Common.Infrastructure.QLDbContext;
 namespace QLN.Common.Migrations.ClassifiedDev
 {
     [DbContext(typeof(QLClassifiedContext))]
-    [Migration("20250818174531_Comments-v1")]
-    partial class Commentsv1
+    [Migration("20250824104346_Comment")]
+    partial class Comment
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -114,7 +115,10 @@ namespace QLN.Common.Migrations.ClassifiedDev
                     b.Property<Guid?>("CompanyId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("FlyerId")
+                    b.Property<string>("FileName")
+                        .HasColumnType("text");
+
+                    b.Property<Guid?>("FlyerId")
                         .HasColumnType("uuid");
 
                     b.Property<Guid?>("SubscriptionId")
@@ -131,6 +135,9 @@ namespace QLN.Common.Migrations.ClassifiedDev
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<string>("Category")
+                        .HasColumnType("text");
+
                     b.Property<string>("Currency")
                         .IsRequired()
                         .HasColumnType("text");
@@ -141,8 +148,11 @@ namespace QLN.Common.Migrations.ClassifiedDev
                     b.Property<string>("PageCoordinates")
                         .HasColumnType("text");
 
-                    b.Property<int>("PageNumber")
+                    b.Property<int?>("PageNumber")
                         .HasColumnType("integer");
+
+                    b.Property<string>("ProductBarcode")
+                        .HasColumnType("text");
 
                     b.Property<string>("ProductDescription")
                         .IsRequired()
@@ -162,6 +172,9 @@ namespace QLN.Common.Migrations.ClassifiedDev
                     b.Property<string>("ProductSummary")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<int?>("Qty")
+                        .HasColumnType("integer");
 
                     b.Property<string>("Slug")
                         .HasColumnType("text");
@@ -330,7 +343,7 @@ namespace QLN.Common.Migrations.ClassifiedDev
 
             modelBuilder.Entity("QLN.Common.DTO_s.ClassifiedsFo.StoresDashboardHeader", b =>
                 {
-                    b.Property<Guid>("CompanyId")
+                    b.Property<Guid?>("CompanyId")
                         .HasColumnType("uuid")
                         .HasColumnName("CompanyId");
 
@@ -341,6 +354,9 @@ namespace QLN.Common.Migrations.ClassifiedDev
                     b.Property<string>("CompanyName")
                         .HasColumnType("text")
                         .HasColumnName("CompanyName");
+
+                    b.Property<int>("CompanyVerificationStatus")
+                        .HasColumnType("integer");
 
                     b.Property<DateTime>("EndDate")
                         .HasColumnType("timestamp with time zone")
@@ -354,7 +370,7 @@ namespace QLN.Common.Migrations.ClassifiedDev
                         .HasColumnType("integer")
                         .HasColumnName("Status");
 
-                    b.Property<Guid>("SubscriptionId")
+                    b.Property<Guid?>("SubscriptionId")
                         .HasColumnType("uuid")
                         .HasColumnName("SubscriptionId");
 
@@ -378,12 +394,12 @@ namespace QLN.Common.Migrations.ClassifiedDev
 
                     b.ToTable("StoresDashboardHeaderItems");
 
-                    b.ToSqlQuery("\r\n            SELECT subs.\"CompanyId\",\r\n                subs.\"SubscriptionId\",\r\n                subs.\"ProductName\",\r\n                subs.\"UserId\",\r\n                comp.\"UserName\",\r\n                comp.\"Status\",\r\n                comp.\"CompanyName\",\r\n                comp.\"CompanyLogo\",\r\n                subs.\"StartDate\",\r\n                subs.\"EndDate\",\r\n                '' as \"XMLFeed\",\r\n            '' as \"UploadFeed\"\r\n            FROM public.\"Subscriptions\" AS subs\r\n            INNER JOIN public.\"Companies\" AS comp\r\n                ON subs.\"CompanyId\" = comp.\"Id\"\r\n            WHERE subs.\"Status\" = 1 \r\n              AND subs.\"Vertical\" = 3\r\n              AND subs.\"SubVertical\" = 3\r\n        ");
+                    b.ToSqlQuery("\r\n            SELECT subs.\"CompanyId\",\r\n                subs.\"SubscriptionId\",\r\n                subs.\"ProductName\",\r\n                subs.\"UserId\",\r\n                comp.\"UserName\",\r\n                comp.\"Status\",\r\n                comp.\"CompanyVerificationStatus\",\r\n                comp.\"CompanyName\",\r\n                comp.\"CompanyLogo\",\r\n                subs.\"StartDate\",\r\n                subs.\"EndDate\",\r\n                '' as \"XMLFeed\",\r\n            '' as \"UploadFeed\"\r\n            FROM public.\"Subscriptions\" AS subs\r\n            INNER JOIN public.\"Companies\" AS comp\r\n                ON subs.\"CompanyId\" = comp.\"Id\"\r\n            WHERE\r\n              subs.\"Vertical\" = 3\r\n              AND subs.\"SubVertical\" = 3\r\n        ");
                 });
 
             modelBuilder.Entity("QLN.Common.DTO_s.ClassifiedsFo.StoresDashboardSummary", b =>
                 {
-                    b.Property<Guid>("CompanyId")
+                    b.Property<Guid?>("CompanyId")
                         .HasColumnType("uuid")
                         .HasColumnName("CompanyId");
 
@@ -395,7 +411,7 @@ namespace QLN.Common.Migrations.ClassifiedDev
                         .HasColumnType("integer")
                         .HasColumnName("ProductCount");
 
-                    b.Property<Guid>("SubscriptionId")
+                    b.Property<Guid?>("SubscriptionId")
                         .HasColumnType("uuid")
                         .HasColumnName("SubscriptionId");
 
@@ -405,10 +421,10 @@ namespace QLN.Common.Migrations.ClassifiedDev
 
                     b.ToTable("StoresDashboardSummaryItems");
 
-                    b.ToSqlQuery("\r\n        SELECT \r\n            subs.\"SubscriptionId\",\r\n            subs.\"CompanyId\",\r\n            subs.\"ProductName\",\r\n            comp.\"CompanyName\",\r\n            COUNT(prod.\"StoreProductId\") as \"ProductCount\"\r\n        FROM public.\"Subscriptions\" AS subs\r\n        LEFT JOIN public.\"Companies\" AS comp\r\n            ON subs.\"CompanyId\" = comp.\"Id\"\r\n        LEFT JOIN public.\"StoreFlyer\" AS fly\r\n            ON subs.\"SubscriptionId\" = fly.\"SubscriptionId\"\r\n            AND subs.\"CompanyId\" = fly.\"CompanyId\"\r\n        LEFT JOIN public.\"StoreProduct\" AS prod\r\n            ON fly.\"StoreFlyersId\" = prod.\"FlyerId\"\r\n        WHERE subs.\"Vertical\" = 3\r\n          AND subs.\"SubVertical\" = 3\r\n        GROUP BY subs.\"SubscriptionId\",\r\n                 subs.\"CompanyId\",\r\n                 subs.\"ProductName\",\r\n                 comp.\"CompanyName\"\r\n    ");
+                    b.ToSqlQuery("\r\n        SELECT \r\n            subs.\"SubscriptionId\",\r\n            subs.\"CompanyId\",\r\n            subs.\"ProductName\",\r\n            comp.\"CompanyName\",\r\n            COUNT(prod.\"StoreProductId\") as \"ProductCount\"\r\n        FROM public.\"Subscriptions\" AS subs\r\n        INNER JOIN public.\"Companies\" AS comp\r\n            ON subs.\"CompanyId\" = comp.\"Id\"\r\n        INNER JOIN public.\"StoreFlyer\" AS fly\r\n            ON subs.\"SubscriptionId\" = fly.\"SubscriptionId\"\r\n            AND subs.\"CompanyId\" = fly.\"CompanyId\"\r\n        INNER JOIN public.\"StoreProduct\" AS prod\r\n            ON fly.\"StoreFlyersId\" = prod.\"FlyerId\"\r\n        WHERE subs.\"Vertical\" = 3\r\n          AND subs.\"SubVertical\" = 3\r\n        GROUP BY subs.\"SubscriptionId\",\r\n                 subs.\"CompanyId\",\r\n                 subs.\"ProductName\",\r\n                 comp.\"CompanyName\"\r\n    ");
                 });
 
-            modelBuilder.Entity("QLN.Common.Infrastructure.Model.Category", b =>
+            modelBuilder.Entity("QLN.Common.Infrastructure.Model.CategoryDropdown", b =>
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
@@ -420,8 +436,8 @@ namespace QLN.Common.Migrations.ClassifiedDev
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<List<string>>("Options")
-                        .HasColumnType("text[]");
+                    b.Property<List<FieldDto>>("Fields")
+                        .HasColumnType("jsonb");
 
                     b.Property<long?>("ParentId")
                         .HasColumnType("bigint");
@@ -429,17 +445,12 @@ namespace QLN.Common.Migrations.ClassifiedDev
                     b.Property<int?>("SubVertical")
                         .HasColumnType("integer");
 
-                    b.Property<string>("Type")
-                        .HasColumnType("text");
-
                     b.Property<int>("Vertical")
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ParentId");
-
-                    b.ToTable("Categories");
+                    b.ToTable("CategoryDropdowns");
                 });
 
             modelBuilder.Entity("QLN.Common.Infrastructure.Model.Collectibles", b =>
@@ -509,8 +520,8 @@ namespace QLN.Common.Migrations.ClassifiedDev
                         .HasColumnType("character varying(100)");
 
                     b.Property<string>("Description")
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
+                        .HasMaxLength(5000)
+                        .HasColumnType("character varying(5000)");
 
                     b.Property<DateTime?>("ExpiryDate")
                         .HasColumnType("timestamp with time zone");
@@ -538,6 +549,9 @@ namespace QLN.Common.Migrations.ClassifiedDev
                         .HasColumnType("boolean");
 
                     b.Property<bool>("IsPromoted")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool?>("IsSold")
                         .HasColumnType("boolean");
 
                     b.Property<string>("L1Category")
@@ -655,12 +669,14 @@ namespace QLN.Common.Migrations.ClassifiedDev
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<long>("AdId")
+                    b.Property<long?>("AdId")
                         .HasColumnType("bigint");
 
                     b.Property<string>("Comments")
-                        .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<Guid?>("CompanyId")
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -674,10 +690,9 @@ namespace QLN.Common.Migrations.ClassifiedDev
                         .HasColumnType("text");
 
                     b.Property<string>("Reason")
-                        .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<int>("SubVertical")
+                    b.Property<int?>("SubVertical")
                         .HasColumnType("integer");
 
                     b.Property<string>("UpdatedUserId")
@@ -741,8 +756,8 @@ namespace QLN.Common.Migrations.ClassifiedDev
                         .HasColumnType("character varying(100)");
 
                     b.Property<string>("Description")
-                        .HasMaxLength(300)
-                        .HasColumnType("character varying(300)");
+                        .HasMaxLength(5000)
+                        .HasColumnType("character varying(5000)");
 
                     b.Property<DateTime?>("EndDate")
                         .HasColumnType("timestamp with time zone");
@@ -765,6 +780,9 @@ namespace QLN.Common.Migrations.ClassifiedDev
                         .HasColumnType("boolean");
 
                     b.Property<bool>("IsPromoted")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool?>("IsSold")
                         .HasColumnType("boolean");
 
                     b.Property<LocationsDtos>("Locations")
@@ -1024,8 +1042,8 @@ namespace QLN.Common.Migrations.ClassifiedDev
                         .HasColumnType("character varying(100)");
 
                     b.Property<string>("Description")
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
+                        .HasMaxLength(5000)
+                        .HasColumnType("character varying(5000)");
 
                     b.Property<DateTime?>("ExpiryDate")
                         .HasColumnType("timestamp with time zone");
@@ -1047,6 +1065,9 @@ namespace QLN.Common.Migrations.ClassifiedDev
                         .HasColumnType("boolean");
 
                     b.Property<bool>("IsRefreshed")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool?>("IsSold")
                         .HasColumnType("boolean");
 
                     b.Property<string>("L1Category")
@@ -1219,8 +1240,8 @@ namespace QLN.Common.Migrations.ClassifiedDev
                         .HasColumnType("character varying(100)");
 
                     b.Property<string>("Description")
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
+                        .HasMaxLength(5000)
+                        .HasColumnType("character varying(5000)");
 
                     b.Property<DateTime?>("ExpiryDate")
                         .HasColumnType("timestamp with time zone");
@@ -1248,6 +1269,9 @@ namespace QLN.Common.Migrations.ClassifiedDev
                         .HasColumnType("boolean");
 
                     b.Property<bool>("IsRefreshed")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool?>("IsSold")
                         .HasColumnType("boolean");
 
                     b.Property<string>("L1Category")
@@ -1506,8 +1530,8 @@ namespace QLN.Common.Migrations.ClassifiedDev
 
                     b.Property<string>("Description")
                         .IsRequired()
-                        .HasMaxLength(300)
-                        .HasColumnType("character varying(300)");
+                        .HasMaxLength(5000)
+                        .HasColumnType("character varying(5000)");
 
                     b.Property<string>("Duration")
                         .HasMaxLength(50)
@@ -1713,16 +1737,6 @@ namespace QLN.Common.Migrations.ClassifiedDev
                     b.Navigation("StoreFlyer");
                 });
 
-            modelBuilder.Entity("QLN.Common.Infrastructure.Model.Category", b =>
-                {
-                    b.HasOne("QLN.Common.Infrastructure.Model.Category", "ParentCategory")
-                        .WithMany("CategoryFields")
-                        .HasForeignKey("ParentId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.Navigation("ParentCategory");
-                });
-
             modelBuilder.Entity("QLN.Common.DTO_s.ClassifiedsBo.StoreFlyers", b =>
                 {
                     b.Navigation("Products");
@@ -1733,11 +1747,6 @@ namespace QLN.Common.Migrations.ClassifiedDev
                     b.Navigation("Features");
 
                     b.Navigation("Images");
-                });
-
-            modelBuilder.Entity("QLN.Common.Infrastructure.Model.Category", b =>
-                {
-                    b.Navigation("CategoryFields");
                 });
 #pragma warning restore 612, 618
         }

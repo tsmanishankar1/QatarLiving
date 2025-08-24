@@ -7,7 +7,6 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using QLN.Common.DTO_s;
 using QLN.Common.DTO_s.Services;
-using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.QLDbContext;
 
 #nullable disable
@@ -693,12 +692,14 @@ namespace QLN.Common.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<long>("AdId")
+                    b.Property<long?>("AdId")
                         .HasColumnType("bigint");
 
                     b.Property<string>("Comments")
-                        .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<Guid?>("CompanyId")
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -712,10 +713,9 @@ namespace QLN.Common.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("Reason")
-                        .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<int>("SubVertical")
+                    b.Property<int?>("SubVertical")
                         .HasColumnType("integer");
 
                     b.Property<string>("UpdatedUserId")
