@@ -1273,6 +1273,22 @@ namespace QLN.Common.Infrastructure.Service.AuthService
 
                     //}
                 }
+                var activeSubscriptions = new List<V2SubscriptionResponseDto>();
+                try
+                {
+                    var allActiveSubscriptions = await _v2SubscriptionService.GetAllActiveSubscriptionsAsync(user.Id.ToString());
+                    activeSubscriptions = allActiveSubscriptions
+                        .Where(s => s.ProductType == ProductType.SUBSCRIPTION && s.IsActive)
+                        .ToList();
+                }
+                catch (Exception ex)
+                {
+                    _log.LogError(ex, "Error fetching active subscriptions for user {UserId}", user.Id);
+                }
+
+                var subscriptionsByVertical = activeSubscriptions
+                    .GroupBy(s => s.Vertical)
+                    .ToDictionary(g => g.Key, g => g.ToList());
                 var accessTs = _config.GetValue<TimeSpan>("TokenLifetimes:AccessToken");
                 var refreshTs = _config.GetValue<TimeSpan>("TokenLifetimes:RefreshToken");
 
@@ -1298,7 +1314,8 @@ namespace QLN.Common.Infrastructure.Service.AuthService
                     Mobilenumber = user.PhoneNumber,
                     AccessToken = accessToken,
                     RefreshToken = refreshToken,
-                    IsTwoFactorEnabled = false // Assuming 2FA is not enabled for Drupal users
+                    IsTwoFactorEnabled = false,
+                    ActiveSubscriptions = subscriptionsByVertical
                 });
             }
             catch (Exception ex)
