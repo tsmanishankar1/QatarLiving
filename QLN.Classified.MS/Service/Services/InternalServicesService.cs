@@ -278,14 +278,17 @@ namespace QLN.Classified.MS.Service.Services
         }
         private ServiceStatus GetAdStatus(string l1CategoryName, ServiceAdType adType)
         {
-            if (adType == ServiceAdType.Subscription)
-                return ServiceStatus.Published;
+            if (string.Equals(l1CategoryName, "Therapeutic Services", StringComparison.OrdinalIgnoreCase) && adType == ServiceAdType.PayToPublish)
+                return ServiceStatus.Draft;
 
-            if (string.Equals(l1CategoryName, "Therapeutic Services", StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(l1CategoryName, "Therapeutic Services", StringComparison.OrdinalIgnoreCase) && adType == ServiceAdType.Subscription)
                 return ServiceStatus.PendingApproval;
 
             if (adType == ServiceAdType.PayToPublish)
-                return ServiceStatus.PendingApproval;
+                return ServiceStatus.Draft;
+
+            if (adType == ServiceAdType.Subscription)
+                return ServiceStatus.Published;
 
             throw new ArgumentException("Invalid ServiceAdType.");
         }
