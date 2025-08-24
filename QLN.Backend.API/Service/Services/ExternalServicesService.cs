@@ -91,7 +91,7 @@ namespace QLN.Backend.API.Service.Services
                 throw;
             }
         }
-        public async Task<string> CreateServiceAd(string uid, string userName, string subscriptionId, ServiceDto dto, CancellationToken cancellationToken = default)
+        public async Task<ResponseDto> CreateServiceAd(string uid, string userName, string subscriptionId, ServiceDto dto, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -164,9 +164,18 @@ namespace QLN.Backend.API.Service.Services
                         );
                     }
                 }
-                await response.Content.ReadAsStringAsync(cancellationToken);
+                var responseJson = await response.Content.ReadAsStringAsync(cancellationToken);
+                var serviceResponse = JsonSerializer.Deserialize<ResponseDto>(
+                    responseJson,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+                );
 
-                return "Service Ad Created Successfully";
+                if (serviceResponse == null)
+                {
+                    throw new Exception("Failed to parse service response.");
+                }
+
+                return serviceResponse;
             }
             catch (Exception ex)
             {

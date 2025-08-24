@@ -181,7 +181,7 @@ namespace QLN.Classified.MS.Service.Services
             }
         }
 
-        public async Task<string> CreateServiceAd(string uid, string userName, string subscriptionId, ServiceDto dto, CancellationToken cancellationToken = default)
+        public async Task<ResponseDto> CreateServiceAd(string uid, string userName, string subscriptionId, ServiceDto dto, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -261,7 +261,12 @@ namespace QLN.Classified.MS.Service.Services
                         cancellationToken: cancellationToken
                     );
                 }
-                return "Service Ad Created Successfully";
+                return new ResponseDto
+                {
+                    AdId = entity.Id,
+                    Title = entity.Title,
+                    Message = "Service Ad Created Successfully"
+                };
             }
             catch (ConflictException)
             {
