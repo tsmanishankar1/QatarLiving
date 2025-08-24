@@ -4932,7 +4932,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                             uid = context.User.FindFirst("sub")?.Value;
                             var userName = context.User.FindFirst("preferred_username")?.Value;
 
-                            // Get all subscription claims
+                            
                             var subscriptionClaims = context.User.FindAll("subscriptions").ToList();
                             Guid? subscriptionId = null;
                             DateTime? expiryDate = null;
