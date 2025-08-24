@@ -67,21 +67,22 @@ namespace QLN.Classified.MS.Service.Services
             }).ToList();
 
             return result;
-        }       
+        }
         private List<FieldDto> FlattenFields(List<FieldDto>? fields)
         {
             var list = new List<FieldDto>();
             if (fields == null) return list;
 
-        //    foreach (var field in fields)
-        //    {
-        //        list.Add(field);
-        //        if (field.Fields != null)
-        //            list.AddRange(FlattenFields(field.Fields));
-        //    }
+            foreach (var field in fields)
+            {
+                list.Add(field);
+                if (field.Fields != null)
+                    list.AddRange(FlattenFields(field.Fields));
+            }
 
             return list;
         }
+
 
         public async Task<string> CreateCategory(CategoryDto dto, CancellationToken cancellationToken)
         {
@@ -123,9 +124,8 @@ namespace QLN.Classified.MS.Service.Services
             {
                 return $"Error: {ex.Message}";
             }
-
-            return maxId;
         }
+
 
         private async Task<long> GetLastIdFromJsonFieldsAsync()
         {
@@ -149,6 +149,7 @@ namespace QLN.Classified.MS.Service.Services
 
             return maxId;
         }
+
 
         private List<long> ExtractAllFieldIds(List<FieldDto> fields)
         {
@@ -179,6 +180,7 @@ namespace QLN.Classified.MS.Service.Services
                     AssignIds(field.Fields, ref lastFieldId);
             }
         }
+
         public async Task<string> CreateServiceAd(string uid, string userName, string subscriptionId, ServiceDto dto, CancellationToken cancellationToken = default)
         {
             try
