@@ -15,6 +15,7 @@ namespace QLN.Common.DTO_s.Subscription
         public const string UnFeature = "unfeature";
         public const string UnPromote = "unpromote";
         public const string UnPublish = "unpublish";
+        public const string Remove = "remove";
         public const string SocialMediaPost = "social_media_post";
     }
 
@@ -59,6 +60,7 @@ namespace QLN.Common.DTO_s.Subscription
         public bool CanFeatureAds { get; set; } = true;
         public bool CanUnFeatureAds { get; set; } = true;
         public bool CanRefreshAds { get; set; } = true;
+        public bool CanRemoveAds {  get; set; } = true;
         public bool CanPostSocialMedia { get; set; } = false;
 
         // Daily tracking
@@ -160,6 +162,11 @@ namespace QLN.Common.DTO_s.Subscription
                     r.Message = r.IsValid ? "Can post" :
                         (!CanPostSocialMedia ? "Social posting not allowed" : "Insufficient social quota");
                     break;
+                case ActionTypes.Remove:
+                    r.IsValid = AdsUsed >= 0;
+                    r.RemainingQuota = AdsUsed;
+                    r.Message = r.IsValid ? "Can Remove" : (!CanRemoveAds ? "Remove not allowed" : "Insufficient ads quota");
+                    break;
             }
             
             return r;
@@ -181,6 +188,7 @@ namespace QLN.Common.DTO_s.Subscription
                 case ActionTypes.UnPromote: PromotionsUsed -= quantity; if (PromotionsUsed < 0) PromotionsUsed = 0; break;
                 case ActionTypes.Refresh: DailyRefreshesUsed += quantity; LastRefreshUsed = DateTime.UtcNow; break;
                 case ActionTypes.SocialMediaPost: SocialMediaPostsUsed += quantity; break;
+                case ActionTypes.Remove:AdsUsed -= quantity; break;
                 default: return false;
             }
 

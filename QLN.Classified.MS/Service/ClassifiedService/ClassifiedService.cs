@@ -1956,14 +1956,14 @@ namespace QLN.Classified.MS.Service
                     _ => throw new ArgumentException("Invalid sub-vertical.")
                 };
 
-                // Get ads from DB that match the provided IDs
+                
                 var ads = await query
                     .Where(a => adIds.Contains(a.Id))
                     .ToListAsync(cancellationToken);
 
                 var failedAds = new List<long>();
 
-                // Validate ads before updating
+               
                 foreach (var ad in ads)
                 {
                     if (ad.UserId != userId)
@@ -1986,7 +1986,7 @@ namespace QLN.Classified.MS.Service
                     }
                 }
 
-                // Check for ads not found in DB
+                
                 var notFound = adIds.Except(ads.Select(a => a.Id)).ToList();
                 foreach (var id in notFound)
                 {
@@ -2007,7 +2007,7 @@ namespace QLN.Classified.MS.Service
                     };
                 }
 
-                // Update ads
+                
                 foreach (var ad in ads)
                 {
                     ad.Status = targetStatus;

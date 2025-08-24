@@ -5035,7 +5035,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                             uid = context.User.FindFirst("sub")?.Value ?? "unknown";
                             var userName = context.User.FindFirst("preferred_username")?.Value ?? "unknown";
 
-                            // Get all subscription claims
+                            
                             var subscriptionClaims = context.User.FindAll("subscriptions").ToList();
                             Guid? subscriptionId = null;
                             DateTime? expiryDate = null;
