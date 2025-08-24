@@ -361,13 +361,16 @@ namespace QLN.Common.Infrastructure.Service.Payments
                     .Where(s => s.IsActive && s.EndDate > DateTime.UtcNow && s.StatusId == SubscriptionStatus.Active)
                     .ToList();
 
+                // Check if user is trying to buy a PUBLISH product
+                var isPublishPurchase = request.Products.Any(p => p.ProductType == ProductType.PUBLISH);
+
                 switch (request.Vertical)
                 {
                     case Vertical.Classifieds:
-                        return ValidateClassifiedsSubscription(activeSubscriptions, request.SubVertical);
+                        return ValidateClassifiedsSubscription(activeSubscriptions, request.SubVertical, isPublishPurchase);
 
                     case Vertical.Services:
-                        return ValidateServicesSubscription(activeSubscriptions);
+                        return ValidateServicesSubscription(activeSubscriptions, isPublishPurchase);
 
                     default:
                         return SubscriptionValidationResult.Success();
@@ -382,7 +385,8 @@ namespace QLN.Common.Infrastructure.Service.Payments
 
         private SubscriptionValidationResult ValidateClassifiedsSubscription(
             List<V2SubscriptionResponseDto> activeSubscriptions,
-            SubVertical? requestedSubVertical)
+            SubVertical? requestedSubVertical,
+            bool isPublishPurchase = false)
         {
             if (!requestedSubVertical.HasValue)
                 return SubscriptionValidationResult.Failure("SubVertical is required for Classifieds subscriptions.");
@@ -396,6 +400,24 @@ namespace QLN.Common.Infrastructure.Service.Payments
                 var existingSub = existingForSubVertical.First();
                 var daysRemaining = (int)(existingSub.EndDate - DateTime.UtcNow).TotalDays;
 
+                // If user is trying to buy PUBLISH type, check if existing subscription has ads quota
+                if (isPublishPurchase)
+                {
+                    var remainingAds = Math.Max(0, existingSub.Quota?.TotalAdsAllowed ?? 0 - existingSub.Quota?.AdsUsed ?? 0);
+
+                    if (remainingAds > 0)
+                    {
+                        return SubscriptionValidationResult.Failure(
+                            $"You still have {remainingAds} ads remaining in your current {requestedSubVertical} subscription. " +
+                            "Pay-to-Publish is only available when you have no remaining ads quota.");
+                    }
+
+                    // Allow PUBLISH purchase if no ads quota remaining
+                    _logger.LogInformation("Allowing PUBLISH purchase for user with expired ads quota in {SubVertical} subscription", requestedSubVertical);
+                    return SubscriptionValidationResult.Success();
+                }
+
+                // For regular SUBSCRIPTION purchases, block if active subscription exists
                 return SubscriptionValidationResult.Failure(
                     $"You already have an active {requestedSubVertical} subscription with {daysRemaining} days remaining. " +
                     "You can buy a new plan to start after expiry or contact support to cancel the current one.");
@@ -404,14 +426,35 @@ namespace QLN.Common.Infrastructure.Service.Payments
             return SubscriptionValidationResult.Success();
         }
 
-        private SubscriptionValidationResult ValidateServicesSubscription(List<V2SubscriptionResponseDto> activeSubscriptions)
+        private SubscriptionValidationResult ValidateServicesSubscription(
+            List<V2SubscriptionResponseDto> activeSubscriptions,
+            bool isPublishPurchase = false)
         {
-            if (activeSubscriptions.Any())
+            var existingSubscriptions = activeSubscriptions.Where(x => x.ProductType == ProductType.SUBSCRIPTION).ToList();
+
+            if (existingSubscriptions.Any())
             {
-                var existingSub = activeSubscriptions.Where
-                    (x=>x.ProductType == ProductType.SUBSCRIPTION).First();
+                var existingSub = existingSubscriptions.First();
                 var daysRemaining = (int)(existingSub.EndDate - DateTime.UtcNow).TotalDays;
 
+                // If user is trying to buy PUBLISH type, check if existing subscription has ads quota
+                if (isPublishPurchase)
+                {
+                    var remainingAds = Math.Max(0, existingSub.Quota?.TotalAdsAllowed ?? 0 - existingSub.Quota?.AdsUsed ?? 0);
+
+                    if (remainingAds > 0)
+                    {
+                        return SubscriptionValidationResult.Failure(
+                            $"You still have {remainingAds} service ads remaining in your current Services subscription. " +
+                            "Pay-to-Publish is only available when you have no remaining ads quota.");
+                    }
+
+                    // Allow PUBLISH purchase if no ads quota remaining
+                    _logger.LogInformation("Allowing PUBLISH purchase for user with expired ads quota in Services subscription");
+                    return SubscriptionValidationResult.Success();
+                }
+
+                // For regular SUBSCRIPTION purchases, block if active subscription exists
                 return SubscriptionValidationResult.Failure(
                     $"You already have an active Services subscription with {daysRemaining} days remaining. " +
                     "You can queue a new plan to start after expiry or contact support to cancel the current one.");
