@@ -3,6 +3,7 @@ using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Models;
 using System.Net.Http.Json;
 using System.Text.Json;
+using System.Net;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.AspNetCore.Components.Forms;
 using MudBlazor;
@@ -298,10 +299,10 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.CreateAd
                 IsSaving = true;
                 var uploadedImages = await UploadImagesAsync(adPostModel.Images);
                 string? certificateUrl = await UploadCertificateAsync();
-                adPostModel.Certificate = certificateUrl; // save it
+                adPostModel.Certificate = certificateUrl;
                 var payload = new
                 {
-                    adType = 1,
+                    adType = 0,
                     title = adPostModel.Title,
                     description = adPostModel.Description,
                     price = adPostModel.Price,
@@ -341,16 +342,40 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.CreateAd
                 };
                 // await JS.InvokeVoidAsync("console.log", payload);
                 var response = await ClassifiedService.PostCollectiblesAdAsync(payload);
+                if (response != null)
+                {
+                    var responseContent = await response.Content.ReadAsStringAsync();
 
-                if (response?.IsSuccessStatusCode == true)
-                {
-                    Snackbar.Add("Ad posted successfully!", Severity.Success);
-                    ResetFormState();
+                    if (response?.IsSuccessStatusCode == true)
+                    {
+                        Snackbar.Add("Ad posted successfully!", Severity.Success);
+                        ResetFormState();
+                    }
+                    else if (response.StatusCode == HttpStatusCode.BadRequest)
+                    {
+                        try
+                        {
+                            using var doc = JsonDocument.Parse(responseContent);
+                            if (doc.RootElement.TryGetProperty("detail", out var detail))
+                            {
+                                Snackbar.Add(detail.GetString() ?? "Failed to post ad.", Severity.Error);
+                            }
+                            else
+                            {
+                                Snackbar.Add("Failed to post ad.", Severity.Error);
+                            }
+                        }
+                        catch
+                        {
+                            Snackbar.Add("Failed to post ad.", Severity.Error);
+                        }
+                    }
+                    else
+                    {
+                        Snackbar.Add("Failed to post ad.", Severity.Error);
+                    }
                 }
-                else
-                {
-                    Snackbar.Add("Failed to post ad.", Severity.Error);
-                }
+    
 
             }
             catch (Exception ex)
