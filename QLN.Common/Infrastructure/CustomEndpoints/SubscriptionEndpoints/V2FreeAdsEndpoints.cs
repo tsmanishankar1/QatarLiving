@@ -25,7 +25,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints
             group.MapV2GetFreeAdsUsageSummary();
             group.MapV2GetUserFreeSubscriptions();
             group.MapV2GetRemainingFreeAdsQuota();
-            group.MapV2RefundFreeAdsUsage();
+            //group.MapV2RefundFreeAdsUsage();
 
             return group;
         }
@@ -350,7 +350,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints
 
             return group;
         }
-        public static RouteGroupBuilder MapV2RefundFreeAdsUsage(this RouteGroupBuilder group)
+/*        public static RouteGroupBuilder MapV2RefundFreeAdsUsage(this RouteGroupBuilder group)
         {
             group.MapPost("/v2/free-ads/refund-usage", async Task<IResult> (
                 [FromBody] FreeAdsRefundRequest req,
@@ -380,7 +380,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints
             .RequireAuthorization();
 
             return group;
-        }
+        }*/
 
 
         private static string BuildCategoryPath(string category, string? l1Category, string? l2Category)

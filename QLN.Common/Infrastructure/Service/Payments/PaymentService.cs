@@ -3,10 +3,12 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using QLN.Common.DTO_s;
+using QLN.Common.DTO_s.Classifieds;
 using QLN.Common.DTO_s.Payments;
 using QLN.Common.DTO_s.Services;
 using QLN.Common.DTO_s.Subscription;
 using QLN.Common.DTOs;
+using QLN.Common.Infrastructure.IService;
 using QLN.Common.Infrastructure.IService.IAuth;
 using QLN.Common.Infrastructure.IService.IPayments;
 using QLN.Common.Infrastructure.IService.IProductService;
@@ -33,6 +35,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
         private readonly QLApplicationContext _applicationDbContext;
         private readonly IV2SubscriptionService _subscriptionService;
         private readonly IServices _services;
+        private readonly IClassifiedService _classifiedService;
 
         public PaymentService(
             ILogger<PaymentService> logger,
@@ -43,7 +46,8 @@ namespace QLN.Common.Infrastructure.Service.Payments
             IV2SubscriptionService subscriptionService,
             QLSubscriptionContext subscriptionContext,
             QLApplicationContext applicationDbContext,
-            IServices services
+            IServices services,
+            IClassifiedService classifiedService
         )
         {
             _logger = logger;
@@ -55,6 +59,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
             _subscriptionContext = subscriptionContext;
             _applicationDbContext = applicationDbContext;
             _services = services;
+            _classifiedService = classifiedService;
         }
 
         public async Task<PaymentResponse> PayAsync(ExternalPaymentRequest request, CancellationToken cancellationToken = default)
@@ -614,6 +619,10 @@ namespace QLN.Common.Infrastructure.Service.Payments
                 {
                     await ProcessServicesAddonsAsync(payment, cancellationToken);
                 }
+                else if (payment.Vertical == Vertical.Classifieds && payment.Products != null && payment.Products.Any())
+                {
+                    await ProcessClassifiedsAddonsAsync(payment, cancellationToken);
+                }
 
                 var d365Data = new D365Data
                 {
@@ -713,6 +722,101 @@ namespace QLN.Common.Infrastructure.Service.Payments
 
                                 await _services.P2PublishService(publishRequest, payment.PaidByUid, subscriptionId, cancellationToken);
                                 _logger.LogInformation("Successfully processed P2Publish for Service ID: {ServiceId}, SubscriptionId: {SubscriptionId}, Payment ID: {PaymentId}",
+                                    payment.AdId.Value, subscriptionId, payment.PaymentId);
+                                break;
+                            }
+
+                        default:
+
+                            break;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error processing services addons for Payment ID: {PaymentId}", payment.PaymentId);
+            }
+        }
+        private async Task ProcessClassifiedsAddonsAsync(PaymentEntity payment, CancellationToken cancellationToken)
+        {
+            try
+            {
+                if (!payment.AdId.HasValue || payment.AdId.Value <= 0)
+                {
+                    _logger.LogWarning("Cannot process services addons - AdId is missing or invalid for Payment ID: {PaymentId}", payment.PaymentId);
+                    return;
+                }
+
+                var addonMappings = await GetAddonIdsByProductTypeAsync(payment, cancellationToken);
+
+                foreach (var product in payment.Products)
+                {
+                    switch (product.ProductType)
+                    {
+                        case ProductType.ADDON_PROMOTE:
+                            {
+                                if (!addonMappings.TryGetValue(ProductType.ADDON_PROMOTE, out var addonId) || addonId == Guid.Empty)
+                                {
+                                    _logger.LogError("Cannot process P2Promote - AddonId for PROMOTE not found for Payment ID: {PaymentId}", payment.PaymentId);
+                                    continue;
+                                }
+
+                                var promoteRequest = new ClassifiedsPayToPromote
+                                {
+                                    AdId = payment.AdId.Value,
+                                    AddonId = addonId,
+                                    SubVertical = (SubVertical)payment.SubVertical,
+                                    Vertical = payment.Vertical,
+                                };
+
+                                await _classifiedService.P2Promote(promoteRequest, payment.PaidByUid, cancellationToken);
+                                _logger.LogInformation("Successfully processed P2Promote for Classifieds ID: {ServiceId}, AddonId: {AddonId}, Payment ID: {PaymentId}",
+                                    payment.AdId.Value, addonId, payment.PaymentId);
+                                break;
+                            }
+
+                        case ProductType.ADDON_FEATURE:
+                            {
+                                if (!addonMappings.TryGetValue(ProductType.ADDON_FEATURE, out var addonId) || addonId == Guid.Empty)
+                                {
+                                    _logger.LogError("Cannot process P2Feature - AddonId for FEATURE not found for Payment ID: {PaymentId}", payment.PaymentId);
+                                    continue;
+                                }
+
+                                var featureRequest = new ClassifiedsPayToFeature
+                                {
+                                    AdId = payment.AdId.Value,
+                                    AddonId = addonId,
+                                    SubVertical = (SubVertical)payment.SubVertical,
+                                    Vertical = payment.Vertical,
+                                };
+
+                                await _classifiedService.P2PFeature(featureRequest, payment.PaidByUid, addonId, cancellationToken);
+                                _logger.LogInformation("Successfully processed P2Feature for Classifieds ID: {ServiceId}, AddonId: {AddonId}, Payment ID: {PaymentId}",
+                                    payment.AdId.Value, addonId, payment.PaymentId);
+                                break;
+                            }
+
+                        case ProductType.PUBLISH:
+                            {
+                                var subscriptionId = payment.UserSubscriptionId ?? Guid.Empty;
+
+                                if (subscriptionId == Guid.Empty)
+                                {
+                                    _logger.LogError("Cannot process P2Publish - SubscriptionId is missing for Payment ID: {PaymentId}", payment.PaymentId);
+                                    continue;
+                                }
+
+                                var publishRequest = new ClassifiedsPayToPublish
+                                {
+                                    AdId = payment.AdId.Value,
+                                    SubscriptionId = subscriptionId,
+                                    SubVertical = (SubVertical)payment.SubVertical,
+                                    Vertical = payment.Vertical,
+                                };
+
+                                await _classifiedService.P2Publish(publishRequest, payment.PaidByUid, cancellationToken);
+                                _logger.LogInformation("Successfully processed P2Publish for Classifieds ID: {ServiceId}, SubscriptionId: {SubscriptionId}, Payment ID: {PaymentId}",
                                     payment.AdId.Value, subscriptionId, payment.PaymentId);
                                 break;
                             }
