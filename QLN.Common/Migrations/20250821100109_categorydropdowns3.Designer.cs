@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using QLN.Common.DTO_s;
+using QLN.Common.DTO_s.Services;
 using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.QLDbContext;
 
@@ -471,7 +472,7 @@ namespace QLN.Common.Migrations.ClassifiedDev
                         .HasColumnType("text");
 
                     b.Property<List<FieldDto>>("Fields")
-                        .HasColumnType("jsonb");
+                      .HasColumnType("jsonb");
 
                     b.Property<int?>("SubVertical")
                         .HasColumnType("integer");

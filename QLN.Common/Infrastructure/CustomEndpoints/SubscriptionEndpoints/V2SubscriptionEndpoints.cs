@@ -22,7 +22,9 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints
             group.MapV2PurchaseSubscription();
             group.MapV2GetSubscriptionsByVertical();
             group.MapV2GetUserSubscriptions();
+            group.MapV2GetActiveUserSubscriptions();
             group.MapV2GetAllActiveSubscriptions();
+            group.MapV2GetActiveUserPublishSubscriptions();
             group.MapV2CancelSubscription();
             group.MapV2UsageValidation();
             group.MapV2UsageRecording();
@@ -446,6 +448,131 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints
             .WithSummary("Record V2 subscription usage")
             .WithDescription("Records usage against a V2 subscription quota.")
             .Produces<V2UsageRecordResponseDto>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
+            .RequireAuthorization();
+
+            return group;
+        }
+        public static RouteGroupBuilder MapV2GetActiveUserSubscriptions(this RouteGroupBuilder group)
+        {
+            group.MapGet("/v2/useractivesubscription", async Task<IResult> (
+                int? verticalId,
+                int? subVerticalId,
+                HttpContext httpContext,
+                [FromServices] IV2SubscriptionService service,
+                CancellationToken cancellationToken) =>
+            {
+                try
+                {
+                   
+                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                    if (string.IsNullOrEmpty(userClaim))
+                    {
+                        return TypedResults.Unauthorized();
+                    }
+
+                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                    var uid = userData.GetProperty("uid").GetString();
+
+                    if (string.IsNullOrWhiteSpace(uid))
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "Authenticated user ID is missing or invalid.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    // Call updated service method
+                    var subscriptions = await service.GetActiveSubscriptionsAsync(
+                        uid,
+                        verticalId,
+                        subVerticalId,
+                        cancellationToken
+                    );
+
+                    return TypedResults.Ok(subscriptions);
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "V2 Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+            .WithName("GetV2UserActiveSubscriptions")
+            .WithTags("V2 Subscription")
+            .WithSummary("Get user's active subscription-type V2 subscriptions")
+            .WithDescription("Retrieves all active V2 subscriptions of type SUBSCRIPTION for the authenticated user filtered by vertical and subvertical if provided.")
+            .Produces<List<V2SubscriptionResponseDto>>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
+            .RequireAuthorization();
+
+            return group;
+        }
+        public static RouteGroupBuilder MapV2GetActiveUserPublishSubscriptions(this RouteGroupBuilder group)
+        {
+            group.MapGet("/v2/useractivepublishsubscription", async Task<IResult> (
+                int? verticalId,
+                int? subVerticalId,
+                long? adId,
+                HttpContext httpContext,
+                [FromServices] IV2SubscriptionService service,
+                CancellationToken cancellationToken) =>
+            {
+                try
+                {
+                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                    if (string.IsNullOrEmpty(userClaim))
+                    {
+                        return TypedResults.Unauthorized();
+                    }
+
+                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                    var uid = userData.GetProperty("uid").GetString();
+
+                    if (string.IsNullOrWhiteSpace(uid))
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "Authenticated user ID is missing or invalid.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    // Call updated service method
+                    var subscriptions = await service.GetUserActivePublishSubscriptionsAsync(
+                        uid,
+                        verticalId,
+                        subVerticalId,
+                        adId,
+                        cancellationToken
+                    );
+
+                    return TypedResults.Ok(subscriptions);
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "V2 Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+            .WithName("GetV2UserActivePublishSubscriptions")
+            .WithTags("V2 Subscription")
+            .WithSummary("Get user's active publish-type V2 subscriptions")
+            .WithDescription("Retrieves all active V2 subscriptions of type PUBLISH for the authenticated user, optionally filtered by vertical, subvertical, and adId.")
+            .Produces<List<V2SubscriptionResponseDto>>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
             .RequireAuthorization();
 

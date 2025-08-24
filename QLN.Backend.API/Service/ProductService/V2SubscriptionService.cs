@@ -100,6 +100,122 @@ namespace QLN.Backend.API.Service.ProductService
                 Version = "V2"
             };
         }
+        public async Task<List<V2SubscriptionResponseDto>> GetActiveSubscriptionsAsync(
+    string userId,
+    int? verticalId,
+    int? subVerticalId,
+    CancellationToken cancellationToken = default)
+        {
+            _logger.LogInformation(
+                "Getting all active SUBSCRIPTION-type V2 subscriptions for user: {UserId}, VerticalId: {VerticalId}, SubVerticalId: {SubVerticalId}",
+                userId, verticalId, subVerticalId);
+
+            var query = _context.Subscriptions
+                .Where(s =>
+                    s.UserId == userId &&
+                    s.Status == SubscriptionStatus.Active &&
+                    s.ProductType == ProductType.SUBSCRIPTION &&
+                    s.EndDate > DateTime.UtcNow);
+
+            if (verticalId.HasValue)
+            {
+                query = query.Where(s => (int)s.Vertical == verticalId.Value);
+            }
+
+            if (subVerticalId.HasValue)
+            {
+                query = query.Where(s => (int)s.SubVertical == subVerticalId.Value);
+            }
+
+            var subscriptionIds = await query
+                .Select(s => s.SubscriptionId)
+                .ToListAsync(cancellationToken);
+
+            var subscriptions = new List<V2SubscriptionResponseDto>();
+
+            foreach (var subscriptionId in subscriptionIds)
+            {
+                try
+                {
+                    var actor = GetV2SubscriptionActorProxy(subscriptionId);
+                    var isActive = await actor.IsActiveAsync(cancellationToken);
+
+                    if (isActive)
+                    {
+                        var actorData = await actor.GetDataAsync(cancellationToken);
+                        if (actorData != null)
+                        {
+                            subscriptions.Add(MapToResponseDto(actorData));
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error getting subscription {Id}", subscriptionId);
+                }
+            }
+
+            return subscriptions;
+        }
+        public async Task<List<V2SubscriptionResponseDto>> GetUserActivePublishSubscriptionsAsync(
+    string userId,
+    int? verticalId,
+    int? subVerticalId,
+    long? adId,
+    CancellationToken cancellationToken = default)
+        {
+            _logger.LogInformation(
+                "Getting active PUBLISH type subscriptions for user: {UserId}, VerticalId: {VerticalId}, SubVerticalId: {SubVerticalId}, AdId: {AdId}",
+                userId, verticalId, subVerticalId, adId);
+
+            var query = _context.Subscriptions
+                .Where(s =>
+                    s.UserId == userId &&
+                    s.Status == SubscriptionStatus.Active &&
+                    s.ProductType == ProductType.PUBLISH);
+
+            if (verticalId.HasValue)
+            {
+                query = query.Where(s => (int)s.Vertical == verticalId.Value);
+            }
+
+            if (subVerticalId.HasValue)
+            {
+                query = query.Where(s => (int)s.SubVertical == subVerticalId.Value);
+            }
+
+            if (adId.HasValue)
+            {
+                query = query.Where(s => s.AdId == adId.Value);
+            }
+
+            var subscriptionIds = await query
+                .Select(s => s.SubscriptionId)
+                .ToListAsync(cancellationToken);
+
+            var subscriptions = new List<V2SubscriptionResponseDto>();
+
+            foreach (var subscriptionId in subscriptionIds)
+            {
+                try
+                {
+                    var actor = GetV2SubscriptionActorProxy(subscriptionId);
+                    var actorData = await actor.GetDataAsync(cancellationToken);
+
+                    if (actorData != null)
+                    {
+                        subscriptions.Add(MapToResponseDto(actorData));
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error getting subscription {Id}", subscriptionId);
+                }
+            }
+
+            return subscriptions;
+        }
+
 
         public async Task<Guid> PurchaseSubscriptionAsync(V2SubscriptionPurchaseRequestDto request, CancellationToken cancellationToken = default)
         {
@@ -110,7 +226,7 @@ namespace QLN.Backend.API.Service.ProductService
             var subscriptionId = Guid.NewGuid();
             var actor = GetV2SubscriptionActorProxy(subscriptionId);
 
-            // Actor handles all DB operations, transactions, and event publishing
+           
             var success = await actor.CreateSubscriptionAsync(request, cancellationToken);
             if (!success)
             {
