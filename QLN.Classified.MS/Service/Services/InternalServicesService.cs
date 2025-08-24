@@ -82,8 +82,6 @@ namespace QLN.Classified.MS.Service.Services
 
             return list;
         }
-
-
         public async Task<string> CreateCategory(CategoryDto dto, CancellationToken cancellationToken)
         {
             try
@@ -125,8 +123,6 @@ namespace QLN.Classified.MS.Service.Services
                 return $"Error: {ex.Message}";
             }
         }
-
-
         private async Task<long> GetLastIdFromJsonFieldsAsync()
         {
             var allCategories = await _dbContext.CategoryDropdowns
@@ -149,8 +145,6 @@ namespace QLN.Classified.MS.Service.Services
 
             return maxId;
         }
-
-
         private List<long> ExtractAllFieldIds(List<FieldDto> fields)
         {
             var ids = new List<long>();
@@ -166,7 +160,6 @@ namespace QLN.Classified.MS.Service.Services
 
             return ids;
         }
-
         private void AssignIds(List<FieldDto>? fields, ref long lastFieldId)
         {
             if (fields == null) return;
@@ -180,7 +173,6 @@ namespace QLN.Classified.MS.Service.Services
                     AssignIds(field.Fields, ref lastFieldId);
             }
         }
-
         public async Task<ResponseDto> CreateServiceAd(string uid, string userName, string subscriptionId, ServiceDto dto, CancellationToken cancellationToken = default)
         {
             try
