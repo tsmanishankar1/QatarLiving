@@ -8,6 +8,7 @@ using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService.ICompanyService;
 using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.QLDbContext;
+using QLN.Common.Infrastructure.Subscriptions;
 using QLN.Common.Infrastructure.Utilities;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -20,12 +21,14 @@ namespace QLN.Company.MS.Service
         private readonly QLCompanyContext _context;
         private readonly QLSubscriptionContext _dbContext;
         private readonly DaprClient _dapr;
-        public InternalCompanyProfileService(ILogger<InternalCompanyProfileService> logger, QLCompanyContext context, QLSubscriptionContext dbContext, DaprClient dapr)
+        private readonly QLClassifiedContext _classContext;
+        public InternalCompanyProfileService(ILogger<InternalCompanyProfileService> logger, QLCompanyContext context, QLSubscriptionContext dbContext, DaprClient dapr, QLClassifiedContext classContext)
         {
             _logger = logger;
             _context = context;
             _dbContext = dbContext;
             _dapr = dapr;
+            _classContext = classContext;
         }
 
         public async Task<string> CreateCompany(string uid, string userName, CompanyProfile dto, CancellationToken cancellationToken = default)
@@ -569,13 +572,34 @@ namespace QLN.Company.MS.Service
 
                 company.Status = dto.Status;
                 company.CompanyVerificationStatus = dto.CompanyVerificationStatus;
-                if (dto.Status == VerifiedStatus.Removed || dto.CompanyVerificationStatus == VerifiedStatus.Removed)
+                if (dto.Status == VerifiedStatus.Removed || dto.CompanyVerificationStatus == VerifiedStatus.Removed || dto.Status == VerifiedStatus.Rejected || dto.CompanyVerificationStatus == VerifiedStatus.Rejected)
                 {
                     company.IsActive = false;
                 }
                 company.UpdatedUtc = DateTime.UtcNow;
                 company.UpdatedBy = userId;
-                dto.Reason = dto.Reason;
+                if (dto.Status == VerifiedStatus.Removed || dto.Status == VerifiedStatus.Rejected ||
+                            dto.Status == VerifiedStatus.NeedChanges ||
+                            dto.Status == VerifiedStatus.OnHold)
+                {
+                    long guidAsLong = BitConverter.ToInt64(company.Id.ToByteArray(), 0);
+                    var comment = new Comment
+                    {
+                        AdId = guidAsLong,               
+                        Action = $"Company {dto.Status}", 
+                        Reason = dto.Reason ?? string.Empty,
+                        Comments = dto.Comments,
+                        Vertical = (Vertical)company.Vertical,
+                        SubVertical = (SubVertical)company.SubVertical,
+                        CreatedAt = DateTime.UtcNow,
+                        CreatedUserId = company.CreatedBy,
+                        CreatedUserName = company.UserName,
+                        UpdatedUserId = userId,
+                        UpdatedUserName = company.UserName
+                    };
+
+                    await _classContext.Comments.AddAsync(comment, cancellationToken);
+                }
                 await _context.SaveChangesAsync(cancellationToken);
                 var upsertRequest = await IndexServiceToAzureSearch(company, cancellationToken);
                 if (upsertRequest != null)
