@@ -12,6 +12,7 @@ using QLN.Common.Infrastructure.Subscriptions;
 using System.Net;
 using System.Text;
 using System.Text.Json;
+using System.Threading;
 
 namespace QLN.Backend.API.Service.Services
 {
@@ -91,16 +92,17 @@ namespace QLN.Backend.API.Service.Services
                 throw;
             }
         }
-        public async Task<ResponseDto> CreateServiceAd(string uid, string userName, string subscriptionId, ServiceDto dto, CancellationToken cancellationToken = default)
+        public async Task<ResponseDto> CreateServiceAd(string uid, string userName, Guid subscriptionId, ServiceDto dto, CancellationToken cancellationToken = default)
         {
             try
             {
+                var subscription = new V2SubscriptionResponseDto();
+                subscription = (await _v2SubscriptionService
+                    .GetActiveSubscriptionsAsync(uid, (int)Vertical.Services, null, cancellationToken))
+                    .FirstOrDefault();
+                subscriptionId = subscription.Id;
                 if (dto.AdType == ServiceAdType.Subscription)
                 {
-                    var subscription = new V2SubscriptionResponseDto();
-                    if (subscriptionId != null)
-                        subscription = await _v2SubscriptionService.GetSubscriptionByIdAsync(Guid.Parse(subscriptionId), cancellationToken);
-
                     if (subscription == null)
                         throw new InvalidDataException("Subscription not found.");
 
@@ -108,7 +110,7 @@ namespace QLN.Backend.API.Service.Services
                         throw new InvalidDataException("Subscription is inactive or expired.");
 
                     var canUse = await _v2SubscriptionService.ValidateSubscriptionUsageAsync(
-                        Guid.Parse(subscriptionId),
+                        subscriptionId,
                         ActionTypes.Publish,
                         1,
                         cancellationToken
@@ -147,10 +149,10 @@ namespace QLN.Backend.API.Service.Services
                     }
                     throw new Exception(errorMessage);
                 }
-                if (Guid.Parse(subscriptionId) != Guid.Empty)
+                if (subscriptionId != Guid.Empty)
                 {
                     var success = await _v2SubscriptionService.RecordSubscriptionUsageAsync(
-                        Guid.Parse(subscriptionId),
+                        subscriptionId,
                         ActionTypes.Publish,
                         1,
                         cancellationToken
@@ -331,16 +333,21 @@ namespace QLN.Backend.API.Service.Services
                 throw;
             }
         }
-        public async Task<Common.Infrastructure.Model.Services> PromoteService(PromoteServiceRequest request, string? uid, string? subscriptionId, CancellationToken ct)
+        public async Task<Common.Infrastructure.Model.Services> PromoteService(PromoteServiceRequest request, string uid, Guid? subscriptionId, CancellationToken ct)
         {
             try
             {
+                var subscription = new V2SubscriptionResponseDto();
+                subscription = (await _v2SubscriptionService
+                    .GetActiveSubscriptionsAsync(uid, (int)Vertical.Services, null, ct))
+                    .FirstOrDefault();
+                subscriptionId = subscription.Id;
                 var quotaAction = request.IsPromoted ? ActionTypes.Promote : ActionTypes.UnPromote;
 
                 if (quotaAction == ActionTypes.Promote)
                 {
                     var canUse = await _v2SubscriptionService.ValidateSubscriptionUsageAsync(
-                        Guid.Parse(subscriptionId),
+                        (Guid)subscriptionId,
                         quotaAction,
                         1,
                         ct
@@ -381,7 +388,7 @@ namespace QLN.Backend.API.Service.Services
                     if (serviceDto.SubscriptionId != Guid.Empty)
                     {
                         var success = await _v2SubscriptionService.RecordSubscriptionUsageAsync(
-                            Guid.Parse(subscriptionId),
+                            (Guid)subscriptionId,
                             quotaAction,
                             1,
                             ct
@@ -414,16 +421,21 @@ namespace QLN.Backend.API.Service.Services
                 throw;
             }
         }
-        public async Task<Common.Infrastructure.Model.Services> FeatureService(FeatureServiceRequest request, string? uid, string? subscriptionId, CancellationToken ct = default)
+        public async Task<Common.Infrastructure.Model.Services> FeatureService(FeatureServiceRequest request, string uid, Guid? subscriptionId, CancellationToken ct = default)
         {
             try
             {
+                var subscription = new V2SubscriptionResponseDto();
+                subscription = (await _v2SubscriptionService
+                    .GetActiveSubscriptionsAsync(uid, (int)Vertical.Services, null, ct))
+                    .FirstOrDefault();
+                subscriptionId = subscription.Id;
                 var quotaAction = request.IsFeature ? ActionTypes.Feature : ActionTypes.UnFeature;
 
                 if (quotaAction == ActionTypes.Feature)
                 {
                     var canUse = await _v2SubscriptionService.ValidateSubscriptionUsageAsync(
-                        Guid.Parse(subscriptionId),
+                        (Guid)subscriptionId,
                         quotaAction,
                         1,
                         ct
@@ -463,7 +475,7 @@ namespace QLN.Backend.API.Service.Services
                     if (serviceDto.SubscriptionId != Guid.Empty)
                     {
                         var success = await _v2SubscriptionService.RecordSubscriptionUsageAsync(
-                            Guid.Parse(subscriptionId),
+                            (Guid)subscriptionId,
                             quotaAction,
                             1,
                             ct
@@ -496,16 +508,21 @@ namespace QLN.Backend.API.Service.Services
                 throw;
             }
         }
-        public async Task<Common.Infrastructure.Model.Services> RefreshService(RefreshServiceRequest request, string? uid, string? subscriptionId, CancellationToken ct)
+        public async Task<Common.Infrastructure.Model.Services> RefreshService(RefreshServiceRequest request, string uid, Guid? subscriptionId, CancellationToken ct)
         {
             try
             {
+                var subscription = new V2SubscriptionResponseDto();
+                subscription = (await _v2SubscriptionService
+                    .GetActiveSubscriptionsAsync(uid, (int)Vertical.Services, null, ct))
+                    .FirstOrDefault();
+                subscriptionId = subscription.Id;
                 var quotaAction = request.IsRefreshed ? ActionTypes.Refresh : null;
 
                 if (quotaAction == ActionTypes.Refresh)
                 {
                     var canUse = await _v2SubscriptionService.ValidateSubscriptionUsageAsync(
-                        Guid.Parse(subscriptionId),
+                        (Guid)subscriptionId,
                         quotaAction,
                         1,
                         ct
@@ -542,7 +559,7 @@ namespace QLN.Backend.API.Service.Services
                     if (serviceDto.SubscriptionId.HasValue && serviceDto.SubscriptionId.Value != Guid.Empty)
                     {
                         var success = await _v2SubscriptionService.RecordSubscriptionUsageAsync(
-                            Guid.Parse(subscriptionId),
+                            (Guid)subscriptionId,
                             quotaAction,
                             1,
                             ct
@@ -575,10 +592,15 @@ namespace QLN.Backend.API.Service.Services
                 throw;
             }
         }
-        public async Task<Common.Infrastructure.Model.Services> PublishService(PublishServiceRequest request, string? uid, string? subscriptionId, CancellationToken ct)
+        public async Task<Common.Infrastructure.Model.Services> PublishService(PublishServiceRequest request, string uid, Guid? subscriptionId, CancellationToken ct)
         {
             try
             {
+                var subscription = new V2SubscriptionResponseDto();
+                subscription = (await _v2SubscriptionService
+                    .GetActiveSubscriptionsAsync(uid, (int)Vertical.Services, null, ct))
+                    .FirstOrDefault();
+                subscriptionId = subscription.Id;
                 var quotaActionPublish = request.Status == ServiceStatus.Published
                     ? ActionTypes.Publish
                     : ActionTypes.UnPublish;
@@ -586,7 +608,7 @@ namespace QLN.Backend.API.Service.Services
                 if (request.Status == ServiceStatus.Published)
                 {
                     var canPublish = await _v2SubscriptionService.ValidateSubscriptionUsageAsync(
-                        Guid.Parse(subscriptionId), quotaActionPublish, 1, ct);
+                        (Guid)subscriptionId, quotaActionPublish, 1, ct);
 
                     if (!canPublish)
                     {
@@ -617,7 +639,7 @@ namespace QLN.Backend.API.Service.Services
                     if (serviceDto.SubscriptionId != Guid.Empty)
                     {
                         var success = await _v2SubscriptionService.RecordSubscriptionUsageAsync(
-                            Guid.Parse(subscriptionId),
+                            (Guid)subscriptionId,
                             quotaActionPublish,
                             1,
                             ct
