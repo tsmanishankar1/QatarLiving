@@ -8,11 +8,19 @@ using System.Threading.Tasks;
 
 namespace QLN.Common.DTO_s.Classifieds
 {
-    public class ItemsPayToPromote
+    public class ClassifiedsPayToPromote
     {
-        public long ItemsAdId { get; set; }
+        public long AdId { get; set; }
         public Guid AddonId { get; set; }
         public Vertical Vertical { get; set; }
         public SubVertical SubVertical { get; set; }
+    }
+
+    public sealed class P2PromoteResponseDto
+    {
+        public SubVertical SubVertical { get; set; }
+        public long AdId { get; set; }
+        public bool Promoted { get; set; }
+        public Guid AddonId { get; set; }
     }
 }
