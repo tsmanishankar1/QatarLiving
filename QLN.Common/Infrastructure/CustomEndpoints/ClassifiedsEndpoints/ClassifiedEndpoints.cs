@@ -2411,63 +2411,55 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 HttpContext httpContext,
                 [FromBody] ClassifiedsDealsDTO dto,
                 IClassifiedService service,
+                [FromServices] IV2SubscriptionService v2Subs,
                 AuditLogger auditLogger,
                 CancellationToken token) =>
             {
+                const int CLASSIFIEDS_VERTICAL = 3;
+                const int DEALS_SUBVERTICAL = 2;
+
                 string? uid = "unknown";
                 string? subId = null;
                 string? name = null;
                 try
                 {
-                    uid = httpContext.User.FindFirst("sub")?.Value;
-                    var userName = httpContext.User.FindFirst("preferred_username")?.Value;
+                    var (extractedUid, username) = UserTokenHelper.ExtractUserAsync(httpContext);
+                    uid = extractedUid;
+                    name = username;
 
-                    // Get all subscription claims
-                    var subscriptionClaims = httpContext.User.FindAll("subscriptions").ToList();
-                    Guid? subscriptionId = null;
-                    DateTime? expiryDate = null;
-
-                    // Find collectible subscription (Vertical=3 and SubVertical=4)
-                    foreach (var claim in subscriptionClaims)
+                    if (string.IsNullOrWhiteSpace(uid))
                     {
-                        try
+                        return TypedResults.Problem(new ProblemDetails
                         {
-                            using (var doc = JsonDocument.Parse(claim.Value))
-                            {
-                                var subscription = doc.RootElement;
-
-                                if (subscription.TryGetProperty("Vertical", out var verticalProp) &&
-                                    verticalProp.GetInt32() == 3 &&
-                                    subscription.TryGetProperty("SubVertical", out var subVerticalProp) &&
-                                    subVerticalProp.GetInt32() == 2)
-                                {
-
-                                    if (subscription.TryGetProperty("EndDate", out var endDateProp) &&
-                                    endDateProp.ValueKind == JsonValueKind.String)
-                                    {
-                                        // Parse to DateTime and ensure UTC
-                                        expiryDate = DateTime.Parse(endDateProp.GetString()).ToUniversalTime();
-                                        subscriptionId = Guid.Parse(subscription.GetProperty("Id").GetString());
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-                        catch
-                        {
-                            continue;
-                        }
+                            Title = "Unauthorized",
+                            Detail = "Unable to resolve user id from token.",
+                            Status = StatusCodes.Status401Unauthorized
+                        });
                     }
+                   
 
-                    if (subscriptionId == null)
+                    var activeSubs = await v2Subs.GetActiveSubscriptionsAsync(
+                          userId: uid,
+                          verticalId: CLASSIFIEDS_VERTICAL,
+                          subVerticalId: DEALS_SUBVERTICAL,
+                          cancellationToken: token
+                          );
+
+                    if (activeSubs == null)
                     {
                         return TypedResults.BadRequest(new ProblemDetails
                         {
                             Title = "Subscription Required",
-                            Detail = "No Deals subscription found for this user.",
+                            Detail = "No active subscription found for the chosen sub-vertical.",
                             Status = StatusCodes.Status400BadRequest
                         });
                     }
+
+                    var subscriptionId = activeSubs
+                    .OrderByDescending(s => s.EndDate)
+                    .Select(s => s.Id)
+                    .First();
+
 
                     var slug = SlugHelper.GenerateSlug(dto.Offertitle, dto.StartDate.ToString(), "Classifieds", Guid.NewGuid());
 
@@ -2477,7 +2469,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         Description = dto.Description,
                         Slug = slug,
                         IsActive = true,
-                        CreatedBy = userName,
+                        CreatedBy = name,
                         CreatedAt = DateTime.UtcNow,
                         FlyerFileUrl = dto.FlyerFileUrl,
                         StartDate = dto.StartDate,
@@ -4921,69 +4913,80 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 [FromQuery] bool isPublished,
                 [FromBody] List<long> adIds,
                 IClassifiedService service,
+                [FromServices] IV2SubscriptionService v2Subs,
                 AuditLogger auditLogger,
                 CancellationToken token) =>
                     {
+                        const int CLASSIFIEDS_VERTICAL = 3;        
+                        const int DEALS_SUBVERTICAL = 2;
+                        const int PRELOVED_SUBVERTICAL = 4;
+
                         string? uid = "unknown";
                         string? subId = null;
                         string? name = null;
                         try
                         {
-                            uid = context.User.FindFirst("sub")?.Value;
-                            var userName = context.User.FindFirst("preferred_username")?.Value;
+                            var (extractedUid, username) = UserTokenHelper.ExtractUserAsync(context);
+                            uid = extractedUid;
+                            name = username;
 
-                            // Get all subscription claims
-                            var subscriptionClaims = context.User.FindAll("subscriptions").ToList();
-                            Guid? subscriptionId = null;
-                            DateTime? expiryDate = null;
-
-                            // Find collectible subscription (Vertical=3 and SubVertical=4)
-                            foreach (var claim in subscriptionClaims)
+                            if (string.IsNullOrWhiteSpace(uid))
                             {
-                                try
+                                return TypedResults.Problem(new ProblemDetails
                                 {
-                                    using (var doc = JsonDocument.Parse(claim.Value))
-                                    {
-                                        var subscription = doc.RootElement;
-
-                                        if (subscription.TryGetProperty("Vertical", out var verticalProp) &&
-                                            verticalProp.GetInt32() == 3 &&
-                                            subscription.TryGetProperty("SubVertical", out var subVerticalProp) &&
-                                            subVerticalProp.GetInt32() == 4)
-                                        {
-
-                                            if (subscription.TryGetProperty("EndDate", out var endDateProp) &&
-                                            endDateProp.ValueKind == JsonValueKind.String)
-                                            {
-                                                // Parse to DateTime and ensure UTC
-                                                expiryDate = DateTime.Parse(endDateProp.GetString()).ToUniversalTime();
-                                                subscriptionId = Guid.Parse(subscription.GetProperty("Id").GetString());
-                                                break;
-                                            }
-                                        }
-                                    }
-                                }
-                                catch
-                                {
-                                    continue;
-                                }
+                                    Title = "Unauthorized",
+                                    Detail = "Unable to resolve user id from token.",
+                                    Status = StatusCodes.Status401Unauthorized
+                                });
                             }
 
-                            if (subscriptionId == null)
+                            if (adIds == null || adIds.Count == 0)
+                            {
+                                return TypedResults.BadRequest(new ProblemDetails
+                                {
+                                    Title = "Invalid Request",
+                                    Detail = "adIds must contain at least one id.",
+                                    Status = StatusCodes.Status400BadRequest
+                                });
+                            }
+
+                            if (subVertical != DEALS_SUBVERTICAL && subVertical != PRELOVED_SUBVERTICAL)
+                            {
+                                return TypedResults.BadRequest(new ProblemDetails
+                                {
+                                    Title = "Unsupported Sub-Vertical",
+                                    Detail = "Only Deals (2) and Preloved (4) are supported for this action.",
+                                    Status = StatusCodes.Status400BadRequest
+                                });
+                            }
+
+                            var activeSubs = await v2Subs.GetActiveSubscriptionsAsync(
+                                userId: uid,
+                                verticalId: CLASSIFIEDS_VERTICAL,
+                                subVerticalId: subVertical,
+                                cancellationToken: token
+                                );
+
+                            if (activeSubs == null || activeSubs.Count == 0)
                             {
                                 return TypedResults.BadRequest(new ProblemDetails
                                 {
                                     Title = "Subscription Required",
-                                    Detail = "No subscription found for this user.",
+                                    Detail = "No active subscription found for the chosen sub-vertical.",
                                     Status = StatusCodes.Status400BadRequest
                                 });
                             }
+
+                            var subscriptionId = activeSubs
+                            .OrderByDescending(s => s.EndDate)      
+                            .Select(s => s.Id)          
+                            .First();
 
                             var result = await service.BulkUpdateAdPublishStatusAsync(
                                 subVertical,
                                 uid,
                                 adIds,
-                                isPublished, subscriptionId.Value, token);
+                                isPublished, subscriptionId, token);
 
                             await auditLogger.LogAuditAsync(
                                 module: "Classified",
