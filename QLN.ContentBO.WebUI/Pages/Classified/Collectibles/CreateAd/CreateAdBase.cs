@@ -19,6 +19,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.CreateAd
         [Inject] public IClassifiedService ClassifiedService { get; set; }
         [Inject] public IFileUploadService FileUploadService { get; set; }
         [Inject] protected IDialogService DialogService { get; set; }
+        [Inject] protected ICollectiblesService CollectiblesService { get; set; }
 
         protected List<LocationZoneDto> Zones { get; set; } = new();
         [Inject] ILogger<CreateAdBase> Logger { get; set; }
@@ -238,7 +239,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.CreateAd
                 FullWidth = true
             };
 
-            var dialog = DialogService.Show<DiscardDialog>("", parameters, options);
+            var dialog = await DialogService.ShowAsync<DiscardDialog>("", parameters, options);
             var result = await dialog.Result;
 
         }
@@ -338,10 +339,20 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.CreateAd
                     images = uploadedImages,
                     attributes = adPostModel.DynamicFields
                         .Where(kv => !IsBasicField(kv.Key))
-                        .ToDictionary(kv => kv.Key, kv => (object)kv.Value)
+                        .ToDictionary(kv => kv.Key, kv => (object)kv.Value),
+
+                    // New fields
+                    subVertical = SubVerticalTypeEnum.Collectibles,
+                    status = AdStatusEnum.PendingApproval,
+                    userId = UserId,
+                    userName = UserEmail,
+                    isSold = false,
+                    isFeatured = false,
+                    isPromoted = false,
+                    yearOrEra = adPostModel.DynamicFields.GetValueOrDefault("YearOrEra")
                 };
-                // await JS.InvokeVoidAsync("console.log", payload);
-                var response = await ClassifiedService.PostCollectiblesAdAsync(payload);
+
+                var response = await CollectiblesService.CreateAd(payload);
                 if (response != null)
                 {
                     var responseContent = await response.Content.ReadAsStringAsync();
@@ -358,21 +369,21 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.CreateAd
                             using var doc = JsonDocument.Parse(responseContent);
                             if (doc.RootElement.TryGetProperty("detail", out var detail))
                             {
-                                Snackbar.Add(detail.GetString() ?? "Failed to post ad.", Severity.Error);
+                                Snackbar.Add(detail.GetString() ?? "Failed to create ad.", Severity.Error);
                             }
                             else
                             {
-                                Snackbar.Add("Failed to post ad.", Severity.Error);
+                                Snackbar.Add("Failed to create ad.", Severity.Error);
                             }
                         }
                         catch
                         {
-                            Snackbar.Add("Failed to post ad.", Severity.Error);
+                            Snackbar.Add("Failed to create ad.", Severity.Error);
                         }
                     }
                     else
                     {
-                        Snackbar.Add("Failed to post ad.", Severity.Error);
+                        Snackbar.Add("Failed to create ad.", Severity.Error);
                     }
                 }
 
@@ -380,7 +391,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.CreateAd
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "Error posting ad");
+                Logger.LogError(ex, "Error create ad");
                 Snackbar.Add("Unexpected error occurred while posting your ad.", Severity.Error);
             }
             finally
