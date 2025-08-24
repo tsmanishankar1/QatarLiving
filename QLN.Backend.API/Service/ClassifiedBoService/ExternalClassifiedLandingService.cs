@@ -1111,7 +1111,7 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
 
                         if (sampleAd.AdType == AdTypeEnum.Free)
                         {
-                            // Validate FREE ads
+                            
                             canUse = await _subscriptionContext.ValidateFreeAdsUsageAsync(
                                 subscriptionId,
                                 sampleAd.Category,
@@ -1139,7 +1139,7 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
                         }
                         else
                         {
-                            // Validate Subscription/Publish Ads
+                            
                             canUse = await _subscriptionContext.ValidateSubscriptionUsageAsync(
                                 subscriptionId,
                                 actionName,

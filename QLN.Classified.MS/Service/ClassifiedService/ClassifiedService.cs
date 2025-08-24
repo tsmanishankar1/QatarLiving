@@ -1960,8 +1960,7 @@ namespace QLN.Classified.MS.Service
                     var deals = await _context.Deal
                         .Where(d => adIds.Contains(d.Id))
                         .ToListAsync(cancellationToken);
-
-                    // Validate deals
+                    
                     foreach (var deal in deals)
                     {
                         if (deal.UserId != userId)
@@ -1983,7 +1982,6 @@ namespace QLN.Classified.MS.Service
                         }
                     }
 
-                    // Not found
                     var notFoundDeals = adIds.Except(deals.Select(d => d.Id)).ToList();
                     foreach (var id in notFoundDeals)
                     {
@@ -2001,7 +1999,6 @@ namespace QLN.Classified.MS.Service
                         };
                     }
 
-                    // Update
                     foreach (var deal in deals)
                     {
                         deal.Status = targetStatus;
@@ -2015,7 +2012,6 @@ namespace QLN.Classified.MS.Service
 
                     await _context.SaveChangesAsync(cancellationToken);
 
-                    // Re-index
                     foreach (var deal in deals)
                         await IndexDealsToAzureSearch(deal, cancellationToken);
 
@@ -2027,7 +2023,6 @@ namespace QLN.Classified.MS.Service
                     };
                 }
 
-                // ✅ For all other ClassifiedBase types, keep your original code
                 IQueryable<ClassifiedBase> query = subVertical switch
                 {
                     (int)SubVertical.Items => _context.Item.Cast<ClassifiedBase>(),
@@ -2040,7 +2035,6 @@ namespace QLN.Classified.MS.Service
                     .Where(a => adIds.Contains(a.Id))
                     .ToListAsync(cancellationToken);
 
-                // Validation
                 foreach (var ad in ads)
                 {
                     if (ad.UserId != userId)
@@ -2079,7 +2073,6 @@ namespace QLN.Classified.MS.Service
                     };
                 }
 
-                // Update
                 foreach (var ad in ads)
                 {
                     ad.Status = targetStatus;
@@ -2093,7 +2086,6 @@ namespace QLN.Classified.MS.Service
 
                 await _context.SaveChangesAsync(cancellationToken);
 
-                // Re-index
                 foreach (var ad in ads)
                 {
                     switch ((SubVertical)subVertical)

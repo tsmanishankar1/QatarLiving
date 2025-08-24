@@ -57,9 +57,6 @@ namespace QLN.ContentBO.WebUI.Interfaces
         /// <summary>
         /// Gets the address coordinates by zone, street, building, and location.
         Task<HttpResponseMessage?> GetAddressByDetailsAsync(int zone, int street, int building, string location);
-        /// <summary>
-        /// Posts a new classified ad.
-        Task<HttpResponseMessage?> PostAdAsync(string vertical, object payload);
         Task<HttpResponseMessage?> UpdateAdAsync(string vertical, object payload);
         Task<HttpResponseMessage?> UplodAsync(object payload);
         Task<HttpResponseMessage?> RefreshAdAsync(long adId, int subVertical);

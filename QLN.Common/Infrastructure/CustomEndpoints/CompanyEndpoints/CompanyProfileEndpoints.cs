@@ -813,7 +813,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
             .WithName("ApproveCompanyInternalViaDapr")
             .WithTags("Company")
             .WithSummary("Approve a company profile internally via Dapr")
-            //.ExcludeFromDescription()
+            .ExcludeFromDescription()
             .Produces<string>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)

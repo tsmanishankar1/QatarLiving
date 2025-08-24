@@ -3,10 +3,12 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using QLN.Common.DTO_s;
+using QLN.Common.DTO_s.Classifieds;
 using QLN.Common.DTO_s.Payments;
 using QLN.Common.DTO_s.Services;
 using QLN.Common.DTO_s.Subscription;
 using QLN.Common.DTOs;
+using QLN.Common.Infrastructure.IService;
 using QLN.Common.Infrastructure.IService.IAuth;
 using QLN.Common.Infrastructure.IService.IPayments;
 using QLN.Common.Infrastructure.IService.IProductService;
@@ -33,6 +35,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
         private readonly QLApplicationContext _applicationDbContext;
         private readonly IV2SubscriptionService _subscriptionService;
         private readonly IServices _services;
+        private readonly IClassifiedService _classifiedService;
 
         public PaymentService(
             ILogger<PaymentService> logger,
@@ -43,7 +46,8 @@ namespace QLN.Common.Infrastructure.Service.Payments
             IV2SubscriptionService subscriptionService,
             QLSubscriptionContext subscriptionContext,
             QLApplicationContext applicationDbContext,
-            IServices services
+            IServices services,
+            IClassifiedService classifiedService
         )
         {
             _logger = logger;
@@ -55,6 +59,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
             _subscriptionContext = subscriptionContext;
             _applicationDbContext = applicationDbContext;
             _services = services;
+            _classifiedService = classifiedService;
         }
 
         public async Task<PaymentResponse> PayAsync(ExternalPaymentRequest request, CancellationToken cancellationToken = default)
@@ -356,13 +361,16 @@ namespace QLN.Common.Infrastructure.Service.Payments
                     .Where(s => s.IsActive && s.EndDate > DateTime.UtcNow && s.StatusId == SubscriptionStatus.Active)
                     .ToList();
 
+                // Check if user is trying to buy a PUBLISH product
+                var isPublishPurchase = request.Products.Any(p => p.ProductType == ProductType.PUBLISH);
+
                 switch (request.Vertical)
                 {
                     case Vertical.Classifieds:
-                        return ValidateClassifiedsSubscription(activeSubscriptions, request.SubVertical);
+                        return ValidateClassifiedsSubscription(activeSubscriptions, request.SubVertical, isPublishPurchase);
 
                     case Vertical.Services:
-                        return ValidateServicesSubscription(activeSubscriptions);
+                        return ValidateServicesSubscription(activeSubscriptions, isPublishPurchase);
 
                     default:
                         return SubscriptionValidationResult.Success();
@@ -377,7 +385,8 @@ namespace QLN.Common.Infrastructure.Service.Payments
 
         private SubscriptionValidationResult ValidateClassifiedsSubscription(
             List<V2SubscriptionResponseDto> activeSubscriptions,
-            SubVertical? requestedSubVertical)
+            SubVertical? requestedSubVertical,
+            bool isPublishPurchase = false)
         {
             if (!requestedSubVertical.HasValue)
                 return SubscriptionValidationResult.Failure("SubVertical is required for Classifieds subscriptions.");
@@ -391,6 +400,24 @@ namespace QLN.Common.Infrastructure.Service.Payments
                 var existingSub = existingForSubVertical.First();
                 var daysRemaining = (int)(existingSub.EndDate - DateTime.UtcNow).TotalDays;
 
+                // If user is trying to buy PUBLISH type, check if existing subscription has ads quota
+                if (isPublishPurchase)
+                {
+                    var remainingAds = Math.Max(0, existingSub.Quota?.TotalAdsAllowed ?? 0 - existingSub.Quota?.AdsUsed ?? 0);
+
+                    if (remainingAds > 0)
+                    {
+                        return SubscriptionValidationResult.Failure(
+                            $"You still have {remainingAds} ads remaining in your current {requestedSubVertical} subscription. " +
+                            "Pay-to-Publish is only available when you have no remaining ads quota.");
+                    }
+
+                    // Allow PUBLISH purchase if no ads quota remaining
+                    _logger.LogInformation("Allowing PUBLISH purchase for user with expired ads quota in {SubVertical} subscription", requestedSubVertical);
+                    return SubscriptionValidationResult.Success();
+                }
+
+                // For regular SUBSCRIPTION purchases, block if active subscription exists
                 return SubscriptionValidationResult.Failure(
                     $"You already have an active {requestedSubVertical} subscription with {daysRemaining} days remaining. " +
                     "You can buy a new plan to start after expiry or contact support to cancel the current one.");
@@ -399,14 +426,35 @@ namespace QLN.Common.Infrastructure.Service.Payments
             return SubscriptionValidationResult.Success();
         }
 
-        private SubscriptionValidationResult ValidateServicesSubscription(List<V2SubscriptionResponseDto> activeSubscriptions)
+        private SubscriptionValidationResult ValidateServicesSubscription(
+            List<V2SubscriptionResponseDto> activeSubscriptions,
+            bool isPublishPurchase = false)
         {
-            if (activeSubscriptions.Any())
+            var existingSubscriptions = activeSubscriptions.Where(x => x.ProductType == ProductType.SUBSCRIPTION).ToList();
+
+            if (existingSubscriptions.Any())
             {
-                var existingSub = activeSubscriptions.Where
-                    (x=>x.ProductType == ProductType.SUBSCRIPTION).First();
+                var existingSub = existingSubscriptions.First();
                 var daysRemaining = (int)(existingSub.EndDate - DateTime.UtcNow).TotalDays;
 
+                // If user is trying to buy PUBLISH type, check if existing subscription has ads quota
+                if (isPublishPurchase)
+                {
+                    var remainingAds = Math.Max(0, existingSub.Quota?.TotalAdsAllowed ?? 0 - existingSub.Quota?.AdsUsed ?? 0);
+
+                    if (remainingAds > 0)
+                    {
+                        return SubscriptionValidationResult.Failure(
+                            $"You still have {remainingAds} service ads remaining in your current Services subscription. " +
+                            "Pay-to-Publish is only available when you have no remaining ads quota.");
+                    }
+
+                    // Allow PUBLISH purchase if no ads quota remaining
+                    _logger.LogInformation("Allowing PUBLISH purchase for user with expired ads quota in Services subscription");
+                    return SubscriptionValidationResult.Success();
+                }
+
+                // For regular SUBSCRIPTION purchases, block if active subscription exists
                 return SubscriptionValidationResult.Failure(
                     $"You already have an active Services subscription with {daysRemaining} days remaining. " +
                     "You can queue a new plan to start after expiry or contact support to cancel the current one.");
@@ -614,6 +662,10 @@ namespace QLN.Common.Infrastructure.Service.Payments
                 {
                     await ProcessServicesAddonsAsync(payment, cancellationToken);
                 }
+                else if (payment.Vertical == Vertical.Classifieds && payment.Products != null && payment.Products.Any())
+                {
+                    await ProcessClassifiedsAddonsAsync(payment, cancellationToken);
+                }
 
                 var d365Data = new D365Data
                 {
@@ -713,6 +765,101 @@ namespace QLN.Common.Infrastructure.Service.Payments
 
                                 await _services.P2PublishService(publishRequest, payment.PaidByUid, subscriptionId, cancellationToken);
                                 _logger.LogInformation("Successfully processed P2Publish for Service ID: {ServiceId}, SubscriptionId: {SubscriptionId}, Payment ID: {PaymentId}",
+                                    payment.AdId.Value, subscriptionId, payment.PaymentId);
+                                break;
+                            }
+
+                        default:
+
+                            break;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error processing services addons for Payment ID: {PaymentId}", payment.PaymentId);
+            }
+        }
+        private async Task ProcessClassifiedsAddonsAsync(PaymentEntity payment, CancellationToken cancellationToken)
+        {
+            try
+            {
+                if (!payment.AdId.HasValue || payment.AdId.Value <= 0)
+                {
+                    _logger.LogWarning("Cannot process services addons - AdId is missing or invalid for Payment ID: {PaymentId}", payment.PaymentId);
+                    return;
+                }
+
+                var addonMappings = await GetAddonIdsByProductTypeAsync(payment, cancellationToken);
+
+                foreach (var product in payment.Products)
+                {
+                    switch (product.ProductType)
+                    {
+                        case ProductType.ADDON_PROMOTE:
+                            {
+                                if (!addonMappings.TryGetValue(ProductType.ADDON_PROMOTE, out var addonId) || addonId == Guid.Empty)
+                                {
+                                    _logger.LogError("Cannot process P2Promote - AddonId for PROMOTE not found for Payment ID: {PaymentId}", payment.PaymentId);
+                                    continue;
+                                }
+
+                                var promoteRequest = new ClassifiedsPayToPromote
+                                {
+                                    AdId = payment.AdId.Value,
+                                    AddonId = addonId,
+                                    SubVertical = (SubVertical)payment.SubVertical,
+                                    Vertical = payment.Vertical,
+                                };
+
+                                await _classifiedService.P2Promote(promoteRequest, payment.PaidByUid, cancellationToken);
+                                _logger.LogInformation("Successfully processed P2Promote for Classifieds ID: {ServiceId}, AddonId: {AddonId}, Payment ID: {PaymentId}",
+                                    payment.AdId.Value, addonId, payment.PaymentId);
+                                break;
+                            }
+
+                        case ProductType.ADDON_FEATURE:
+                            {
+                                if (!addonMappings.TryGetValue(ProductType.ADDON_FEATURE, out var addonId) || addonId == Guid.Empty)
+                                {
+                                    _logger.LogError("Cannot process P2Feature - AddonId for FEATURE not found for Payment ID: {PaymentId}", payment.PaymentId);
+                                    continue;
+                                }
+
+                                var featureRequest = new ClassifiedsPayToFeature
+                                {
+                                    AdId = payment.AdId.Value,
+                                    AddonId = addonId,
+                                    SubVertical = (SubVertical)payment.SubVertical,
+                                    Vertical = payment.Vertical,
+                                };
+
+                                await _classifiedService.P2PFeature(featureRequest, payment.PaidByUid, addonId, cancellationToken);
+                                _logger.LogInformation("Successfully processed P2Feature for Classifieds ID: {ServiceId}, AddonId: {AddonId}, Payment ID: {PaymentId}",
+                                    payment.AdId.Value, addonId, payment.PaymentId);
+                                break;
+                            }
+
+                        case ProductType.PUBLISH:
+                            {
+                                var subscriptionId = payment.UserSubscriptionId ?? Guid.Empty;
+
+                                if (subscriptionId == Guid.Empty)
+                                {
+                                    _logger.LogError("Cannot process P2Publish - SubscriptionId is missing for Payment ID: {PaymentId}", payment.PaymentId);
+                                    continue;
+                                }
+
+                                var publishRequest = new ClassifiedsPayToPublish
+                                {
+                                    AdId = payment.AdId.Value,
+                                    SubscriptionId = subscriptionId,
+                                    SubVertical = (SubVertical)payment.SubVertical,
+                                    Vertical = payment.Vertical,
+                                };
+
+                                await _classifiedService.P2Publish(publishRequest, payment.PaidByUid, cancellationToken);
+                                _logger.LogInformation("Successfully processed P2Publish for Classifieds ID: {ServiceId}, SubscriptionId: {SubscriptionId}, Payment ID: {PaymentId}",
                                     payment.AdId.Value, subscriptionId, payment.PaymentId);
                                 break;
                             }

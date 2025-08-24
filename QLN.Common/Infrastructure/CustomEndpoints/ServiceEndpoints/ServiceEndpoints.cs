@@ -159,23 +159,16 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
         }
         public static RouteGroupBuilder MapServiceAdEndpoints(this RouteGroupBuilder group)
         {
-            group.MapPost("/create", async Task<Results<Ok<string>, BadRequest<ProblemDetails>, ProblemHttpResult>> (
+            group.MapPost("/create", async Task<Results<Ok<ResponseDto>, BadRequest<ProblemDetails>, ProblemHttpResult>> (
                 ServiceDto dto,
                 IServices service,
                 AuditLogger auditLogger,
                 HttpContext httpContext,
                 CancellationToken cancellationToken) =>
             {
-                string uid = "unknown";
-                string? userName = null;
-
+                var (uid, userName) = UserTokenHelper.ExtractUserAsync(httpContext);
                 try
                 {
-                    var (extractedUid, extractedUserName, subscriptionId, expiryDate) =
-                        await UserTokenHelper.ExtractUserAndSubscriptionDetailsAsync(httpContext, vertical: (int)Vertical.Services, serviceAdType: (int)dto.AdType);
-                    uid = extractedUid;
-                    userName = extractedUserName;
-                    subscriptionId = subscriptionId;
                     if (string.IsNullOrEmpty(uid) || string.IsNullOrEmpty(userName))
                     {
                         return TypedResults.Problem(new ProblemDetails
@@ -185,7 +178,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                             Status = StatusCodes.Status403Forbidden
                         });
                     }
-                    var result = await service.CreateServiceAd(uid, userName, subscriptionId, dto, cancellationToken);
+                    var result = await service.CreateServiceAd(uid, userName, Guid.Empty, dto, cancellationToken);
 
                     await auditLogger.LogAuditAsync(
                        module: ModuleName,
@@ -229,16 +222,16 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
             .WithSummary("Create a new service ad")
             .WithDescription("Creates a new service ad with the provided details. " +
                              "The ad must include a valid category and description.")
-            .Produces<string>(StatusCodes.Status200OK)
+            .Produces<ResponseDto>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
             .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-            group.MapPost("/createbyuserid", async Task<Results<Ok<string>, BadRequest<ProblemDetails>, ProblemHttpResult>> (
+            group.MapPost("/createbyuserid", async Task<Results<Ok<ResponseDto>, BadRequest<ProblemDetails>, ProblemHttpResult>> (
             ServiceRequest dto,
             [FromQuery] string uid,
             [FromQuery] string userName,
-            [FromQuery] string subscriptionId,
+            [FromQuery] Guid subscriptionId,
             IServices service,
             HttpContext httpContext,
             CancellationToken cancellationToken) =>
@@ -278,7 +271,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
             .WithSummary("Create a new service ad")
             .WithDescription("Creates a new service ad with the provided details. " +
                                  "The ad must include a valid category and description.")
-            .Produces<string>(StatusCodes.Status200OK)
+            .Produces<ResponseDto>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
             .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
@@ -294,16 +287,9 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                 IServices service,
                 CancellationToken cancellationToken) =>
             {
-                string uid = "unknown";
-                string? userName = null;
-
+                var (uid, userName) = UserTokenHelper.ExtractUserAsync(httpContext);
                 try
                 {
-                    var (extractedUid, extractedUserName, subscriptionId, expiryDate) =
-                        await UserTokenHelper.ExtractUserAndSubscriptionDetailsAsync(httpContext, vertical: 4);
-                    uid = extractedUid;
-                    userName = extractedUserName;
-                    subscriptionId = subscriptionId;
                     if (string.IsNullOrEmpty(uid) || string.IsNullOrEmpty(userName))
                     {
                         return TypedResults.Problem(new ProblemDetails
@@ -759,17 +745,10 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                 IServices service,
                 CancellationToken cancellationToken) =>
             {
-                string uid = "unknown";
-                string? userName = null;
-
+                var (uid, userName) = UserTokenHelper.ExtractUserAsync(httpContext);
                 try
                 {
-                    var (extractedUid, extractedUserName, subscriptionId, expiryDate) =
-                        await UserTokenHelper.ExtractUserAndSubscriptionDetailsAsync(httpContext, vertical: 4);
-
-                    uid = extractedUid;
-                    subscriptionId = subscriptionId;
-                    if (string.IsNullOrEmpty(uid))
+                    if (string.IsNullOrEmpty(uid) || string.IsNullOrEmpty(userName))
                     {
                         return TypedResults.Problem(new ProblemDetails
                         {
@@ -778,8 +757,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                             Status = StatusCodes.Status403Forbidden
                         });
                     }
-
-                    var resultMessage = await service.PromoteService(request, uid, subscriptionId, cancellationToken);
+                    var resultMessage = await service.PromoteService(request, uid, Guid.Empty, cancellationToken);
 
                     if (resultMessage == null)
                     {
@@ -837,8 +815,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
 
             group.MapPost("/promotebyuserid", async Task<IResult> (
                 PromoteServiceRequest request,
-                [FromQuery] string? uid,
-                [FromQuery] string? subscriptionId,
+                [FromQuery] string uid,
+                [FromQuery] Guid? subscriptionId,
                 IServices service,
                 CancellationToken cancellationToken) =>
             {
@@ -908,16 +886,10 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                 IServices service,
                 CancellationToken cancellationToken) =>
             {
-                string uid = "unknown";
-                string? userName = null;
-
+                var (uid, userName) = UserTokenHelper.ExtractUserAsync(httpContext);
                 try
                 {
-                    var (extractedUid, extractedUserName, subscriptionId, expiryDate) =
-                        await UserTokenHelper.ExtractUserAndSubscriptionDetailsAsync(httpContext, vertical: 4);
-                    uid = extractedUid;
-                    subscriptionId = subscriptionId;
-                    if (string.IsNullOrEmpty(uid))
+                    if (string.IsNullOrEmpty(uid) || string.IsNullOrEmpty(userName))
                     {
                         return TypedResults.Problem(new ProblemDetails
                         {
@@ -926,7 +898,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                             Status = StatusCodes.Status403Forbidden
                         });
                     }
-                    var result = await service.FeatureService(request, uid, subscriptionId, cancellationToken);
+                    var result = await service.FeatureService(request, uid, Guid.Empty, cancellationToken);
 
                     await auditLogger.LogAuditAsync(
                         module: "Service",
@@ -968,8 +940,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
 
             group.MapPost("/featurebyuserid", async Task<IResult> (
                 FeatureServiceRequest request,
-                [FromQuery] string? uid,
-                [FromQuery] string? subscriptionId,
+                [FromQuery] string uid,
+                [FromQuery] Guid? subscriptionId,
                 IServices service,
                 CancellationToken cancellationToken) =>
             {
@@ -1031,16 +1003,10 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                 IServices service,
                 CancellationToken cancellationToken) =>
             {
-                string uid = "unknown";
-                string? userName = null;
-
+                var (uid, userName) = UserTokenHelper.ExtractUserAsync(httpContext);
                 try
                 {
-                    var (extractedUid, extractedUserName, subscriptionId, expiryDate) =
-                        await UserTokenHelper.ExtractUserAndSubscriptionDetailsAsync(httpContext, vertical: 4);
-                    uid = extractedUid;
-                    subscriptionId = subscriptionId;
-                    if (string.IsNullOrEmpty(uid))
+                    if (string.IsNullOrEmpty(uid) || string.IsNullOrEmpty(userName))
                     {
                         return TypedResults.Problem(new ProblemDetails
                         {
@@ -1049,7 +1015,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                             Status = StatusCodes.Status403Forbidden
                         });
                     }
-                    var resultMessage = await service.RefreshService(request, uid, subscriptionId, cancellationToken);
+                    var resultMessage = await service.RefreshService(request, uid, Guid.Empty, cancellationToken);
                     if (resultMessage == null)
                     {
                         return Results.Problem(
@@ -1104,8 +1070,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
 
             group.MapPost("/refreshbyuserid", async Task<IResult> (
                 RefreshServiceRequest request,
-                [FromQuery] string? uid,
-                [FromQuery] string? subscriptionId, 
+                [FromQuery] string uid,
+                [FromQuery] Guid? subscriptionId, 
                 IServices service,
                 CancellationToken cancellationToken) =>
             {
@@ -1172,16 +1138,10 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                 IServices service,
                 CancellationToken cancellationToken) =>
             {
-                string uid = "unknown";
-                string? userName = null;
-
+                var (uid, userName) = UserTokenHelper.ExtractUserAsync(httpContext);
                 try
                 {
-                    var (extractedUid, extractedUserName, subscriptionId, expiryDate) =
-                        await UserTokenHelper.ExtractUserAndSubscriptionDetailsAsync(httpContext, vertical: 4);
-                    uid = extractedUid;
-                    subscriptionId = subscriptionId;
-                    if (string.IsNullOrEmpty(uid))
+                    if (string.IsNullOrEmpty(uid) || string.IsNullOrEmpty(userName))
                     {
                         return TypedResults.Problem(new ProblemDetails
                         {
@@ -1191,7 +1151,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                         });
                     }
                     request.UpdatedBy = uid;
-                    var result = await service.PublishService(request, uid, subscriptionId, cancellationToken);
+                    var result = await service.PublishService(request, uid, Guid.Empty, cancellationToken);
                     if (result == null)
                     {
                         return Results.Problem(
@@ -1255,8 +1215,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
 
             group.MapPost("/publishbyuserid", async Task<IResult> (
                 PublishServiceRequest request,
-                [FromQuery] string? uid,
-                [FromQuery] string? subscriptionId,
+                [FromQuery] string uid,
+                [FromQuery] Guid? subscriptionId,
                 IServices service,
                 CancellationToken cancellationToken) =>
             {
