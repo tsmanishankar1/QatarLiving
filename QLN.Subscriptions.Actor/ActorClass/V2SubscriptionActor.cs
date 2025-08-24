@@ -1405,7 +1405,77 @@ namespace QLN.Subscriptions.Actor.ActorClass
 
             return quota;
         }
+        public async Task<int> RefundFreeAdsUsageAsync(string category, string? l1Category, string? l2Category, int amount, CancellationToken cancellationToken = default)
+        {
+            using var scope = _scopeFactory.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<QLSubscriptionContext>();
 
+            using var tx = await context.Database.BeginTransactionAsync(cancellationToken);
+            try
+            {
+                var data = await SyncFromDatabaseAsync(force: true, cancellationToken);
+                if (data == null || data.ProductType != ProductType.FREE ||
+                    data.StatusId != SubscriptionStatus.Active || data.EndDate <= DateTime.UtcNow)
+                    return 0;
+
+                var cat = data.Quota.CategoryQuotas.FirstOrDefault(c =>
+                    c.Category == category &&
+                    c.L1Category == l1Category &&
+                    c.L2Category == l2Category);
+
+                if (cat == null || cat.AdsUsed <= 0) return 0;
+
+                var amountToRefund = Math.Max(0, Math.Min(amount, cat.AdsUsed));
+                if (amountToRefund == 0) return 0;
+
+                var subscriptionId = data.Id;
+                var l1 = l1Category ?? "";
+                var l2 = l2Category ?? "";
+                var now = DateTime.UtcNow;
+
+                var rows = await context.Database.ExecuteSqlInterpolatedAsync($@"
+                UPDATE ""Subscriptions""
+                SET ""Quota"" = jsonb_set(
+                    jsonb_set(""Quota"", '{{""AdsUsed""}}',
+                        GREATEST(0, COALESCE((""Quota""->>'AdsUsed')::int, 0) - {amountToRefund})::text::jsonb
+                    ),
+                    '{{""CategoryQuotas""}}',
+                    (
+                        SELECT jsonb_agg(
+                            CASE
+                                WHEN category_item->>'Category' = {category}
+                                 AND COALESCE(category_item->>'L1Category','') = COALESCE({l1},'')
+                                 AND COALESCE(category_item->>'L2Category','') = COALESCE({l2},'')
+                                THEN jsonb_set(
+                                    category_item,
+                                    '{{""AdsUsed""}}',
+                                    GREATEST(0, (COALESCE(category_item->>'AdsUsed','0')::int - {amountToRefund}))::text::jsonb
+                                )
+                                ELSE category_item
+                            END
+                        )
+                        FROM jsonb_array_elements(""Quota""->'CategoryQuotas') AS category_item
+                    )
+                ),
+                ""UpdatedAt"" = {now}
+                WHERE ""SubscriptionId"" = {subscriptionId}");
+
+                if (rows == 0) return 0;
+
+                cat.AdsUsed -= amountToRefund;
+                data.Quota.AdsUsed = Math.Max(0, data.Quota.AdsUsed - amountToRefund);
+                await FastSetDataAsync(data, cancellationToken);
+                await tx.CommitAsync(cancellationToken);
+                ClearCache();
+
+                return amountToRefund;
+            }
+            catch
+            {
+                await tx.RollbackAsync(cancellationToken);
+                throw;
+            }
+        }
         #endregion
     }
 }

@@ -25,6 +25,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints
             group.MapV2GetFreeAdsUsageSummary();
             group.MapV2GetUserFreeSubscriptions();
             group.MapV2GetRemainingFreeAdsQuota();
+            group.MapV2RefundFreeAdsUsage();
 
             return group;
         }
@@ -349,6 +350,38 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints
 
             return group;
         }
+        public static RouteGroupBuilder MapV2RefundFreeAdsUsage(this RouteGroupBuilder group)
+        {
+            group.MapPost("/v2/free-ads/refund-usage", async Task<IResult> (
+                [FromBody] FreeAdsRefundRequest req,
+                [FromServices] IV2SubscriptionService svc,
+                CancellationToken ct) =>
+            {
+                try
+                {
+                    if (req.SubscriptionId == Guid.Empty || string.IsNullOrWhiteSpace(req.Category) || req.Amount <= 0)
+                        return Results.BadRequest(new { message = "subscriptionId, category and positive amount are required" });
+
+                    var refunded = await svc.RefundFreeAdsUsageAsync(req.SubscriptionId, req.Category, req.L1Category, req.L2Category, req.Amount, ct);
+
+                    return Results.Ok(new FreeAdsRefundResult(refunded > 0, refunded));
+                }
+                catch (Exception ex)
+                {
+                    return Results.Problem(
+                        title: "FREE Ads Refund Quota Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+            .WithName("RefundFreeAdsUsage")
+            .WithTags("V2 FREE Ads")
+            .RequireAuthorization();
+
+            return group;
+        }
+
 
         private static string BuildCategoryPath(string category, string? l1Category, string? l2Category)
         {

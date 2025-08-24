@@ -1146,7 +1146,19 @@ namespace QLN.Backend.API.Service.ProductService
 
             return subscriptions;
         }
-
+        public async Task<int> RefundFreeAdsUsageAsync(Guid subscriptionId, string category, string? l1Category, string? l2Category, int amount, CancellationToken ct = default)
+        {
+            try
+            {
+                var actor = GetV2SubscriptionActorProxy(subscriptionId);
+                return await actor.RefundFreeAdsUsageAsync(category, l1Category, l2Category, amount, ct);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error refunding FREE ads usage for subscription {SubscriptionId}", subscriptionId);
+                return 0;
+            }
+        }
         #endregion
     }
 }
