@@ -54,8 +54,8 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.UserVerificationProf
             Status = newTab switch
             {
                 "verificationrequests" => 1,
-                "rejected" => 2,
-                "approved" => 3,
+                "rejected" => 4,
+                "approved" => 2,
                 _ => null
             };
             HandleStatusChange(Status);
@@ -68,7 +68,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.UserVerificationProf
                 var payload = new
                 {
                     vertical = Vertical.Classifieds,
-                    subVertical = SubVertical.Items,
+                    subVertical = SubVertical.Collectibles,
                     companyVerificationStatus = Status,
                     pageNumber = currentPage,
                     pageSize = pageSize
