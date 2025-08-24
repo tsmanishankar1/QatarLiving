@@ -21,6 +21,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.CreateAd
         [Inject] ILogger<CreateAdBase> Logger { get; set; }
         [Inject] ISnackbar Snackbar { get; set; }
         [Inject] private IJSRuntime JS { get; set; }
+        [Inject] public IItemService ItemService { get; set; }
 
         protected List<LocationZoneDto> Zones { get; set; } = [];
         protected bool IsLoadingZones { get; set; } = true;
@@ -125,7 +126,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.CreateAd
 
             if (SelectedSubcategory?.Fields?.Any() == true && string.IsNullOrEmpty(adPostModel.SelectedSubSubcategoryId))
             {
-                 var firstField = SelectedSubcategory.Fields.FirstOrDefault();
+                var firstField = SelectedSubcategory.Fields.FirstOrDefault();
                 if (firstField != null && firstField.Type == "L2Category")
                 {
                     messageStore.Add(() => adPostModel.SelectedSubSubcategoryId, "Section is required.");
@@ -161,7 +162,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.CreateAd
                         isValid = false;
                     }
                 }
-                
+
             }
 
             // Show the errors
@@ -314,10 +315,18 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.CreateAd
                     userName = string.IsNullOrWhiteSpace(UserEmail) ? null : UserEmail,
                     attributes = adPostModel.DynamicFields
                         .Where(kv => !IsBasicField(kv.Key))
-                        .ToDictionary(kv => kv.Key, kv => (object)kv.Value)
+                        .ToDictionary(kv => kv.Key, kv => (object)kv.Value),
+
+                    // New Fields and properties
+                    subVertical = SubVerticalTypeEnum.Items,
+                    createdBy = UserId,
+                    isSold = false,
+                    isFeatured = false,
+                    isPromoted = false,
+                    isRefreshed = false
                 };
-                // await JS.InvokeVoidAsync("console.log", payload);
-                var response = await ClassifiedService.PostAdAsync("items", payload);
+
+                var response = await ItemService.CreateAd(payload);
 
                 if (response?.IsSuccessStatusCode == true)
                 {
@@ -326,7 +335,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.CreateAd
                 }
                 else
                 {
-                    Snackbar.Add("Failed to post ad.", Severity.Error);
+                    Snackbar.Add("Failed to create an item ad.", Severity.Error);
                 }
 
             }
