@@ -825,7 +825,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 HttpContext httpContext,
                 [FromBody] ClassifiedsItemsDTO dto,
                 IClassifiedService service,
-                IV2SubscriptionService subscriptionService,
+                [FromServices]IV2SubscriptionService subscriptionService,
                 AuditLogger auditLogger,
                 CancellationToken token) =>
             {
