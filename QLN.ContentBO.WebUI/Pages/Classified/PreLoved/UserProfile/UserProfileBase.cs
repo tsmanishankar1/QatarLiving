@@ -86,8 +86,8 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.UserProfile
             Status = newTab switch
             {
                 "verificationrequests" => 1,
-                "rejected" => 2,
-                "approved" => 3,
+                "rejected" => 4,
+                "approved" => 2,
                 _ => null
             };
             HandleStatusChange(Status);

@@ -36,7 +36,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.UserProfile.Verification
 
         protected void GoBack()
         {
-            NavigationManager.NavigateTo("/manage/classified/collectibles/user/verification/profile");
+            NavigationManager.NavigateTo("/manage/classified/preloved/user/profile");
         }
 
         protected async Task ApproveAsync()
