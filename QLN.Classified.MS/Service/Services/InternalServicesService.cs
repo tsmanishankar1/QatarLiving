@@ -123,8 +123,6 @@ namespace QLN.Classified.MS.Service.Services
             {
                 return $"Error: {ex.Message}";
             }
-
-            return maxId;
         }
 
         private async Task<long> GetLastIdFromJsonFieldsAsync()

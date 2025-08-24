@@ -15,4 +15,12 @@ namespace QLN.Common.DTO_s.Classifieds
         public Vertical Vertical { get; set; }
         public SubVertical SubVertical { get; set; }
     }
+
+    public class ClassifiedsPayToFeature
+    {
+        public long AdId { get; set; }
+        public Guid AddonId { get; set; }
+        public Vertical Vertical { get; set; }
+        public SubVertical SubVertical { get; set; }
+    }
 }
