@@ -68,6 +68,14 @@ namespace QLN.Common.Infrastructure.IService
         Task<List<Wishlist>> GetAllByUserFavouriteList(string userId, Vertical vertical, SubVertical subVertical, CancellationToken cancellationToken);
         Task<string> UnFavourite(string userId, Vertical vertical, SubVertical subVertical, long adId, CancellationToken cancellationToken);
 
+        Task<List<CategoryCountDto>> GetCategoryCountsAsync(CancellationToken cancellationToken);
+
+
+        Task<string> P2PFeature(
+    ClassifiedsPayToFeature dto,
+    string userId,
+    Guid addonId,
+    CancellationToken cancellationToken = default);
         Task<object> P2Promote(ClassifiedsPayToPromote promote, string uid, CancellationToken ct);
         Task<object> P2Publish(ClassifiedsPayToPublish publish, string uid, CancellationToken ct);
     }

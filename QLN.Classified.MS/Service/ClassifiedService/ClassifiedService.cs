@@ -2902,6 +2902,103 @@ namespace QLN.Classified.MS.Service
 
         #endregion
 
+        public async Task<List<CategoryCountDto>> GetCategoryCountsAsync(CancellationToken cancellationToken)
+        {
+            var query =
+                from c in _context.CategoryDropdowns
+                where c.Vertical == Vertical.Classifieds && c.SubVertical == SubVertical.Items
+                join i in (
+                    from item in _context.Item
+                    where item.Status == AdStatus.Published
+                    group item by item.Category into g
+                    select new { Category = g.Key, AdsCount = (int?)g.Count() }
+                )
+                on c.CategoryName.ToLower() equals i.Category.ToLower() into gj
+                from i in gj.DefaultIfEmpty()
+                select new CategoryCountDto
+                {
+                    Category = c.CategoryName,
+                    AdsCount = i.AdsCount ?? 0
+                };
+
+            return await query.ToListAsync(cancellationToken);
+        }
+        #region payToFeature with addons for all subverticals
+
+        public async Task<string> P2PFeature(
+   ClassifiedsPayToFeature dto,
+   string userId,
+   Guid addonId,
+   CancellationToken cancellationToken = default)
+        {
+            _logger.LogInformation(
+                "FeatureClassifiedAd called. SubVertical: {SubVertical}, AdId: {AdId}, UserId: {UserId}",
+                dto.SubVertical, dto.AdId, userId);
+
+            try
+            {
+
+                object? adItem = dto.SubVertical switch
+                {
+                    SubVertical.Items => await _context.Item.FirstOrDefaultAsync(i => i.Id == dto.AdId && i.IsActive, cancellationToken),
+                    SubVertical.Preloved => await _context.Preloved.FirstOrDefaultAsync(p => p.Id == dto.AdId && p.IsActive, cancellationToken),
+                    SubVertical.Collectibles => await _context.Collectible.FirstOrDefaultAsync(c => c.Id == dto.AdId && c.IsActive, cancellationToken),
+                   
+                    _ => throw new InvalidOperationException($"Invalid SubVertical: {dto.SubVertical}")
+                };
+
+                if (adItem == null)
+                    throw new KeyNotFoundException($"Ad with id {dto.AdId} not found in {dto.SubVertical}.");
+
+
+                void FeatureAd(dynamic ad)
+                {
+                    ad.IsFeatured = true;
+                    ad.FeaturedExpiryDate = DateTime.UtcNow.AddDays(30);
+                    ad.UpdatedAt = DateTime.UtcNow;
+                    ad.UpdatedBy = userId;
+
+                    _logger.LogInformation("Ad {AdId} set to featured.", dto.AdId);
+                }
+
+                switch (adItem)
+                {
+                    case Items i: FeatureAd(i); break;
+                    case Preloveds p: FeatureAd(p); break;
+                    case Collectibles c: FeatureAd(c); break;
+                    default: throw new InvalidOperationException($"Unsupported ad type: {adItem.GetType().Name}");
+                }
+
+                await _context.SaveChangesAsync(cancellationToken);
+
+
+                switch (dto.SubVertical)
+                {
+                    case SubVertical.Items: await IndexItemsToAzureSearch((Items)adItem, cancellationToken); break;
+                    case SubVertical.Preloved: await IndexPrelovedToAzureSearch((Preloveds)adItem, cancellationToken); break;
+                    case SubVertical.Collectibles: await IndexCollectiblesToAzureSearch((Collectibles)adItem, cancellationToken); break;
+                    
+                }
+
+                return "The ad has been successfully featured.";
+            }
+            catch (Exception ex) when (
+                ex is ArgumentException ||
+                ex is KeyNotFoundException ||
+                ex is InvalidOperationException)
+            {
+                _logger.LogError(ex, "Known error while featuring AdId: {AdId}", dto.AdId);
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogCritical(ex, "Unhandled error while featuring AdId: {AdId}", dto.AdId);
+                throw new InvalidOperationException("Failed to feature ad due to an unexpected error.", ex);
+            }
+        }
+
+        #endregion
+
 
 
     }

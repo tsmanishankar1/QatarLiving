@@ -25,6 +25,7 @@ namespace QLN.ContentBO.WebUI.Components.Banner
             public string DisplayName { get; set; } = string.Empty;
             public string Value { get; set; } = string.Empty;
         }
+        protected bool IsLoading = true;
         [Inject] IBannerService bannerService { get; set; }
         protected string? SelectedStatus { get; set; }
         protected bool? isActive { get; set; }
@@ -40,14 +41,26 @@ namespace QLN.ContentBO.WebUI.Components.Banner
         };
         protected override async Task OnInitializedAsync()
         {
+            try{
+
             bannerTypes = await GetBannerTypes();
             bannerPageTypes = bannerTypes
                 .Where(bt => bt.Pages != null)
                 .SelectMany(bt => bt.Pages!)
                 .ToList();
+                }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "OnInitializedAsync");
+            }
+            finally
+            {
+                IsLoading = false;
+            }
         }
         protected async Task OnStatusChanged(string value)
         {
+            IsLoading = true;
             SelectedStatus = value;
             isActive = value switch
             {
@@ -61,15 +74,18 @@ namespace QLN.ContentBO.WebUI.Components.Banner
                 .Where(bt => bt.Pages != null)
                 .SelectMany(bt => bt.Pages!)
                 .ToList();
+                IsLoading = false;
         }
         protected async Task OnVerticalChanged(int value)
         {
+            IsLoading = true;
             SelectedVertical = value;
             bannerTypes = await GetBannerTypes();
             bannerPageTypes = bannerTypes
                 .Where(bt => bt.Pages != null)
                 .SelectMany(bt => bt.Pages!)
                 .ToList();
+                IsLoading = false;
         }
 
 

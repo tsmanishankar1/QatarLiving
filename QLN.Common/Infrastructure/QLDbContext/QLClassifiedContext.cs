@@ -54,6 +54,11 @@ namespace QLN.Common.Infrastructure.QLDbContext
                 .Property(p => p.Attributes)
                 .HasColumnType("jsonb");
 
+            modelBuilder.Entity<CategoryDropdown>()
+            .Property(c => c.Fields)
+           .HasColumnType("jsonb");
+
+
             modelBuilder.Entity<StoreProducts>()
                 .HasMany(s => s.Features)
                 .WithOne(a => a.StoreProduct)

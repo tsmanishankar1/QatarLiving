@@ -729,7 +729,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 HttpContext httpContext,
                 [FromBody] ClassifiedsItemsDTO dto,
                 IClassifiedService service,
-                [FromServices]IV2SubscriptionService subscriptionService,
+                [FromServices] IV2SubscriptionService subscriptionService,
                 AuditLogger auditLogger,
                 CancellationToken token) =>
             {
@@ -958,7 +958,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 try
                 {
                     uid = httpContext.User.FindFirst("sub")?.Value;
-                    var userName = httpContext.User.FindFirst("preferred_username")?.Value ;
+                    var userName = httpContext.User.FindFirst("preferred_username")?.Value;
 
                     var subscriptionClaims = httpContext.User.FindAll("subscriptions").ToList();
                     Guid? subscriptionId = null;
@@ -1106,7 +1106,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 string? name = null;
                 try
                 {
-                    uid = httpContext.User.FindFirst("sub")?.Value ;
+                    uid = httpContext.User.FindFirst("sub")?.Value;
                     var userName = httpContext.User.FindFirst("preferred_username")?.Value;
 
                     // Get all subscription claims
@@ -2177,7 +2177,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
             group.MapPost("collectibles", async Task<IResult> (
                 HttpContext httpContext,
-                [FromBody] ClassifiedsCollectablesDTO dto,                
+                [FromBody] ClassifiedsCollectablesDTO dto,
                 IClassifiedService service,
                 AuditLogger auditLogger,
                 CancellationToken token) =>
@@ -5461,6 +5461,32 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
             #endregion
 
+
+            group.MapGet("get-category-count", async Task<IResult> (
+                 IClassifiedService service,
+                 CancellationToken token) =>
+            {
+                try
+                {
+                    var result = await service.GetCategoryCountsAsync(token);
+                    return TypedResults.Ok(result);
+                }
+                catch (Exception ex)
+                {
+                    throw ex;
+                }
+            })
+.WithName("GetCategoryCount")
+.WithTags("Classified")
+.WithSummary("Get category count")
+.WithDescription("Get all published ads count based on category.")
+.AllowAnonymous()
+.Produces<List<SavedSearchResponseDto>>(StatusCodes.Status200OK)
+.Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+.Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+
+
             return group;
         }
         public static RouteGroupBuilder MapClassifiedsFeaturedItemEndpoint(this RouteGroupBuilder group)
@@ -5550,9 +5576,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 {
                     Text = req.Text,
                     Filters = req.Filters,
-                    OrderBy = "",
-                    PageNumber = req.PageNumber,
-                    PageSize = req.PageSize
+                    OrderBy = ""
                 };
                 if (indexName == null)
                 {
@@ -5643,14 +5667,27 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                             }
                         }
 
+                        // Pagination
+                        int page = Math.Max(1, req.PageNumber);
+                        int pageSize = Math.Max(1, Math.Min(100, req.PageSize));
+                        var totalCount = response.Stores.Count;
+                        int totalPages = (int)Math.Ceiling((double)totalCount / pageSize);
+
+                        if (page > totalPages && totalPages > 0)
+                            page = totalPages;
+
+                        var pagedEntities = response.Stores
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                   .ToList();
 
 
                         return Results.Ok(new ClassifiedBOPageResponse<StoresGroup>
                         {
-                            Page = req.PageNumber,
-                            PerPage = req.PageSize,
-                            TotalCount = response.Stores.Count,
-                            Items = response.Stores
+                            Page = page,
+                            PerPage = pageSize,
+                            TotalCount = totalCount,
+                            Items = pagedEntities
                         });
                     }
                     else
@@ -5722,9 +5759,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 {
                     Text = req.Text,
                     Filters = req.Filters,
-                    OrderBy = "",
-                    PageNumber = req.PageNumber,
-                    PageSize = req.PageSize
+                    OrderBy = ""
                 };
                 if (indexName == null)
                 {
@@ -5908,10 +5943,10 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 var request = new CommonSearchRequest
                 {
                     Text = req.Text,
-                    Filters = req.Filters,
+                    Filters = req.Filters
                     //  OrderBy = req.OrderBy,
-                    PageNumber = req.PageNumber,
-                    PageSize = req.PageSize,
+                    //PageNumber = req.PageNumber,
+                    //PageSize = req.PageSize,
 
                 };
                 if (indexName == null)
@@ -5950,12 +5985,27 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                             _ => response.Products.OrderBy(t => t.ProductPrice).ToList()
                         };
 
+                        // Pagination
+                        int page = Math.Max(1, req.PageNumber);
+                        int pageSize = Math.Max(1, Math.Min(100, req.PageSize));
+                        var totalCount = response.Products.Count;
+                        int totalPages = (int)Math.Ceiling((double)totalCount / pageSize);
+
+                        if (page > totalPages && totalPages > 0)
+                            page = totalPages;
+
+                        var pagedEntities = response.Products
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                   .ToList();
+
+
                         return Results.Ok(new ClassifiedBOPageResponse<ClassifiedStoresIndex>
                         {
-                            Page = req.PageNumber,
-                            PerPage = req.PageSize,
-                            TotalCount = response.Products.Count,
-                            Items = response.Products
+                            Page = page,
+                            PerPage = pageSize,
+                            TotalCount = totalCount,
+                            Items = pagedEntities
                         });
                     }
                     else
@@ -6495,6 +6545,165 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
 
+            #region payToFeature with addons for items
+            group.MapPut("/classifiedsfeature", async Task<IResult> (
+    HttpContext httpContext,
+    ClassifiedsPayToFeature dto,
+    AuditLogger auditLogger,
+    IClassifiedService service,
+    CancellationToken token) =>
+            {
+                string uid = "unknown";
+                string username = "unknown";
+
+                try
+                {
+                    (uid, username) = UserTokenHelper.ExtractUserAsync(httpContext);
+
+                    if (uid == null)
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Subscription Required",
+                            Detail = "No valid subscription found for this user.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    await service.P2PFeature(dto, uid, dto.AddonId, token);
+
+                    await auditLogger.LogAuditAsync(
+                        module: "Classified",
+                        httpMethod: "PUT",
+                        apiEndpoint: "/api/classifieds/items/feature",
+                        message: $"Featured classified ad with ID {dto.AdId}",
+                        createdBy: uid,
+                        payload: dto,
+                        cancellationToken: token
+                    );
+
+                    return TypedResults.Ok(new
+                    {
+                        AdId = dto.AdId,
+                        Message = "The ad has been successfully marked as featured."
+                    });
+                }
+                catch (Exception ex)
+                {
+                    await auditLogger.LogExceptionAsync("Classified", "/api/classifieds/items/feature", ex, uid, token);
+
+                    return ex switch
+                    {
+                        ArgumentException => TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = ex.Message,
+                            Status = StatusCodes.Status400BadRequest
+                        }),
+                        InvalidOperationException => TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Bad Request",
+                            Detail = ex.Message,
+                            Status = StatusCodes.Status400BadRequest
+                        }),
+                        KeyNotFoundException => TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Not Found",
+                            Detail = ex.Message,
+                            Status = StatusCodes.Status404NotFound
+                        }),
+                        _ => TypedResults.Problem(
+                            title: "Internal Server Error",
+                            detail: ex.Message,
+                            statusCode: StatusCodes.Status500InternalServerError
+                        )
+                    };
+                }
+            })
+.RequireAuthorization()
+    .WithName("ClassifiedsFeature")
+    .WithTags("Classified")
+    .WithSummary("Feature the ad (public)")
+    .WithDescription("Marks the ad as featured after validating subscription from user claims.")
+    .Produces(StatusCodes.Status200OK)
+    .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+    .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+    .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapPut("/classifiedsfeaturedid", async Task<IResult> (
+                [FromQuery] int adId,
+                [FromQuery] int subVertical,
+                [FromQuery] string userId,
+                [FromQuery] Guid addonId,
+                IClassifiedService service,
+                CancellationToken token) =>
+            {
+                try
+                {
+                    if (adId <= 0)
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "AdId is required.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    var dto = new ClassifiedsPayToFeature { AdId = adId, SubVertical = (SubVertical)subVertical };
+
+                    await service.P2PFeature(dto, userId, addonId, token);
+
+                    return TypedResults.Ok(new
+                    {
+                        AdId = adId,
+                        Message = $"The ad has been successfully featured in subVertical {subVertical}."
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return ex switch
+                    {
+                        ArgumentException => TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = ex.Message,
+                            Status = StatusCodes.Status400BadRequest
+                        }),
+                        InvalidOperationException => TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Bad Request",
+                            Detail = ex.Message,
+                            Status = StatusCodes.Status400BadRequest
+                        }),
+                        KeyNotFoundException => TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Not Found",
+                            Detail = ex.Message,
+                            Status = StatusCodes.Status404NotFound
+                        }),
+                        _ => TypedResults.Problem(
+                            title: "Internal Server Error",
+                            detail: ex.Message,
+                            statusCode: StatusCodes.Status500InternalServerError
+                        )
+                    };
+                }
+            })
+            .ExcludeFromDescription()
+    .WithName("FeatureInternalAd")
+    .WithTags("Classified")
+    .WithSummary("Feature the ad (internal)")
+    .WithDescription("Endpoint used by external service to feature an ad directly.")
+    .Produces(StatusCodes.Status200OK)
+    .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+    .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+    .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+
+
+
+
             group.MapPost("/classifiedspaytopublish", async Task<IResult> (
                 [FromBody] ClassifiedsPayToPublish request,
                 [FromServices] IClassifiedService service,
@@ -6591,9 +6800,9 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 [FromQuery] string uid,
                 [FromServices] IClassifiedService service,
                 CancellationToken cancellationToken) =>
-            {                
+            {
                 try
-                {                    
+                {
 
                     if (string.IsNullOrWhiteSpace(uid))
                     {
@@ -6612,27 +6821,27 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                             Status = StatusCodes.Status400BadRequest
                         });
                     }
-                   
 
-                    var result = await service.P2Publish(request, uid, cancellationToken);                    
+
+                    var result = await service.P2Publish(request, uid, cancellationToken);
                     return Results.Ok(result);
                 }
                 catch (KeyNotFoundException ex)
-                {                    
+                {
                     return Results.Problem(
                         detail: ex.Message,
                         statusCode: StatusCodes.Status404NotFound,
                         title: "Invalid Request");
                 }
                 catch (InvalidDataException ex)
-                {                   
+                {
                     return Results.Problem(
                         detail: ex.Message,
                         statusCode: StatusCodes.Status400BadRequest,
                         title: "Invalid Request");
                 }
                 catch (Exception ex)
-                {                   
+                {
                     return Results.Problem(
                         detail: ex.Message,
                         statusCode: StatusCodes.Status500InternalServerError,
@@ -6651,10 +6860,139 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
 
+            group.MapGet("/stores-dashboard-process-csv",
+   async Task<Results<Ok<string>, BadRequest<ProblemDetails>, ForbidHttpResult, ProblemHttpResult>> (
+       string Url,
+       string CsvPlatform,
+       string CompanyId,
+       string SubscriptionId,
+       string Domain,
+       [FromServices] IClassifiedsFoService service,
+       HttpContext context,
+       CancellationToken cancellationToken
+   ) =>
+   {
+       try
+       {
+           var (userId, error) = GenericClaimsHelper.GetValidUserId(context.User);
+           if (!string.IsNullOrEmpty(error))
+           {
+               return TypedResults.Problem(
+               title: "Subscription issue in token.",
+               detail: error,
+               statusCode: StatusCodes.Status500InternalServerError,
+               instance: context.Request.Path
+               );
+           }
+
+           if (string.IsNullOrEmpty(userId))
+           {
+               return TypedResults.Forbid();
+           }
+
+           var result = await service.GetFOProcessStoresCSV(Url, CsvPlatform, CompanyId, SubscriptionId, userId?.ToString(), Domain, cancellationToken);
+
+           switch (result?.ToString())
+           {
+               case "created":
+                   return TypedResults.Ok("Products have been successfully created at the specified store(s).");
+
+               case "No products":
+                   return TypedResults.BadRequest(new ProblemDetails
+                   {
+                       Title = "No Products Found",
+                       Detail = "The CSV did not contain any valid products to process.",
+                       Status = StatusCodes.Status400BadRequest
+                   });
+
+               case "Insufficient quota":
+                   return TypedResults.BadRequest(new ProblemDetails
+                   {
+                       Title = "Insufficient quota",
+                       Detail = "The CSV did not contain any valid quota to process.",
+                       Status = StatusCodes.Status400BadRequest
+                   });
+
+               case "Fail to reserve quota":
+                   return TypedResults.BadRequest(new ProblemDetails
+                   {
+                       Title = "Fail to reserve quota",
+                       Detail = "The CSV fail to reserve quota to process.",
+                       Status = StatusCodes.Status400BadRequest
+                   });
+
+               default:
+                   return TypedResults.BadRequest(new ProblemDetails
+                   {
+                       Title = "Store Processing Failed",
+                       Detail = result?.ToString() ?? "Unknown error occurred.",
+                       Status = StatusCodes.Status400BadRequest
+                   });
+           }
+       }
+       catch (Exception ex)
+       {
+           return TypedResults.Problem(
+               title: "Internal Server Error",
+               detail: ex.Message,
+               statusCode: StatusCodes.Status500InternalServerError,
+               instance: context.Request.Path
+           );
+       }
+   })
+               .WithName("GetDashboardProcessStoresCSV")
+               .WithTags("Classified")
+               .WithSummary("Process the csv file.")
+               .WithDescription("Processing the uploaded csv.Storing the products into data layer.")
+               .Produces<string>(StatusCodes.Status200OK)
+               .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+               .Produces(StatusCodes.Status403Forbidden)
+               .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapGet("/stores-dashboard-processing-csv",
+   async Task<Results<Ok<string>, BadRequest<ProblemDetails>, ForbidHttpResult, ProblemHttpResult>> (
+       string Url,
+        string CsvPlatform,
+       string CompanyId,
+       string SubscriptionId,
+       string UserId,
+       string Domain,
+       [FromServices] IClassifiedsFoService service,
+       HttpContext context,
+       CancellationToken cancellationToken
+   ) =>
+   {
+       try
+       {
+           var result = await service.GetFOProcessStoresCSV(Url, CsvPlatform, CompanyId, SubscriptionId, UserId, Domain, cancellationToken);
+           return TypedResults.Ok(result);
+
+       }
+       catch (Exception ex)
+       {
+           return TypedResults.Problem(
+               title: "Internal Server Error",
+               detail: ex.Message,
+               statusCode: StatusCodes.Status500InternalServerError,
+               instance: context.Request.Path
+           );
+       }
+   })
+               .ExcludeFromDescription()
+               //.AllowAnonymous()
+               .WithName("GetDashboardProcessStoreCSV")
+               .WithTags("Classified")
+               .WithSummary("Processing the csv.")
+               .WithDescription("Processing the uploaded csv.Storing the products into data layer.")
+               .Produces<string>(StatusCodes.Status200OK)
+               .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+               .Produces(StatusCodes.Status403Forbidden)
+               .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
             return group;
-            
 
 
+            #endregion
 
         }
 

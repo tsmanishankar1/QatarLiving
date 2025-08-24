@@ -1,6 +1,8 @@
 ﻿using Dapr;
 using Dapr.Client;
 using Google.Apis.Auth.OAuth2;
+using Microsoft.AspNetCore.Http;
+using Google.Apis.Discovery;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Spatial;
 using QLN.Backend.API.Service.ProductService;
@@ -2038,8 +2040,172 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
+        //public async Task<List<CategoryCountDto>> GetCategoryCountsAsync(CancellationToken cancellationToken)
+        //{
+            
+        //    try
+        //    {
+        //        var response = await _dapr.InvokeMethodAsync<List<CategoryCountDto>>(
+        //            HttpMethod.Get,
+        //            SERVICE_APP_ID,
+        //            $"/api/classifieds/get-category-count", cancellationToken);
+
+
+        //        return response;
+        //    }          
+        //    catch (Exception ex)
+        //    {
+        //        _log.LogError(ex, "Unexpected exception while retrieving count",1);
+        //        throw;
+        //    }
+        //}
+
+        public async Task<List<CategoryCountDto>> GetCategoryCountsAsync(CancellationToken cancellationToken) { 
+            try
+            {
+               
+                var response = await _dapr.InvokeMethodAsync<List<CategoryCountDto>>(
+                    HttpMethod.Get,
+                    SERVICE_APP_ID,
+
+                    $"api/classifieds/get-category-count",
+                    cancellationToken
+                );
+
+                return response ?? new List<CategoryCountDto>();
+            }
+            catch (Exception ex)
+            {
+                _log.LogError("Unexpected exception while retrieving count. :"+ex.Message);
+                throw new InvalidOperationException("Unexpected exception while retrieving count", ex);
+            }
+        }
+        #endregion
+        #region PayToFeature with addons (generic for all subVerticals)
+
+        public async Task<string> P2PFeature(
+      ClassifiedsPayToFeature dto,
+      string userId,
+      Guid subscriptionAddonId,
+      CancellationToken cancellationToken = default)
+        {
+            if (dto.AdId <= 0)
+            {
+                throw new ArgumentException("AdId is required.");
+            }
+
+            HttpStatusCode? failedStatusCode = null;
+
+            try
+            {
+               
+                
+                
+                    var canUse = await _subscriptionContext.ValidateAddonUsageAsync(
+                        subscriptionAddonId,
+                        "feature",
+                        1,
+                        cancellationToken
+                    );
+
+                    if (!canUse)
+                    {
+                        _log.LogWarning(
+                            "Addon {AddonId} has insufficient quota for feature.",
+                            GuidToLong(subscriptionAddonId)
+                        );
+                        throw new InvalidOperationException("Insufficient addon quota for feature.");
+                    }
+                
+
+                // Build query params
+                var queryParams = new Dictionary<string, string>
+        {
+            { "adId", dto.AdId.ToString() },
+            { "subVertical", ((int)dto.SubVertical).ToString() },
+            { "userId", userId }
+        };
+
+                var queryString = "?" + string.Join("&", queryParams.Select(kv =>
+                    $"{Uri.EscapeDataString(kv.Key)}={Uri.EscapeDataString(kv.Value)}"));
+
+                var url = $"/api/classifieds/classifiedsfeaturedid/{queryString}&addonId={subscriptionAddonId}";
+
+                var serviceRequest = _dapr.CreateInvokeMethodRequest(HttpMethod.Put, SERVICE_APP_ID, url);
+                serviceRequest.Content = new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
+
+                var response = await _dapr.InvokeMethodWithResponseAsync(serviceRequest, cancellationToken);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorJson = await response.Content.ReadAsStringAsync(cancellationToken);
+                    string errorMessage;
+
+                    if (!string.IsNullOrWhiteSpace(errorJson))
+                    {
+                        try
+                        {
+                            var problem = JsonSerializer.Deserialize<ProblemDetails>(errorJson);
+                            errorMessage = problem?.Detail ?? "Unknown validation error.";
+                        }
+                        catch (JsonException)
+                        {
+                            errorMessage = errorJson;
+                        }
+                    }
+                    else
+                    {
+                        errorMessage = "No error details returned from service.";
+                    }
+
+                    failedStatusCode = response.StatusCode;
+                    throw new InvalidDataException(errorMessage);
+                }
+
+                
+                if (subscriptionAddonId != Guid.Empty)
+                {
+                    
+                    
+                    var success = await _subscriptionContext.RecordAddonUsageAsync(
+                        subscriptionAddonId,
+                        "feature",
+                        1,
+                        cancellationToken
+                    );
+
+                    if (!success)
+                    {
+                        _log.LogWarning(
+                            "Failed to record addon usage for AddonId {AddonId}",
+                            GuidToLong(subscriptionAddonId)
+                        );
+                    }
+                }
+
+                return $"Ad {dto.AdId} has been featured successfully in {dto.SubVertical}.";
+            }
+            catch (Exception ex)
+            {
+                if (failedStatusCode == HttpStatusCode.Conflict)
+                {
+                    throw new ConflictException(ex.Message);
+                }
+                else if (failedStatusCode == HttpStatusCode.NotFound)
+                {
+                    throw new KeyNotFoundException(ex.Message);
+                }
+                _log.LogException(ex);
+                throw new InvalidOperationException("Failed to feature the ad due to an unexpected error.", ex);
+            }
+        }
+
 
         #endregion
+
+
+
     }
 }
+
 

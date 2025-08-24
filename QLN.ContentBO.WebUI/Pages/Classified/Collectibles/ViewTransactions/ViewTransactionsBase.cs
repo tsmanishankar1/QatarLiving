@@ -9,7 +9,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.ViewTransactions
     {
         [Inject] public ICollectiblesService CollectiblesService { get; set; }
 
-        protected string SearchTerm { get; set; } = string.Empty;
+        protected string? SearchTerm { get; set; }
         protected bool Ascending = true;
         protected bool IsLoading = true;
         protected DateTime? FilterCreated { get; set; }
@@ -74,10 +74,10 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.ViewTransactions
                 {
                     SubVertical = (int)SubVerticalTypeEnum.Collectibles,
                     Status = "Active",
-                    DateCreated = FilterCreated?.Date.ToString("yyyy-MM-dd") ?? string.Empty,
-                    DatePublished = FilterPublished?.Date.ToString("yyyy-MM-dd") ?? string.Empty,
-                    DateStart = FilterStart?.Date.ToString("yyyy-MM-dd") ?? string.Empty,
-                    DateEnd = FilterEnd?.Date.ToString("yyyy-MM-dd") ?? string.Empty,
+                    DateCreated = FilterCreated?.Date.ToString("yyyy-MM-dd"),
+                    DatePublished = FilterPublished?.Date.ToString("yyyy-MM-dd"),
+                    DateStart = FilterStart?.Date.ToString("yyyy-MM-dd") ,
+                    DateEnd = FilterEnd?.Date.ToString("yyyy-MM-dd"),
                     PageNumber = CurrentPage,
                     PageSize = PageSize,
                     SearchText = SearchTerm,
