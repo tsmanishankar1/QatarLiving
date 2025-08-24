@@ -281,7 +281,9 @@ namespace QLN.Backend.API.Service.CompanyService
                 {
                     CompanyId = dto.CompanyId,
                     Status = dto.Status,
-                    CompanyVerificationStatus = dto.CompanyVerificationStatus
+                    CompanyVerificationStatus = dto.CompanyVerificationStatus,
+                    Reason = dto.Reason,
+                    Comments = dto.Comments
                 };
 
                 var url = $"/api/companyprofile/approvecompanybyuserid?userId={userId}";
