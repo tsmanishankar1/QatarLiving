@@ -13,6 +13,7 @@ using QLN.Common.DTO_s.Payments;
 using QLN.Common.DTO_s.Subscription;
 using QLN.Common.Infrastructure.CustomException;
 using QLN.Common.Infrastructure.IService;
+using QLN.Common.Infrastructure.IService.IAuth;
 using QLN.Common.Infrastructure.IService.IPayments;
 using QLN.Common.Infrastructure.IService.IProductService;
 using QLN.Common.Infrastructure.Model;
@@ -41,6 +42,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IV2SubscriptionService _subscriptionService;
         private readonly IClassifiedService _classifiedService;
+        private readonly IDrupalUserService _drupalService;
         private readonly IConfidentialClientApplication _msalApp;
         private readonly SemaphoreSlim _tokenSemaphore = new(1, 1);
         private string? _cachedToken;
@@ -186,7 +188,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error creating and invoicing bulk sales order for order: {OrderId}", d365OrderId);
-                await SendErrorEmail(d365OrderId, ex.Message, cancellationToken);
+                await SendD365ErrorEmail(d365OrderId, ex.Message, cancellationToken);
                 return false;
             }
         }
@@ -282,12 +284,12 @@ namespace QLN.Common.Infrastructure.Service.Payments
                 await _dbContext.D365PaymentLogs.AddRangeAsync(paymentLogs, cancellationToken);
                 await _dbContext.SaveChangesAsync(cancellationToken);
 
-                await SendErrorEmail(null, ex.Message, cancellationToken);
+                await SendD365ErrorEmail(null, ex.Message, cancellationToken);
             }
 
             _logger.LogError("Failed to send checkout Sale order {StatusText}", statusText);
 
-            await SendErrorEmail(order.PaymentInfo.PaymentId.ToString(), $"Failed to send checkout Sale order {statusText}", cancellationToken);
+            await SendD365ErrorEmail(order.PaymentInfo.PaymentId.ToString(), $"Failed to send checkout Sale order {statusText}", cancellationToken);
 
             return false;
         }
@@ -342,7 +344,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
                         cancellationToken
                     );
 
-                    await SendErrorEmail(orderGroup.Key, $"Error processing order group: {ex.Message}", cancellationToken);
+                    await SendD365ErrorEmail(orderGroup.Key, $"Error processing order group: {ex.Message}", cancellationToken);
 
                     return false;
                 }
@@ -369,7 +371,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
             {
                 _logger.LogWarning("Product not found for product code: {ProductCode}", order.D365Itemid);
 
-                await SendErrorEmail(order.OrderId, $"Product not found for product code: order.D365Itemid", cancellationToken);
+                await SendD365ErrorEmail(order.OrderId, $"Product not found for product code: order.D365Itemid", cancellationToken);
                 // cannot buy something which doesnt exist
                 throw new InvalidOperationException($"Product not found for product code {order.D365Itemid}");
             }
@@ -400,7 +402,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
                         case "ADD":
                             return await ProcessAddonFeature(order, Vertical.Classifieds, cancellationToken);
                         default:
-                            await SendErrorEmail(order.OrderId, $"Unknown QLC D365 ItemID : {order.D365Itemid}", cancellationToken);
+                            await SendD365ErrorEmail(order.OrderId, $"Unknown QLC D365 ItemID : {order.D365Itemid}", cancellationToken);
                             throw new InvalidOperationException($"Unknown QLC D365 ItemID : {order.D365Itemid}");
                     }
                 // check if this is for Services
@@ -424,7 +426,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
                             switch (subProductCheck)
                             {
                                 default:
-                                    await SendErrorEmail(order.OrderId, $"Unknown QLS D365 ItemID : {order.D365Itemid}", cancellationToken);
+                                    await SendD365ErrorEmail(order.OrderId, $"Unknown QLS D365 ItemID : {order.D365Itemid}", cancellationToken);
                                     throw new InvalidOperationException($"Unknown QLS D365 ItemID : {order.D365Itemid}");
                             }
                     }
@@ -439,13 +441,13 @@ namespace QLN.Common.Infrastructure.Service.Payments
         {
             if (orderItem.D365Itemid == null)
             {
-                await SendErrorEmail(orderItem.OrderId, $"D365 ItemID is null for order: '{orderItem.OrderId}'", cancellationToken);
+                await SendD365ErrorEmail(orderItem.OrderId, $"D365 ItemID is null for order: '{orderItem.OrderId}'", cancellationToken);
                 throw new InvalidOperationException("D365 ItemID is null");
             }
 
             if (orderItem.QLUserId == 0)
             {
-                await SendErrorEmail(orderItem.OrderId, $"D365 QLUserId is null for order: '{orderItem.OrderId}'", cancellationToken);
+                await SendD365ErrorEmail(orderItem.OrderId, $"D365 QLUserId is null for order: '{orderItem.OrderId}'", cancellationToken);
                 throw new InvalidOperationException("D365 QLUserId is 0");
             }
 
@@ -595,7 +597,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
                     cancellationToken
                 );
 
-                await SendErrorEmail(order.OrderId, $"Error while processing subscription: '{order.OrderId}'", cancellationToken);
+                await SendD365ErrorEmail(order.OrderId, $"Error while processing subscription: '{order.OrderId}'", cancellationToken);
                 throw new InvalidOperationException($"Error processing subscription: {ex.Message}", ex);
             }
         }
@@ -604,13 +606,13 @@ namespace QLN.Common.Infrastructure.Service.Payments
         {
             if (order.Price == null || order.Price <= 0)
             {
-                await SendErrorEmail(order.OrderId, $"Price must be greater than zero for addon feature processing for order '{order.OrderId}'", cancellationToken);
+                await SendD365ErrorEmail(order.OrderId, $"Price must be greater than zero for addon feature processing for order '{order.OrderId}'", cancellationToken);
                 throw new InvalidOperationException("Price must be greater than zero for addon feature processing.");
             }
 
             if(order.AdId == 0)
             {
-                await SendErrorEmail(order.OrderId, $"AdId must be provided for addon feature processing for order '{order.OrderId}'", cancellationToken);
+                await SendD365ErrorEmail(order.OrderId, $"AdId must be provided for addon feature processing for order '{order.OrderId}'", cancellationToken);
                 throw new InvalidOperationException("AdId must be provided for addon feature processing.");
             }
 
@@ -641,7 +643,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
                     new { message = ex.Message },
                     cancellationToken
                 );
-                await SendErrorEmail(order.OrderId, $"Error processing feature: {ex.Message}", cancellationToken);
+                await SendD365ErrorEmail(order.OrderId, $"Error processing feature: {ex.Message}", cancellationToken);
                 throw new InvalidOperationException($"Error processing feature: {ex.Message}", ex);
             }
         }
@@ -650,13 +652,13 @@ namespace QLN.Common.Infrastructure.Service.Payments
         {
             if (order.Price == null || order.Price <= 0)
             {
-                await SendErrorEmail(order.OrderId, $"Price must be greater than zero for addon promote processing for order '{order.OrderId}'", cancellationToken);
+                await SendD365ErrorEmail(order.OrderId, $"Price must be greater than zero for addon promote processing for order '{order.OrderId}'", cancellationToken);
                 throw new InvalidOperationException("Price must be greater than zero for addon promote processing.");
             }
 
             if (order.AdId == 0)
             {
-                await SendErrorEmail(order.OrderId, $"AdId must be provided for addon promote processing for order '{order.OrderId}'", cancellationToken);
+                await SendD365ErrorEmail(order.OrderId, $"AdId must be provided for addon promote processing for order '{order.OrderId}'", cancellationToken);
                 throw new InvalidOperationException("AdId must be provided for addon promote processing.");
             }
 
@@ -686,7 +688,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
                     new { message = ex.Message },
                     cancellationToken
                 );
-                await SendErrorEmail(order.OrderId, $"Error processing promote: {ex.Message}", cancellationToken);
+                await SendD365ErrorEmail(order.OrderId, $"Error processing promote: {ex.Message}", cancellationToken);
                 throw new InvalidOperationException($"Error processing promote: {ex.Message}", ex);
             }
         }
@@ -695,13 +697,13 @@ namespace QLN.Common.Infrastructure.Service.Payments
         {
             if (order.Price == null || order.Price <= 0)
             {
-                await SendErrorEmail(order.OrderId, $"Price must be greater than zero for addon refresh processing for order '{order.OrderId}'", cancellationToken);
+                await SendD365ErrorEmail(order.OrderId, $"Price must be greater than zero for addon refresh processing for order '{order.OrderId}'", cancellationToken);
                 throw new InvalidOperationException("Price must be greater than zero for addon refresh processing.");
             }
 
             if (order.AdId == 0)
             {
-                await SendErrorEmail(order.OrderId, $"AdId must be provided for addon refresh processing for order '{order.OrderId}'", cancellationToken);
+                await SendD365ErrorEmail(order.OrderId, $"AdId must be provided for addon refresh processing for order '{order.OrderId}'", cancellationToken);
                 throw new InvalidOperationException("AdId must be provided for addon refresh processing.");
             }
 
@@ -731,7 +733,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
                     new { message = ex.Message },
                     cancellationToken
                 );
-                await SendErrorEmail(order.OrderId, $"Error processing refresh: {ex.Message}", cancellationToken);
+                await SendD365ErrorEmail(order.OrderId, $"Error processing refresh: {ex.Message}", cancellationToken);
                 throw new InvalidOperationException($"Error processing refresh: {ex.Message}", ex);
             }
         }
@@ -740,7 +742,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
         {
             if (order.Price == null || order.Price <= 0)
             {
-                await SendErrorEmail(order.OrderId, $"Price must be greater than zero for pay to publish processing for order '{order.OrderId}'", cancellationToken);
+                await SendD365ErrorEmail(order.OrderId, $"Price must be greater than zero for pay to publish processing for order '{order.OrderId}'", cancellationToken);
                 throw new InvalidOperationException("Price must be greater than zero for pay to publish processing.");
             }
 
@@ -768,7 +770,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
                     new { message = ex.Message },
                     cancellationToken
                 );
-                await SendErrorEmail(order.OrderId, $"Error processing pay to publish: {ex.Message}", cancellationToken);
+                await SendD365ErrorEmail(order.OrderId, $"Error processing pay to publish: {ex.Message}", cancellationToken);
                 throw new InvalidOperationException($"Error processing pay to publish: {ex.Message}", ex);
             }
         }
@@ -780,13 +782,13 @@ namespace QLN.Common.Infrastructure.Service.Payments
 
             if (advert == null)
             {
-                await SendErrorEmail(null, $"Advert with ID {adId} not found.", cancellationToken);
+                await SendD365ErrorEmail(null, $"Advert with ID {adId} not found.", cancellationToken);
                 throw new InvalidOperationException($"Advert with ID {adId} not found.");
             }
 
             if (advert.SubscriptionId == null || advert.SubscriptionId == Guid.Empty)
             {
-                await SendErrorEmail(null, $"Advert with ID {adId} does not have a valid SubscriptionId.", cancellationToken);
+                await SendD365ErrorEmail(null, $"Advert with ID {adId} does not have a valid SubscriptionId.", cancellationToken);
                 throw new InvalidOperationException($"Advert with ID {adId} does not have a valid SubscriptionId.");
             }
 
@@ -794,7 +796,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
 
             if (user == null)
             {
-                await SendErrorEmail(null, $"User with ID {advert.UserId} not found for AdId {adId}.", cancellationToken);
+                await SendD365ErrorEmail(null, $"Pay to Feature Error: User with ID {advert.UserId} not found for AdId {adId}.", cancellationToken);
                 throw new InvalidOperationException($"User with ID {advert.UserId} not found for AdId {adId}.");
             }
 
@@ -845,13 +847,13 @@ namespace QLN.Common.Infrastructure.Service.Payments
 
             if (advert == null)
             {
-                await SendErrorEmail(null, $"Advert with ID {adId} not found.", cancellationToken);
+                await SendD365ErrorEmail(null, $"Advert with ID {adId} not found.", cancellationToken);
                 throw new InvalidOperationException($"Advert with ID {adId} not found.");
             }
 
             if (advert.SubscriptionId == null || advert.SubscriptionId == Guid.Empty)
             {
-                await SendErrorEmail(null, $"Advert with ID {adId} does not have a valid SubscriptionId.", cancellationToken);
+                await SendD365ErrorEmail(null, $"Advert with ID {adId} does not have a valid SubscriptionId.", cancellationToken);
                 throw new InvalidOperationException($"Advert with ID {adId} does not have a valid SubscriptionId.");
             }
 
@@ -859,7 +861,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
 
             if (user == null)
             {
-                await SendErrorEmail(null, $"User with ID {advert.UserId} not found for AdId {adId}.", cancellationToken);
+                await SendD365ErrorEmail(null, $"Pay to Promote Error: User with ID {advert.UserId} not found for AdId {adId}.", cancellationToken);
                 throw new InvalidOperationException($"User with ID {advert.UserId} not found for AdId {adId}.");
             }
 
@@ -910,13 +912,13 @@ namespace QLN.Common.Infrastructure.Service.Payments
 
             if (advert == null)
             {
-                await SendErrorEmail(null, $"Advert with ID {adId} not found.", cancellationToken);
+                await SendD365ErrorEmail(null, $"Advert with ID {adId} not found.", cancellationToken);
                 throw new InvalidOperationException($"Advert with ID {adId} not found.");
             }
 
             if (advert.SubscriptionId == null || advert.SubscriptionId == Guid.Empty)
             {
-                await SendErrorEmail(null, $"Advert with ID {adId} does not have a valid SubscriptionId.", cancellationToken);
+                await SendD365ErrorEmail(null, $"Advert with ID {adId} does not have a valid SubscriptionId.", cancellationToken);
                 throw new InvalidOperationException($"Advert with ID {adId} does not have a valid SubscriptionId.");
             }
 
@@ -924,7 +926,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
 
             if (user == null)
             {
-                await SendErrorEmail(null, $"User with ID {advert.UserId} not found for AdId {adId}.", cancellationToken);
+                await SendD365ErrorEmail(null, $"Refresh Error: User with ID {advert.UserId} not found for AdId {adId}.", cancellationToken);
                 throw new InvalidOperationException($"User with ID {advert.UserId} not found for AdId {adId}.");
             }
 
@@ -971,6 +973,12 @@ namespace QLN.Common.Infrastructure.Service.Payments
 
         private async Task ProcessSubscriptionsAsync(D365Order order, Vertical vertical, CancellationToken cancellationToken)
         {
+            if (order.Price == null || order.Price <= 0)
+            {
+                await SendD365ErrorEmail(order.OrderId, $"Price must be greater than zero for pay to publish processing for order '{order.OrderId}'", cancellationToken);
+                throw new InvalidOperationException("Price must be greater than zero for pay to publish processing.");
+            }
+
             var user = await FindOrCreateUser(order.QLUserId, order.QLUsername, order.Email, order.Mobile, cancellationToken);
 
             var paymentEntity = new PaymentEntity
@@ -1014,7 +1022,26 @@ namespace QLN.Common.Infrastructure.Service.Payments
 
         private async Task ProcessPayToPublishAsync(D365Order order, Vertical vertical, CancellationToken cancellationToken)
         {
+
+            if(order.Price == null || order.Price <= 0)
+            {
+                await SendD365ErrorEmail(order.OrderId, $"Price must be greater than zero for pay to publish processing for order '{order.OrderId}'", cancellationToken);
+                throw new InvalidOperationException("Price must be greater than zero for pay to publish processing.");
+            }
+
+            if (order.AdId == 0)
+            {
+                await SendD365ErrorEmail(order.OrderId, $"AdId must be provided for pay to publish processing for order '{order.OrderId}'", cancellationToken);
+                throw new InvalidOperationException("AdId must be provided for pay to publish processing.");
+            }
+            
             var user = await FindOrCreateUser(order.QLUserId, order.QLUsername, order.Email, order.Mobile, cancellationToken);
+
+            if (user == null)
+            {
+                await SendD365ErrorEmail(null, $"Pay to Publish Error: User with ID {order.QLUserId} not found for AdId {order.AdId}.", cancellationToken);
+                throw new InvalidOperationException($"User with ID {order.QLUserId} not found for AdId {order.AdId}.");
+            }
 
             var paymentEntity = new PaymentEntity
             {
@@ -1057,8 +1084,14 @@ namespace QLN.Common.Infrastructure.Service.Payments
             await _dbContext.SaveChangesAsync(cancellationToken);
         }
 
-        private async Task<ApplicationUser> FindOrCreateUser(long userId, string userName, string email, string mobile, CancellationToken cancellationToken)
+        private async Task<ApplicationUser?> FindOrCreateUser(long userId, string userName, string email, string mobile, CancellationToken cancellationToken)
         {
+            if(string.IsNullOrEmpty(email))
+            {
+                await SendD365ErrorEmail(null, $"Email is required to find or create user for QLUserId '{userId}' with QLUsername '{userName}'", cancellationToken);
+                throw new ArgumentNullException(nameof(email));
+            }
+
             // look for the user using their legacy user ID
             var user = await _userManager.Users.FirstOrDefaultAsync(u => u.LegacyUid == userId, cancellationToken);
 
@@ -1079,41 +1112,44 @@ namespace QLN.Common.Infrastructure.Service.Payments
             {
                 // now go and see if this user is on Drupal
 
-                //var drupalUser = await _drupalService.GetUserByEmailAsync(email, cancellationToken);
+                var drupalUser = await _drupalService.GetUserInfoFromDrupalAsync(email, cancellationToken);
 
-
-                // Create new user
-                var randomPassword = GenerateRandomPassword();
-
-                user = new ApplicationUser
+                if(int.TryParse(drupalUser?.User.Status, out var userStatus) && userStatus == 1)
                 {
-                    UserName = userName,
-                    Email = email,
-                    PhoneNumber = mobile,
-                    FirstName = userName,
-                    LastName = null,
-                    LegacyUid = userId,
-                    EmailConfirmed = true,
-                    PhoneNumberConfirmed = true,
-                    TwoFactorEnabled = false,
-                    SecurityStamp = Guid.NewGuid().ToString(),
-                    CreatedAt = DateTime.UtcNow,
-                    LanguagePreferences = "en", // Default language,
-                };
+                    // Create new user
+                    var randomPassword = GenerateRandomPassword();
 
-                var createResult = await _userManager.CreateAsync(user, randomPassword);
+                    user = new ApplicationUser
+                    {
+                        UserName = userName ?? drupalUser.User.Username,
+                        Email = email,
+                        PhoneNumber = mobile ?? drupalUser.User.Phone,
+                        FirstName = userName ?? drupalUser.User.Username,
+                        LastName = null,
+                        LegacyUid = userId != 0 ? userId : (long.TryParse(drupalUser.User.Uid, out var drupalUserId) ? drupalUserId : 0),
+                        EmailConfirmed = true,
+                        PhoneNumberConfirmed = true,
+                        TwoFactorEnabled = false,
+                        SecurityStamp = Guid.NewGuid().ToString(),
+                        CreatedAt = DateTime.UtcNow,
+                        LanguagePreferences = "en", // Default language,
+                    };
 
-                if (!createResult.Succeeded)
-                {
-                    var errors = createResult.Errors
-                        .GroupBy(e => e.Code)
-                        .ToDictionary(g => g.Key, g => g.Select(e => e.Description).ToArray());
-                    await SendErrorEmail(null, $"Error creating DB user '{userName}': {string.Join(", ", errors.SelectMany(e => e.Value))}", cancellationToken);
-                    throw new RegistrationValidationException(errors);
+                    var createResult = await _userManager.CreateAsync(user, randomPassword);
+
+                    if (!createResult.Succeeded)
+                    {
+                        var errors = createResult.Errors
+                            .GroupBy(e => e.Code)
+                            .ToDictionary(g => g.Key, g => g.Select(e => e.Description).ToArray());
+                        await SendD365ErrorEmail(null, $"Error creating DB user '{userName}': {string.Join(", ", errors.SelectMany(e => e.Value))}", cancellationToken);
+                        throw new RegistrationValidationException(errors);
+                    }
+
                 }
             }
 
-            // at this point we should have a valid user
+            // if we still do not have a user, then something went wrong
             return user;
         }
 
@@ -1137,7 +1173,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error saving D365 request logs");
-                await SendErrorEmail(null, $"Error saving D365 request logs: {ex.Message}", cancellationToken);
+                await SendD365ErrorEmail(null, $"Error saving D365 request logs: {ex.Message}", cancellationToken);
                 throw;
             }
         }
@@ -1161,13 +1197,13 @@ namespace QLN.Common.Infrastructure.Service.Payments
                 else
                 {
                     _logger.LogError("Error processing message: Unsupported operation {Operation}", data.Operation);
-                    await SendErrorEmail(null, $"Error processing D365 payment notification: Unsupported operation {data.Operation}", cancellationToken);
+                    await SendD365ErrorEmail(null, $"Error processing D365 payment notification: Unsupported operation {data.Operation}", cancellationToken);
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error processing message");
-                await SendErrorEmail(null, $"Error processing D365 payment notification: {ex.Message}", cancellationToken);
+                await SendD365ErrorEmail(null, $"Error processing D365 payment notification: {ex.Message}", cancellationToken);
             }
         }
 
@@ -1180,7 +1216,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
             return new string(Enumerable.Repeat(chars, 12)
                 .Select(s => s[random.Next(s.Length)]).ToArray());
         }
-        private async Task SendErrorEmail(string? orderId, string? errorMessage, CancellationToken cancellationToken)
+        private async Task SendD365ErrorEmail(string? orderId, string? errorMessage, CancellationToken cancellationToken)
         {
             var recipients = new List<RecipientDto>();
 
