@@ -4,7 +4,7 @@
 @using QLN.ContentBO.WebUI.Components.Banner
 @using QLN.ContentBO.WebUI.Components.Banner.ManageBanner
 @inherits ManageBannerComponentBase
-<MudTabs Elevation="0" Rounded="true" Class="pt-4">
+<MudTabs @ref="mudTabs" Elevation="0" Rounded="true" Class="pt-4">
     <MudTabPanel>
         <ChildContent>
             <ManageBanner/>
@@ -15,7 +15,7 @@
     </MudTabPanel>
     <MudTabPanel>
         <ChildContent>
-            <CreateBannerComponent />
+            <CreateBannerComponent OnBannerCreated="SwitchToFirstTab" />
         </ChildContent>
         <TabContent>
             <MudText>Create Banner</MudText>

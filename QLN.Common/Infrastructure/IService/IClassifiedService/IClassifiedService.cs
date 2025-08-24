@@ -71,5 +71,11 @@ namespace QLN.Common.Infrastructure.IService
         Task<Items> P2PromoteItems(ItemsPayToPromote promote, string uid, CancellationToken ct);
         Task<List<CategoryCountDto>> GetCategoryCountsAsync(CancellationToken cancellationToken);
 
+
+        Task<string> P2PFeature(
+    ClassifiedsPayToFeature dto,
+    string userId,
+    Guid addonId,
+    CancellationToken cancellationToken = default);
     }
 }
