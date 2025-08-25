@@ -16,6 +16,7 @@ using QLN.Common.Infrastructure.IService;
 using QLN.Common.Infrastructure.IService.IAuth;
 using QLN.Common.Infrastructure.IService.IPayments;
 using QLN.Common.Infrastructure.IService.IProductService;
+using QLN.Common.Infrastructure.IService.IService;
 using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.QLDbContext;
 using QLN.Common.Infrastructure.Subscriptions;
@@ -42,6 +43,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IV2SubscriptionService _subscriptionService;
         private readonly IClassifiedService _classifiedService;
+        private readonly IServices _servicesService;
         private readonly IDrupalUserService _drupalService;
         private readonly IConfidentialClientApplication _msalApp;
         private readonly SemaphoreSlim _tokenSemaphore = new(1, 1);
@@ -58,6 +60,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
             UserManager<ApplicationUser> userManager,
             IV2SubscriptionService subscriptionService,
             IClassifiedService classifiedService,
+            IServices servicesService,
             IDrupalUserService drupalService
             )
         {
@@ -70,6 +73,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
             _userManager = userManager;
             _subscriptionService = subscriptionService;
             _classifiedService = classifiedService;
+            _servicesService = servicesService;
             _drupalService = drupalService;
 
             // Acquire Bearer token using MSAL
@@ -399,15 +403,15 @@ namespace QLN.Common.Infrastructure.Service.Payments
             {
                 // Always order these based on which ones are more likely to happen often
                 case ProductType.PUBLISH:
-                    return await ProcessPayToPublish(order, product.Vertical, cancellationToken);
+                    return await ProcessPayToPublish(order, product, cancellationToken);
                 case ProductType.SUBSCRIPTION:
-                    return await ProcessSubscription(order, product.Vertical, cancellationToken);
+                    return await ProcessSubscription(order, product, cancellationToken);
                 case ProductType.ADDON_FEATURE:
-                    return await ProcessAddonFeature(order, product.Vertical, cancellationToken);
+                    return await ProcessAddonFeature(order, product, cancellationToken);
                 case ProductType.ADDON_PROMOTE:
-                    return await ProcessAddonPromote(order, product.Vertical, cancellationToken);
+                    return await ProcessAddonPromote(order, product, cancellationToken);
                 case ProductType.ADDON_REFRESH:
-                    return await ProcessAddonRefresh(order, product.Vertical, cancellationToken);
+                    return await ProcessAddonRefresh(order, product, cancellationToken);
                 default:
                     await SendD365ErrorEmail(order.OrderId, $"Unknown D365 ItemID : {order.D365Itemid}", cancellationToken);
                     return $"Unknown D365 ItemID : {order.D365Itemid}";
@@ -547,12 +551,31 @@ namespace QLN.Common.Infrastructure.Service.Payments
         //    };
         //}
 
-        private async Task<string> ProcessSubscription(D365Order order, Vertical vertical, CancellationToken cancellationToken)
+        private async Task<string> ProcessSubscription(D365Order order, Product product, CancellationToken cancellationToken)
         {
+            if (decimal.TryParse(order.Price, out var price) && price <= 0)
+            {
+                await SendD365ErrorEmail(order.OrderId, $"Price must be greater than zero for pay to publish processing for order '{order.OrderId}'", cancellationToken);
+                return "Price must be greater than zero for pay to publish processing.";
+            }
+
+            if (!int.TryParse(order.QLUserId, out var qlUserId))
+            {
+                await SendD365ErrorEmail(order.OrderId, $"Invalid QLUserId '{order.QLUserId}' for order '{order.OrderId}'", cancellationToken);
+                return $"Invalid QLUserId '{order.QLUserId}' for order '{order.OrderId}'";
+            }
+
+            // needs to be removed in leui of a lookup based on QLUserId
+            if (string.IsNullOrEmpty(order.Email))
+            {
+                await SendD365ErrorEmail(null, $"Email is required to find or create user for QLUserId '{order.QLUserId}' with QLUsername '{order.QLUsername}'", cancellationToken);
+                return $"Email is required to find or create user for QLUserId '{order.QLUserId}' with QLUsername '{order.QLUsername}'";
+            }
+
             try
             {
                 // Simulate ProcessSubscriptions (replace with actual implementation)
-                var result = await ProcessSubscriptionsAsync(order, vertical, cancellationToken);
+                var result = await ProcessSubscriptionsAsync(order, qlUserId, price, product.Vertical, product.SubVertical, cancellationToken);
 
                 await SaveD365RequestLogsAsync(
                     DateTime.UtcNow,
@@ -708,18 +731,70 @@ namespace QLN.Common.Infrastructure.Service.Payments
             }
         }
 
-        private async Task<string> ProcessPayToPublish(D365Order order, Vertical vertical, CancellationToken cancellationToken)
+        private async Task<string> ProcessPayToPublish(D365Order order, Product product, CancellationToken cancellationToken)
         {
+            if (decimal.TryParse(order.Price, out var price) && price <= 0)
+            {
+                await SendD365ErrorEmail(order.OrderId, $"Price must be greater than zero for pay to publish processing for order '{order.OrderId}'", cancellationToken);
+                return "Price must be greater than zero for pay to publish processing.";
+            }
+
+            if (order.AdId == 0)
+            {
+                await SendD365ErrorEmail(order.OrderId, $"AdId must be provided for pay to publish processing for order '{order.OrderId}'", cancellationToken);
+                return "AdId must be provided for pay to publish processing.";
+            }
+
+            if (!int.TryParse(order.QLUserId, out var qlUserId))
+            {
+                await SendD365ErrorEmail(order.OrderId, $"Invalid QLUserId '{order.QLUserId}' for order '{order.OrderId}'", cancellationToken);
+                return $"Invalid QLUserId '{order.QLUserId}' for order '{order.OrderId}'";
+            }
+
+            // needs to be removed in leui of a lookup based on QLUserId
+            if (string.IsNullOrEmpty(order.Email))
+            {
+                await SendD365ErrorEmail(null, $"Email is required to find or create user for QLUserId '{order.QLUserId}' with QLUsername '{order.QLUsername}'", cancellationToken);
+                return $"Email is required to find or create user for QLUserId '{order.QLUserId}' with QLUsername '{order.QLUsername}'";
+            }
+
             try
             {
-                
-                var result = await ProcessPayToPublishAsync(order, vertical, cancellationToken);
+                var result = String.Empty;
+                switch (product.Vertical)
+                {
+                    case Vertical.Classifieds:
+                        switch (product.SubVertical)
+                        {
+                            case SubVertical.Items:
+                                result = await ProcessPayToPublishItemsAsync(order, qlUserId, price, cancellationToken);
+                                break;
+                            case SubVertical.Preloved:
+                                result = await ProcessPayToPublishPrelovedAsync(order, qlUserId, price, cancellationToken);
+                                break;
+                            case SubVertical.Collectibles:
+                                result = await ProcessPayToPublishCollectiblesAsync(order, qlUserId, price, cancellationToken);
+                                break;
+                            default:
+                                await SendD365ErrorEmail(order.OrderId, $"Unknown D365 ItemID : {order.D365Itemid}", cancellationToken);
+                                result = $"Unknown D365 ItemID : {order.D365Itemid}";
+                                break;
+                        }
+                        break;
+                    case Vertical.Services:
+                        result = await ProcessPayToPublishServicesAsync(order, qlUserId, price, cancellationToken);
+                        break;
+                    default:
+                        await SendD365ErrorEmail(order.OrderId, $"Unknown D365 ItemID : {order.D365Itemid}", cancellationToken);
+                        result = $"Unknown D365 ItemID : {order.D365Itemid}";
+                        break;
+            }
 
                 await SaveD365RequestLogsAsync(
                     DateTime.UtcNow,
                     order,
                     1,
-                    new { message = "Pay to publish processed successfully" },
+                    new { message = result },
                     cancellationToken
                 );
 
@@ -962,29 +1037,10 @@ namespace QLN.Common.Infrastructure.Service.Payments
             return "Ad Refresh processed successfully";
         }
 
-        private async Task<string> ProcessSubscriptionsAsync(D365Order order, Vertical vertical, CancellationToken cancellationToken)
+        private async Task<string> ProcessSubscriptionsAsync(D365Order order, long qlUserId, decimal price, Vertical vertical, SubVertical? subVertical, CancellationToken cancellationToken)
         {
-            if (decimal.TryParse(order.Price, out var price) && price <= 0)
-            {
-                await SendD365ErrorEmail(order.OrderId, $"Price must be greater than zero for pay to publish processing for order '{order.OrderId}'", cancellationToken);
-                return "Price must be greater than zero for pay to publish processing.";
-            }
-
-            if(!int.TryParse(order.QLUserId, out var qlUserId))
-            {
-                await SendD365ErrorEmail(order.OrderId, $"Invalid QLUserId '{order.QLUserId}' for order '{order.OrderId}'", cancellationToken);
-                return $"Invalid QLUserId '{order.QLUserId}' for order '{order.OrderId}'";
-            }
-
-            if (string.IsNullOrEmpty(order.Email))
-            {
-                await SendD365ErrorEmail(null, $"Email is required to find or create user for QLUserId '{order.QLUserId}' with QLUsername '{order.QLUsername}'", cancellationToken);
-                return $"Email is required to find or create user for QLUserId '{order.QLUserId}' with QLUsername '{order.QLUsername}'";
-            }
-
             try
             {
-
                 var user = await FindOrCreateUser(qlUserId, order.QLUsername, order.Email, order.Mobile, cancellationToken);
 
                 if (user == null)
@@ -1003,6 +1059,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
                     Source = Source.D365,
                     Status = PaymentStatus.Success,
                     Vertical = vertical,
+                    SubVertical = subVertical,
                     TriggeredSource = TriggeredSource.D365,
                     Products = new List<ProductDetails>
                 {
@@ -1030,42 +1087,16 @@ namespace QLN.Common.Infrastructure.Service.Payments
                 // Update payment entity with subscription ID
                 paymentEntity.UserSubscriptionId = subscriptionId;
                 await _dbContext.SaveChangesAsync(cancellationToken);
+                return "Subscription processed successfully";
             }
             catch (Exception ex)
             {
                 return $"Error processing subscription: {ex.Message}";
             }
-
-            return "Subscription processed successfully";
         }
 
-        private async Task<string> ProcessPayToPublishAsync(D365Order order, Vertical vertical, CancellationToken cancellationToken)
+        private async Task<string> ProcessPayToPublishItemsAsync(D365Order order, long qlUserId, decimal price, CancellationToken cancellationToken)
         {
-
-            if(decimal.TryParse(order.Price, out var price) && price <= 0)
-            {
-                await SendD365ErrorEmail(order.OrderId, $"Price must be greater than zero for pay to publish processing for order '{order.OrderId}'", cancellationToken);
-                return "Price must be greater than zero for pay to publish processing.";
-            }
-
-            if (order.AdId == 0)
-            {
-                await SendD365ErrorEmail(order.OrderId, $"AdId must be provided for pay to publish processing for order '{order.OrderId}'", cancellationToken);
-                return "AdId must be provided for pay to publish processing.";
-            }
-
-            if (!int.TryParse(order.QLUserId, out var qlUserId))
-            {
-                await SendD365ErrorEmail(order.OrderId, $"Invalid QLUserId '{order.QLUserId}' for order '{order.OrderId}'", cancellationToken);
-                return $"Invalid QLUserId '{order.QLUserId}' for order '{order.OrderId}'";
-            }
-
-            if (string.IsNullOrEmpty(order.Email))
-            {
-                await SendD365ErrorEmail(null, $"Email is required to find or create user for QLUserId '{order.QLUserId}' with QLUsername '{order.QLUsername}'", cancellationToken);
-                return $"Email is required to find or create user for QLUserId '{order.QLUserId}' with QLUsername '{order.QLUsername}'";
-            }
-
             var advert = await _classifiedService.GetItemAdById(order.AdId, cancellationToken);
 
             if (advert == null)
@@ -1093,7 +1124,8 @@ namespace QLN.Common.Infrastructure.Service.Payments
                     PaymentMethod = PaymentMethod.Cash,
                     Source = Source.D365,
                     Status = PaymentStatus.Success,
-                    Vertical = vertical,
+                    Vertical = Vertical.Classifieds,
+                    SubVertical = SubVertical.Items,
                     AdId = order.AdId,
                     TriggeredSource = TriggeredSource.D365,
                     Products = new List<ProductDetails>
@@ -1123,13 +1155,271 @@ namespace QLN.Common.Infrastructure.Service.Payments
                 // Update payment entity with subscription ID
                 paymentEntity.UserSubscriptionId = subscriptionId;
                 await _dbContext.SaveChangesAsync(cancellationToken);
+
+                // update the advert to awaiting approval
+                advert.Status = AdStatus.PendingApproval;
+                var result = await _classifiedService.UpdateClassifiedItemsAd(advert, cancellationToken);
+
+                if(result != null)
+                {
+                    return "Items: Pay to Publish processed successfully";
+
+                } else
+                {
+                    return "Error processing items pay to publish.";
+                }
+
             }
             catch (Exception ex)
             {
-                return $"Error processing pay to publish: {ex.Message}";
+                return $"Error processing items pay to publish: {ex.Message}";
+            }
+        }
+
+        private async Task<string> ProcessPayToPublishPrelovedAsync(D365Order order, long qlUserId, decimal price, CancellationToken cancellationToken)
+        {
+            var advert = await _classifiedService.GetPrelovedAdById(order.AdId, cancellationToken);
+
+            if (advert == null)
+            {
+                await SendD365ErrorEmail(order.OrderId, $"Advert with ID {order.AdId} not found.", cancellationToken);
+                return $"Advert with ID {order.AdId} not found.";
             }
 
-            return "Pay to Publish processed successfully";
+            try
+            {
+                var user = await FindOrCreateUser(qlUserId, order.QLUsername, order.Email, order.Mobile, cancellationToken);
+
+                if (user == null)
+                {
+                    await SendD365ErrorEmail(null, $"Pay to Publish Error: User with ID {order.QLUserId} not found for AdId {order.AdId}.", cancellationToken);
+                    return $"User with ID {order.QLUserId} not found for AdId {order.AdId}.";
+                }
+
+                var paymentEntity = new PaymentEntity
+                {
+                    Gateway = Gateway.D365,
+                    Date = DateTime.UtcNow,
+                    Fee = price,
+                    PaidByUid = user.Id.ToString(),
+                    PaymentMethod = PaymentMethod.Cash,
+                    Source = Source.D365,
+                    Status = PaymentStatus.Success,
+                    Vertical = Vertical.Classifieds,
+                    SubVertical = SubVertical.Preloved,
+                    AdId = order.AdId,
+                    TriggeredSource = TriggeredSource.D365,
+                    Products = new List<ProductDetails>
+                {
+                    new ProductDetails
+                    {
+                        ProductType = ProductType.PUBLISH,
+                        ProductCode = order.D365Itemid,
+                        Price = price
+                    }
+                }
+                };
+
+                // TODO: This maybe needs to be wrapped in a try catch
+                var payment = _dbContext.Payments.AddAsync(paymentEntity, cancellationToken);
+                await _dbContext.SaveChangesAsync(cancellationToken);
+
+                // create the pay to publish and reference the payment Id
+                var subscriptionId = await _subscriptionService.PurchaseSubscriptionAsync(new V2SubscriptionPurchaseRequestDto
+                {
+                    UserId = user.LegacyUid.ToString(),
+                    ProductCode = order.D365Itemid,
+                    PaymentId = paymentEntity.PaymentId,
+                    AdId = order.AdId,
+                }, cancellationToken);
+
+                // Update payment entity with subscription ID
+                paymentEntity.UserSubscriptionId = subscriptionId;
+                await _dbContext.SaveChangesAsync(cancellationToken);
+
+                // update the advert to awaiting approval
+                advert.Status = AdStatus.PendingApproval;
+                var result = await _classifiedService.UpdateClassifiedPrelovedAd(advert, cancellationToken);
+
+                if (result != null)
+                {
+                    return "Preloved: Pay to Publish processed successfully";
+
+                }
+                else
+                {
+                    return "Error processing preloved pay to publish.";
+                }
+
+            }
+            catch (Exception ex)
+            {
+                return $"Error processing preloved pay to publish: {ex.Message}";
+            }
+        }
+
+        private async Task<string> ProcessPayToPublishCollectiblesAsync(D365Order order, long qlUserId, decimal price, CancellationToken cancellationToken)
+        {
+            var advert = await _classifiedService.GetCollectiblesAdById(order.AdId, cancellationToken);
+
+            if (advert == null)
+            {
+                await SendD365ErrorEmail(order.OrderId, $"Advert with ID {order.AdId} not found.", cancellationToken);
+                return $"Advert with ID {order.AdId} not found.";
+            }
+
+            try
+            {
+                var user = await FindOrCreateUser(qlUserId, order.QLUsername, order.Email, order.Mobile, cancellationToken);
+
+                if (user == null)
+                {
+                    await SendD365ErrorEmail(null, $"Pay to Publish Error: User with ID {order.QLUserId} not found for AdId {order.AdId}.", cancellationToken);
+                    return $"User with ID {order.QLUserId} not found for AdId {order.AdId}.";
+                }
+
+                var paymentEntity = new PaymentEntity
+                {
+                    Gateway = Gateway.D365,
+                    Date = DateTime.UtcNow,
+                    Fee = price,
+                    PaidByUid = user.Id.ToString(),
+                    PaymentMethod = PaymentMethod.Cash,
+                    Source = Source.D365,
+                    Status = PaymentStatus.Success,
+                    Vertical = Vertical.Classifieds,
+                    SubVertical = SubVertical.Collectibles,
+                    AdId = order.AdId,
+                    TriggeredSource = TriggeredSource.D365,
+                    Products = new List<ProductDetails>
+                {
+                    new ProductDetails
+                    {
+                        ProductType = ProductType.PUBLISH,
+                        ProductCode = order.D365Itemid,
+                        Price = price
+                    }
+                }
+                };
+
+                // TODO: This maybe needs to be wrapped in a try catch
+                var payment = _dbContext.Payments.AddAsync(paymentEntity, cancellationToken);
+                await _dbContext.SaveChangesAsync(cancellationToken);
+
+                // create the pay to publish and reference the payment Id
+                var subscriptionId = await _subscriptionService.PurchaseSubscriptionAsync(new V2SubscriptionPurchaseRequestDto
+                {
+                    UserId = user.LegacyUid.ToString(),
+                    ProductCode = order.D365Itemid,
+                    PaymentId = paymentEntity.PaymentId,
+                    AdId = order.AdId,
+                }, cancellationToken);
+
+                // Update payment entity with subscription ID
+                paymentEntity.UserSubscriptionId = subscriptionId;
+                await _dbContext.SaveChangesAsync(cancellationToken);
+
+                // update the advert to awaiting approval
+                advert.Status = AdStatus.PendingApproval;
+                var result = await _classifiedService.UpdateClassifiedCollectiblesAd(advert, cancellationToken);
+
+                if (result != null)
+                {
+                    return "Collectibles: Pay to Publish processed successfully";
+
+                }
+                else
+                {
+                    return "Error processing collectibles pay to publish.";
+                }
+
+            }
+            catch (Exception ex)
+            {
+                return $"Error processing collectibles pay to publish: {ex.Message}";
+            }
+        }
+
+        private async Task<string> ProcessPayToPublishServicesAsync(D365Order order, long qlUserId, decimal price, CancellationToken cancellationToken)
+        {
+            var advert = await _servicesService.GetServiceAdById(order.AdId, cancellationToken);
+
+            if (advert == null)
+            {
+                await SendD365ErrorEmail(order.OrderId, $"Advert with ID {order.AdId} not found.", cancellationToken);
+                return $"Advert with ID {order.AdId} not found.";
+            }
+
+            try
+            {
+                var user = await FindOrCreateUser(qlUserId, order.QLUsername, order.Email, order.Mobile, cancellationToken);
+
+                if (user == null)
+                {
+                    await SendD365ErrorEmail(null, $"Pay to Publish Error: User with ID {order.QLUserId} not found for AdId {order.AdId}.", cancellationToken);
+                    return $"User with ID {order.QLUserId} not found for AdId {order.AdId}.";
+                }
+
+                var paymentEntity = new PaymentEntity
+                {
+                    Gateway = Gateway.D365,
+                    Date = DateTime.UtcNow,
+                    Fee = price,
+                    PaidByUid = user.Id.ToString(),
+                    PaymentMethod = PaymentMethod.Cash,
+                    Source = Source.D365,
+                    Status = PaymentStatus.Success,
+                    Vertical = Vertical.Services,
+                    SubVertical = SubVertical.Services,
+                    AdId = order.AdId,
+                    TriggeredSource = TriggeredSource.D365,
+                    Products = new List<ProductDetails>
+                {
+                    new ProductDetails
+                    {
+                        ProductType = ProductType.PUBLISH,
+                        ProductCode = order.D365Itemid,
+                        Price = price
+                    }
+                }
+                };
+
+                // TODO: This maybe needs to be wrapped in a try catch
+                var payment = _dbContext.Payments.AddAsync(paymentEntity, cancellationToken);
+                await _dbContext.SaveChangesAsync(cancellationToken);
+
+                // create the pay to publish and reference the payment Id
+                var subscriptionId = await _subscriptionService.PurchaseSubscriptionAsync(new V2SubscriptionPurchaseRequestDto
+                {
+                    UserId = user.LegacyUid.ToString(),
+                    ProductCode = order.D365Itemid,
+                    PaymentId = paymentEntity.PaymentId,
+                    AdId = order.AdId,
+                }, cancellationToken);
+
+                // Update payment entity with subscription ID
+                paymentEntity.UserSubscriptionId = subscriptionId;
+                await _dbContext.SaveChangesAsync(cancellationToken);
+
+                // update the advert to awaiting approval
+                advert.Status = ServiceStatus.PendingApproval;
+                var result = await _servicesService.UpdateServiceAd(order.QLUserId, advert, cancellationToken);
+
+                if (result != null)
+                {
+                    return "Services: Pay to Publish processed successfully";
+
+                }
+                else
+                {
+                    return "Error processing services pay to publish.";
+                }
+
+            }
+            catch (Exception ex)
+            {
+                return $"Error processing services pay to publish: {ex.Message}";
+            }
         }
 
         private async Task<ApplicationUser?> FindOrCreateUser(long userId, string userName, string email, string mobile, CancellationToken cancellationToken)
