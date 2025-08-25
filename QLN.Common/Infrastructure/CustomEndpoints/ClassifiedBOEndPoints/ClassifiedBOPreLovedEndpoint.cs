@@ -8,6 +8,7 @@ using QLN.Common.DTO_s;
 using QLN.Common.DTO_s.ClassifiedsBo;
 using QLN.Common.Infrastructure.Auditlog;
 using QLN.Common.Infrastructure.IService.IClassifiedBoService;
+using QLN.Common.Infrastructure.IService.IProductService;
 using QLN.Common.Infrastructure.Subscriptions;
 using QLN.Common.Infrastructure.Utilities;
 using System;
@@ -154,6 +155,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedBOEndPoints
           ProblemHttpResult>>
           (
           [FromServices] IClassifiedPreLovedBOService service,
+          [FromServices] IV2SubscriptionService subsService,
           HttpContext httpContext,
           BulkEditPreLovedP2PDto dto,
           AuditLogger auditLogger,
@@ -162,29 +164,21 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedBOEndPoints
             {
                 try
                 {
-                    var (userId, validSubscriptions, error) = GenericClaimsHelper.GetValidSubscriptions(httpContext.User, (int)Vertical.Classifieds, (int)SubVertical.Stores);
-                    if (!string.IsNullOrEmpty(error))
-                    {
-                        return TypedResults.Problem(
-                        title: "Subscription issue in token.",
-                        detail: error,
-                        statusCode: StatusCodes.Status500InternalServerError,
-                        instance: httpContext.Request.Path
-                        );
-                    }
+                    var (userId, userName) = UserTokenHelper.ExtractUserAsync(httpContext);
 
-                    if (string.IsNullOrEmpty(userId))
+                    if (string.IsNullOrWhiteSpace(userId))
                     {
                         return TypedResults.Forbid();
                     }
+
+                
                     if (dto==null)
                         return TypedResults.BadRequest(new ProblemDetails() { Detail="Bulk PreLoved edit object cannot be null."});
                     else if(dto.AdIds == null || dto.AdStatus==0)
                         return TypedResults.BadRequest(new ProblemDetails() { Detail = "AdIs cannot be null or Status not be '0'." });
                     
 
-                    if (validSubscriptions != null && validSubscriptions.Any())
-                    {
+                  
                         var result = await service.BulkEditP2PSubscriptions(dto, userId, cancellationToken);
                         await auditLogger.LogAuditAsync(
                             module: ModuleName,
@@ -197,11 +191,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedBOEndPoints
                         );
 
                         return TypedResults.Ok(result);
-                    }
-                    else
-                    {
-                        return TypedResults.Forbid();
-                    }
+                   
                 }
                 catch (Exception ex)
                 {
