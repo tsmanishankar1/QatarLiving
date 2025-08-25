@@ -122,10 +122,10 @@ namespace QLN.Common.Infrastructure.QLDbContext
         FROM public.""Subscriptions"" AS subs
         INNER JOIN public.""Companies"" AS comp
             ON subs.""CompanyId"" = comp.""Id""
-        INNER JOIN public.""StoreFlyer"" AS fly
+        LEFT JOIN public.""StoreFlyer"" AS fly
             ON subs.""SubscriptionId"" = fly.""SubscriptionId""
             AND subs.""CompanyId"" = fly.""CompanyId""
-        INNER JOIN public.""StoreProduct"" AS prod
+        LEFT JOIN public.""StoreProduct"" AS prod
             ON fly.""StoreFlyersId"" = prod.""FlyerId""
         WHERE subs.""Vertical"" = 3
           AND subs.""SubVertical"" = 3

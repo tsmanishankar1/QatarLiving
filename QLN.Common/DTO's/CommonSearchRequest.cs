@@ -15,7 +15,7 @@ namespace QLN.Common.DTO_s
         public Dictionary<string, object> Filters { get; set; } = new();
         public string? OrderBy { get; set; }
         public int PageNumber { get; set; } = 1;
-        public int PageSize { get; set; } = 500;
+        public int PageSize { get; set; } = 1000;
     }
     public class ClassifiedsSearchRequest
 
@@ -28,7 +28,7 @@ namespace QLN.Common.DTO_s
         public Dictionary<string, object> Filters { get; set; } = new();
         public string? OrderBy { get; set; }
         public int PageNumber { get; set; } = 1;
-        public int PageSize { get; set; } = 500;
+        public int PageSize { get; set; } = 1000;
     }
     public enum SearchType
     {

@@ -132,7 +132,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
         }
 
         
-        public async Task<string> GetProcessStoresCSV(string Url, string CsvPlatform, string? CompanyId, string? SubscriptionId,
+        public async Task<string> GetProcessStoresCSVOld(string Url, string CsvPlatform, string? CompanyId, string? SubscriptionId,
            string? UserId,string Domain, CancellationToken cancellationToken = default)
         {
             try
@@ -291,7 +291,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
           
         }
 
-        public async Task<string> GetProcessStoresCSVNew(string Url, string CsvPlatform, string? CompanyId, string? SubscriptionId,
+        public async Task<string> GetProcessStoresCSV(string Url, string CsvPlatform, string? CompanyId, string? SubscriptionId,
           string? UserId, string Domain, CancellationToken cancellationToken = default)
         {
             try
