@@ -76,7 +76,8 @@ namespace QLN.Common.DTO_s
         Expired = 6,
         NeedsModification = 7,
         Hold = 8,
-        Onhold = 9
+        Onhold = 9,
+        Removed = 10
     }
     public enum BulkModerationAction
     {

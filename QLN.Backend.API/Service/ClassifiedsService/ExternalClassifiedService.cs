@@ -1359,8 +1359,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
             try
             {
-                //var subscriptionid = Guid.Parse("5a024f96-7414-4473-80b8-f5d70297e262");
-
+             
                 if (subscriptionId != Guid.Empty && dto.IsFeatured == true)
                 {
                     var canUse = await _subscriptionContext.ValidateSubscriptionUsageAsync(
@@ -2152,9 +2151,11 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
+        #endregion
+
         //public async Task<List<CategoryCountDto>> GetCategoryCountsAsync(CancellationToken cancellationToken)
         //{
-            
+
         //    try
         //    {
         //        var response = await _dapr.InvokeMethodAsync<List<CategoryCountDto>>(
@@ -2192,7 +2193,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 throw new InvalidOperationException("Unexpected exception while retrieving count", ex);
             }
         }
-        #endregion
+   
         #region PayToFeature with addons (generic for all subVerticals)
 
         public async Task<string> P2PFeature(

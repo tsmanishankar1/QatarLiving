@@ -494,7 +494,7 @@ namespace QLN.Common.Infrastructure.Service.AuthService
                         IsTwoFactorEnabled = true
                     });
                 }
-                var drupaluser = new DrupalUser();
+                var drupaluser = new QLN.Common.Infrastructure.Model.DrupalUser();
                 var accessToken = await _tokenService.GenerateEnrichedAccessToken(user, drupaluser, DateTime.UtcNow.AddDays(30),null);
                 var refreshToken = _tokenService.GenerateRefreshToken();
 
@@ -607,7 +607,7 @@ namespace QLN.Common.Infrastructure.Service.AuthService
             }
         }
 
-        public async Task<Results<Ok<RefreshTokenResponse>, BadRequest<ProblemDetails>, ProblemHttpResult, UnauthorizedHttpResult>> RefreshToken(Guid userId,DrupalUser drupalUser, string refreshToken)
+        public async Task<Results<Ok<RefreshTokenResponse>, BadRequest<ProblemDetails>, ProblemHttpResult, UnauthorizedHttpResult>> RefreshToken(Guid userId, QLN.Common.Infrastructure.Model.DrupalUser drupalUser, string refreshToken)
         {
             try
             {
@@ -1022,7 +1022,7 @@ namespace QLN.Common.Infrastructure.Service.AuthService
                    Regex.IsMatch(email, @"^[^@\s]+@[^@\s]+\.[^@\s]+$", RegexOptions.IgnoreCase);
         }
 
-        public async Task<Results<Ok<LoginResponse>, BadRequest<ProblemDetails>, UnauthorizedHttpResult, ProblemHttpResult, ValidationProblem>> UserSync(DrupalUser drupalUser, DateTime expiry)
+        public async Task<Results<Ok<LoginResponse>, BadRequest<ProblemDetails>, UnauthorizedHttpResult, ProblemHttpResult, ValidationProblem>> UserSync(QLN.Common.Infrastructure.Model.DrupalUser drupalUser, DateTime expiry)
         {
             try
             {
@@ -1681,5 +1681,7 @@ namespace QLN.Common.Infrastructure.Service.AuthService
             var parts = categoryPath.Split(" > ");
             return parts.Length > 2 ? parts[2] : null;
         }
+
+       
     }
 }

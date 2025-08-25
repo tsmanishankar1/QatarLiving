@@ -92,37 +92,47 @@ namespace QLN.Backend.API.Service.Services
                 throw;
             }
         }
-        public async Task<ResponseDto> CreateServiceAd(string uid, string userName, Guid subscriptionId, ServiceDto dto, CancellationToken cancellationToken = default)
+        public async Task<ResponseDto> CreateServiceAd(string uid, string userName, Guid? subscriptionId, ServiceDto dto, CancellationToken cancellationToken = default)
         {
             try
             {
-                var subscription = new V2SubscriptionResponseDto();
-                subscription = (await _v2SubscriptionService
-                    .GetActiveSubscriptionsAsync(uid, (int)Vertical.Services, null, cancellationToken))
-                    .FirstOrDefault();
-                subscriptionId = subscription.Id;
+                V2SubscriptionResponseDto? subscription = null;
                 if (dto.AdType == ServiceAdType.Subscription)
                 {
+                    subscription = (await _v2SubscriptionService
+                        .GetActiveSubscriptionsAsync(uid, (int)Vertical.Services, null, cancellationToken))
+                        .FirstOrDefault();
+
                     if (subscription == null)
                         throw new InvalidDataException("Subscription not found.");
 
                     if (subscription.StatusId != SubscriptionStatus.Active || subscription.EndDate <= DateTime.UtcNow)
                         throw new InvalidDataException("Subscription is inactive or expired.");
 
+                    subscriptionId = subscription.Id; 
+
                     var canUse = await _v2SubscriptionService.ValidateSubscriptionUsageAsync(
-                        subscriptionId,
+                        (Guid)subscriptionId,
                         ActionTypes.Publish,
                         1,
                         cancellationToken
                     );
 
                     if (!canUse)
-                    {
                         throw new InvalidDataException("Insufficient subscription quota to create this ad.");
-                    }
+                }
+                else
+                {
+                    subscriptionId = null;
+                }
+                var query = $"uid={uid}&userName={userName}";
+
+                if (subscriptionId.HasValue)
+                {
+                    query += $"&subscriptionId={subscriptionId.Value}";
                 }
 
-                var url = $"/api/service/createbyuserid?uid={uid}&userName={userName}&subscriptionId={subscriptionId}";
+                var url = $"/api/service/createbyuserid?{query}";
                 var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, ConstantValues.Services.ServiceAppId, url);
                 request.Content = new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
                 var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
@@ -149,10 +159,10 @@ namespace QLN.Backend.API.Service.Services
                     }
                     throw new Exception(errorMessage);
                 }
-                if (subscriptionId != Guid.Empty)
+                if (dto.AdType == ServiceAdType.Subscription && subscriptionId.HasValue)
                 {
                     var success = await _v2SubscriptionService.RecordSubscriptionUsageAsync(
-                        subscriptionId,
+                        subscriptionId.Value,
                         ActionTypes.Publish,
                         1,
                         cancellationToken
@@ -689,11 +699,17 @@ namespace QLN.Backend.API.Service.Services
                 _ => Array.Empty<string>()
             };
         }
-        public async Task<BulkAdActionResponseitems> ModerateBulkService(BulkModerationRequest request, string? userId, string subscriptionGuid, DateTime? expiryDate,
+        public async Task<BulkAdActionResponseitems> ModerateBulkService(BulkModerationRequest request, string userId, Guid? subscriptionGuid, DateTime? expiryDate,
             CancellationToken cancellationToken = default)
         {
             try
             {
+                var subscription = new V2SubscriptionResponseDto();
+                subscription = (await _v2SubscriptionService
+                    .GetActiveSubscriptionsAsync(userId, (int)Vertical.Services, null, cancellationToken))
+                    .FirstOrDefault();
+                subscriptionGuid = subscription.Id;
+                expiryDate = subscription.EndDate;
                 var failedIds = new List<long>();
                 var succeededIds = new List<long>();
 
@@ -701,7 +717,7 @@ namespace QLN.Backend.API.Service.Services
                     request.AdIds.Select(id => GetServiceAdById(id, cancellationToken))
                 );
 
-                var subscriptionId = Guid.Parse(subscriptionGuid);
+                var subscriptionId = (Guid)subscriptionGuid;
 
                 var groupedActions = ads
                     .Where(a => a != null && a.SubscriptionId.HasValue && a.SubscriptionId.Value != Guid.Empty)

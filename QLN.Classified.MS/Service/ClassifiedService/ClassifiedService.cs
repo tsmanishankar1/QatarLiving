@@ -399,9 +399,7 @@ namespace QLN.Classified.MS.Service
                 subVertical, adId, userId);
 
             try
-            {
-               // subscriptionId = Guid.Parse("5a024f96-7414-4473-80b8-f5d70297e262");
-                //var subcription = await _subscriptionContext.Subscriptions.AsNoTracking().FirstOrDefaultAsync(s => s.SubscriptionId == subscriptionid,cancellationToken);
+            {              
                 string? adTitle;
 
                 object? adItem = subVertical switch
@@ -1849,7 +1847,7 @@ namespace QLN.Classified.MS.Service
                 string? searchLower = string.IsNullOrWhiteSpace(search) ? null : search.ToLowerInvariant();
                 
                 IQueryable<Items> ItemsFilter(IQueryable<Items> q)
-                    => q.Where(i => i.UserId == userId && i.IsActive)
+                    => q.Where(i => i.UserId == userId && i.IsActive && i.Status != AdStatus.Draft)
                         .Where(i => searchLower == null || (i.Title ?? "").ToLower().Contains(searchLower))
                         .Where(i => !isPublished.HasValue
                             || (isPublished.Value
@@ -1858,7 +1856,7 @@ namespace QLN.Classified.MS.Service
                         .OrderByDescending(i => i.UpdatedAt ?? i.CreatedAt);
 
                 IQueryable<Preloveds> PrelovedFilter(IQueryable<Preloveds> q)
-                    => q.Where(p => p.UserId == userId && p.IsActive)
+                    => q.Where(p => p.UserId == userId && p.IsActive && p.Status != AdStatus.Draft)
                         .Where(p => searchLower == null || (p.Title ?? "").ToLower().Contains(searchLower))
                         .Where(p => !isPublished.HasValue
                             || (isPublished.Value
@@ -1867,7 +1865,7 @@ namespace QLN.Classified.MS.Service
                         .OrderByDescending(p => p.UpdatedAt ?? p.CreatedAt);
 
                 IQueryable<Collectibles> CollectiblesFilter(IQueryable<Collectibles> q)
-                    => q.Where(c => c.UserId == userId && c.IsActive)
+                    => q.Where(c => c.UserId == userId && c.IsActive && c.Status != AdStatus.Draft)
                         .Where(c => searchLower == null || (c.Title ?? "").ToLower().Contains(searchLower))
                         .Where(c => !isPublished.HasValue
                             || (isPublished.Value
@@ -1876,7 +1874,7 @@ namespace QLN.Classified.MS.Service
                         .OrderByDescending(c => c.UpdatedAt ?? c.CreatedAt);
 
                 IQueryable<Deals> DealsFilter(IQueryable<Deals> q)
-                    => q.Where(d => d.UserId == userId && d.IsActive)
+                    => q.Where(d => d.UserId == userId && d.IsActive && d.Status != AdStatus.Draft)
                         .Where(d => searchLower == null || (d.Offertitle ?? "").ToLower().Contains(searchLower))
                         .Where(d => !isPublished.HasValue
                             || (isPublished.Value
@@ -1927,28 +1925,28 @@ namespace QLN.Classified.MS.Service
 
                 var counts = new UserAdCountsDto
                 {
-                    ItemsPublished = await _context.Item.CountAsync(i => i.UserId == userId && i.IsActive &&
+                    ItemsPublished = await _context.Item.CountAsync(i => i.UserId == userId && i.IsActive && i.Status != AdStatus.Draft &&
                     (i.Status == AdStatus.Published || i.Status == AdStatus.Approved), cancellationToken),
 
-                    ItemsUnpublished = await _context.Item.CountAsync(i => i.UserId == userId && i.IsActive &&
+                    ItemsUnpublished = await _context.Item.CountAsync(i => i.UserId == userId && i.IsActive && i.Status != AdStatus.Draft &&
                     (i.Status != AdStatus.Published && i.Status != AdStatus.Approved), cancellationToken),
 
-                    PrelovedPublished = await _context.Preloved.CountAsync(p => p.UserId == userId && p.IsActive &&
+                    PrelovedPublished = await _context.Preloved.CountAsync(p => p.UserId == userId && p.IsActive && p.Status != AdStatus.Draft &&
                     (p.Status == AdStatus.Published || p.Status == AdStatus.Approved), cancellationToken),
 
-                    PrelovedUnpublished = await _context.Preloved.CountAsync(p => p.UserId == userId && p.IsActive &&
+                    PrelovedUnpublished = await _context.Preloved.CountAsync(p => p.UserId == userId && p.IsActive && p.Status != AdStatus.Draft &&
                     (p.Status != AdStatus.Published && p.Status != AdStatus.Approved), cancellationToken),
 
-                    CollectiblesPublished = await _context.Collectible.CountAsync(c => c.UserId == userId && c.IsActive &&
+                    CollectiblesPublished = await _context.Collectible.CountAsync(c => c.UserId == userId && c.IsActive && c.Status != AdStatus.Draft &&
                     (c.Status == AdStatus.Published || c.Status == AdStatus.Approved), cancellationToken),
 
-                    CollectiblesUnpublished = await _context.Collectible.CountAsync(c => c.UserId == userId && c.IsActive &&
+                    CollectiblesUnpublished = await _context.Collectible.CountAsync(c => c.UserId == userId && c.IsActive && c.Status != AdStatus.Draft &&
                     (c.Status != AdStatus.Published && c.Status != AdStatus.Approved), cancellationToken),
 
-                    DealsPublished = await _context.Deal.CountAsync(d => d.UserId == userId && d.IsActive &&
+                    DealsPublished = await _context.Deal.CountAsync(d => d.UserId == userId && d.IsActive && d.Status != AdStatus.Draft &&
                     (d.Status == AdStatus.Published || d.Status == AdStatus.Approved), cancellationToken),
 
-                    DealsUnpublished = await _context.Deal.CountAsync(d => d.UserId == userId && d.IsActive &&
+                    DealsUnpublished = await _context.Deal.CountAsync(d => d.UserId == userId && d.IsActive && d.Status != AdStatus.Draft &&
                     (d.Status != AdStatus.Published && d.Status != AdStatus.Approved), cancellationToken)
                 };
 
@@ -1967,34 +1965,103 @@ namespace QLN.Classified.MS.Service
         }
 
         public async Task<BulkAdActionResponse> BulkUpdateAdPublishStatusAsync(
-     int subVertical,
-     string userId,
-     List<long> adIds,
-     bool isPublished,
-     Guid subscriptionId,
-     CancellationToken cancellationToken = default)
+       int subVertical,
+       string userId,
+       List<long> adIds,
+       bool isPublished,
+       Guid subscriptionId,
+       CancellationToken cancellationToken = default)
         {
             try
             {
-                var targetStatus = isPublished ? AdStatus.PendingApproval : AdStatus.Draft;
+                var targetStatus = (SubVertical)subVertical switch
+                {
+                    SubVertical.Deals => isPublished ? AdStatus.Published : AdStatus.Unpublished,
+                    SubVertical.Preloved => isPublished ? AdStatus.Published : AdStatus.Unpublished,
+                    _ => isPublished ? AdStatus.PendingApproval : AdStatus.Draft
+                };
+                var failedAds = new List<long>();
+
+                if (subVertical == (int)SubVertical.Deals)
+                {
+                    var deals = await _context.Deal
+                        .Where(d => adIds.Contains(d.Id))
+                        .ToListAsync(cancellationToken);
+                    
+                    foreach (var deal in deals)
+                    {
+                        if (deal.UserId != userId)
+                        {
+                            _logger.LogWarning("Deal {DealId} failed validation: UserId mismatch. Expected {Expected}, found {Actual}.",
+                                deal.Id, userId, deal.UserId);
+                            failedAds.Add(deal.Id);
+                        }
+                        else if (deal.Status == targetStatus)
+                        {
+                            _logger.LogWarning("Deal {DealId} failed validation: Already has target status {Status}.",
+                                deal.Id, deal.Status);
+                            failedAds.Add(deal.Id);
+                        }
+                        else if (!deal.IsActive)
+                        {
+                            _logger.LogWarning("Deal {DealId} failed validation: Deal is not active.", deal.Id);
+                            failedAds.Add(deal.Id);
+                        }
+                    }
+
+                    var notFoundDeals = adIds.Except(deals.Select(d => d.Id)).ToList();
+                    foreach (var id in notFoundDeals)
+                    {
+                        _logger.LogWarning("Deal {DealId} failed validation: Not found in database.", id);
+                    }
+                    failedAds.AddRange(notFoundDeals);
+
+                    if (failedAds.Any())
+                    {
+                        return new BulkAdActionResponse
+                        {
+                            SuccessCount = 0,
+                            FailedAdIds = failedAds.Distinct().ToList(),
+                            Message = "Some deals failed validation."
+                        };
+                    }
+
+                    foreach (var deal in deals)
+                    {
+                        deal.Status = targetStatus;
+                        if (isPublished)
+                            deal.CreatedAt = DateTime.UtcNow;
+                        else
+                            deal.UpdatedAt = DateTime.UtcNow;
+
+                        _logger.LogInformation("Deal {DealId} status updated to {Status}.", deal.Id, targetStatus);
+                    }
+
+                    await _context.SaveChangesAsync(cancellationToken);
+
+                    foreach (var deal in deals)
+                        await IndexDealsToAzureSearch(deal, cancellationToken);
+
+                    return new BulkAdActionResponse
+                    {
+                        SuccessCount = deals.Count,
+                        FailedAdIds = new(),
+                        Message = $"{deals.Count} deal(s) {(isPublished ? "published" : "unpublished")} successfully."
+                    };
+                }
 
                 IQueryable<ClassifiedBase> query = subVertical switch
                 {
                     (int)SubVertical.Items => _context.Item.Cast<ClassifiedBase>(),
-                    (int)SubVertical.Deals => _context.Deal.Cast<ClassifiedBase>(),
                     (int)SubVertical.Preloved => _context.Preloved.Cast<ClassifiedBase>(),
                     (int)SubVertical.Collectibles => _context.Collectible.Cast<ClassifiedBase>(),
                     _ => throw new ArgumentException("Invalid sub-vertical.")
                 };
 
-                
                 var ads = await query
                     .Where(a => adIds.Contains(a.Id))
                     .ToListAsync(cancellationToken);
 
-                var failedAds = new List<long>();
-
-               
                 foreach (var ad in ads)
                 {
                     if (ad.UserId != userId)
@@ -2011,13 +2078,11 @@ namespace QLN.Classified.MS.Service
                     }
                     else if (!ad.IsActive)
                     {
-                        _logger.LogWarning("Ad {AdId} failed validation: Ad is not active.",
-                            ad.Id);
+                        _logger.LogWarning("Ad {AdId} failed validation: Ad is not active.", ad.Id);
                         failedAds.Add(ad.Id);
                     }
                 }
 
-                
                 var notFound = adIds.Except(ads.Select(a => a.Id)).ToList();
                 foreach (var id in notFound)
                 {
@@ -2027,9 +2092,6 @@ namespace QLN.Classified.MS.Service
 
                 if (failedAds.Any())
                 {
-                    _logger.LogInformation("Bulk update failed for {FailedCount} out of {TotalCount} ads.",
-                        failedAds.Distinct().Count(), adIds.Count);
-
                     return new BulkAdActionResponse
                     {
                         SuccessCount = 0,
@@ -2038,18 +2100,14 @@ namespace QLN.Classified.MS.Service
                     };
                 }
 
-                
                 foreach (var ad in ads)
                 {
                     ad.Status = targetStatus;
                     if (isPublished)
-                    {
-                        ad.CreatedAt = DateTime.UtcNow;     
-                    }
+                        ad.CreatedAt = DateTime.UtcNow;
                     else
-                    {
-                        ad.UpdatedAt = DateTime.UtcNow;     
-                    }
+                        ad.UpdatedAt = DateTime.UtcNow;
+
                     _logger.LogInformation("Ad {AdId} status updated to {Status}.", ad.Id, targetStatus);
                 }
 
@@ -2063,12 +2121,6 @@ namespace QLN.Classified.MS.Service
                             var item = await _context.Item.FirstOrDefaultAsync(i => i.Id == ad.Id, cancellationToken);
                             if (item != null)
                                 await IndexItemsToAzureSearch(item, cancellationToken);
-                            break;
-
-                        case SubVertical.Deals:
-                            var deal = await _context.Deal.FirstOrDefaultAsync(d => d.Id == ad.Id, cancellationToken);
-                            if (deal != null)
-                                await IndexDealsToAzureSearch(deal, cancellationToken);
                             break;
 
                         case SubVertical.Preloved:
@@ -2085,10 +2137,6 @@ namespace QLN.Classified.MS.Service
                     }
                 }
 
-
-                _logger.LogInformation("{Count} ad(s) successfully {Action}.",
-                    ads.Count, isPublished ? "published" : "unpublished");
-
                 return new BulkAdActionResponse
                 {
                     SuccessCount = ads.Count,
@@ -2102,7 +2150,6 @@ namespace QLN.Classified.MS.Service
                 throw new InvalidOperationException("An error occurred during bulk update.", ex);
             }
         }
-
 
 
         #region Private Methods
@@ -2161,7 +2208,8 @@ namespace QLN.Classified.MS.Service
                 {
                     Url = i.Url,
                     Order = i.Order
-                }).ToList()
+                }).ToList(),
+                IsSold = dto.IsSold
             };
             var indexRequest = new CommonIndexRequest
             {
@@ -2245,7 +2293,8 @@ namespace QLN.Classified.MS.Service
                 FeaturedExpiryDate = dto.FeaturedExpiryDate,
                 IsPromoted = dto.IsPromoted,
                 PromotedExpiryDate = dto.PromotedExpiryDate,
-                IsRefreshed = dto.IsRefreshed
+                IsRefreshed = dto.IsRefreshed,
+                IsSold = dto.IsSold
             };
             var indexRequest = new CommonIndexRequest
             {
@@ -2330,7 +2379,8 @@ namespace QLN.Classified.MS.Service
                 IsFeatured = dto.IsFeatured,
                 FeaturedExpiryDate = dto.FeaturedExpiryDate,
                 IsPromoted = dto.IsPromoted,
-                PromotedExpiryDate = dto.PromotedExpiryDate
+                PromotedExpiryDate = dto.PromotedExpiryDate,
+                IsSold = dto.IsSold
 
             };
             var indexRequest = new CommonIndexRequest
@@ -2355,12 +2405,14 @@ namespace QLN.Classified.MS.Service
                 );
             }
         }
+
         private async Task IndexDealsToAzureSearch(Deals dto, CancellationToken cancellationToken)
         {
             var indexDoc = new ClassifiedsDealsIndex
             {
-                Id = dto.Id.ToString(),                
-                UserId = dto.UserId,
+                Id = dto.Id.ToString(),
+                Subvertical = SubVertical.Deals.ToString(), 
+                UserId = dto.UserId ?? string.Empty,
                 BusinessName = dto.BusinessName,
                 BranchNames = dto.BranchNames,
                 BusinessType = dto.BusinessType,
@@ -2376,18 +2428,20 @@ namespace QLN.Classified.MS.Service
                 WebsiteUrl = dto.WebsiteUrl,
                 SocialMediaLinks = dto.SocialMediaLinks,
                 IsActive = dto.IsActive,
-                CreatedBy = dto.CreatedBy,
+                CreatedBy = dto.CreatedBy ?? string.Empty,            
                 CreatedAt = dto.CreatedAt,
-                XMLlink = dto.XMLlink,                
-                SubscriptionId = dto.SubscriptionId,
+                XMLlink = dto.XMLlink ?? string.Empty,                
+                SubscriptionId = dto.SubscriptionId.ToString(),                 
                 UpdatedAt = dto.UpdatedAt,
                 UpdatedBy = dto.UpdatedBy,
                 ExpiryDate = dto.ExpiryDate,
-                CoverImage = dto.CoverImage,
+                CoverImage = dto.CoverImage ?? string.Empty,        
                 PromotedExpiryDate = dto.PromotedExpiryDate,
                 IsPromoted = dto.IsPromoted,
                 FeaturedExpiryDate = dto.FeaturedExpiryDate,
                 IsFeatured = dto.IsFeatured,
+                IsSold = dto.IsSold,
+                Locations = dto.Locations      
             };
 
             var indexRequest = new CommonIndexRequest
@@ -2395,23 +2449,22 @@ namespace QLN.Classified.MS.Service
                 IndexName = ConstantValues.IndexNames.ClassifiedsDealsIndex,
                 ClassifiedsDealsItem = indexDoc
             };
-            if (indexRequest != null)
-            {
-                var message = new IndexMessage
-                {
-                    Action = "Upsert",
-                    Vertical = ConstantValues.IndexNames.ClassifiedsDealsIndex,
-                    UpsertRequest = indexRequest
-                };
 
-                await _dapr.PublishEventAsync(
-                    pubsubName: ConstantValues.PubSubName,
-                    topicName: ConstantValues.PubSubTopics.IndexUpdates,
-                    data: message,
-                    cancellationToken: cancellationToken
-                );
-            }
+            var message = new IndexMessage
+            {
+                Action = "Upsert",
+                Vertical = ConstantValues.IndexNames.ClassifiedsDealsIndex,
+                UpsertRequest = indexRequest
+            };
+
+            await _dapr.PublishEventAsync(
+                ConstantValues.PubSubName,
+                ConstantValues.PubSubTopics.IndexUpdates,
+                message,
+                cancellationToken);
         }
+
+
         #endregion
 
         public async Task<string> FeatureClassifiedAd(
@@ -2635,10 +2688,6 @@ namespace QLN.Classified.MS.Service
                 throw new InvalidOperationException("Failed to update promotion state due to an unexpected error.", ex);
             }
         }
-
-
-
-
 
 
         #region WishList
@@ -2873,6 +2922,7 @@ namespace QLN.Classified.MS.Service
                         itemsAd.AdType = AdTypeEnum.P2P;
                         itemsAd.UpdatedBy = uid;
                         itemsAd.UpdatedAt = DateTime.UtcNow;
+                        itemsAd.ExpiryDate = DateTime.UtcNow.AddMonths(1);
 
                         await _context.SaveChangesAsync(ct);
                         
@@ -2953,6 +3003,7 @@ namespace QLN.Classified.MS.Service
 
             return await query.ToListAsync(cancellationToken);
         }
+
         #region payToFeature with addons for all subverticals
 
         public async Task<string> P2PFeature(
@@ -3028,7 +3079,6 @@ namespace QLN.Classified.MS.Service
         }
 
         #endregion
-
 
 
     }

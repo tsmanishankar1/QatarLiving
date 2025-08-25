@@ -7,8 +7,8 @@ spec:
   version: v1
   metadata:
     - name: redisHost
-      value: "qlnv2-redis-dev.redis.cache.windows.net:6379"
+      value: localhost:6379
     - name: redisPassword
-      value: "iCYAJ8uvK7ymtfwX9wgbnin3r4IWT5AO9AzCaBrsGg4="
+      value: ""
     - name: enableQuery
       value: "true"
