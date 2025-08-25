@@ -54,9 +54,11 @@ namespace QLN.Common.Infrastructure.Service.Payments
             HttpClient httpClient,
             D365Config d365Config,
             QLPaymentsContext dbContext,
+            QLSubscriptionContext qLSubscriptionContext,
             UserManager<ApplicationUser> userManager,
             IV2SubscriptionService subscriptionService,
-            IClassifiedService classifiedService
+            IClassifiedService classifiedService,
+            IDrupalUserService drupalService
             )
         {
             _daprClient = daprClient;
@@ -64,9 +66,11 @@ namespace QLN.Common.Infrastructure.Service.Payments
             _httpClient = httpClient;
             _d365Config = d365Config;
             _dbContext = dbContext;
+            _subscriptionDbContext = qLSubscriptionContext;
             _userManager = userManager;
             _subscriptionService = subscriptionService;
             _classifiedService = classifiedService;
+            _drupalService = drupalService;
 
             // Acquire Bearer token using MSAL
             var authority = $"https://login.microsoftonline.com/{_d365Config.TenantId}";
@@ -146,8 +150,8 @@ namespace QLN.Common.Infrastructure.Service.Payments
                 itemId = $"{payment.PaymentId}-{index + 1}",
                 productCode = product.ProductCode,
                 productType = product.ProductType.ToString(),
-                startDate_dd_mm_yyyy = order.ProductDuration?.StartDate_dd_mm_yyyy.ToString("dd/MM/yyyy"),
-                endDate_dd_mm_yyyy = order.ProductDuration?.EndDate_dd_mm_yyyy.ToString("dd/MM/yyyy"),
+                startDate_dd_mm_yyyy = order.ProductDuration?.StartDate.ToString("dd/MM/yyyy"),
+                endDate_dd_mm_yyyy = order.ProductDuration?.EndDate.ToString("dd/MM/yyyy"),
                 transDate_dd_mm_yyyy = order.PaymentInfo.Date.ToString("dd/MM/yyyy"),
                 amount = product.Price,
                 quantity = 1, // Default to 1 for now
@@ -232,7 +236,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
                         PaymentId = order.PaymentInfo.PaymentId,
                         Operation = Operation.CHECKOUT_REQUEST,
                         Status = 200, // HttpStatusCode.Ok
-                        Response = processedOrder
+                        Response = JsonSerializer.Serialize(processedOrder)
                     }
                 };
 
@@ -277,7 +281,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
                         PaymentId = order.PaymentInfo.PaymentId,
                         Operation = Operation.CHECKOUT_REQUEST,
                         Status = 200, // HttpStatusCode.Ok
-                        Response = processedOrder
+                        Response = JsonSerializer.Serialize(processedOrder)
                     }
                 };
 
@@ -294,13 +298,17 @@ namespace QLN.Common.Infrastructure.Service.Payments
             return false;
         }
 
-        public async Task<bool> D365OrdersAsync(D365Order[] orders, CancellationToken cancellationToken)
+        public async Task<List<string>> D365OrdersAsync(D365Order[] orders, CancellationToken cancellationToken)
         {
+            var results = new List<string>();
+
             if (orders == null || orders.Length == 0)
             {
                 _logger.LogError("Order array is missing");
-                return false;
+                results.Add("Order array is missing");
+                return results;
             }
+
 
             // Group orders by OrderId to handle multiple items with same order ID
             var orderGroups = orders.GroupBy(o => o.OrderId).ToList();
@@ -321,7 +329,8 @@ namespace QLN.Common.Infrastructure.Service.Payments
                     // Process each item in the order group
                     foreach (var item in orderItems)
                     {
-                        await HandleD365OrderItemAsync(item, cancellationToken);
+                        var result = await HandleD365OrderItemAsync(item, cancellationToken);
+                        results.Add(result);
                     }
 
                     await SaveD365RequestLogsAsync(
@@ -329,7 +338,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
                         orderItems.First(),
                         1,
                         new { message = $"Order group {orderId} processed successfully with {orderItems.Count} items" },
-                        cancellationToken
+                        cancellationToken // dont send cancellation token else no log gets written
                     );
                 }
                 catch (Exception ex)
@@ -340,17 +349,17 @@ namespace QLN.Common.Infrastructure.Service.Payments
                         DateTime.UtcNow,
                         orderGroup.First(),
                         0,
-                        new { message = $"Error processing order group: {ex.Message}" },
-                        cancellationToken
+                        new { message = $"Error processing order group: {ex.Message}" }
+                        //cancellationToken // dont send cancellation token else no log gets written
                     );
 
                     await SendD365ErrorEmail(orderGroup.Key, $"Error processing order group: {ex.Message}", cancellationToken);
 
-                    return false;
+                    results.Add($"Error processing order group {orderGroup.Key}: {ex.Message}");
                 }
             }
 
-            return true;
+            return results;
         }
 
         public async Task<string> HandleD365OrderAsync(D365Order order, CancellationToken cancellationToken)
@@ -361,7 +370,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
 
             if (orderStrings.Length < 3)
             {
-                throw new InvalidOperationException($"Invalid D365 ItemID format: {order.D365Itemid}");
+                return $"Invalid D365 ItemID format: {order.D365Itemid}";
             }
 
             // Find the corresponding product in subscriptionDbContext
@@ -373,7 +382,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
 
                 await SendD365ErrorEmail(order.OrderId, $"Product not found for product code: order.D365Itemid", cancellationToken);
                 // cannot buy something which doesnt exist
-                throw new InvalidOperationException($"Product not found for product code {order.D365Itemid}");
+                return $"Product not found for product code {order.D365Itemid}";
             }
 
             var verticalCheck = orderStrings[0];
@@ -391,6 +400,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
                             switch (subProductCheck)
                             {
                                 case "ADD":
+                                case "FEA":
                                     return await ProcessAddonFeature(order, Vertical.Classifieds, cancellationToken);
                                 case "REF":
                                     return await ProcessAddonRefresh(order, Vertical.Classifieds, cancellationToken);
@@ -403,7 +413,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
                             return await ProcessAddonFeature(order, Vertical.Classifieds, cancellationToken);
                         default:
                             await SendD365ErrorEmail(order.OrderId, $"Unknown QLC D365 ItemID : {order.D365Itemid}", cancellationToken);
-                            throw new InvalidOperationException($"Unknown QLC D365 ItemID : {order.D365Itemid}");
+                            return $"Unknown QLC D365 ItemID : {order.D365Itemid}";
                     }
                 // check if this is for Services
                 case "QLS":
@@ -427,7 +437,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
                             {
                                 default:
                                     await SendD365ErrorEmail(order.OrderId, $"Unknown QLS D365 ItemID : {order.D365Itemid}", cancellationToken);
-                                    throw new InvalidOperationException($"Unknown QLS D365 ItemID : {order.D365Itemid}");
+                                    return $"Unknown QLS D365 ItemID : {order.D365Itemid}";
                             }
                     }
                 default:
@@ -442,13 +452,13 @@ namespace QLN.Common.Infrastructure.Service.Payments
             if (orderItem.D365Itemid == null)
             {
                 await SendD365ErrorEmail(orderItem.OrderId, $"D365 ItemID is null for order: '{orderItem.OrderId}'", cancellationToken);
-                throw new InvalidOperationException("D365 ItemID is null");
+                return "D365 ItemID is null";
             }
 
-            if (orderItem.QLUserId == 0)
+            if (orderItem.QLUserId == "0")
             {
                 await SendD365ErrorEmail(orderItem.OrderId, $"D365 QLUserId is null for order: '{orderItem.OrderId}'", cancellationToken);
-                throw new InvalidOperationException("D365 QLUserId is 0");
+                return "D365 QLUserId is 0";
             }
 
             _logger.LogInformation("Handling D365 order item with ID: {ItemId} for order: {OrderId}",
@@ -575,7 +585,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
             try
             {
                 // Simulate ProcessSubscriptions (replace with actual implementation)
-                await ProcessSubscriptionsAsync(order, vertical, cancellationToken);
+                var result = await ProcessSubscriptionsAsync(order, vertical, cancellationToken);
 
                 await SaveD365RequestLogsAsync(
                     DateTime.UtcNow,
@@ -585,7 +595,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
                     cancellationToken
                 );
 
-                return "Subscription processed successfully";
+                return result;
             }
             catch (Exception ex)
             {
@@ -593,36 +603,33 @@ namespace QLN.Common.Infrastructure.Service.Payments
                     DateTime.UtcNow,
                     order,
                     0,
-                    new { message = "Error while processing subscription" },
-                    cancellationToken
+                    new { message = "Error while processing subscription" }
+                //cancellationToken // dont send cancellation token else no log gets written
                 );
 
                 await SendD365ErrorEmail(order.OrderId, $"Error while processing subscription: '{order.OrderId}'", cancellationToken);
-                throw new InvalidOperationException($"Error processing subscription: {ex.Message}", ex);
+                return $"Error processing subscription: {ex.Message}";
             }
         }
 
         private async Task<string> ProcessAddonFeature(D365Order order, Vertical vertical, CancellationToken cancellationToken)
         {
-            if (order.Price == null || order.Price <= 0)
+            if (decimal.TryParse(order.Price, out var price) && price <= 0)
             {
                 await SendD365ErrorEmail(order.OrderId, $"Price must be greater than zero for addon feature processing for order '{order.OrderId}'", cancellationToken);
-                throw new InvalidOperationException("Price must be greater than zero for addon feature processing.");
+                return "Price must be greater than zero for addon feature processing.";
             }
 
             if(order.AdId == 0)
             {
                 await SendD365ErrorEmail(order.OrderId, $"AdId must be provided for addon feature processing for order '{order.OrderId}'", cancellationToken);
-                throw new InvalidOperationException("AdId must be provided for addon feature processing.");
+                return "AdId must be provided for addon feature processing.";
             }
-
-            decimal price = order.Price.HasValue ? order.Price.Value : 0;
-
 
             try
             {
                 // Simulate ProcessPaytoFeature (replace with actual implementation)
-                await ProcessPaytoFeatureAsync(order.AdId, order.D365Itemid, price, vertical, cancellationToken);
+                var result = await ProcessPaytoFeatureAsync(order.AdId, order.D365Itemid, price, vertical, cancellationToken);
 
                 await SaveD365RequestLogsAsync(
                     DateTime.UtcNow,
@@ -632,7 +639,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
                     cancellationToken
                 );
 
-                return "Ad Feature processed successfully";
+                return result;
             }
             catch (Exception ex)
             {
@@ -640,34 +647,32 @@ namespace QLN.Common.Infrastructure.Service.Payments
                     DateTime.UtcNow,
                     order,
                     0,
-                    new { message = ex.Message },
-                    cancellationToken
+                    new { message = ex.Message }
+                    //cancellationToken // dont send cancellation token else no log gets written
                 );
                 await SendD365ErrorEmail(order.OrderId, $"Error processing feature: {ex.Message}", cancellationToken);
-                throw new InvalidOperationException($"Error processing feature: {ex.Message}", ex);
+                return $"Error processing feature: {ex.Message}";
             }
         }
 
         private async Task<string> ProcessAddonPromote(D365Order order, Vertical vertical, CancellationToken cancellationToken)
         {
-            if (order.Price == null || order.Price <= 0)
+            if (decimal.TryParse(order.Price, out var price) && price <= 0)
             {
                 await SendD365ErrorEmail(order.OrderId, $"Price must be greater than zero for addon promote processing for order '{order.OrderId}'", cancellationToken);
-                throw new InvalidOperationException("Price must be greater than zero for addon promote processing.");
+                return "Price must be greater than zero for addon promote processing.";
             }
 
             if (order.AdId == 0)
             {
                 await SendD365ErrorEmail(order.OrderId, $"AdId must be provided for addon promote processing for order '{order.OrderId}'", cancellationToken);
-                throw new InvalidOperationException("AdId must be provided for addon promote processing.");
+                return "AdId must be provided for addon promote processing.";
             }
-
-            decimal price = order.Price.HasValue ? order.Price.Value : 0;
 
             try
             {
                 // Simulate ProcessPaytoPromote (replace with actual implementation)
-                await ProcessPaytoPromoteAsync(order.AdId, order.D365Itemid, price, vertical, cancellationToken);
+                var result = await ProcessPaytoPromoteAsync(order.AdId, order.D365Itemid, price, vertical, cancellationToken);
 
                 await SaveD365RequestLogsAsync(
                     DateTime.UtcNow,
@@ -677,7 +682,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
                     cancellationToken
                 );
 
-                return "Ad Promote processed successfully";
+                return result;
             }
             catch (Exception ex)
             {
@@ -685,34 +690,32 @@ namespace QLN.Common.Infrastructure.Service.Payments
                     DateTime.UtcNow,
                     order,
                     0,
-                    new { message = ex.Message },
-                    cancellationToken
+                    new { message = ex.Message }
+                    //cancellationToken // dont send cancellation token else no log gets written
                 );
                 await SendD365ErrorEmail(order.OrderId, $"Error processing promote: {ex.Message}", cancellationToken);
-                throw new InvalidOperationException($"Error processing promote: {ex.Message}", ex);
+                return $"Error processing promote: {ex.Message}";
             }
         }
 
         private async Task<string> ProcessAddonRefresh(D365Order order, Vertical vertical, CancellationToken cancellationToken)
         {
-            if (order.Price == null || order.Price <= 0)
+            if (decimal.TryParse(order.Price, out var price) && price <= 0)
             {
                 await SendD365ErrorEmail(order.OrderId, $"Price must be greater than zero for addon refresh processing for order '{order.OrderId}'", cancellationToken);
-                throw new InvalidOperationException("Price must be greater than zero for addon refresh processing.");
+                return "Price must be greater than zero for addon refresh processing.";
             }
 
             if (order.AdId == 0)
             {
                 await SendD365ErrorEmail(order.OrderId, $"AdId must be provided for addon refresh processing for order '{order.OrderId}'", cancellationToken);
-                throw new InvalidOperationException("AdId must be provided for addon refresh processing.");
+                return "AdId must be provided for addon refresh processing.";
             }
-
-            decimal price = order.Price.HasValue ? order.Price.Value : 0;
 
             try
             {
                 // Simulate ProcessPaytoRefresh (replace with actual implementation)
-                await ProcessAddonRefreshAsync(order.AdId, order.D365Itemid, price, vertical, cancellationToken);
+                var result = await ProcessAddonRefreshAsync(order.AdId, order.D365Itemid, price, vertical, cancellationToken);
 
                 await SaveD365RequestLogsAsync(
                     DateTime.UtcNow,
@@ -722,7 +725,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
                     cancellationToken
                 );
 
-                return "Ad Refresh processed successfully";
+                return result;
             }
             catch (Exception ex)
             {
@@ -730,26 +733,26 @@ namespace QLN.Common.Infrastructure.Service.Payments
                     DateTime.UtcNow,
                     order,
                     0,
-                    new { message = ex.Message },
-                    cancellationToken
+                    new { message = ex.Message }
+                    //cancellationToken // dont send cancellation token else no log gets written
                 );
                 await SendD365ErrorEmail(order.OrderId, $"Error processing refresh: {ex.Message}", cancellationToken);
-                throw new InvalidOperationException($"Error processing refresh: {ex.Message}", ex);
+                return $"Error processing refresh: {ex.Message}";
             }
         }
 
         private async Task<string> ProcessPayToPublish(D365Order order, Vertical vertical, CancellationToken cancellationToken)
         {
-            if (order.Price == null || order.Price <= 0)
+            if (decimal.TryParse(order.Price, out var price) && price <= 0)
             {
                 await SendD365ErrorEmail(order.OrderId, $"Price must be greater than zero for pay to publish processing for order '{order.OrderId}'", cancellationToken);
-                throw new InvalidOperationException("Price must be greater than zero for pay to publish processing.");
+                return "Price must be greater than zero for pay to publish processing.";
             }
 
             try
             {
-                // Simulate ProcessPayToPublish (replace with actual implementation)
-                await ProcessPayToPublishAsync(order, vertical, cancellationToken);
+                
+                var result = await ProcessPayToPublishAsync(order, vertical, cancellationToken);
 
                 await SaveD365RequestLogsAsync(
                     DateTime.UtcNow,
@@ -759,7 +762,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
                     cancellationToken
                 );
 
-                return "Pay to Publish processed successfully";
+                return result;
             }
             catch (Exception ex)
             {
@@ -767,29 +770,29 @@ namespace QLN.Common.Infrastructure.Service.Payments
                     DateTime.UtcNow,
                     order,
                     0,
-                    new { message = ex.Message },
-                    cancellationToken
+                    new { message = ex.Message }
+                    //cancellationToken // dont send cancellation token else no log gets written
                 );
                 await SendD365ErrorEmail(order.OrderId, $"Error processing pay to publish: {ex.Message}", cancellationToken);
-                throw new InvalidOperationException($"Error processing pay to publish: {ex.Message}", ex);
+                return $"Error processing pay to publish: {ex.Message}";
             }
         }
 
         // Updated to use new PaymentEntity structure
-        private async Task ProcessPaytoFeatureAsync(int adId, string d365ItemId, decimal price, Vertical vertical, CancellationToken cancellationToken)
+        private async Task<string> ProcessPaytoFeatureAsync(int adId, string d365ItemId, decimal price, Vertical vertical, CancellationToken cancellationToken)
         {
             var advert = await _classifiedService.GetItemAdById(adId, cancellationToken);
 
             if (advert == null)
             {
                 await SendD365ErrorEmail(null, $"Advert with ID {adId} not found.", cancellationToken);
-                throw new InvalidOperationException($"Advert with ID {adId} not found.");
+                return $"Advert with ID {adId} not found.";
             }
 
             if (advert.SubscriptionId == null || advert.SubscriptionId == Guid.Empty)
             {
                 await SendD365ErrorEmail(null, $"Advert with ID {adId} does not have a valid SubscriptionId.", cancellationToken);
-                throw new InvalidOperationException($"Advert with ID {adId} does not have a valid SubscriptionId.");
+                return $"Advert with ID {adId} does not have a valid SubscriptionId.";
             }
 
             var user = await _userManager.FindByIdAsync(advert.UserId);
@@ -797,22 +800,24 @@ namespace QLN.Common.Infrastructure.Service.Payments
             if (user == null)
             {
                 await SendD365ErrorEmail(null, $"Pay to Feature Error: User with ID {advert.UserId} not found for AdId {adId}.", cancellationToken);
-                throw new InvalidOperationException($"User with ID {advert.UserId} not found for AdId {adId}.");
+                return $"User with ID {advert.UserId} not found for AdId {adId}.";
             }
 
-            var paymentEntity = new PaymentEntity
+            try
             {
-                Gateway = Gateway.D365,
-                Date = DateTime.UtcNow,
-                Fee = price,
-                PaidByUid = user.Id.ToString(),
-                PaymentMethod = PaymentMethod.Cash,
-                Source = Source.D365,
-                Status = PaymentStatus.Success,
-                Vertical = vertical,
-                AdId = adId,
-                TriggeredSource = TriggeredSource.D365,
-                Products = new List<ProductDetails>
+                var paymentEntity = new PaymentEntity
+                {
+                    Gateway = Gateway.D365,
+                    Date = DateTime.UtcNow,
+                    Fee = price,
+                    PaidByUid = user.Id.ToString(),
+                    PaymentMethod = PaymentMethod.Cash,
+                    Source = Source.D365,
+                    Status = PaymentStatus.Success,
+                    Vertical = vertical,
+                    AdId = adId,
+                    TriggeredSource = TriggeredSource.D365,
+                    Products = new List<ProductDetails>
                 {
                     new ProductDetails
                     {
@@ -821,40 +826,47 @@ namespace QLN.Common.Infrastructure.Service.Payments
                         Price = price
                     }
                 }
-            };
+                };
 
-            // TODO: This maybe needs to be wrapped in a try catch
-            var payment = await _dbContext.Payments.AddAsync(paymentEntity, cancellationToken);
-            await _dbContext.SaveChangesAsync(cancellationToken);
+                // TODO: This maybe needs to be wrapped in a try catch
+                var payment = await _dbContext.Payments.AddAsync(paymentEntity, cancellationToken);
+                await _dbContext.SaveChangesAsync(cancellationToken);
 
-            // create the pay to feature and reference the payment Id
-            var addonId = await _subscriptionService.PurchaseAddonAsync(new V2UserAddonPurchaseRequestDto
+                // create the pay to feature and reference the payment Id
+                var addonId = await _subscriptionService.PurchaseAddonAsync(new V2UserAddonPurchaseRequestDto
+                {
+                    UserId = user.LegacyUid.ToString(),
+                    ProductCode = d365ItemId,
+                    PaymentId = paymentEntity.PaymentId,
+                    SubscriptionId = advert.SubscriptionId != null ? advert.SubscriptionId.Value : Guid.Empty
+                }, cancellationToken);
+
+                // Update payment entity with addon ID
+                paymentEntity.UserAddonIds = new List<Guid> { addonId };
+                await _dbContext.SaveChangesAsync(cancellationToken);
+            }
+            catch (Exception ex)
             {
-                UserId = user.Id.ToString(),
-                ProductCode = d365ItemId,
-                PaymentId = paymentEntity.PaymentId,
-                SubscriptionId = advert.SubscriptionId != null ? advert.SubscriptionId.Value : Guid.Empty
-            }, cancellationToken);
+                return $"Error processing pay to feature: {ex.Message}";
+            }
 
-            // Update payment entity with addon ID
-            paymentEntity.UserAddonIds = new List<Guid> { addonId };
-            await _dbContext.SaveChangesAsync(cancellationToken);
+            return "Ad Feature processed successfully";
         }
 
-        private async Task ProcessPaytoPromoteAsync(int adId, string d365ItemId, decimal price, Vertical vertical, CancellationToken cancellationToken)
+        private async Task<string> ProcessPaytoPromoteAsync(int adId, string d365ItemId, decimal price, Vertical vertical, CancellationToken cancellationToken)
         {
             var advert = await _classifiedService.GetItemAdById(adId, cancellationToken);
 
             if (advert == null)
             {
                 await SendD365ErrorEmail(null, $"Advert with ID {adId} not found.", cancellationToken);
-                throw new InvalidOperationException($"Advert with ID {adId} not found.");
+                return $"Advert with ID {adId} not found.";
             }
 
             if (advert.SubscriptionId == null || advert.SubscriptionId == Guid.Empty)
             {
                 await SendD365ErrorEmail(null, $"Advert with ID {adId} does not have a valid SubscriptionId.", cancellationToken);
-                throw new InvalidOperationException($"Advert with ID {adId} does not have a valid SubscriptionId.");
+                return $"Advert with ID {adId} does not have a valid SubscriptionId.";
             }
 
             var user = await _userManager.FindByIdAsync(advert.UserId);
@@ -862,22 +874,24 @@ namespace QLN.Common.Infrastructure.Service.Payments
             if (user == null)
             {
                 await SendD365ErrorEmail(null, $"Pay to Promote Error: User with ID {advert.UserId} not found for AdId {adId}.", cancellationToken);
-                throw new InvalidOperationException($"User with ID {advert.UserId} not found for AdId {adId}.");
+                return $"User with ID {advert.UserId} not found for AdId {adId}.";
             }
 
-            var paymentEntity = new PaymentEntity
+            try
             {
-                Gateway = Gateway.D365,
-                Date = DateTime.UtcNow,
-                Fee = price,
-                PaidByUid = user.Id.ToString(),
-                PaymentMethod = PaymentMethod.Cash,
-                Source = Source.D365,
-                Status = PaymentStatus.Success,
-                Vertical = vertical,
-                AdId = adId,
-                TriggeredSource = TriggeredSource.D365,
-                Products = new List<ProductDetails>
+                var paymentEntity = new PaymentEntity
+                {
+                    Gateway = Gateway.D365,
+                    Date = DateTime.UtcNow,
+                    Fee = price,
+                    PaidByUid = user.Id.ToString(),
+                    PaymentMethod = PaymentMethod.Cash,
+                    Source = Source.D365,
+                    Status = PaymentStatus.Success,
+                    Vertical = vertical,
+                    AdId = adId,
+                    TriggeredSource = TriggeredSource.D365,
+                    Products = new List<ProductDetails>
                 {
                     new ProductDetails
                     {
@@ -886,40 +900,47 @@ namespace QLN.Common.Infrastructure.Service.Payments
                         Price = price
                     }
                 }
-            };
+                };
 
-            // TODO: This maybe needs to be wrapped in a try catch
-            var payment = await _dbContext.Payments.AddAsync(paymentEntity, cancellationToken);
-            await _dbContext.SaveChangesAsync(cancellationToken);
+                // TODO: This maybe needs to be wrapped in a try catch
+                var payment = await _dbContext.Payments.AddAsync(paymentEntity, cancellationToken);
+                await _dbContext.SaveChangesAsync(cancellationToken);
 
-            // create the pay to promote and reference the payment Id
-            var addonId = await _subscriptionService.PurchaseAddonAsync(new V2UserAddonPurchaseRequestDto
+                // create the pay to promote and reference the payment Id
+                var addonId = await _subscriptionService.PurchaseAddonAsync(new V2UserAddonPurchaseRequestDto
+                {
+                    UserId = user.LegacyUid.ToString(),
+                    ProductCode = d365ItemId,
+                    PaymentId = paymentEntity.PaymentId,
+                    SubscriptionId = advert.SubscriptionId != null ? advert.SubscriptionId.Value : Guid.Empty
+                }, cancellationToken);
+
+                // Update payment entity with addon ID
+                paymentEntity.UserAddonIds = new List<Guid> { addonId };
+                await _dbContext.SaveChangesAsync(cancellationToken);
+            }
+            catch (Exception ex)
             {
-                UserId = user.Id.ToString(),
-                ProductCode = d365ItemId,
-                PaymentId = paymentEntity.PaymentId,
-                SubscriptionId = advert.SubscriptionId != null ? advert.SubscriptionId.Value : Guid.Empty
-            }, cancellationToken);
+                 return $"Error processing pay to promote: {ex.Message}";
+            }
 
-            // Update payment entity with addon ID
-            paymentEntity.UserAddonIds = new List<Guid> { addonId };
-            await _dbContext.SaveChangesAsync(cancellationToken);
+            return "Ad Promote processed successfully";
         }
 
-        private async Task ProcessAddonRefreshAsync(int adId, string d365ItemId, decimal price, Vertical vertical, CancellationToken cancellationToken)
+        private async Task<string> ProcessAddonRefreshAsync(int adId, string d365ItemId, decimal price, Vertical vertical, CancellationToken cancellationToken)
         {
             var advert = await _classifiedService.GetItemAdById(adId, cancellationToken);
 
             if (advert == null)
             {
                 await SendD365ErrorEmail(null, $"Advert with ID {adId} not found.", cancellationToken);
-                throw new InvalidOperationException($"Advert with ID {adId} not found.");
+                return $"Advert with ID {adId} not found.";
             }
 
             if (advert.SubscriptionId == null || advert.SubscriptionId == Guid.Empty)
             {
                 await SendD365ErrorEmail(null, $"Advert with ID {adId} does not have a valid SubscriptionId.", cancellationToken);
-                throw new InvalidOperationException($"Advert with ID {adId} does not have a valid SubscriptionId.");
+                return $"Advert with ID {adId} does not have a valid SubscriptionId.";
             }
 
             var user = await _userManager.FindByIdAsync(advert.UserId);
@@ -927,22 +948,24 @@ namespace QLN.Common.Infrastructure.Service.Payments
             if (user == null)
             {
                 await SendD365ErrorEmail(null, $"Refresh Error: User with ID {advert.UserId} not found for AdId {adId}.", cancellationToken);
-                throw new InvalidOperationException($"User with ID {advert.UserId} not found for AdId {adId}.");
+                return $"User with ID {advert.UserId} not found for AdId {adId}.";
             }
 
-            var paymentEntity = new PaymentEntity
+            try
             {
-                Gateway = Gateway.D365,
-                Date = DateTime.UtcNow,
-                Fee = price,
-                PaidByUid = user.Id.ToString(),
-                PaymentMethod = PaymentMethod.Cash,
-                Source = Source.D365,
-                Status = PaymentStatus.Success,
-                Vertical = vertical,
-                AdId = adId,
-                TriggeredSource = TriggeredSource.D365,
-                Products = new List<ProductDetails>
+                var paymentEntity = new PaymentEntity
+                {
+                    Gateway = Gateway.D365,
+                    Date = DateTime.UtcNow,
+                    Fee = price,
+                    PaidByUid = user.Id.ToString(),
+                    PaymentMethod = PaymentMethod.Cash,
+                    Source = Source.D365,
+                    Status = PaymentStatus.Success,
+                    Vertical = vertical,
+                    AdId = adId,
+                    TriggeredSource = TriggeredSource.D365,
+                    Products = new List<ProductDetails>
                 {
                     new ProductDetails
                     {
@@ -951,147 +974,206 @@ namespace QLN.Common.Infrastructure.Service.Payments
                         Price = price
                     }
                 }
-            };
+                };
 
-            // TODO: This maybe needs to be wrapped in a try catch
-            var payment = await _dbContext.Payments.AddAsync(paymentEntity, cancellationToken);
-            await _dbContext.SaveChangesAsync(cancellationToken);
+                // TODO: This maybe needs to be wrapped in a try catch
+                var payment = await _dbContext.Payments.AddAsync(paymentEntity, cancellationToken);
+                await _dbContext.SaveChangesAsync(cancellationToken);
 
-            // create the pay to refresh and reference the payment Id
-            var addonId = await _subscriptionService.PurchaseAddonAsync(new V2UserAddonPurchaseRequestDto
+                // create the pay to refresh and reference the payment Id
+                var addonId = await _subscriptionService.PurchaseAddonAsync(new V2UserAddonPurchaseRequestDto
+                {
+                    UserId = user.LegacyUid.ToString(),
+                    ProductCode = d365ItemId,
+                    PaymentId = paymentEntity.PaymentId,
+                    SubscriptionId = advert.SubscriptionId != null ? advert.SubscriptionId.Value : Guid.Empty
+                }, cancellationToken);
+
+                // Update payment entity with addon ID
+                paymentEntity.UserAddonIds = new List<Guid> { addonId };
+                await _dbContext.SaveChangesAsync(cancellationToken);
+            }
+            catch (Exception ex)
             {
-                UserId = user.Id.ToString(),
-                ProductCode = d365ItemId,
-                PaymentId = paymentEntity.PaymentId,
-                SubscriptionId = advert.SubscriptionId != null ? advert.SubscriptionId.Value : Guid.Empty
-            }, cancellationToken);
-
-            // Update payment entity with addon ID
-            paymentEntity.UserAddonIds = new List<Guid> { addonId };
-            await _dbContext.SaveChangesAsync(cancellationToken);
-        }
-
-        private async Task ProcessSubscriptionsAsync(D365Order order, Vertical vertical, CancellationToken cancellationToken)
-        {
-            if (order.Price == null || order.Price <= 0)
-            {
-                await SendD365ErrorEmail(order.OrderId, $"Price must be greater than zero for pay to publish processing for order '{order.OrderId}'", cancellationToken);
-                throw new InvalidOperationException("Price must be greater than zero for pay to publish processing.");
+                return $"Error processing refresh: {ex.Message}";
             }
 
-            var user = await FindOrCreateUser(order.QLUserId, order.QLUsername, order.Email, order.Mobile, cancellationToken);
+            return "Ad Refresh processed successfully";
+        }
 
-            var paymentEntity = new PaymentEntity
+        private async Task<string> ProcessSubscriptionsAsync(D365Order order, Vertical vertical, CancellationToken cancellationToken)
+        {
+            if (decimal.TryParse(order.Price, out var price) && price <= 0)
             {
-                Gateway = Gateway.D365,
-                Date = DateTime.UtcNow,
-                Fee = order.Price ?? 0,
-                PaidByUid = user.Id.ToString(),
-                PaymentMethod = PaymentMethod.Cash,
-                Source = Source.D365,
-                Status = PaymentStatus.Success,
-                Vertical = vertical,
-                TriggeredSource = TriggeredSource.D365,
-                Products = new List<ProductDetails>
+                await SendD365ErrorEmail(order.OrderId, $"Price must be greater than zero for pay to publish processing for order '{order.OrderId}'", cancellationToken);
+                return "Price must be greater than zero for pay to publish processing.";
+            }
+
+            if(!int.TryParse(order.QLUserId, out var qlUserId))
+            {
+                await SendD365ErrorEmail(order.OrderId, $"Invalid QLUserId '{order.QLUserId}' for order '{order.OrderId}'", cancellationToken);
+                return $"Invalid QLUserId '{order.QLUserId}' for order '{order.OrderId}'";
+            }
+
+            if (string.IsNullOrEmpty(order.Email))
+            {
+                await SendD365ErrorEmail(null, $"Email is required to find or create user for QLUserId '{order.QLUserId}' with QLUsername '{order.QLUsername}'", cancellationToken);
+                return $"Email is required to find or create user for QLUserId '{order.QLUserId}' with QLUsername '{order.QLUsername}'";
+            }
+
+            try
+            {
+
+                var user = await FindOrCreateUser(qlUserId, order.QLUsername, order.Email, order.Mobile, cancellationToken);
+
+                if (user == null)
+                {
+                    await SendD365ErrorEmail(null, $"Subscription Error: User with ID {order.QLUserId} not found for OrderId {order.OrderId}.", cancellationToken);
+                    return $"User with ID {order.QLUserId} not found for OrderId {order.OrderId}.";
+                }
+
+                var paymentEntity = new PaymentEntity
+                {
+                    Gateway = Gateway.D365,
+                    Date = DateTime.UtcNow,
+                    Fee = price,
+                    PaidByUid = user.Id.ToString(),
+                    PaymentMethod = PaymentMethod.Cash,
+                    Source = Source.D365,
+                    Status = PaymentStatus.Success,
+                    Vertical = vertical,
+                    TriggeredSource = TriggeredSource.D365,
+                    Products = new List<ProductDetails>
                 {
                     new ProductDetails
                     {
                         ProductType = ProductType.SUBSCRIPTION,
                         ProductCode = order.D365Itemid,
-                        Price = order.Price ?? 0
+                        Price = price
                     }
                 }
-            };
+                };
 
-            // TODO: This maybe needs to be wrapped in a try catch
-            var payment = _dbContext.Payments.Add(paymentEntity);
-            await _dbContext.SaveChangesAsync(cancellationToken);
+                // TODO: This maybe needs to be wrapped in a try catch
+                var payment = _dbContext.Payments.Add(paymentEntity);
+                await _dbContext.SaveChangesAsync(cancellationToken);
 
-            // create the subscription and reference the payment Id
-            var subscriptionId = await _subscriptionService.PurchaseSubscriptionAsync(new V2SubscriptionPurchaseRequestDto
+                // create the subscription and reference the payment Id
+                var subscriptionId = await _subscriptionService.PurchaseSubscriptionAsync(new V2SubscriptionPurchaseRequestDto
+                {
+                    UserId = user.LegacyUid.ToString(),
+                    ProductCode = order.D365Itemid,
+                    PaymentId = paymentEntity.PaymentId,
+                }, cancellationToken);
+
+                // Update payment entity with subscription ID
+                paymentEntity.UserSubscriptionId = subscriptionId;
+                await _dbContext.SaveChangesAsync(cancellationToken);
+            }
+            catch (Exception ex)
             {
-                UserId = user.Id.ToString(),
-                ProductCode = order.D365Itemid,
-                PaymentId = paymentEntity.PaymentId,
-            }, cancellationToken);
+                return $"Error processing subscription: {ex.Message}";
+            }
 
-            // Update payment entity with subscription ID
-            paymentEntity.UserSubscriptionId = subscriptionId;
-            await _dbContext.SaveChangesAsync(cancellationToken);
+            return "Subscription processed successfully";
         }
 
-        private async Task ProcessPayToPublishAsync(D365Order order, Vertical vertical, CancellationToken cancellationToken)
+        private async Task<string> ProcessPayToPublishAsync(D365Order order, Vertical vertical, CancellationToken cancellationToken)
         {
 
-            if(order.Price == null || order.Price <= 0)
+            if(decimal.TryParse(order.Price, out var price) && price <= 0)
             {
                 await SendD365ErrorEmail(order.OrderId, $"Price must be greater than zero for pay to publish processing for order '{order.OrderId}'", cancellationToken);
-                throw new InvalidOperationException("Price must be greater than zero for pay to publish processing.");
+                return "Price must be greater than zero for pay to publish processing.";
             }
 
             if (order.AdId == 0)
             {
                 await SendD365ErrorEmail(order.OrderId, $"AdId must be provided for pay to publish processing for order '{order.OrderId}'", cancellationToken);
-                throw new InvalidOperationException("AdId must be provided for pay to publish processing.");
-            }
-            
-            var user = await FindOrCreateUser(order.QLUserId, order.QLUsername, order.Email, order.Mobile, cancellationToken);
-
-            if (user == null)
-            {
-                await SendD365ErrorEmail(null, $"Pay to Publish Error: User with ID {order.QLUserId} not found for AdId {order.AdId}.", cancellationToken);
-                throw new InvalidOperationException($"User with ID {order.QLUserId} not found for AdId {order.AdId}.");
+                return "AdId must be provided for pay to publish processing.";
             }
 
-            var paymentEntity = new PaymentEntity
+            if (!int.TryParse(order.QLUserId, out var qlUserId))
             {
-                Gateway = Gateway.D365,
-                Date = DateTime.UtcNow,
-                Fee = order.Price ?? 0,
-                PaidByUid = user.Id.ToString(),
-                PaymentMethod = PaymentMethod.Cash,
-                Source = Source.D365,
-                Status = PaymentStatus.Success,
-                Vertical = vertical,
-                AdId = order.AdId,
-                TriggeredSource = TriggeredSource.D365,
-                Products = new List<ProductDetails>
+                await SendD365ErrorEmail(order.OrderId, $"Invalid QLUserId '{order.QLUserId}' for order '{order.OrderId}'", cancellationToken);
+                return $"Invalid QLUserId '{order.QLUserId}' for order '{order.OrderId}'";
+            }
+
+            if (string.IsNullOrEmpty(order.Email))
+            {
+                await SendD365ErrorEmail(null, $"Email is required to find or create user for QLUserId '{order.QLUserId}' with QLUsername '{order.QLUsername}'", cancellationToken);
+                return $"Email is required to find or create user for QLUserId '{order.QLUserId}' with QLUsername '{order.QLUsername}'";
+            }
+
+            var advert = await _classifiedService.GetItemAdById(order.AdId, cancellationToken);
+
+            if (advert == null)
+            {
+                await SendD365ErrorEmail(order.OrderId, $"Advert with ID {order.AdId} not found.", cancellationToken);
+                return $"Advert with ID {order.AdId} not found.";
+            }
+
+            try
+            {
+                var user = await FindOrCreateUser(qlUserId, order.QLUsername, order.Email, order.Mobile, cancellationToken);
+
+                if (user == null)
+                {
+                    await SendD365ErrorEmail(null, $"Pay to Publish Error: User with ID {order.QLUserId} not found for AdId {order.AdId}.", cancellationToken);
+                    return $"User with ID {order.QLUserId} not found for AdId {order.AdId}.";
+                }
+
+                var paymentEntity = new PaymentEntity
+                {
+                    Gateway = Gateway.D365,
+                    Date = DateTime.UtcNow,
+                    Fee = price,
+                    PaidByUid = user.Id.ToString(),
+                    PaymentMethod = PaymentMethod.Cash,
+                    Source = Source.D365,
+                    Status = PaymentStatus.Success,
+                    Vertical = vertical,
+                    AdId = order.AdId,
+                    TriggeredSource = TriggeredSource.D365,
+                    Products = new List<ProductDetails>
                 {
                     new ProductDetails
                     {
                         ProductType = ProductType.PUBLISH,
                         ProductCode = order.D365Itemid,
-                        Price = order.Price ?? 0
+                        Price = price
                     }
                 }
-            };
+                };
 
-            // TODO: This maybe needs to be wrapped in a try catch
-            var payment = _dbContext.Payments.AddAsync(paymentEntity, cancellationToken);
-            await _dbContext.SaveChangesAsync(cancellationToken);
+                // TODO: This maybe needs to be wrapped in a try catch
+                var payment = _dbContext.Payments.AddAsync(paymentEntity, cancellationToken);
+                await _dbContext.SaveChangesAsync(cancellationToken);
 
-            // create the pay to publish and reference the payment Id
-            var subscriptionId = await _subscriptionService.PurchaseSubscriptionAsync(new V2SubscriptionPurchaseRequestDto
+                // create the pay to publish and reference the payment Id
+                var subscriptionId = await _subscriptionService.PurchaseSubscriptionAsync(new V2SubscriptionPurchaseRequestDto
+                {
+                    UserId = user.LegacyUid.ToString(),
+                    ProductCode = order.D365Itemid,
+                    PaymentId = paymentEntity.PaymentId,
+                    AdId = order.AdId,
+                }, cancellationToken);
+
+                // Update payment entity with subscription ID
+                paymentEntity.UserSubscriptionId = subscriptionId;
+                await _dbContext.SaveChangesAsync(cancellationToken);
+            }
+            catch (Exception ex)
             {
-                UserId = user.Id.ToString(),
-                ProductCode = order.D365Itemid,
-                PaymentId = paymentEntity.PaymentId,
-                AdId = order.AdId,
-            }, cancellationToken);
+                return $"Error processing pay to publish: {ex.Message}";
+            }
 
-            // Update payment entity with subscription ID
-            paymentEntity.UserSubscriptionId = subscriptionId;
-            await _dbContext.SaveChangesAsync(cancellationToken);
+            return "Pay to Publish processed successfully";
         }
 
         private async Task<ApplicationUser?> FindOrCreateUser(long userId, string userName, string email, string mobile, CancellationToken cancellationToken)
         {
-            if(string.IsNullOrEmpty(email))
-            {
-                await SendD365ErrorEmail(null, $"Email is required to find or create user for QLUserId '{userId}' with QLUsername '{userName}'", cancellationToken);
-                throw new ArgumentNullException(nameof(email));
-            }
-
+            
             // look for the user using their legacy user ID
             var user = await _userManager.Users.FirstOrDefaultAsync(u => u.LegacyUid == userId, cancellationToken);
 
@@ -1114,7 +1196,9 @@ namespace QLN.Common.Infrastructure.Service.Payments
 
                 var drupalUser = await _drupalService.GetUserInfoFromDrupalAsync(email, cancellationToken);
 
-                if(int.TryParse(drupalUser?.User.Status, out var userStatus) && userStatus == 1)
+                if (drupalUser == null) return null;
+
+                if(int.TryParse(drupalUser.User.Status, out var userStatus) && userStatus == 1)
                 {
                     // Create new user
                     var randomPassword = GenerateRandomPassword();
@@ -1153,17 +1237,18 @@ namespace QLN.Common.Infrastructure.Service.Payments
             return user;
         }
 
-        private async Task SaveD365RequestLogsAsync(DateTime createdAt, D365Order payload, int status, object response, CancellationToken cancellationToken)
+        private async Task SaveD365RequestLogsAsync(DateTime createdAt, D365Order payload, int status, object response, CancellationToken cancellationToken = default)
         {
+
             try
             {
                 // Assuming D365RequestsLogsEntity is a class with a suitable constructor or properties
                 var logEntry = new D365RequestsLogsEntity
                 {
                     CreatedAt = createdAt,
-                    Payload = payload,
+                    Payload = JsonSerializer.Serialize(payload),
                     Status = status,
-                    Response = response
+                    Response = JsonSerializer.Serialize(response)
                 };
 
                 // Replace with your actual persistence logic, e.g. EF Core DbContext or repository

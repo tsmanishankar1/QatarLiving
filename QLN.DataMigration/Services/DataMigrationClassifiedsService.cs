@@ -288,6 +288,11 @@ namespace QLN.DataMigration.Services
             throw new NotImplementedException();
         }
 
+        public Task<List<CategoryCountDto>> GetCategoryCountsAsync(CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
+
         //public Task<AdCreatedResponseDto> CreateClassifiedItemsAd(Items dto, SaveIntent intent, CancellationToken cancellationToken = default)
         //{
         //    throw new NotImplementedException();
