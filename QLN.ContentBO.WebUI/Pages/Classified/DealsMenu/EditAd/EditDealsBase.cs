@@ -168,14 +168,21 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
             return Task.CompletedTask;
         }
 
-        protected string LocationsString
+       protected string LocationsString
         {
-            get => adPostModel.Locations != null ? string.Join(", ", adPostModel.Locations) : "";
-            set => adPostModel.Locations = value?.Split(',')
-                                    .Select(x => x.Trim())
-                                    .Where(x => !string.IsNullOrWhiteSpace(x))
-                                    .ToList() ?? [];
+            get => adPostModel.Locations?.Locations != null
+                   ? string.Join(", ", adPostModel.Locations.Locations)
+                   : "";
+            set => adPostModel.Locations = new LocationsWrapper
+            {
+                Locations = value?.Split(',')
+                                  .Select(x => x.Trim())
+                                  .Where(x => !string.IsNullOrWhiteSpace(x))
+                                  .ToList() ?? new List<string>()
+            };
         }
+
+
 
         protected async Task HandlePdfFileChanged(InputFileChangeEventArgs e)
         {

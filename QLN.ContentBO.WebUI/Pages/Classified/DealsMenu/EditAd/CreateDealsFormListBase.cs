@@ -76,15 +76,20 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.EditAd
             Ad.WhatsappNumber = phone;
             return Task.CompletedTask;
         }
-
         protected string locationsString
         {
-            get => Ad.Locations != null ? string.Join(", ", Ad.Locations) : "";
-            set => Ad.Locations = value?.Split(',')
-                                    .Select(x => x.Trim())
-                                    .Where(x => !string.IsNullOrWhiteSpace(x))
-                                    .ToList() ?? [];
+            get => Ad.Locations?.Locations != null
+                   ? string.Join(", ", Ad.Locations.Locations)
+                   : "";
+            set => Ad.Locations = new LocationsWrapper
+            {
+                Locations = value?.Split(',')
+                                  .Select(x => x.Trim())
+                                  .Where(x => !string.IsNullOrWhiteSpace(x))
+                                  .ToList() ?? new List<string>()
+            };
         }
+
 
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {

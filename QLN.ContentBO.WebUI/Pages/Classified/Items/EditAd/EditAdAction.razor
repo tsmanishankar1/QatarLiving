@@ -1,5 +1,6 @@
 @inherits EditAdActionBase
 @using MudBlazor
+@using QLN.ContentBO.WebUI.Models
 
 <div class="ad-preview-container">
     <div class="left-column">
@@ -14,6 +15,21 @@
         <div class="button-row">
 
             @* Feature Button *@
+             @if(IsPendingApproval){
+                 <MudButton Color="Color.Success" Variant="Variant.Filled" Class="action-btn"
+                           OnClick='@(() => ShowConfirmation("Approve", "Are you sure you want to Approve this ad?", "Approve"))'>
+                    Approve
+                </MudButton>
+            }
+             @if (IsNeedChange)
+            {
+                  <MudButton Color="Color.Error" Variant="Variant.Filled" Class="action-btn"
+                           OnClick='@(() => ShowConfirmation("Need Change", "Are you sure you want to request Need Change for this ad?", "Need Change"))'>
+                    Need Change
+                </MudButton>
+
+            }
+
             @if (AdModel.IsFeatured)
             {
                 <MudButton Color="Color.Primary" Variant="Variant.Filled" Class="action-btn"
