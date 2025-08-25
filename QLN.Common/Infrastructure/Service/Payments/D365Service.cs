@@ -366,6 +366,12 @@ namespace QLN.Common.Infrastructure.Service.Payments
         {
             _logger.LogInformation("Handling D365 order with ID: {OrderId}", order.OrderId);
 
+            if (order.D365Itemid == null)
+            {
+                await SendD365ErrorEmail(order.OrderId, $"D365 ItemID is null for order: '{order.OrderId}'", cancellationToken);
+                return "D365 ItemID is null";
+            }
+            // still check this as it is useful to check this format
             var orderStrings = order.D365Itemid.Split('-');
 
             if (orderStrings.Length < 3)
@@ -385,66 +391,23 @@ namespace QLN.Common.Infrastructure.Service.Payments
                 return $"Product not found for product code {order.D365Itemid}";
             }
 
-            var verticalCheck = orderStrings[0];
-            var productCheck = orderStrings[1];
-            var subProductCheck = orderStrings[2];
-
-            switch (verticalCheck)
+            switch (product.ProductType)
             {
-                // check if this is for Classifieds
-                case "QLC":
-                    switch (productCheck)
-                    {
-                        // Always order these based on which ones are more likely to happen often
-                        case "P2P":
-                            switch (subProductCheck)
-                            {
-                                case "ADD":
-                                case "FEA":
-                                    return await ProcessAddonFeature(order, Vertical.Classifieds, cancellationToken);
-                                case "REF":
-                                    return await ProcessAddonRefresh(order, Vertical.Classifieds, cancellationToken);
-                                default:
-                                    return await ProcessPayToPublish(order, Vertical.Classifieds, cancellationToken);
-                            }
-                        case "SUB":
-                            return await ProcessSubscription(order, Vertical.Classifieds, cancellationToken);
-                        case "ADD":
-                            return await ProcessAddonFeature(order, Vertical.Classifieds, cancellationToken);
-                        default:
-                            await SendD365ErrorEmail(order.OrderId, $"Unknown QLC D365 ItemID : {order.D365Itemid}", cancellationToken);
-                            return $"Unknown QLC D365 ItemID : {order.D365Itemid}";
-                    }
-                // check if this is for Services
-                case "QLS":
-                    switch (productCheck)
-                    {
-                        // Always order these based on which ones are more likely to happen often
-                        case "P2P":
-                            switch (subProductCheck)
-                            {
-                                case "ADD":
-                                    return await ProcessAddonFeature(order, Vertical.Services, cancellationToken);
-                                case "PRO":
-                                    return await ProcessAddonPromote(order, Vertical.Services, cancellationToken);
-                                default:
-                                    return await ProcessPayToPublish(order, Vertical.Services, cancellationToken);
-                            }
-                        case "SUB":
-                            return await ProcessSubscription(order, Vertical.Services, cancellationToken);
-                        default:
-                            switch (subProductCheck)
-                            {
-                                default:
-                                    await SendD365ErrorEmail(order.OrderId, $"Unknown QLS D365 ItemID : {order.D365Itemid}", cancellationToken);
-                                    return $"Unknown QLS D365 ItemID : {order.D365Itemid}";
-                            }
-                    }
+                // Always order these based on which ones are more likely to happen often
+                case ProductType.PUBLISH:
+                    return await ProcessPayToPublish(order, product.Vertical, cancellationToken);
+                case ProductType.SUBSCRIPTION:
+                    return await ProcessSubscription(order, product.Vertical, cancellationToken);
+                case ProductType.ADDON_FEATURE:
+                    return await ProcessAddonFeature(order, product.Vertical, cancellationToken);
+                case ProductType.ADDON_PROMOTE:
+                    return await ProcessAddonPromote(order, product.Vertical, cancellationToken);
+                case ProductType.ADDON_REFRESH:
+                    return await ProcessAddonRefresh(order, product.Vertical, cancellationToken);
                 default:
-                    break;
+                    await SendD365ErrorEmail(order.OrderId, $"Unknown D365 ItemID : {order.D365Itemid}", cancellationToken);
+                    return $"Unknown D365 ItemID : {order.D365Itemid}";
             }
-
-            return "No order item matched";
         }
 
         private async Task<string> HandleD365OrderItemAsync(D365Order orderItem, CancellationToken cancellationToken)
@@ -743,12 +706,6 @@ namespace QLN.Common.Infrastructure.Service.Payments
 
         private async Task<string> ProcessPayToPublish(D365Order order, Vertical vertical, CancellationToken cancellationToken)
         {
-            if (decimal.TryParse(order.Price, out var price) && price <= 0)
-            {
-                await SendD365ErrorEmail(order.OrderId, $"Price must be greater than zero for pay to publish processing for order '{order.OrderId}'", cancellationToken);
-                return "Price must be greater than zero for pay to publish processing.";
-            }
-
             try
             {
                 
