@@ -22,6 +22,7 @@ namespace QLN.Common.Infrastructure.Constants
 
         //Drupal user AutoComplete
         public const string AutocompleteUserPath = "/qlnapi/user/autocomplete";
+        public const string UserLookupPath = "/api/v4/user";
 
         //Index constants
         public static class IndexNames

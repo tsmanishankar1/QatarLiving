@@ -1,8 +1,8 @@
 ﻿using Dapr;
 using Dapr.Client;
 using Google.Apis.Auth.OAuth2;
-using Microsoft.AspNetCore.Http;
 using Google.Apis.Discovery;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Spatial;
 using QLN.Backend.API.Service.ProductService;
@@ -22,6 +22,7 @@ using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.QLDbContext;
 using QLN.Common.Infrastructure.Subscriptions;
 using QLN.Common.Infrastructure.Utilities;
+using System;
 using System.Net;
 using System.Text;
 using System.Text.Json;
@@ -40,6 +41,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
         private readonly IFileStorageBlobService _fileStorageBlob;
         private readonly ISearchService _searchService;
         private readonly IV2SubscriptionService _subscriptionContext;
+        
 
 
         public ExternalClassifiedService(DaprClient dapr, IEventlogger log, IHttpContextAccessor httpContextAccessor, IFileStorageBlobService fileStorageBlob, ISearchService searchService, IV2SubscriptionService subscriptionService)
@@ -50,33 +52,36 @@ namespace QLN.Backend.API.Service.ClassifiedService
             _fileStorageBlob = fileStorageBlob;
             _searchService = searchService ?? throw new ArgumentNullException(nameof(searchService));
             _subscriptionContext = subscriptionService;
+           
         }
 
         public async Task<bool> SaveSearchByVertical(SaveSearchRequestDto dto, string userId, CancellationToken cancellationToken = default)
         {
             try
-            {             
+            {
+                // Validate search query
                 if (dto.SearchQuery == null || string.IsNullOrWhiteSpace(dto.SearchQuery.Text))
                 {
                     _log.LogError("Search query is invalid. Text is required.");
                     return false;
                 }
 
-               
+                // Construct the search DTO with ALL required properties
                 var searchDto = new SaveSearchRequestByIdDto
                 {
                     UserId = userId,
                     Name = dto.Name,
                     CreatedAt = dto.CreatedAt,
                     SearchQuery = dto.SearchQuery,
-                    Vertical = dto.Vertical,        
-                    SubVertical = dto.SubVertical   
+                    Vertical = dto.Vertical,        // Added missing property
+                    SubVertical = dto.SubVertical   // Added missing property
                 };
-                
+
+                // Invoke the INTERNAL service (not the external endpoint)
                 var result = await _dapr.InvokeMethodAsync<SaveSearchRequestByIdDto, string>(
                     HttpMethod.Post,
                     SERVICE_APP_ID,
-                    $"api/{Vertical}/savesearchinternal", 
+                    $"api/{Vertical}/savesearchinternal", // Call internal endpoint, not external
                     searchDto,
                     cancellationToken
                 );
@@ -97,6 +102,8 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
+
+        ///2 .getsavesearch
         public async Task<List<SavedSearchResponseDto>> GetSearches(string userId, Vertical vertical, SubVertical? subVertical = null, CancellationToken cancellationToken = default)
         {
             try
@@ -104,11 +111,12 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 if (string.IsNullOrWhiteSpace(userId))
                     throw new ArgumentException("User ID is required", nameof(userId));
 
+                // Build query parameters - vertical is now mandatory
                 var queryParams = new List<string>
-                {
-                    $"userId={Uri.EscapeDataString(userId)}",
-                    $"vertical={vertical}"
-                };
+        {
+            $"userId={Uri.EscapeDataString(userId)}",
+            $"vertical={vertical}"  // Always include vertical since it's mandatory
+        };
 
                 if (subVertical.HasValue)
                     queryParams.Add($"subVertical={subVertical.Value}");
@@ -125,11 +133,13 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 return result ?? new List<SavedSearchResponseDto>();
             }
             catch (DaprException dex)
-            {               
+            {
+               
                 throw new InvalidOperationException("Failed to retrieve saved searches due to external service error.", dex);
             }
             catch (Exception ex)
-            {                
+            {
+                
                 throw;
             }
         }
@@ -476,8 +486,12 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 throw;
             }
         }
-          
-        public async Task<DeleteAdResponseDto> DeleteClassifiedAd(SubVertical subVertical, long adId, string userId, CancellationToken cancellationToken = default)
+
+        public async Task<DeleteAdResponseDto> DeleteClassifiedAd(
+    SubVertical subVertical,
+    long adId,
+    string userId,
+    CancellationToken cancellationToken = default)
         {
             try
             {
@@ -487,13 +501,72 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 if (string.IsNullOrWhiteSpace(userId))
                     throw new ArgumentException("UserId must not be empty.", nameof(userId));
 
+                
+                dynamic? adInfo = subVertical switch
+                {
+                    SubVertical.Preloved => await GetPrelovedAdById(adId, cancellationToken),
+                    SubVertical.Deals => await GetDealsAdById(adId, cancellationToken),
+                    SubVertical.Items => await GetItemAdById(adId, cancellationToken),
+                    SubVertical.Collectibles => await GetCollectiblesAdById(adId, cancellationToken),
+                    _ => null
+                };
+
+                if (adInfo == null)
+                    throw new InvalidOperationException($"Ad not found for adId {adId} in subVertical {subVertical}");
+                
+
+                var adType = adInfo.AdType.ToString().ToLowerInvariant();
+                bool isPublished = adInfo.Status == AdStatus.Published;
+                Guid? subscriptionId = adInfo.SubscriptionId;
+
+                
                 var response = await _dapr.InvokeMethodAsync<DeleteAdResponseDto>(
                     HttpMethod.Delete,
                     SERVICE_APP_ID,
                     $"api/classifieds/{subVertical}/delete-by-id/{adId}/{userId}",
                     cancellationToken
                 );
+
                 
+                if ((subVertical == SubVertical.Preloved || subVertical == SubVertical.Deals)
+                    && (adType == "subscription")
+                    && subscriptionId.HasValue && subscriptionId != Guid.Empty)
+                {
+                    var success = await _subscriptionContext.RecordSubscriptionUsageAsync(
+                        subscriptionId.Value,
+                        "unpublish",
+                        1,
+                        cancellationToken
+                    );
+
+                    if (!success)
+                        _log.LogWarning(
+                            "Failed to decrement subscription usage for SubscriptionId {SubscriptionId}",
+                            GuidToLong(subscriptionId.Value)
+                        );
+                }
+
+                
+                if (subVertical == SubVertical.Items
+                    && adType == "free"
+                    && isPublished
+                    && subscriptionId.HasValue && subscriptionId != Guid.Empty)
+                {
+                    var success = await _subscriptionContext.RecordSubscriptionUsageAsync(
+                        subscriptionId.Value,
+                        "unpublish",
+                        1,
+                        cancellationToken
+                    );
+
+                    if (!success)
+                        _log.LogWarning(
+                            "Failed to decrement free ad usage for SubscriptionId {SubscriptionId}",
+                            GuidToLong(subscriptionId.Value)
+                        );
+                }
+
+                // Delete from search index
                 string indexName = subVertical switch
                 {
                     SubVertical.Items => ConstantValues.IndexNames.ClassifiedsItemsIndex,
@@ -510,9 +583,14 @@ namespace QLN.Backend.API.Service.ClassifiedService
             catch (Exception ex)
             {
                 _log.LogException(ex);
-                throw new InvalidOperationException($"Failed to delete classified ad from subvertical {subVertical}.", ex);
+                throw new InvalidOperationException(
+                    $"Failed to delete classified ad from subvertical {subVertical}.", ex);
             }
         }
+
+
+
+
 
         public async Task<Items> GetItemAdById(long adId, CancellationToken cancellationToken = default)
         {
@@ -1281,8 +1359,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
             try
             {
-                //var subscriptionid = Guid.Parse("5a024f96-7414-4473-80b8-f5d70297e262");
-
+             
                 if (subscriptionId != Guid.Empty && dto.IsFeatured == true)
                 {
                     var canUse = await _subscriptionContext.ValidateSubscriptionUsageAsync(
@@ -1467,12 +1544,12 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
 
         public async Task<BulkAdActionResponse> BulkUpdateAdPublishStatusAsync(
-     int subVertical,
-     string userId,
-     List<long> adIds,
-     bool isPublished,
-     Guid subscriptionId,
-     CancellationToken cancellationToken = default)
+    int subVertical,
+    string userId,
+    List<long> adIds,
+    bool isPublished,
+    Guid subscriptionId,
+    CancellationToken cancellationToken = default)
         {
             if (subVertical <= 0 || string.IsNullOrWhiteSpace(userId) || adIds == null || adIds.Count == 0)
             {
@@ -1480,8 +1557,51 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
 
             try
-            {                
-                if (subscriptionId != Guid.Empty && isPublished)
+            {
+                bool requiresValidation = false;
+
+                switch (subVertical)
+                {
+                    case (int)SubVertical.Items:
+                    case (int)SubVertical.Collectibles:
+                        requiresValidation = false;
+                        break;
+
+                    case (int)SubVertical.Preloved:
+                        if (isPublished && subscriptionId != Guid.Empty)
+                        {
+                            var ads = await Task.WhenAll(
+                                adIds.Select(id => GetPrelovedAdById(id, cancellationToken)));
+
+                            if (ads.All(ad =>
+                                string.Equals(ad.AdType.ToString(), "subscription", StringComparison.OrdinalIgnoreCase) ||
+                                string.Equals(ad.AdType.ToString(), "p2p", StringComparison.OrdinalIgnoreCase)
+                                && ad.Status != AdStatus.Published))
+                            {
+                                requiresValidation = true;
+                            }
+                        }
+                        break;
+                    case (int)SubVertical.Deals:
+                        if (isPublished && subscriptionId != Guid.Empty)
+                        {
+                            var ads = await Task.WhenAll(
+                                adIds.Select(id => GetDealsAdById(id, cancellationToken)));
+
+                            if (ads.All(ad =>
+                                ad.Status != AdStatus.Published))
+                            {
+                                requiresValidation = true;
+                            }
+                        }
+                        break;
+
+                    default:
+                        requiresValidation = isPublished && subscriptionId != Guid.Empty;
+                        break;
+                }
+
+                if (requiresValidation)
                 {
                     var canUse = await _subscriptionContext.ValidateSubscriptionUsageAsync(
                         subscriptionId,
@@ -1492,7 +1612,6 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
                     if (!canUse)
                     {
-                        
                         throw new InvalidOperationException("Insufficient subscription quota for publishing.");
                     }
                 }
@@ -1502,7 +1621,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                     $"api/classifieds/user-dashboard/bulk-action-by-id" +
                     $"?subVertical={Uri.EscapeDataString(subVerticalStr)}" +
                     $"&isPublished={isPublished.ToString().ToLowerInvariant()}" +
-                    $"&userId={Uri.EscapeDataString(userId)}"+
+                    $"&userId={Uri.EscapeDataString(userId)}" +
                     $"&subscriptionid={subscriptionId}";
 
                 var result = await _dapr.InvokeMethodAsync<List<long>, BulkAdActionResponse>(
@@ -1512,7 +1631,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                     adIds,
                     cancellationToken);
 
-                if (subscriptionId != Guid.Empty)
+                if (subscriptionId != Guid.Empty && requiresValidation)
                 {
                     if (isPublished)
                     {
@@ -1525,27 +1644,29 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
                         if (!success)
                         {
-                            _log.LogWarning(
-                                "Failed to record subscription usage for SubscriptionId {SubscriptionId}",
-                                GuidToLong(subscriptionId)
-                            );
+                            _log.LogWarning("Failed to record subscription usage for SubscriptionId {SubscriptionId}", GuidToLong(subscriptionId));
                         }
                     }
                     else
                     {
-                        var success = await _subscriptionContext.RecordSubscriptionUsageAsync(
-                            subscriptionId,
-                            "unpublish",
-                            adIds.Count,
-                            cancellationToken
+                        var ads = await Task.WhenAll(
+                            adIds.Select(id => GetPrelovedAdById(id, cancellationToken))
                         );
 
-                        if (!success)
+                        if (ads.All(ad =>
+                            string.Equals(ad.AdType.ToString(), "subscription", StringComparison.OrdinalIgnoreCase)))
                         {
-                            _log.LogWarning(
-                                "Failed to decrement subscription usage for SubscriptionId {SubscriptionId}",
-                                GuidToLong(subscriptionId)
+                            var success = await _subscriptionContext.RecordSubscriptionUsageAsync(
+                                subscriptionId,
+                                "unpublish",
+                                adIds.Count,
+                                cancellationToken
                             );
+
+                            if (!success)
+                            {
+                                _log.LogWarning("Failed to decrement subscription usage for SubscriptionId {SubscriptionId}", GuidToLong(subscriptionId));
+                            }
                         }
                     }
                 }
@@ -1561,6 +1682,9 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 );
             }
         }
+
+
+
 
         private static long GuidToLong(Guid guid)
         {
@@ -2040,9 +2164,11 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
+        #endregion
+
         //public async Task<List<CategoryCountDto>> GetCategoryCountsAsync(CancellationToken cancellationToken)
         //{
-            
+
         //    try
         //    {
         //        var response = await _dapr.InvokeMethodAsync<List<CategoryCountDto>>(
@@ -2080,7 +2206,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 throw new InvalidOperationException("Unexpected exception while retrieving count", ex);
             }
         }
-        #endregion
+   
         #region PayToFeature with addons (generic for all subVerticals)
 
         public async Task<string> P2PFeature(

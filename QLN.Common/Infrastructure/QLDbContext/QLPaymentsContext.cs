@@ -28,24 +28,14 @@ namespace QLN.Common.Infrastructure.QLDbContext
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<D365PaymentLogsEntity>().OwnsOne(
-                b => b.Response, owned => { owned.ToJson(); });
-
-            modelBuilder.Entity<D365RequestsLogsEntity>().OwnsOne(
-                b => b.Payload, owned => { owned.ToJson(); });
-
-            modelBuilder.Entity<D365RequestsLogsEntity>().OwnsOne(
-                b => b.Response, owned => { owned.ToJson(); });
-
-            var e = modelBuilder.Entity<PaymentEntity>();
-
             var jsonOpts = new JsonSerializerOptions
             {
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
                 DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
             };
 
-            
+            var e = modelBuilder.Entity<PaymentEntity>();
+
             var productsConverter = new ValueConverter<List<ProductDetails>, string>(
                 v => JsonSerializer.Serialize(v ?? new List<ProductDetails>(), jsonOpts),
                 v => SafeDeserializeProducts(v, jsonOpts)

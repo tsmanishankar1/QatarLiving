@@ -1050,7 +1050,7 @@ namespace QLN.Subscriptions.Actor.ActorClass
         /// </summary>
         public async Task<bool> ValidateFreeAdsUsageAsync(string category, string? l1Category, string? l2Category, int requestedAmount, CancellationToken cancellationToken = default)
         {
-            // ALWAYS sync from database first to catch manual changes
+            Console.WriteLine("category:"+ category + "l1Category:"+ l1Category+ "l2Category:"+l2Category+ "requestedAmount:"+ requestedAmount);
             var data = await SyncFromDatabaseAsync(force: true, cancellationToken);
             if (data == null)
             {
@@ -1078,6 +1078,7 @@ namespace QLN.Subscriptions.Actor.ActorClass
                 c.Category == category &&
                 c.L1Category == l1Category &&
                 c.L2Category == l2Category);
+            Console.WriteLine("categoryUsage:"+ categoryUsage);
 
             if (categoryUsage == null)
             {
