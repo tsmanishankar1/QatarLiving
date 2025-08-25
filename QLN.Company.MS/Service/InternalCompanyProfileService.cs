@@ -77,6 +77,20 @@ namespace QLN.Company.MS.Service
 
                 _context.Companies.Add(entity);
                 await _context.SaveChangesAsync(cancellationToken);
+                // Update the subscription with the new company ID if it exists
+                var subscription = await _dbContext.Subscriptions
+                .FirstOrDefaultAsync(s =>
+                s.UserId == uid &&
+                (int)s.Vertical == (int)(Vertical)dto.Vertical &&
+                s.SubVertical == dto.SubVertical && s.ProductType == Common.DTO_s.Payments.ProductType.SUBSCRIPTION,
+                cancellationToken);
+
+                if (subscription != null)
+                {
+                    subscription.CompanyId = newCompanyId;
+                    _dbContext.Subscriptions.Update(subscription);
+                    await _dbContext.SaveChangesAsync(cancellationToken);
+                }
                 var upsertRequest = await IndexServiceToAzureSearch(entity, cancellationToken);
                 if (upsertRequest != null)
                 {

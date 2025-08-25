@@ -145,7 +145,7 @@ namespace QLN.Subscriptions.Actor.ActorClass
                     SubVertical = product.SubVertical,
                     Quota = BuildSubscriptionQuotaFromProduct(product),
                     StartDate = DateTime.UtcNow,
-                    EndDate = DateTime.UtcNow.Add(GetDurationFromProduct(product)),
+                    EndDate = ComputeEndDateFromProduct(product, DateTime.UtcNow),
                     Status = SubscriptionStatus.Active,
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow
@@ -837,20 +837,32 @@ namespace QLN.Subscriptions.Actor.ActorClass
             };
         }
 
-        private TimeSpan GetDurationFromProduct(Product product)
+        private DateTime ComputeEndDateFromProduct(Product product, DateTime startUtc)
         {
-            if (product.Constraints?.Duration.HasValue == true)
+            var duration = product.Constraints?.Duration;
+            if (duration.HasValue)
             {
-                return product.Constraints.Duration.Value;
+                var days = (int)Math.Round(duration.Value.TotalDays);
+
+                return days switch
+                {
+                    30 => startUtc.AddMonths(1),
+                    60 => startUtc.AddMonths(2),
+                    90 => startUtc.AddMonths(3),
+                    180 => startUtc.AddMonths(6),
+                    365 => startUtc.AddYears(1),
+                    _ => startUtc.Add(duration.Value)
+                };
             }
 
             return product.ProductType switch
             {
-                ProductType.SUBSCRIPTION => TimeSpan.FromDays(30),
-                ProductType.ADDON_COMBO => TimeSpan.FromDays(30),
-                ProductType.ADDON_FEATURE => TimeSpan.FromDays(7),
-                ProductType.ADDON_REFRESH => TimeSpan.FromDays(30),
-                _ => TimeSpan.FromDays(30)
+                ProductType.SUBSCRIPTION => startUtc.AddMonths(1),
+                ProductType.ADDON_COMBO => startUtc.AddMonths(1),
+                ProductType.ADDON_FEATURE => startUtc.AddMonths(1),
+                ProductType.ADDON_REFRESH => startUtc.AddMonths(1),
+                ProductType.FREE => startUtc.AddMonths(12),
+                _ => startUtc.AddMonths(1)
             };
         }
 
@@ -1051,7 +1063,7 @@ namespace QLN.Subscriptions.Actor.ActorClass
         /// </summary>
         public async Task<bool> ValidateFreeAdsUsageAsync(string category, string? l1Category, string? l2Category, int requestedAmount, CancellationToken cancellationToken = default)
         {
-            // ALWAYS sync from database first to catch manual changes
+            Console.WriteLine("category:"+ category + "l1Category:"+ l1Category+ "l2Category:"+l2Category+ "requestedAmount:"+ requestedAmount);
             var data = await SyncFromDatabaseAsync(force: true, cancellationToken);
             if (data == null)
             {
@@ -1079,6 +1091,7 @@ namespace QLN.Subscriptions.Actor.ActorClass
                 c.Category == category &&
                 c.L1Category == l1Category &&
                 c.L2Category == l2Category);
+            Console.WriteLine("categoryUsage:"+ categoryUsage);
 
             if (categoryUsage == null)
             {

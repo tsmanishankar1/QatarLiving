@@ -130,6 +130,9 @@ namespace QLN.Common.DTO_s
 
         [SearchableField(IsFilterable = true)]
         public string? AttributesJson { get; set; }
+
+        [SimpleField(IsFilterable = true)]
+        public bool? IsSold { get; set; } = false;
     }
 
     public class ImageInfo
