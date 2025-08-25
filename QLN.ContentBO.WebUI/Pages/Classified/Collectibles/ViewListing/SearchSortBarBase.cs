@@ -117,14 +117,14 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.ViewListing
                 FullWidth = true
             };
 
-            var dialog = DialogService.Show<ConfirmationDialog>("", parameters, options);
+            var dialog = await DialogService.ShowAsync<ConfirmationDialog>("", parameters, options);
             var result = await dialog.Result;
         }
         private async Task ExportToExcel()
         {
             try
             {
-                if (Items == null || !Items.Any())
+                if (Items == null || Items.Count == 0)
                 {
                     Snackbar.Add("No data available to export.", Severity.Warning);
                     return;
@@ -135,7 +135,9 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.ViewListing
                 {
                     ["Image URL"] = x.Images?.FirstOrDefault()?.Url ?? "-",
                     ["Ad ID"] = x.Id,
-                    ["Ad Type"] = (AdTypeEnum)x.AdType,
+                    ["Ad Type"] = Enum.IsDefined(typeof(AdTypeEnum), x.AdType)
+                                    ? ((AdTypeEnum)Convert.ToInt32(x.AdType)).ToString()
+                                    : (AdTypeEnum)x.AdType,
                     ["Ad Title"] = x.Title,
                     ["User ID"] = x.UserId,
                     ["User Name"] = x.UserName,
