@@ -231,7 +231,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
             ServiceRequest dto,
             [FromQuery] string uid,
             [FromQuery] string userName,
-            [FromQuery] Guid subscriptionId,
+            [FromQuery] Guid? subscriptionId,
             IServices service,
             HttpContext httpContext,
             CancellationToken cancellationToken) =>
@@ -1288,15 +1288,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                     CancellationToken ct
                 ) =>
             {
-                string? uid = "unknown";
-                string? userName = null;
-                var (extractedUid, extractedUserName, subscriptionId, expiryDate) =
-                        await UserTokenHelper.ExtractUserAndSubscriptionDetailsAsync(httpContext, vertical: 4);
-                uid = extractedUid;
-                subscriptionId = subscriptionId;
-                expiryDate = expiryDate;
-                userName = extractedUserName;
-                if (string.IsNullOrEmpty(uid))
+                var (uid, userName) = UserTokenHelper.ExtractUserAsync(httpContext);
+                if (string.IsNullOrEmpty(uid) || string.IsNullOrEmpty(userName))
                 {
                     return TypedResults.Problem(new ProblemDetails
                     {
@@ -1308,7 +1301,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                 req.UpdatedBy = uid;
                 try
                 {
-                    var result = await service.ModerateBulkService(req, uid, subscriptionId, expiryDate, ct);
+                    var result = await service.ModerateBulkService(req, uid, Guid.Empty, null, ct);
                     await auditLogger.LogAuditAsync(
                         module: ModuleName,
                         httpMethod: "POST",
@@ -1365,7 +1358,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
            >> (
                BulkModerationRequest req,
                string userId,
-               string subscriptionId,
+               Guid? subscriptionId,
                DateTime? expiryDate,
                HttpContext httpContext,
                IServices service,
