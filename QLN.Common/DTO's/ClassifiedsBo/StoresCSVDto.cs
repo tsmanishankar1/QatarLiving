@@ -162,10 +162,10 @@ namespace QLN.Common.DTO_s.ClassifiedsBo
         public string? Name { get; set; }
 
         [Name("Published")]
-        public bool Published { get; set; }
+        public bool? Published { get; set; } = false;
 
         [Name("Is featured?")]
-        public bool IsFeatured { get; set; }
+        public bool? IsFeatured { get; set; } = false;
 
         [Name("Visibility in catalog")]
         public string? VisibilityInCatalog { get; set; }
@@ -189,16 +189,16 @@ namespace QLN.Common.DTO_s.ClassifiedsBo
         public string? TaxClass { get; set; }
 
         [Name("In stock?")]
-        public bool InStock { get; set; }
+        public bool? InStock { get; set; }=false;
 
         [Name("Stock")]
         public int? Stock { get; set; }
 
         [Name("Backorders allowed?")]
-        public bool BackordersAllowed { get; set; }
+        public bool? BackordersAllowed { get; set; } = false;
 
         [Name("Sold individually?")]
-        public bool SoldIndividually { get; set; }
+        public bool? SoldIndividually { get; set; } = false;
 
         [Name("Weight (lbs)")]
         public decimal? WeightLbs { get; set; }
@@ -213,7 +213,7 @@ namespace QLN.Common.DTO_s.ClassifiedsBo
         public decimal? HeightIn { get; set; }
 
         [Name("Allow customer reviews?")]
-        public bool AllowCustomerReviews { get; set; }
+        public bool? AllowCustomerReviews { get; set; } = false;
 
         [Name("Purchase note")]
         public string? PurchaseNote { get; set; }
@@ -270,10 +270,10 @@ namespace QLN.Common.DTO_s.ClassifiedsBo
         public string? Attribute1Values { get; set; }
 
         [Name("Attribute 1 visible")]
-        public bool Attribute1Visible { get; set; }
+        public bool? Attribute1Visible { get; set; } = false;
 
         [Name("Attribute 1 global")]
-        public bool Attribute1Global { get; set; }
+        public bool? Attribute1Global { get; set; } = false;
 
         [Name("Attribute 2 name")]
         public string? Attribute2Name { get; set; }
@@ -282,13 +282,13 @@ namespace QLN.Common.DTO_s.ClassifiedsBo
         public string? Attribute2Values { get; set; }
 
         [Name("Attribute 2 visible")]
-        public bool Attribute2Visible { get; set; }
+        public bool? Attribute2Visible { get; set; } = false;
 
         [Name("Attribute 2 global")]
-        public bool Attribute2Global { get; set; }
+        public bool? Attribute2Global { get; set; } = false;
 
         [Name("Meta: _wpcom_is_markdown")]
-        public bool MetaWpcomIsMarkdown { get; set; }
+        public bool? MetaWpcomIsMarkdown { get; set; } = false;
 
         [Name("Download 1 name")]
         public string? Download1Name { get; set; }

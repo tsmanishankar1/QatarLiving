@@ -77,18 +77,9 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
     {
         try
         {
-            var (userId, error) = GenericClaimsHelper.GetValidUserId(context.User);
-            if (!string.IsNullOrEmpty(error))
-            {
-                return TypedResults.Problem(
-                title: "Subscription issue in token.",
-                detail: error,
-                statusCode: StatusCodes.Status500InternalServerError,
-                instance: context.Request.Path
-                );
-            }
+            var (userId, userName) = UserTokenHelper.ExtractUserAsync(context);
 
-            if (string.IsNullOrEmpty(userId))
+            if (string.IsNullOrWhiteSpace(userId))
             {
                 return TypedResults.Forbid();
             }
@@ -167,6 +158,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
    {
        try
        {
+          
            var result = await service.GetProcessStoresCSV(Url, CsvPlatform, CompanyId, SubscriptionId, UserId, Domain, cancellationToken);
            return TypedResults.Ok(result);
 

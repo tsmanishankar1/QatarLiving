@@ -246,46 +246,22 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 HttpContext context
             ) =>
             {
-                var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                var userId = userData.GetProperty("uid").GetString();
-                var name = userData.GetProperty("name").GetString();
-                if (userId == null)
+                var (extractedUid, username) = UserTokenHelper.ExtractUserAsync(context);
+                var uid = extractedUid;
+                //var uid = "cc06ed9c-8738-4295-917c-0378b66b97ed";
+                if (string.IsNullOrWhiteSpace(uid))
                 {
-                    return TypedResults.BadRequest(new ProblemDetails
+                    return TypedResults.Problem(new ProblemDetails
                     {
-                        Title = "Validation Error",
-                        Detail = "Valid User ID must be provided.",
-                        Status = StatusCodes.Status400BadRequest,
-                        Instance = context.Request.Path
-                    });
-                }
-
-                if (string.IsNullOrWhiteSpace(dto.Name))
-                {
-                    return TypedResults.BadRequest(new ProblemDetails
-                    {
-                        Title = "Validation Error",
-                        Detail = "Search name is required.",
-                        Status = StatusCodes.Status400BadRequest,
-                        Instance = context.Request.Path
-                    });
-                }
-
-                if (dto.SearchQuery == null || string.IsNullOrWhiteSpace(dto.SearchQuery.Text))
-                {
-                    return TypedResults.BadRequest(new ProblemDetails
-                    {
-                        Title = "Validation Error",
-                        Detail = "Search query text is required.",
-                        Status = StatusCodes.Status400BadRequest,
-                        Instance = context.Request.Path
+                        Title = "Unauthorized",
+                        Detail = "Unable to resolve user id from token.",
+                        Status = StatusCodes.Status401Unauthorized
                     });
                 }
 
                 try
                 {
-                    var success = await service.SaveSearch(dto, userId);
+                    var success = await service.SaveSearch(dto, uid);
                     if (success)
                     {
                         return TypedResults.Ok("Search saved successfully.");
@@ -408,61 +384,23 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
     HttpContext context
 ) =>
             {
-                // Extract userId from the claims
-                var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
 
-                if (string.IsNullOrEmpty(userClaim))
+                var (extractedUid, username) = UserTokenHelper.ExtractUserAsync(context);
+                var uid = extractedUid;
+
+                if (string.IsNullOrWhiteSpace(uid))
                 {
-                    return TypedResults.BadRequest(new ProblemDetails
+                    return TypedResults.Problem(new ProblemDetails
                     {
-                        Title = "Validation Error",
-                        Detail = "Valid User ID must be provided in the token.",
-                        Status = StatusCodes.Status400BadRequest,
-                        Instance = context.Request.Path
-                    });
-                }
-
-                var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                var userId = userData.GetProperty("uid").GetString();
-                var name = userData.GetProperty("name").GetString();
-
-                if (string.IsNullOrWhiteSpace(userId))
-                {
-                    return TypedResults.BadRequest(new ProblemDetails
-                    {
-                        Title = "Validation Error",
-                        Detail = "Valid User ID must be provided.",
-                        Status = StatusCodes.Status400BadRequest,
-                        Instance = context.Request.Path
-                    });
-                }
-
-                // Validate the request body (Search name and SearchQuery)
-                if (string.IsNullOrWhiteSpace(dto.Name))
-                {
-                    return TypedResults.BadRequest(new ProblemDetails
-                    {
-                        Title = "Validation Error",
-                        Detail = "Search name is required.",
-                        Status = StatusCodes.Status400BadRequest,
-                        Instance = context.Request.Path
-                    });
-                }
-
-                if (dto.SearchQuery == null || string.IsNullOrWhiteSpace(dto.SearchQuery.Text))
-                {
-                    return TypedResults.BadRequest(new ProblemDetails
-                    {
-                        Title = "Validation Error",
-                        Detail = "Search query text is required.",
-                        Status = StatusCodes.Status400BadRequest,
-                        Instance = context.Request.Path
+                        Title = "Unauthorized",
+                        Detail = "Unable to resolve user id from token.",
+                        Status = StatusCodes.Status401Unauthorized
                     });
                 }
 
                 try
                 {
-                    var success = await service.SaveSearchByVertical(dto, userId);
+                    var success = await service.SaveSearchByVertical(dto, uid);
                     if (success)
                     {
                         return TypedResults.Ok("Search saved successfully.");
@@ -563,31 +501,19 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
     HttpContext context
 ) =>
             {
-                var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-
-                if (string.IsNullOrEmpty(userClaim))
-                {
-                    return TypedResults.BadRequest(new ProblemDetails
-                    {
-                        Title = "Authentication Error",
-                        Detail = "User claim not found in token.",
-                        Status = StatusCodes.Status400BadRequest,
-                        Instance = context.Request.Path
-                    });
-                }
-
                 try
                 {
-                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                    var userId = userData.GetProperty("uid").GetString();
+                    var (extractedUid, username) = UserTokenHelper.ExtractUserAsync(context);
+                    var uid = extractedUid;
+                    //var uid = "cc06ed9c-8738-4295-917c-0378b66b97ed";
 
-                    if (string.IsNullOrEmpty(userId))
+                    if (string.IsNullOrWhiteSpace(uid))
                     {
-                        return TypedResults.BadRequest(new ProblemDetails
+                        return TypedResults.Problem(new ProblemDetails
                         {
-                            Title = "Validation Error",
-                            Detail = "Valid User ID must be provided in the token.",
-                            Status = StatusCodes.Status400BadRequest,
+                            Title = "Unauthorized",
+                            Detail = "Unable to resolve user id from token.",
+                            Status = StatusCodes.Status401Unauthorized,
                             Instance = context.Request.Path
                         });
                     }
@@ -618,7 +544,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         }
                     }
 
-                    var result = await service.GetSearches(userId, vertical, subVertical);
+                    var result = await service.GetSearches(uid, vertical, subVertical);
                     return TypedResults.Ok(result);
                 }
                 catch (JsonException)
@@ -649,6 +575,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 .Produces<List<SavedSearchResponseDto>>(StatusCodes.Status200OK)
 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
 
             group.MapGet("/search/save-by-id", async Task<Results<
                 Ok<List<SavedSearchResponseDto>>,
@@ -5771,8 +5698,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                     Text = "*",
                     Filters = null,
                     //  OrderBy = req.OrderBy,
-                    PageNumber = 1,
-                    PageSize = 100,
+                    //PageNumber = 1,
+                    //PageSize = 100,
 
                 };
                 var results = await svc.GetAllAsync(indexName, request); // You may need to pass indexName/request appropriately
@@ -6168,7 +6095,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 }
             })
                     .WithName("StoresDashboardHeaders")
-                   .ExcludeFromDescription()
+                    .ExcludeFromDescription()
                     .WithTags("Classified")
                     .WithSummary("To display the stores dashboard header information.")
                     .WithDescription("Fetches all stores dashboard header information.")
@@ -6771,65 +6698,72 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
        string Domain,
        [FromServices] IClassifiedsFoService service,
        HttpContext context,
+       [FromServices] IV2SubscriptionService subsService,
        CancellationToken cancellationToken
    ) =>
    {
        try
        {
-           var (userId, error) = GenericClaimsHelper.GetValidUserId(context.User);
-           if (!string.IsNullOrEmpty(error))
-           {
-               return TypedResults.Problem(
-               title: "Subscription issue in token.",
-               detail: error,
-               statusCode: StatusCodes.Status500InternalServerError,
-               instance: context.Request.Path
-               );
-           }
+           var (userId, userName) = UserTokenHelper.ExtractUserAsync(context);
 
-           if (string.IsNullOrEmpty(userId))
+           if (string.IsNullOrWhiteSpace(userId))
            {
                return TypedResults.Forbid();
            }
 
-           var result = await service.GetFOProcessStoresCSV(Url, CsvPlatform, CompanyId, SubscriptionId, userId?.ToString(), Domain, cancellationToken);
+           var subscriptions = await subsService.GetActiveSubscriptionsAsync(
+              userId,
+              (int)Vertical.Classifieds,
+              (int)SubVertical.Stores,
+              cancellationToken
+          );
 
-           switch (result?.ToString())
+           if (subscriptions != null && subscriptions.Any())
            {
-               case "created":
-                   return TypedResults.Ok("Products have been successfully created at the specified store(s).");
 
-               case "No products":
-                   return TypedResults.BadRequest(new ProblemDetails
-                   {
-                       Title = "No Products Found",
-                       Detail = "The CSV did not contain any valid products to process.",
-                       Status = StatusCodes.Status400BadRequest
-                   });
+               var result = await service.GetFOProcessStoresCSV(Url, CsvPlatform, CompanyId, SubscriptionId, userId?.ToString(), Domain, cancellationToken);
 
-               case "Insufficient quota":
-                   return TypedResults.BadRequest(new ProblemDetails
-                   {
-                       Title = "Insufficient quota",
-                       Detail = "The CSV did not contain any valid quota to process.",
-                       Status = StatusCodes.Status400BadRequest
-                   });
+               switch (result?.ToString())
+               {
+                   case "created":
+                       return TypedResults.Ok("Products have been successfully created at the specified store(s).");
 
-               case "Fail to reserve quota":
-                   return TypedResults.BadRequest(new ProblemDetails
-                   {
-                       Title = "Fail to reserve quota",
-                       Detail = "The CSV fail to reserve quota to process.",
-                       Status = StatusCodes.Status400BadRequest
-                   });
+                   case "No products":
+                       return TypedResults.BadRequest(new ProblemDetails
+                       {
+                           Title = "No Products Found",
+                           Detail = "The CSV did not contain any valid products to process.",
+                           Status = StatusCodes.Status400BadRequest
+                       });
 
-               default:
-                   return TypedResults.BadRequest(new ProblemDetails
-                   {
-                       Title = "Store Processing Failed",
-                       Detail = result?.ToString() ?? "Unknown error occurred.",
-                       Status = StatusCodes.Status400BadRequest
-                   });
+                   case "Insufficient quota":
+                       return TypedResults.BadRequest(new ProblemDetails
+                       {
+                           Title = "Insufficient quota",
+                           Detail = "The CSV did not contain any valid quota to process.",
+                           Status = StatusCodes.Status400BadRequest
+                       });
+
+                   case "Fail to reserve quota":
+                       return TypedResults.BadRequest(new ProblemDetails
+                       {
+                           Title = "Fail to reserve quota",
+                           Detail = "The CSV fail to reserve quota to process.",
+                           Status = StatusCodes.Status400BadRequest
+                       });
+
+                   default:
+                       return TypedResults.BadRequest(new ProblemDetails
+                       {
+                           Title = "Store Processing Failed",
+                           Detail = result?.ToString() ?? "Unknown error occurred.",
+                           Status = StatusCodes.Status400BadRequest
+                       });
+               }
+           } 
+           else
+           {
+               return TypedResults.Forbid();
            }
        }
        catch (Exception ex)

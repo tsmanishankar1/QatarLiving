@@ -607,7 +607,7 @@ namespace QLN.Common.Infrastructure.Service.AuthService
             }
         }
 
-        public async Task<Results<Ok<RefreshTokenResponse>, BadRequest<ProblemDetails>, ProblemHttpResult, UnauthorizedHttpResult>> RefreshToken(Guid userId,QLN.Common.Infrastructure.Model.DrupalUser drupalUser, string refreshToken)
+        public async Task<Results<Ok<RefreshTokenResponse>, BadRequest<ProblemDetails>, ProblemHttpResult, UnauthorizedHttpResult>> RefreshToken(Guid userId, QLN.Common.Infrastructure.Model.DrupalUser drupalUser, string refreshToken)
         {
             try
             {
@@ -1681,5 +1681,7 @@ namespace QLN.Common.Infrastructure.Service.AuthService
             var parts = categoryPath.Split(" > ");
             return parts.Length > 2 ? parts[2] : null;
         }
+
+       
     }
 }

@@ -41,6 +41,8 @@ namespace QLN.DataMigration.Services
             throw new NotImplementedException();
         }
 
+       
+
         public Task<string> DeleteServiceAdById(string userId, long id, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
