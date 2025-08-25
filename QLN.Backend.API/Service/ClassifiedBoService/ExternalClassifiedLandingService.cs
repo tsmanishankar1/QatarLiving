@@ -1032,9 +1032,9 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
 
 
         public async Task<BulkAdActionResponseitems> BulkItemsAction(
-     BulkActionRequest request,
-     string userId, string userName,
-     CancellationToken cancellationToken = default)
+      BulkActionRequest request,
+      string userId, string userName,
+      CancellationToken cancellationToken = default)
         {
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
@@ -1044,6 +1044,7 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
 
             var failedIds = new List<long>();
             var succeededIds = new List<long>();
+            var failedReasons = new Dictionary<long, string>(); // store detailed errors
 
             _logger.LogInformation("Started Bulk Items Action. Request: {Action} for {Count} Ads.", request.Action, request.AdIds?.Count);
 
@@ -1052,13 +1053,18 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
                 var ads = await Task.WhenAll(request.AdIds.Select(id => _classifiedService.GetItemAdById(id, cancellationToken)));
                 _logger.LogInformation("{Count} Ads retrieved.", ads.Length);
 
+                // Invalid ads
                 var invalidAds = ads
                     .Where(a => a == null || !a.SubscriptionId.HasValue || a.SubscriptionId.Value == Guid.Empty)
                     .ToList();
 
                 if (invalidAds.Any())
                 {
-                    failedIds.AddRange(invalidAds.Where(x => x != null).Select(x => x.Id));
+                    foreach (var ad in invalidAds.Where(x => x != null))
+                    {
+                        failedIds.Add(ad.Id);
+                        failedReasons[ad.Id] = "Invalid Ad (missing or empty SubscriptionId).";
+                    }
                     _logger.LogWarning("{Count} Invalid Ads found.", invalidAds.Count);
                 }
 
@@ -1112,23 +1118,6 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
                         {
                             if (group.Key.ActionType is BulkActionEnum.Publish or BulkActionEnum.Approve or BulkActionEnum.Promote or BulkActionEnum.Feature)
                             {
-                                //// Publish or promote free ads
-                                //var canUse = await _subscriptionContext.ValidateFreeAdsUsageAsync(
-                                //    subscriptionId,
-                                //    sampleAd.Category,
-                                //    sampleAd.L1Category,
-                                //    sampleAd.L2Category,
-                                //    usageCount,
-                                //    cancellationToken
-                                //);
-
-                                //if (!canUse)
-                                //{
-                                //    _logger.LogWarning("FREE Ads quota exceeded for Subscription {SubscriptionId}.", subscriptionId);
-                                //    failedIds.AddRange(group.Select(x => x.Id));
-                                //    continue;
-                                //}
-
                                 reserved = await _subscriptionContext.RecordFreeAdsUsageAsync(
                                     subscriptionId,
                                     sampleAd.Category,
@@ -1140,7 +1129,6 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
                             }
                             else if (group.Key.ActionType is BulkActionEnum.Unpublish or BulkActionEnum.UnFeature or BulkActionEnum.UnPromote)
                             {
-                                // Refund quota for unpublishing free ads
                                 int refunded = await _subscriptionContext.RefundFreeAdsUsageAsync(
                                     subscriptionId,
                                     sampleAd.Category,
@@ -1156,21 +1144,6 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
                         }
                         else
                         {
-                            // Paid subscription logic
-                            //var canUse = await _subscriptionContext.ValidateSubscriptionUsageAsync(
-                            //    subscriptionId,
-                            //    actionName,
-                            //    usageCount,
-                            //    cancellationToken
-                            //);
-
-                            //if (!canUse)
-                            //{
-                            //    _logger.LogWarning("Subscription {SubscriptionId} cannot perform {ActionName}. Insufficient quota.", subscriptionId, actionName);
-                            //    failedIds.AddRange(group.Select(x => x.Id));
-                            //    continue;
-                            //}
-
                             reserved = await _subscriptionContext.RecordSubscriptionUsageAsync(
                                 subscriptionId,
                                 actionName,
@@ -1181,8 +1154,12 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
 
                         if (!reserved)
                         {
+                            foreach (var ad in group)
+                            {
+                                failedIds.Add(ad.Id);
+                                failedReasons[ad.Id] = $"Quota reservation failed for action {actionName}.";
+                            }
                             _logger.LogWarning("Failed to reserve quota for {SubscriptionId} and action {ActionName}.", subscriptionId, actionName);
-                            failedIds.AddRange(group.Select(x => x.Id));
                             continue;
                         }
                     }
@@ -1201,9 +1178,14 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
                         {
                             var errorJson = await response.Content.ReadAsStringAsync(cancellationToken);
                             var failReason = ExtractErrorMessage(errorJson);
-                            _logger.LogError("External service failed for action {ActionName}. Reason: {FailReason}", actionName, failReason);
 
-                            failedIds.AddRange(group.Select(x => x.Id));
+                            foreach (var ad in group)
+                            {
+                                failedIds.Add(ad.Id);
+                                failedReasons[ad.Id] = $"External service error: {failReason}";
+                            }
+
+                            _logger.LogError("External service failed for action {ActionName}. Reason: {FailReason}", actionName, failReason);
                             continue;
                         }
 
@@ -1212,8 +1194,13 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
                     }
                     catch (Exception ex)
                     {
+                        foreach (var ad in group)
+                        {
+                            failedIds.Add(ad.Id);
+                            failedReasons[ad.Id] = $"Exception: {ex.Message}";
+                        }
+
                         _logger.LogError(ex, "Error invoking external service for {ActionName}. SubscriptionId: {SubscriptionId}", actionName, subscriptionId);
-                        failedIds.AddRange(group.Select(x => x.Id));
                         continue;
                     }
                 }
@@ -1224,7 +1211,8 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
                     {
                         Count = failedIds.Count,
                         Ids = failedIds,
-                        Reason = failedIds.Any() ? "Failed actions" : null
+                        Reason = failedIds.Any() ? "Some actions failed" : null,
+                        ErrorMessages = failedReasons // detailed errors
                     },
                     Succeeded = new ResultGroup
                     {
@@ -1240,6 +1228,7 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
                 throw;
             }
         }
+
 
 
 
@@ -1302,7 +1291,7 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
 
                     var actionName = group.Key.ActionType switch
                     {
-                        // quota-tracked actions
+                        
                         BulkActionEnum.Promote => "promote",
                         BulkActionEnum.Feature => "feature",
                         BulkActionEnum.UnPromote => "unpromote",
@@ -1311,7 +1300,7 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
                         BulkActionEnum.Publish => "publish",
                         BulkActionEnum.Approve => "publish",
 
-                        // non-quota actions
+                        
                         BulkActionEnum.Hold => "hold",
                         BulkActionEnum.Onhold => "onhold",
                         BulkActionEnum.NeedChanges => "needchanges",

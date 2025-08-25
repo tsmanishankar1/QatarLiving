@@ -41,6 +41,11 @@ namespace QLN.DataMigration.Services
             throw new NotImplementedException();
         }
 
+        public Task<ResponseDto> CreateServiceAd(string uid, string userName, Guid subscriptionId, ServiceDto dto, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+
         public Task<string> DeleteServiceAdById(string userId, long id, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
@@ -52,6 +57,11 @@ namespace QLN.DataMigration.Services
         }
 
         public Task<Common.Infrastructure.Model.Services> FeatureService(FeatureServiceRequest request, string? uid, string? subscriptionId, CancellationToken ct = default)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<Common.Infrastructure.Model.Services> FeatureService(FeatureServiceRequest request, string uid, Guid? subscriptionId, CancellationToken ct = default)
         {
             throw new NotImplementedException();
         }
@@ -176,12 +186,22 @@ namespace QLN.DataMigration.Services
             throw new NotImplementedException();
         }
 
+        public Task<Common.Infrastructure.Model.Services> PromoteService(PromoteServiceRequest request, string uid, Guid? subscriptionId, CancellationToken ct)
+        {
+            throw new NotImplementedException();
+        }
+
         public Task<Common.Infrastructure.Model.Services> PublishService(PublishServiceRequest request, string? uid, CancellationToken ct)
         {
             throw new NotImplementedException();
         }
 
         public Task<Common.Infrastructure.Model.Services> PublishService(PublishServiceRequest request, string? uid, string? subscriptionId, CancellationToken ct)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<Common.Infrastructure.Model.Services> PublishService(PublishServiceRequest request, string uid, Guid? subscriptionId, CancellationToken ct)
         {
             throw new NotImplementedException();
         }
@@ -196,6 +216,11 @@ namespace QLN.DataMigration.Services
             throw new NotImplementedException();
         }
 
+        public Task<Common.Infrastructure.Model.Services> RefreshService(RefreshServiceRequest request, string uid, Guid? subscriptionId, CancellationToken ct)
+        {
+            throw new NotImplementedException();
+        }
+
         public Task<string> UpdateCategory(CategoryDto dto, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
@@ -206,9 +231,6 @@ namespace QLN.DataMigration.Services
             throw new NotImplementedException();
         }
 
-        Task<ResponseDto> IServices.CreateServiceAd(string uid, string userName, string subscriptionId, ServiceDto dto, CancellationToken cancellationToken)
-        {
-            throw new NotImplementedException();
-        }
+        
     }
 }
