@@ -70,19 +70,13 @@ namespace QLN.Classified.MS.Service
         public async Task<bool> SaveSearchByVertical(SaveSearchRequestDto dto, string userId, CancellationToken cancellationToken = default)
         {
             try
-            {                
+            {
+                
                 var actualUserId = !string.IsNullOrWhiteSpace(dto.UserId) ? dto.UserId : userId;
 
                 if (string.IsNullOrWhiteSpace(actualUserId))
                 {
                     _logger.LogError("UserId is required to save search");
-                    return false;
-                }
-
-                bool isValidSubVertical = ValidateVerticalAndSubVertical(dto.Vertical, dto.SubVertical);
-                if (!isValidSubVertical)
-                {
-                    _logger.LogError("Invalid SubVertical {SubVertical} for Vertical {Vertical}", dto.SubVertical, dto.Vertical);
                     return false;
                 }
 
@@ -92,7 +86,7 @@ namespace QLN.Classified.MS.Service
                     SubVertical = dto.SubVertical,
                     Vertical = dto.Vertical,
                     SearchQuery = dto.SearchQuery,
-                    CreatedAt = DateTime.UtcNow, 
+                    CreatedAt = DateTime.UtcNow,
                     UserId = actualUserId
                 };
 
@@ -108,6 +102,7 @@ namespace QLN.Classified.MS.Service
                 throw new InvalidOperationException("Failed to save the search", ex);
             }
         }
+
 
         private bool ValidateVerticalAndSubVertical(Vertical vertical, SubVertical? subVertical)
         {
@@ -133,22 +128,24 @@ namespace QLN.Classified.MS.Service
             {
                 if (string.IsNullOrWhiteSpace(userId))
                     throw new ArgumentException("UserId is required.", nameof(userId));
-                
+
+                // Start with base query filtered by userId and vertical (both mandatory)
                 var query = _context.saveSearches
                     .Where(s => s.UserId == userId && s.Vertical == vertical);
 
+                // Apply subvertical filter if provided
                 if (subVertical.HasValue)
                 {
                     query = query.Where(s => s.SubVertical == subVertical.Value);
                 }
 
+                // Execute query with ordering
                 var savedSearches = await query
                     .OrderByDescending(s => s.CreatedAt)
                     .ToListAsync(cancellationToken);
 
                 var responseDto = savedSearches.Select(s => new SavedSearchResponseDto
                 {
-                    Id = s.Id,
                     Name = s.Name,
                     Vertical = s.Vertical,
                     SubVertical = s.SubVertical,
@@ -157,8 +154,8 @@ namespace QLN.Classified.MS.Service
                     UserId = s.UserId
                 }).ToList();
 
-                //_logger.LogInformation("Retrieved {Count} saved searches from database for user {UserId}, vertical {Vertical}, subVertical {SubVertical}",
-                //    responseDto.Count, userId, vertical, subVertical);
+                _logger.LogInformation("Retrieved {Count} saved searches from database for user {UserId}, vertical {Vertical}, subVertical {SubVertical}",
+                    responseDto.Count, userId, vertical, subVertical);
 
                 return responseDto;
             }
@@ -169,6 +166,7 @@ namespace QLN.Classified.MS.Service
                 throw new InvalidOperationException("Failed to retrieve saved searches from database.", ex);
             }
         }
+
 
         public async Task<bool> SaveSearchById(SaveSearchRequestByIdDto dto, CancellationToken cancellationToken = default)
         {
@@ -223,11 +221,42 @@ namespace QLN.Classified.MS.Service
                 throw new InvalidOperationException("An unexpected error occurred while saving search.", ex);
             }
         }
-     
-        public Task<bool> SaveSearch(SaveSearchRequestDto dto, string userId, CancellationToken cancellationToken = default)
+
+        public async Task<bool> SaveSearch(SaveSearchRequestDto dto, string userId, CancellationToken cancellationToken = default)
         {
-            throw new NotImplementedException();
+            try
+            {
+                var actualUserId = !string.IsNullOrWhiteSpace(dto.UserId) ? dto.UserId : userId;
+
+                if (string.IsNullOrWhiteSpace(actualUserId))
+                {
+                    _logger.LogError("UserId is required to save search");
+                    return false;
+                }
+
+                var saveSearch = new SaveSearch
+                {
+                    Name = dto.Name,
+                    SubVertical = dto.SubVertical,
+                    Vertical = dto.Vertical,
+                    SearchQuery = dto.SearchQuery,
+                    CreatedAt = DateTime.UtcNow,
+                    UserId = actualUserId
+                };
+
+                _context.saveSearches.Add(saveSearch);
+                await _context.SaveChangesAsync(cancellationToken);
+
+                _logger.LogInformation("Search '{SearchName}' saved successfully for user {UserId}", dto.Name, actualUserId);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to save the search '{SearchName}' for user {UserId}", dto.Name, userId);
+                throw new InvalidOperationException("Failed to save the search", ex);
+            }
         }
+
 
         public async Task<AdCreatedResponseDto> CreateClassifiedItemsAd(
     Items dto,
@@ -2894,6 +2923,7 @@ namespace QLN.Classified.MS.Service
                         itemsAd.UpdatedBy = uid;
                         itemsAd.UpdatedAt = DateTime.UtcNow;
                         itemsAd.ExpiryDate = DateTime.UtcNow.AddMonths(1);
+                        itemsAd.SubscriptionId = publish.SubscriptionId;
 
                         await _context.SaveChangesAsync(ct);
                         
@@ -2913,7 +2943,7 @@ namespace QLN.Classified.MS.Service
                         prelovedAd.AdType = AdTypeEnum.P2P;
                         prelovedAd.UpdatedBy = uid;
                         prelovedAd.UpdatedAt = DateTime.UtcNow;
-
+                        prelovedAd.SubscriptionId= publish.SubscriptionId;
                         await _context.SaveChangesAsync(ct);
                         await IndexPrelovedToAzureSearch(prelovedAd, ct);
 
@@ -2931,6 +2961,7 @@ namespace QLN.Classified.MS.Service
                         collectibleAd.AdType = AdTypeEnum.P2P;
                         collectibleAd.UpdatedBy = uid;
                         collectibleAd.UpdatedAt = DateTime.UtcNow;
+                        collectibleAd.SubscriptionId=publish.SubscriptionId;
 
                         await _context.SaveChangesAsync(ct);
                         await IndexCollectiblesToAzureSearch(collectibleAd, ct);

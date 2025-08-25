@@ -7,7 +7,7 @@
 ###
 POST {{QLN.Backend.API_HostAddress}}/api/pay/d365
 Accept: application/json
-X-Api-Key: 43terg454gf456dgdy!e098
+X-Api-Key: <replace_me>
 Content-Type: application/json
 {
   "order": [
