@@ -619,7 +619,25 @@ namespace QLN.Common.Infrastructure.Service.Payments
             try
             {
                 // 
-                var result = await ProcessPaytoFeatureItemsAsync(order.AdId, order.D365Itemid, price, product.Vertical, cancellationToken);
+                var result = string.Empty;
+
+                switch (product.Vertical)
+                {
+                    case Vertical.Classifieds:
+                        switch (product.SubVertical)
+                        {
+                            case SubVertical.Items:
+                                result = await ProcessPaytoFeatureItemsAsync(order.AdId, order.D365Itemid, price, product.Vertical, cancellationToken);
+                                break;
+                            default:
+                                break;
+                        }
+                        break;
+                    case Vertical.Services:
+                        break;
+                    default:
+                        break;
+                }
 
                 await SaveD365RequestLogsAsync(
                     DateTime.UtcNow,
@@ -1079,7 +1097,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
             }
         }
 
-        private async Task<string> ProcessPaytoFeatureServicesAsync(int adId, string d365ItemId, decimal price, CancellationToken cancellationToken)
+        private async Task<string> ProcessPaytoFeatureServicesAsync(string userId, int adId, string d365ItemId, decimal price, CancellationToken cancellationToken)
         {
             var advert = await _servicesService.GetServiceAdById(adId, cancellationToken);
 
@@ -1095,14 +1113,6 @@ namespace QLN.Common.Infrastructure.Service.Payments
                 return $"Advert with ID {adId} does not have a valid SubscriptionId.";
             }
 
-            var user = await _userManager.FindByIdAsync(advert.UserId);
-
-            if (user == null)
-            {
-                await SendD365ErrorEmail(null, $"Pay to Feature Error: User with ID {advert.UserId} not found for AdId {adId}.", cancellationToken);
-                return $"User with ID {advert.UserId} not found for AdId {adId}.";
-            }
-
             try
             {
                 var paymentEntity = new PaymentEntity
@@ -1110,7 +1120,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
                     Gateway = Gateway.D365,
                     Date = DateTime.UtcNow,
                     Fee = price,
-                    PaidByUid = user.Id.ToString(),
+                    PaidByUid = userId,
                     PaymentMethod = PaymentMethod.Cash,
                     Source = Source.D365,
                     Status = PaymentStatus.Success,
@@ -1138,7 +1148,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
 
                 var addonId = await _subscriptionService.PurchaseAddonAsync(new V2UserAddonPurchaseRequestDto
                 {
-                    UserId = user.LegacyUid.ToString(),
+                    UserId = userId.ToString(),
                     ProductCode = d365ItemId,
                     PaymentId = paymentEntity.PaymentId,
                     SubscriptionId = subscriptionId
@@ -1148,7 +1158,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
                 paymentEntity.UserAddonIds = new List<Guid> { addonId };
                 await _dbContext.SaveChangesAsync(cancellationToken);
 
-                var result = await _servicesService.UpdateServiceAd(user.Id, advert, cancellationToken);
+                var result = await _servicesService.UpdateServiceAd(userId, advert, cancellationToken);
 
                 if (result != null)
                 {
