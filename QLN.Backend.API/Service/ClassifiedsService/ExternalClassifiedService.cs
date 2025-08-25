@@ -2145,9 +2145,11 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
+        #endregion
+
         //public async Task<List<CategoryCountDto>> GetCategoryCountsAsync(CancellationToken cancellationToken)
         //{
-            
+
         //    try
         //    {
         //        var response = await _dapr.InvokeMethodAsync<List<CategoryCountDto>>(

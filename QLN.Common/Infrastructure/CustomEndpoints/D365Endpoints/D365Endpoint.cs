@@ -17,7 +17,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.D365Endpoints
     {
         public static RouteGroupBuilder MapD365PayEndpoint(this RouteGroupBuilder group)
         {
-            group.MapGet("/d365", async Task<IResult> (
+            group.MapPost("/d365", async Task<IResult> (
                 [FromServices] IOptions<D365Config> config,
                 [FromServices] ID365Service service,
                 [FromBody] D365Orders request,
