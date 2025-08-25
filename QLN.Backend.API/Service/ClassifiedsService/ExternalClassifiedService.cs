@@ -58,28 +58,30 @@ namespace QLN.Backend.API.Service.ClassifiedService
         public async Task<bool> SaveSearchByVertical(SaveSearchRequestDto dto, string userId, CancellationToken cancellationToken = default)
         {
             try
-            {             
+            {
+                // Validate search query
                 if (dto.SearchQuery == null || string.IsNullOrWhiteSpace(dto.SearchQuery.Text))
                 {
                     _log.LogError("Search query is invalid. Text is required.");
                     return false;
                 }
 
-               
+                // Construct the search DTO with ALL required properties
                 var searchDto = new SaveSearchRequestByIdDto
                 {
                     UserId = userId,
                     Name = dto.Name,
                     CreatedAt = dto.CreatedAt,
                     SearchQuery = dto.SearchQuery,
-                    Vertical = dto.Vertical,        
-                    SubVertical = dto.SubVertical   
+                    Vertical = dto.Vertical,        // Added missing property
+                    SubVertical = dto.SubVertical   // Added missing property
                 };
-                
+
+                // Invoke the INTERNAL service (not the external endpoint)
                 var result = await _dapr.InvokeMethodAsync<SaveSearchRequestByIdDto, string>(
                     HttpMethod.Post,
                     SERVICE_APP_ID,
-                    $"api/{Vertical}/savesearchinternal", 
+                    $"api/{Vertical}/savesearchinternal", // Call internal endpoint, not external
                     searchDto,
                     cancellationToken
                 );
@@ -100,6 +102,8 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
+
+        ///2 .getsavesearch
         public async Task<List<SavedSearchResponseDto>> GetSearches(string userId, Vertical vertical, SubVertical? subVertical = null, CancellationToken cancellationToken = default)
         {
             try
@@ -107,11 +111,12 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 if (string.IsNullOrWhiteSpace(userId))
                     throw new ArgumentException("User ID is required", nameof(userId));
 
+                // Build query parameters - vertical is now mandatory
                 var queryParams = new List<string>
-                {
-                    $"userId={Uri.EscapeDataString(userId)}",
-                    $"vertical={vertical}"
-                };
+        {
+            $"userId={Uri.EscapeDataString(userId)}",
+            $"vertical={vertical}"  // Always include vertical since it's mandatory
+        };
 
                 if (subVertical.HasValue)
                     queryParams.Add($"subVertical={subVertical.Value}");
@@ -128,11 +133,13 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 return result ?? new List<SavedSearchResponseDto>();
             }
             catch (DaprException dex)
-            {               
+            {
+               
                 throw new InvalidOperationException("Failed to retrieve saved searches due to external service error.", dex);
             }
             catch (Exception ex)
-            {                
+            {
+                
                 throw;
             }
         }

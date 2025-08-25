@@ -253,7 +253,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                         StoreSlug = storeIndexDto.StoreSlug,
                         ProductSlug = storeProducts.Slug,
                         ProductCategory = storeProducts.Category,
-                        ProductUrl = Domain + "Products/" + storeProducts.ProductBarcode
+                        ProductUrl = Domain + "products/" + storeProducts.ProductBarcode
 
                     };
                         storesIndexList.Add(classifiedStoresIndex);
@@ -432,7 +432,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                         StoreSlug = storeIndexDto.StoreSlug,
                         ProductSlug = storeProducts.Slug,
                         ProductCategory = storeProducts.Category,
-                        ProductUrl = Domain + "Products/" + storeProducts.ProductBarcode
+                        ProductUrl = Domain + "products/" + storeProducts.ProductBarcode
 
                     };
                     storesIndexList.Add(classifiedStoresIndex);

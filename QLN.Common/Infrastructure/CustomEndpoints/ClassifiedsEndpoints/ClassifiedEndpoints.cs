@@ -246,46 +246,22 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 HttpContext context
             ) =>
             {
-                var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                var userId = userData.GetProperty("uid").GetString();
-                var name = userData.GetProperty("name").GetString();
-                if (userId == null)
+                var (extractedUid, username) = UserTokenHelper.ExtractUserAsync(context);
+                var uid = extractedUid;
+                //var uid = "cc06ed9c-8738-4295-917c-0378b66b97ed";
+                if (string.IsNullOrWhiteSpace(uid))
                 {
-                    return TypedResults.BadRequest(new ProblemDetails
+                    return TypedResults.Problem(new ProblemDetails
                     {
-                        Title = "Validation Error",
-                        Detail = "Valid User ID must be provided.",
-                        Status = StatusCodes.Status400BadRequest,
-                        Instance = context.Request.Path
-                    });
-                }
-
-                if (string.IsNullOrWhiteSpace(dto.Name))
-                {
-                    return TypedResults.BadRequest(new ProblemDetails
-                    {
-                        Title = "Validation Error",
-                        Detail = "Search name is required.",
-                        Status = StatusCodes.Status400BadRequest,
-                        Instance = context.Request.Path
-                    });
-                }
-
-                if (dto.SearchQuery == null || string.IsNullOrWhiteSpace(dto.SearchQuery.Text))
-                {
-                    return TypedResults.BadRequest(new ProblemDetails
-                    {
-                        Title = "Validation Error",
-                        Detail = "Search query text is required.",
-                        Status = StatusCodes.Status400BadRequest,
-                        Instance = context.Request.Path
+                        Title = "Unauthorized",
+                        Detail = "Unable to resolve user id from token.",
+                        Status = StatusCodes.Status401Unauthorized
                     });
                 }
 
                 try
                 {
-                    var success = await service.SaveSearch(dto, userId);
+                    var success = await service.SaveSearch(dto, uid);
                     if (success)
                     {
                         return TypedResults.Ok("Search saved successfully.");
@@ -408,61 +384,23 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
     HttpContext context
 ) =>
             {
-                // Extract userId from the claims
-                var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
 
-                if (string.IsNullOrEmpty(userClaim))
+                var (extractedUid, username) = UserTokenHelper.ExtractUserAsync(context);
+                var uid = extractedUid;
+
+                if (string.IsNullOrWhiteSpace(uid))
                 {
-                    return TypedResults.BadRequest(new ProblemDetails
+                    return TypedResults.Problem(new ProblemDetails
                     {
-                        Title = "Validation Error",
-                        Detail = "Valid User ID must be provided in the token.",
-                        Status = StatusCodes.Status400BadRequest,
-                        Instance = context.Request.Path
-                    });
-                }
-
-                var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                var userId = userData.GetProperty("uid").GetString();
-                var name = userData.GetProperty("name").GetString();
-
-                if (string.IsNullOrWhiteSpace(userId))
-                {
-                    return TypedResults.BadRequest(new ProblemDetails
-                    {
-                        Title = "Validation Error",
-                        Detail = "Valid User ID must be provided.",
-                        Status = StatusCodes.Status400BadRequest,
-                        Instance = context.Request.Path
-                    });
-                }
-
-                // Validate the request body (Search name and SearchQuery)
-                if (string.IsNullOrWhiteSpace(dto.Name))
-                {
-                    return TypedResults.BadRequest(new ProblemDetails
-                    {
-                        Title = "Validation Error",
-                        Detail = "Search name is required.",
-                        Status = StatusCodes.Status400BadRequest,
-                        Instance = context.Request.Path
-                    });
-                }
-
-                if (dto.SearchQuery == null || string.IsNullOrWhiteSpace(dto.SearchQuery.Text))
-                {
-                    return TypedResults.BadRequest(new ProblemDetails
-                    {
-                        Title = "Validation Error",
-                        Detail = "Search query text is required.",
-                        Status = StatusCodes.Status400BadRequest,
-                        Instance = context.Request.Path
+                        Title = "Unauthorized",
+                        Detail = "Unable to resolve user id from token.",
+                        Status = StatusCodes.Status401Unauthorized
                     });
                 }
 
                 try
                 {
-                    var success = await service.SaveSearchByVertical(dto, userId);
+                    var success = await service.SaveSearchByVertical(dto, uid);
                     if (success)
                     {
                         return TypedResults.Ok("Search saved successfully.");
@@ -563,31 +501,19 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
     HttpContext context
 ) =>
             {
-                var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-
-                if (string.IsNullOrEmpty(userClaim))
-                {
-                    return TypedResults.BadRequest(new ProblemDetails
-                    {
-                        Title = "Authentication Error",
-                        Detail = "User claim not found in token.",
-                        Status = StatusCodes.Status400BadRequest,
-                        Instance = context.Request.Path
-                    });
-                }
-
                 try
                 {
-                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                    var userId = userData.GetProperty("uid").GetString();
+                    var (extractedUid, username) = UserTokenHelper.ExtractUserAsync(context);
+                    var uid = extractedUid;
+                    //var uid = "cc06ed9c-8738-4295-917c-0378b66b97ed";
 
-                    if (string.IsNullOrEmpty(userId))
+                    if (string.IsNullOrWhiteSpace(uid))
                     {
-                        return TypedResults.BadRequest(new ProblemDetails
+                        return TypedResults.Problem(new ProblemDetails
                         {
-                            Title = "Validation Error",
-                            Detail = "Valid User ID must be provided in the token.",
-                            Status = StatusCodes.Status400BadRequest,
+                            Title = "Unauthorized",
+                            Detail = "Unable to resolve user id from token.",
+                            Status = StatusCodes.Status401Unauthorized,
                             Instance = context.Request.Path
                         });
                     }
@@ -618,7 +544,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         }
                     }
 
-                    var result = await service.GetSearches(userId, vertical, subVertical);
+                    var result = await service.GetSearches(uid, vertical, subVertical);
                     return TypedResults.Ok(result);
                 }
                 catch (JsonException)
@@ -649,6 +575,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 .Produces<List<SavedSearchResponseDto>>(StatusCodes.Status200OK)
 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
 
             group.MapGet("/search/save-by-id", async Task<Results<
                 Ok<List<SavedSearchResponseDto>>,
