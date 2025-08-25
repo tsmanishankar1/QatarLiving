@@ -574,7 +574,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
 
             try
             {
-                // Simulate ProcessSubscriptions (replace with actual implementation)
+                // This method can process any subscription type
                 var result = await ProcessSubscriptionsAsync(order, qlUserId, price, product.Vertical, product.SubVertical, cancellationToken);
 
                 await SaveD365RequestLogsAsync(
@@ -602,7 +602,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
             }
         }
 
-        private async Task<string> ProcessAddonFeature(D365Order order, Vertical vertical, CancellationToken cancellationToken)
+        private async Task<string> ProcessAddonFeature(D365Order order, Product product, CancellationToken cancellationToken)
         {
             if (decimal.TryParse(order.Price, out var price) && price <= 0)
             {
@@ -618,8 +618,8 @@ namespace QLN.Common.Infrastructure.Service.Payments
 
             try
             {
-                // Simulate ProcessPaytoFeature (replace with actual implementation)
-                var result = await ProcessPaytoFeatureAsync(order.AdId, order.D365Itemid, price, vertical, cancellationToken);
+                // 
+                var result = await ProcessPaytoFeatureItemsAsync(order.AdId, order.D365Itemid, price, product.Vertical, cancellationToken);
 
                 await SaveD365RequestLogsAsync(
                     DateTime.UtcNow,
@@ -815,7 +815,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
         }
 
         // Updated to use new PaymentEntity structure
-        private async Task<string> ProcessPaytoFeatureAsync(int adId, string d365ItemId, decimal price, Vertical vertical, CancellationToken cancellationToken)
+        private async Task<string> ProcessPaytoFeatureItemsAsync(int adId, string d365ItemId, decimal price, CancellationToken cancellationToken)
         {
             var advert = await _classifiedService.GetItemAdById(adId, cancellationToken);
 
@@ -850,7 +850,8 @@ namespace QLN.Common.Infrastructure.Service.Payments
                     PaymentMethod = PaymentMethod.Cash,
                     Source = Source.D365,
                     Status = PaymentStatus.Success,
-                    Vertical = vertical,
+                    Vertical = Vertical.Classifieds,
+                    SubVertical = SubVertical.Items,
                     AdId = adId,
                     TriggeredSource = TriggeredSource.D365,
                     Products = new List<ProductDetails>
@@ -869,24 +870,301 @@ namespace QLN.Common.Infrastructure.Service.Payments
                 await _dbContext.SaveChangesAsync(cancellationToken);
 
                 // create the pay to feature and reference the payment Id
+                Guid subscriptionId = advert.SubscriptionId != null ? advert.SubscriptionId.Value : Guid.Empty;
+
                 var addonId = await _subscriptionService.PurchaseAddonAsync(new V2UserAddonPurchaseRequestDto
                 {
                     UserId = user.LegacyUid.ToString(),
                     ProductCode = d365ItemId,
                     PaymentId = paymentEntity.PaymentId,
-                    SubscriptionId = advert.SubscriptionId != null ? advert.SubscriptionId.Value : Guid.Empty
+                    SubscriptionId = subscriptionId
                 }, cancellationToken);
 
                 // Update payment entity with addon ID
                 paymentEntity.UserAddonIds = new List<Guid> { addonId };
                 await _dbContext.SaveChangesAsync(cancellationToken);
+
+                var result = await _classifiedService.UpdateClassifiedItemsAd(advert, cancellationToken);
+
+                if (result != null)
+                {
+                    return "Items: Pay To Feature processed successfully";
+
+                }
+                else
+                {
+                    return "Error processing items pay to feature.";
+                }
+
             }
             catch (Exception ex)
             {
-                return $"Error processing pay to feature: {ex.Message}";
+                return $"Error processing items pay to feature: {ex.Message}";
+            }
+        }
+
+        private async Task<string> ProcessPaytoFeatureCollectiblesAsync(int adId, string d365ItemId, decimal price, CancellationToken cancellationToken)
+        {
+            var advert = await _classifiedService.GetCollectiblesAdById(adId, cancellationToken);
+
+            if (advert == null)
+            {
+                await SendD365ErrorEmail(null, $"Advert with ID {adId} not found.", cancellationToken);
+                return $"Advert with ID {adId} not found.";
             }
 
-            return "Ad Feature processed successfully";
+            if (advert.SubscriptionId == null || advert.SubscriptionId == Guid.Empty)
+            {
+                await SendD365ErrorEmail(null, $"Advert with ID {adId} does not have a valid SubscriptionId.", cancellationToken);
+                return $"Advert with ID {adId} does not have a valid SubscriptionId.";
+            }
+
+            var user = await _userManager.FindByIdAsync(advert.UserId);
+
+            if (user == null)
+            {
+                await SendD365ErrorEmail(null, $"Pay to Feature Error: User with ID {advert.UserId} not found for AdId {adId}.", cancellationToken);
+                return $"User with ID {advert.UserId} not found for AdId {adId}.";
+            }
+
+            try
+            {
+                var paymentEntity = new PaymentEntity
+                {
+                    Gateway = Gateway.D365,
+                    Date = DateTime.UtcNow,
+                    Fee = price,
+                    PaidByUid = user.Id.ToString(),
+                    PaymentMethod = PaymentMethod.Cash,
+                    Source = Source.D365,
+                    Status = PaymentStatus.Success,
+                    Vertical = Vertical.Classifieds,
+                    SubVertical = SubVertical.Collectibles,
+                    AdId = adId,
+                    TriggeredSource = TriggeredSource.D365,
+                    Products = new List<ProductDetails>
+                {
+                    new ProductDetails
+                    {
+                        ProductType = ProductType.ADDON_FEATURE,
+                        ProductCode = d365ItemId,
+                        Price = price
+                    }
+                }
+                };
+
+                // TODO: This maybe needs to be wrapped in a try catch
+                var payment = await _dbContext.Payments.AddAsync(paymentEntity, cancellationToken);
+                await _dbContext.SaveChangesAsync(cancellationToken);
+
+                // create the pay to feature and reference the payment Id
+                Guid subscriptionId = advert.SubscriptionId != null ? advert.SubscriptionId.Value : Guid.Empty;
+
+                var addonId = await _subscriptionService.PurchaseAddonAsync(new V2UserAddonPurchaseRequestDto
+                {
+                    UserId = user.LegacyUid.ToString(),
+                    ProductCode = d365ItemId,
+                    PaymentId = paymentEntity.PaymentId,
+                    SubscriptionId = subscriptionId
+                }, cancellationToken);
+
+                // Update payment entity with addon ID
+                paymentEntity.UserAddonIds = new List<Guid> { addonId };
+                await _dbContext.SaveChangesAsync(cancellationToken);
+
+                var result = await _classifiedService.UpdateClassifiedCollectiblesAd(advert, cancellationToken);
+
+                if (result != null)
+                {
+                    return "Collectibles: Pay To Feature processed successfully";
+
+                }
+                else
+                {
+                    return "Error processing collectibles pay to feature.";
+                }
+
+            }
+            catch (Exception ex)
+            {
+                return $"Error processing collectibles pay to feature: {ex.Message}";
+            }
+        }
+
+        private async Task<string> ProcessPaytoFeaturePrelovedAsync(int adId, string d365ItemId, decimal price, CancellationToken cancellationToken)
+        {
+            var advert = await _classifiedService.GetPrelovedAdById(adId, cancellationToken);
+
+            if (advert == null)
+            {
+                await SendD365ErrorEmail(null, $"Advert with ID {adId} not found.", cancellationToken);
+                return $"Advert with ID {adId} not found.";
+            }
+
+            if (advert.SubscriptionId == null || advert.SubscriptionId == Guid.Empty)
+            {
+                await SendD365ErrorEmail(null, $"Advert with ID {adId} does not have a valid SubscriptionId.", cancellationToken);
+                return $"Advert with ID {adId} does not have a valid SubscriptionId.";
+            }
+
+            var user = await _userManager.FindByIdAsync(advert.UserId);
+
+            if (user == null)
+            {
+                await SendD365ErrorEmail(null, $"Pay to Feature Error: User with ID {advert.UserId} not found for AdId {adId}.", cancellationToken);
+                return $"User with ID {advert.UserId} not found for AdId {adId}.";
+            }
+
+            try
+            {
+                var paymentEntity = new PaymentEntity
+                {
+                    Gateway = Gateway.D365,
+                    Date = DateTime.UtcNow,
+                    Fee = price,
+                    PaidByUid = user.Id.ToString(),
+                    PaymentMethod = PaymentMethod.Cash,
+                    Source = Source.D365,
+                    Status = PaymentStatus.Success,
+                    Vertical = Vertical.Classifieds,
+                    SubVertical = SubVertical.Collectibles,
+                    AdId = adId,
+                    TriggeredSource = TriggeredSource.D365,
+                    Products = new List<ProductDetails>
+                {
+                    new ProductDetails
+                    {
+                        ProductType = ProductType.ADDON_FEATURE,
+                        ProductCode = d365ItemId,
+                        Price = price
+                    }
+                }
+                };
+
+                // TODO: This maybe needs to be wrapped in a try catch
+                var payment = await _dbContext.Payments.AddAsync(paymentEntity, cancellationToken);
+                await _dbContext.SaveChangesAsync(cancellationToken);
+
+                // create the pay to feature and reference the payment Id
+                Guid subscriptionId = advert.SubscriptionId != null ? advert.SubscriptionId.Value : Guid.Empty;
+
+                var addonId = await _subscriptionService.PurchaseAddonAsync(new V2UserAddonPurchaseRequestDto
+                {
+                    UserId = user.LegacyUid.ToString(),
+                    ProductCode = d365ItemId,
+                    PaymentId = paymentEntity.PaymentId,
+                    SubscriptionId = subscriptionId
+                }, cancellationToken);
+
+                // Update payment entity with addon ID
+                paymentEntity.UserAddonIds = new List<Guid> { addonId };
+                await _dbContext.SaveChangesAsync(cancellationToken);
+
+                var result = await _classifiedService.UpdateClassifiedPrelovedAd(advert, cancellationToken);
+
+                if (result != null)
+                {
+                    return "Preloved: Pay To Feature processed successfully";
+
+                }
+                else
+                {
+                    return "Error processing preloved pay to feature.";
+                }
+
+            }
+            catch (Exception ex)
+            {
+                return $"Error processing preloved pay to feature: {ex.Message}";
+            }
+        }
+
+        private async Task<string> ProcessPaytoFeatureServicesAsync(int adId, string d365ItemId, decimal price, CancellationToken cancellationToken)
+        {
+            var advert = await _servicesService.GetServiceAdById(adId, cancellationToken);
+
+            if (advert == null)
+            {
+                await SendD365ErrorEmail(null, $"Advert with ID {adId} not found.", cancellationToken);
+                return $"Advert with ID {adId} not found.";
+            }
+
+            if (advert.SubscriptionId == null || advert.SubscriptionId == Guid.Empty)
+            {
+                await SendD365ErrorEmail(null, $"Advert with ID {adId} does not have a valid SubscriptionId.", cancellationToken);
+                return $"Advert with ID {adId} does not have a valid SubscriptionId.";
+            }
+
+            var user = await _userManager.FindByIdAsync(advert.UserId);
+
+            if (user == null)
+            {
+                await SendD365ErrorEmail(null, $"Pay to Feature Error: User with ID {advert.UserId} not found for AdId {adId}.", cancellationToken);
+                return $"User with ID {advert.UserId} not found for AdId {adId}.";
+            }
+
+            try
+            {
+                var paymentEntity = new PaymentEntity
+                {
+                    Gateway = Gateway.D365,
+                    Date = DateTime.UtcNow,
+                    Fee = price,
+                    PaidByUid = user.Id.ToString(),
+                    PaymentMethod = PaymentMethod.Cash,
+                    Source = Source.D365,
+                    Status = PaymentStatus.Success,
+                    Vertical = Vertical.Classifieds,
+                    SubVertical = SubVertical.Collectibles,
+                    AdId = adId,
+                    TriggeredSource = TriggeredSource.D365,
+                    Products = new List<ProductDetails>
+                {
+                    new ProductDetails
+                    {
+                        ProductType = ProductType.ADDON_FEATURE,
+                        ProductCode = d365ItemId,
+                        Price = price
+                    }
+                }
+                };
+
+                // TODO: This maybe needs to be wrapped in a try catch
+                var payment = await _dbContext.Payments.AddAsync(paymentEntity, cancellationToken);
+                await _dbContext.SaveChangesAsync(cancellationToken);
+
+                // create the pay to feature and reference the payment Id
+                Guid subscriptionId = advert.SubscriptionId != null ? advert.SubscriptionId.Value : Guid.Empty;
+
+                var addonId = await _subscriptionService.PurchaseAddonAsync(new V2UserAddonPurchaseRequestDto
+                {
+                    UserId = user.LegacyUid.ToString(),
+                    ProductCode = d365ItemId,
+                    PaymentId = paymentEntity.PaymentId,
+                    SubscriptionId = subscriptionId
+                }, cancellationToken);
+
+                // Update payment entity with addon ID
+                paymentEntity.UserAddonIds = new List<Guid> { addonId };
+                await _dbContext.SaveChangesAsync(cancellationToken);
+
+                var result = await _servicesService.UpdateServiceAd(user.Id, advert, cancellationToken);
+
+                if (result != null)
+                {
+                    return "Services: Pay To Feature processed successfully";
+
+                }
+                else
+                {
+                    return "Error processing services pay to feature.";
+                }
+
+            }
+            catch (Exception ex)
+            {
+                return $"Error processing services pay to feature: {ex.Message}";
+            }
         }
 
         private async Task<string> ProcessPaytoPromoteAsync(int adId, string d365ItemId, decimal price, Vertical vertical, CancellationToken cancellationToken)
@@ -1039,6 +1317,12 @@ namespace QLN.Common.Infrastructure.Service.Payments
 
         private async Task<string> ProcessSubscriptionsAsync(D365Order order, long qlUserId, decimal price, Vertical vertical, SubVertical? subVertical, CancellationToken cancellationToken)
         {
+            // this will handle all subscription types
+            // including:
+            // Deals
+            // Stores
+            // Preloved
+            // Services (where subVertical will be null)
             try
             {
                 var user = await FindOrCreateUser(qlUserId, order.QLUsername, order.Email, order.Mobile, cancellationToken);
