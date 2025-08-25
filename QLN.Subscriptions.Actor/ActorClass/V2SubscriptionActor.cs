@@ -145,7 +145,7 @@ namespace QLN.Subscriptions.Actor.ActorClass
                     SubVertical = product.SubVertical,
                     Quota = BuildSubscriptionQuotaFromProduct(product),
                     StartDate = DateTime.UtcNow,
-                    EndDate = ComputeEndDateFromProduct(product, DateTime.UtcNow),
+                    EndDate = DateTime.UtcNow.Add(GetDurationFromProduct(product)),
                     Status = SubscriptionStatus.Active,
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow
@@ -837,35 +837,22 @@ namespace QLN.Subscriptions.Actor.ActorClass
             };
         }
 
-        private DateTime ComputeEndDateFromProduct(Product product, DateTime startUtc)
+        private TimeSpan GetDurationFromProduct(Product product)
         {
-            var duration = product.Constraints?.Duration;
-            if (duration.HasValue)
+            if (product.Constraints?.Duration.HasValue == true)
             {
-                var days = (int)Math.Round(duration.Value.TotalDays);
-
-                return days switch
-                {
-                    30 => startUtc.AddMonths(1),
-                    60 => startUtc.AddMonths(2),
-                    90 => startUtc.AddMonths(3),
-                    180 => startUtc.AddMonths(6),
-                    365 => startUtc.AddYears(1),
-                    _ => startUtc.Add(duration.Value)
-                };
+                return product.Constraints.Duration.Value;
             }
 
             return product.ProductType switch
             {
-                ProductType.SUBSCRIPTION => startUtc.AddMonths(1),
-                ProductType.ADDON_COMBO => startUtc.AddMonths(1),
-                ProductType.ADDON_FEATURE => startUtc.AddMonths(1),
-                ProductType.ADDON_REFRESH => startUtc.AddMonths(1),
-                ProductType.FREE => startUtc.AddMonths(12),
-                _ => startUtc.AddMonths(1)
+                ProductType.SUBSCRIPTION => TimeSpan.FromDays(30),
+                ProductType.ADDON_COMBO => TimeSpan.FromDays(30),
+                ProductType.ADDON_FEATURE => TimeSpan.FromDays(30),
+                ProductType.ADDON_REFRESH => TimeSpan.FromDays(30),
+                _ => TimeSpan.FromDays(30)
             };
         }
-
         private static string MapQuotaTypeToAction(string quotaType) =>
             (quotaType ?? string.Empty).ToLower() switch
             {
