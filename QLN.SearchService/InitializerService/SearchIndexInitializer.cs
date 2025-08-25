@@ -86,6 +86,8 @@ namespace QLN.SearchService
                 var modelType = ResolveModelType(vertical);
                 var fields = new FieldBuilder().Build(modelType);
 
+                ConfigureFieldsForPartialSearch(fields.ToList());
+
                 var attributesField = fields.FirstOrDefault(f => f.Name == "AttributesJson");
                 if (attributesField != null)
                 {
@@ -124,9 +126,22 @@ namespace QLN.SearchService
                     }
                 };
 
-                _logger.LogInformation("Creating index '{IndexName}' for vertical '{Vertical}'", indexName, vertical);
+                var suggesterFields = GetSuggesterFields(fieldsList);
+                if (suggesterFields.Any())
+                {
+                    indexDefinition.Suggesters.Add(
+                        new SearchSuggester("default-suggester", suggesterFields)
+                    );
+                    _logger.LogInformation("Added suggester with {Count} fields", suggesterFields.Count);
+                }
+                else
+                {
+                    _logger.LogWarning("No suitable fields found for suggester in index '{IndexName}'", indexName);
+                }
+
+                _logger.LogInformation("Creating index '{IndexName}' for vertical '{Vertical}' with enhanced search capabilities", indexName, vertical);
                 await _indexClient.CreateIndexAsync(indexDefinition);
-                _logger.LogInformation("Index '{IndexName}' created successfully.", indexName);
+                _logger.LogInformation("Index '{IndexName}' created successfully with partial search support.", indexName);
             }
             catch (RequestFailedException ex)
             {
@@ -138,6 +153,36 @@ namespace QLN.SearchService
                 _logger.LogError(ex, "Unexpected error creating index '{IndexName}'", indexName);
                 throw;
             }
+        }
+
+        private void ConfigureFieldsForPartialSearch(List<SearchField> fields)
+        {
+            var textualFields = new[] { "Title", "Description", "Name", "Content", "Tags", "CompanyName", "Location" };
+
+            foreach (var field in fields.Where(f => f.IsSearchable == true))
+            {
+                if (textualFields.Any(tf => field.Name.Contains(tf, StringComparison.OrdinalIgnoreCase)))
+                {
+
+                    field.AnalyzerName = LexicalAnalyzerName.EnMicrosoft; 
+                    _logger.LogDebug("Applied enhanced analyzer to field '{FieldName}'", field.Name);
+                }
+                else
+                {
+                    field.AnalyzerName = LexicalAnalyzerName.StandardLucene;
+                }
+            }
+        }
+
+        private List<string> GetSuggesterFields(List<SearchField> fields)
+        {
+            var suggesterFields = new[] { "Title", "Name", "Description", "CompanyName" };
+            return fields
+                .Where(f => f.IsSearchable == true &&
+                           suggesterFields.Any(sf => f.Name.Contains(sf, StringComparison.OrdinalIgnoreCase)))
+                .Select(f => f.Name)
+                .Take(10) 
+                .ToList();
         }
 
         private Type ResolveModelType(string vertical)
@@ -170,5 +215,4 @@ namespace QLN.SearchService
             return type;
         }
     }
-
 }

@@ -17,5 +17,6 @@ namespace QLN.Common.Infrastructure.IService.ISearchService
         Task DeleteAsync(string indexName, string key);
         Task<GetWithSimilarResponse<T>> GetBySlugWithSimilarAsync<T>(string indexName, string slug, int similarPageSize = 10) where T : class;
         Task<AzureSearchResults<T>> SearchRawAsync<T>(string indexName, RawSearchRequest request, CancellationToken ct = default) where T : class;
+        Task<List<string>> GetSearchSuggestionsAsync(string indexName, string searchText, int maxSuggestions = 10);
     }
 }

@@ -14,6 +14,7 @@ using Microsoft.AspNetCore.Builder;
 using QLN.Common.Infrastructure.Constants;
 using Dapr;
 using System.Net;
+using System.Runtime.Intrinsics.Arm;
 
 namespace QLN.Common.Infrastructure.CustomEndpoints;
 
@@ -1069,6 +1070,41 @@ public static class CommonIndexingEndpoints
         .WithTags("Indexes")
         .WithSummary("Get index statistics")
         .WithDescription("Examples: /api/indexes/classifiedsitems/stats");
+
+        group.MapGet("/{index}/suggestions", async (
+                [FromRoute] string index,
+                [FromQuery] string q,
+                [FromServices] ISearchService svc,
+                [FromServices] ILoggerFactory logFac,
+                [FromQuery] int size = 10
+            ) =>
+        {
+            var logger = logFac.CreateLogger("CommonIndexing");
+
+            if (string.IsNullOrWhiteSpace(index))
+                return Results.BadRequest("Index parameter is required");
+
+            if (string.IsNullOrWhiteSpace(q) || q.Length < 2)
+                return Results.Ok(new List<string>());
+
+            if (size <= 0 || size > 50)
+                size = 10;
+
+            try
+            {
+                var suggestions = await svc.GetSearchSuggestionsAsync(index, q, size);
+                return Results.Ok(suggestions);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Suggestions failed for index '{Index}', query '{Query}'", index, q);
+                return Results.Ok(new List<string>());
+            }
+        })
+        .WithName("GetSearchSuggestions")
+        .WithTags("Indexes")
+        .WithSummary("Get search suggestions for autocomplete")
+        .WithDescription("Examples: /api/indexes/classifiedsitems/suggestions?q=micr&size=10");
 
         return group;
     }

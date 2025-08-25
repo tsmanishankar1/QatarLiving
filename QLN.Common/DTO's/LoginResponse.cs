@@ -14,8 +14,7 @@ namespace QLN.Common.DTO_s
         public string AccessToken { get; set; } = string.Empty;
         public string RefreshToken { get; set; } = string.Empty;
         public bool? IsTwoFactorEnabled { get; set; } = false;
-        public Dictionary<Vertical, List<V2SubscriptionResponseDto>> ActiveSubscriptions { get; set; } = new();
-        public Dictionary<Vertical, List<CompanyWithSubscriptionDto>> Companies { get; set; } = new();
+        public Dictionary<Vertical, List<V2SubscriptionCompanyResponse>> ActiveSubscriptions { get; set; } = new();
     }
 
     public class RefreshTokenRequest
