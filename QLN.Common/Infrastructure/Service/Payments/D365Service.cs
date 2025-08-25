@@ -391,6 +391,10 @@ namespace QLN.Common.Infrastructure.Service.Payments
                 return $"Product not found for product code {order.D365Itemid}";
             }
 
+            // NOTE:
+            // the logic below is incompomplete - we actually need to care about the subVertical as
+            // there are different methods per subvertical to update database tables
+
             switch (product.ProductType)
             {
                 // Always order these based on which ones are more likely to happen often
