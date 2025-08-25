@@ -582,5 +582,30 @@ namespace QLN.Backend.API.Service.SearchService
                 throw new InvalidOperationException($"Unexpected error in RawSearchAsync: {ex.Message}", ex);
             }
         }
+        public async Task<List<string>> GetSearchSuggestionsAsync(string indexName, string searchText, int maxSuggestions = 10)
+        {
+            if (string.IsNullOrWhiteSpace(indexName))
+                throw new ArgumentException("IndexName is required.", nameof(indexName));
+
+            if (string.IsNullOrWhiteSpace(searchText) || searchText.Length < 2)
+                return new List<string>();
+
+            try
+            {
+                var methodName = $"/api/indexes/{indexName}/suggestions?q={Uri.EscapeDataString(searchText)}&size={maxSuggestions}";
+                var suggestions = await _dapr.InvokeMethodAsync<List<string>>(
+                    HttpMethod.Get,
+                    appId: SERVICE_APP_ID,
+                    methodName: methodName
+                );
+
+                return suggestions ?? new List<string>();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting suggestions for index '{IndexName}', text '{SearchText}'", indexName, searchText);
+                return new List<string>();
+            }
+        }
     }
 }

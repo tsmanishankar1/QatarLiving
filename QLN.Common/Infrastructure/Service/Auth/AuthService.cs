@@ -1273,39 +1273,73 @@ namespace QLN.Common.Infrastructure.Service.AuthService
 
                     //}
                 }
-                var activeSubscriptions = new List<V2SubscriptionResponseDto>();
+                List<V2SubscriptionResponseDto> rawSubscriptions;
                 try
                 {
-                    var allActiveSubscriptions = await _v2SubscriptionService.GetAllActiveSubscriptionsAsync(user.Id.ToString());
-                    activeSubscriptions = allActiveSubscriptions
+                    rawSubscriptions = (await _v2SubscriptionService.GetAllActiveSubscriptionsAsync(user.Id.ToString()))
                         .Where(s => s.ProductType == ProductType.SUBSCRIPTION && s.IsActive)
                         .ToList();
                 }
                 catch (Exception ex)
                 {
                     _log.LogError(ex, "Error fetching active subscriptions for user {UserId}", user.Id);
+                    rawSubscriptions = new List<V2SubscriptionResponseDto>();
                 }
-                var companiesByVertical = new Dictionary<Vertical, List<CompanyWithSubscriptionDto>>();
-                try
-                {
-                    var userCompanies = await _companyProfile.GetCompaniesByToken(user.Id.ToString());
 
-                    if (userCompanies != null && userCompanies.Any())
+                var activeSubscriptions = new List<V2SubscriptionCompanyResponse>();
+
+                foreach (var sub in rawSubscriptions)
+                {
+                    string companyName = string.Empty;
+                    string companyLogo = string.Empty;
+
+                    if (sub.CompanyId.HasValue)
                     {
-                        var companiesGrouped = userCompanies
-                            .GroupBy(c => MapVerticalTypeToVertical(c.Vertical))
-                            .ToDictionary(g => g.Key, g => g.ToList());
-
-                        companiesByVertical = companiesGrouped;
+                        try
+                        {
+                            var company = await _companyProfile.GetCompanyById(sub.CompanyId.Value);
+                            if (company != null)
+                            {
+                                companyName = company.CompanyName ?? string.Empty;
+                                companyLogo = company.CompanyLogo ?? string.Empty;
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            _log.LogError(ex, "Error fetching company info for CompanyId {CompanyId}", (Guid)sub.CompanyId);
+                        }
                     }
+
+                    activeSubscriptions.Add(new V2SubscriptionCompanyResponse
+                    {
+                        Id = sub.Id,
+                        ProductCode = sub.ProductCode,
+                        ProductName = sub.ProductName,
+                        ProductType = sub.ProductType,
+                        CompanyName = companyName,
+                        CompanyLogo = companyLogo,
+                        UserId = sub.UserId,
+                        VerticalName = sub.VerticalName,
+                        Vertical = sub.Vertical,
+                        SubVertical = sub.SubVertical,
+                        Price = sub.Price,
+                        Currency = sub.Currency,
+                        Quota = sub.Quota,
+                        StartDate = sub.StartDate,
+                        EndDate = sub.EndDate,
+                        StatusId = sub.StatusId,
+                        StatusName = sub.StatusName,
+                        IsActive = sub.IsActive,
+                        DaysRemaining = sub.DaysRemaining,
+                        Version = sub.Version
+                    });
                 }
-                catch (Exception ex)
-                {
-                    _log.LogError(ex, "Error fetching companies for user {UserId}", user.Id);
-                }
+
+                // Step 3: Group enriched subscriptions by vertical
                 var subscriptionsByVertical = activeSubscriptions
                     .GroupBy(s => s.Vertical)
                     .ToDictionary(g => g.Key, g => g.ToList());
+
                 var accessTs = _config.GetValue<TimeSpan>("TokenLifetimes:AccessToken");
                 var refreshTs = _config.GetValue<TimeSpan>("TokenLifetimes:RefreshToken");
 
@@ -1332,8 +1366,7 @@ namespace QLN.Common.Infrastructure.Service.AuthService
                     AccessToken = accessToken,
                     RefreshToken = refreshToken,
                     IsTwoFactorEnabled = false,
-                    ActiveSubscriptions = subscriptionsByVertical,
-                    Companies = companiesByVertical
+                    ActiveSubscriptions = subscriptionsByVertical
 
                 });
             }
