@@ -3259,6 +3259,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                     L1Category = c.L1Category,
                     Location = c.Location,
                     Brand = c.Brand,
+                    Images=c.Images,
                     Model = c.Model,
                     Condition = c.Condition,
                     Color = c.Color,

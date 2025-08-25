@@ -177,31 +177,34 @@ namespace QLN.Backend.API.Service.ServiceBoService
         }
 
         public async Task<PaginatedResult<ServiceP2PAdSummaryDto>> GetAllP2PServiceBoAds(
-       string? sortBy = "CreationDate",
-       string? search = null,
-       DateTime? fromDate = null,
-       DateTime? toDate = null,
-       int pageNumber = 1,
-       int pageSize = 12,
-       CancellationToken cancellationToken = default)
+    string? sortBy = "CreationDate",
+    string? search = null,
+    DateTime? fromDate = null,
+    DateTime? toDate = null,
+    int pageNumber = 1,
+    int pageSize = 12,
+    CancellationToken cancellationToken = default)
         {
             try
             {
-
                 var queryParams = new List<string>
         {
             $"sortBy={Uri.EscapeDataString(sortBy ?? "CreationDate")}",
             $"pageNumber={pageNumber}",
-            $"pageSize={pageSize}"
+            $"pageSize={pageSize}",
+
+            // Pass adType=PayToPublish explicitly
+            $"adType={(int)ServiceAdType.PayToPublish}"
         };
 
                 if (!string.IsNullOrWhiteSpace(search))
                     queryParams.Add($"search={Uri.EscapeDataString(search)}");
+
                 if (fromDate.HasValue)
                     queryParams.Add($"fromDate={Uri.EscapeDataString(fromDate.Value.ToString("o"))}");
+
                 if (toDate.HasValue)
                     queryParams.Add($"toDate={Uri.EscapeDataString(toDate.Value.ToString("o"))}");
-               
 
                 var queryString = string.Join("&", queryParams);
                 var url = $"/api/servicebo/getallp2pbo?{queryString}";
@@ -245,6 +248,7 @@ namespace QLN.Backend.API.Service.ServiceBoService
                 throw;
             }
         }
+
 
         public async Task<PaginatedResult<ServiceSubscriptionAdSummaryDto>> GetAllSubscriptionAdsServiceBo(
                 string? sortBy = "CreationDate",

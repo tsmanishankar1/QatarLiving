@@ -290,8 +290,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints
                             Status = StatusCodes.Status400BadRequest
                         });
                     }
-
-                    // Cancel subscription for that user
                     var result = await service.CancelSubscriptionAsync(subscriptionId, uid, cancellationToken);
 
                     if (!result)

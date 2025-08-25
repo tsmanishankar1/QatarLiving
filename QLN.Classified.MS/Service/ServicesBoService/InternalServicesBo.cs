@@ -32,18 +32,18 @@ namespace QLN.Classified.MS.Service.ServicesBoService
         }
 
         public async Task<PaginatedResult<ServiceAdSummaryDto>> GetAllServiceBoAds(
-       string? sortBy = "CreatedAt",
-       string? search = null,
-       DateTime? fromDate = null,
-       DateTime? toDate = null,
-       DateTime? publishedFrom = null,
-       DateTime? publishedTo = null,
-       int? status = null,
-       bool? isFeatured = null,
-       bool? isPromoted = null,
-       int pageNumber = 1,
-       int pageSize = 12,
-       CancellationToken cancellationToken = default)
+     string? sortBy = "CreatedAt",
+     string? search = null,
+     DateTime? fromDate = null,
+     DateTime? toDate = null,
+     DateTime? publishedFrom = null,
+     DateTime? publishedTo = null,
+     int? status = null,
+     bool? isFeatured = null,
+     bool? isPromoted = null,
+     int pageNumber = 1,
+     int pageSize = 12,
+     CancellationToken cancellationToken = default)
         {
             try
             {
@@ -51,6 +51,7 @@ namespace QLN.Classified.MS.Service.ServicesBoService
 
                 var query = _dbContext.Services.AsQueryable();
                 query = query.Where(ad => ad.IsActive);
+
                 if (!string.IsNullOrWhiteSpace(search))
                 {
                     var lowerSearch = search.ToLowerInvariant();
@@ -85,8 +86,8 @@ namespace QLN.Classified.MS.Service.ServicesBoService
 
                 if (isPromoted.HasValue)
                     query = query.Where(ad => ad.IsPromoted == isPromoted.Value);
+                query = query.Where(ad => ad.AdType == ServiceAdType.PayToPublish);
 
-                
                 sortBy = (sortBy?.ToLowerInvariant() == "asc") ? "asc" : "desc";
                 query = sortBy == "asc"
                     ? query.OrderBy(x => x.CreatedAt)
@@ -94,20 +95,17 @@ namespace QLN.Classified.MS.Service.ServicesBoService
 
                 int totalCount = await query.CountAsync(cancellationToken);
 
-                
                 var pagedAds = await query
                     .Skip((pageNumber - 1) * pageSize)
                     .Take(pageSize)
                     .ToListAsync(cancellationToken);
 
-              
                 var adIdStrings = pagedAds.Select(ad => ad.Id).ToList();
 
                 var matchingPayments = await _paymentsContext.Payments
                     .Where(p => (int)p.Vertical == verticalId && adIdStrings.Contains((long)p.AdId))
                     .ToListAsync(cancellationToken);
 
-                
                 var resultItems = pagedAds.Select(serviceAd =>
                 {
                     var matchingPayment = matchingPayments.FirstOrDefault(p => p.AdId == serviceAd.Id);
@@ -146,6 +144,8 @@ namespace QLN.Classified.MS.Service.ServicesBoService
                 throw new Exception("Error retrieving service ads", ex);
             }
         }
+
+
 
 
 
@@ -356,43 +356,51 @@ namespace QLN.Classified.MS.Service.ServicesBoService
 
 
         public async Task<PaginatedResult<ServiceP2PAdSummaryDto>> GetAllP2PServiceBoAds(
-     string? sortBy = "CreatedAt",
-     string? search = null,
-     DateTime? fromDate = null,
-     DateTime? toDate = null,
-     int pageNumber = 1,
-     int pageSize = 12,
-     CancellationToken cancellationToken = default)
+      string? sortBy = "CreatedAt",
+      string? search = null,
+      DateTime? fromDate = null,
+      DateTime? toDate = null,
+      int pageNumber = 1,
+      int pageSize = 12,
+      CancellationToken cancellationToken = default)
         {
             try
             {
                 const int verticalId = 4;
-                var query = _dbContext.Services
-                    .Where(ad => ad.IsActive)
-                    .AsQueryable();
 
+                // Only active ads of type PayToPublish
+                var query = _dbContext.Services
+                    .AsNoTracking()
+                    .Where(ad => ad.IsActive && ad.AdType == ServiceAdType.PayToPublish);
+
+                // Search filter
                 if (!string.IsNullOrWhiteSpace(search))
                 {
                     var lowerSearch = search.ToLowerInvariant();
                     query = query.Where(ad =>
                         (!string.IsNullOrEmpty(ad.Title) && ad.Title.ToLower().Contains(lowerSearch)) ||
-                        ad.Id.ToString().ToLower().Contains(lowerSearch) ||
+                        ad.Id.ToString().Contains(lowerSearch) ||
                         (!string.IsNullOrEmpty(ad.UserName) && ad.UserName.ToLower().Contains(lowerSearch))
                     );
                 }
 
+                // Date filters
                 if (fromDate.HasValue)
                     query = query.Where(ad => ad.CreatedAt >= fromDate.Value);
+
                 if (toDate.HasValue)
                     query = query.Where(ad => ad.CreatedAt <= toDate.Value);
 
+                // Sorting
                 sortBy = sortBy?.ToLowerInvariant() ?? "desc";
                 query = sortBy == "asc"
                     ? query.OrderBy(x => x.CreatedAt)
                     : query.OrderByDescending(x => x.CreatedAt);
 
+                // Paging metadata
                 var totalCount = await query.CountAsync(cancellationToken);
 
+                // Get paged ads
                 var pagedAds = await query
                     .Skip((pageNumber - 1) * pageSize)
                     .Take(pageSize)
@@ -411,14 +419,14 @@ namespace QLN.Classified.MS.Service.ServicesBoService
                     })
                     .ToListAsync(cancellationToken);
 
-                
+                // Collect user IDs for subscription lookup
                 var userIds = pagedAds
                     .Where(s => !string.IsNullOrWhiteSpace(s.CreatedBy))
                     .Select(s => s.CreatedBy)
                     .Distinct()
                     .ToList();
 
-               
+                // Fetch subscriptions for these users
                 var subscriptions = new List<(Guid SubscriptionId, string UserId, int? PaymentId, DateTime StartDate, DateTime EndDate)>();
                 if (userIds.Any())
                 {
@@ -439,12 +447,13 @@ namespace QLN.Classified.MS.Service.ServicesBoService
                         .ToList();
                 }
 
-             
-                var adIdStrings = pagedAds.Select(ad => ad.Id).ToList();
+                // Fetch payments for these ads
+                var adIds = pagedAds.Select(ad => ad.Id).ToList();
                 var matchingPayments = await _paymentsContext.Payments
-                    .Where(p => (int)p.Vertical == verticalId && adIdStrings.Contains((long)p.AdId))
+                    .Where(p => (int)p.Vertical == verticalId && adIds.Contains((long)p.AdId))
                     .ToListAsync(cancellationToken);
 
+                // Build response DTOs
                 var pagedItems = pagedAds.Select(ad =>
                 {
                     var matchingPayment = matchingPayments.FirstOrDefault(p => p.AdId == ad.Id);
@@ -453,7 +462,6 @@ namespace QLN.Classified.MS.Service.ServicesBoService
                         ? subscriptions.FirstOrDefault(s => s.UserId == ad.CreatedBy)
                         : (SubscriptionId: Guid.Empty, UserId: string.Empty, PaymentId: (int?)null, StartDate: DateTime.MinValue, EndDate: DateTime.MinValue);
 
-                    
                     string productType = "N/A";
                     if (matchingSubscription.UserId != string.Empty)
                     {
@@ -496,14 +504,13 @@ namespace QLN.Classified.MS.Service.ServicesBoService
                         Status = ad.Status,
                         CreatedAt = ad.CreatedAt,
                         DatePublished = ad.PublishedDate,
-                       
                         StartDate = matchingSubscription.UserId != string.Empty
                             ? matchingSubscription.StartDate.ToString("dd/MM/yyyy")
                             : "N/A",
                         EndDate = matchingSubscription.UserId != string.Empty
                             ? matchingSubscription.EndDate.ToString("dd/MM/yyyy")
                             : "N/A",
-                        Views = "02/10/2025" 
+                        Views = "02/10/2025" // Placeholder?
                     };
                 }).ToList();
 
@@ -524,36 +531,40 @@ namespace QLN.Classified.MS.Service.ServicesBoService
 
 
 
+
         public async Task<PaginatedResult<ServiceSubscriptionAdSummaryDto>> GetAllSubscriptionAdsServiceBo(
-     string? sortBy = "createdAt",
-     string? search = null,
-     DateTime? fromDate = null,
-     DateTime? toDate = null,
-     DateTime? publishedFrom = null,
-     DateTime? publishedTo = null,
-     int pageNumber = 1,
-     int pageSize = 12,
-     CancellationToken cancellationToken = default)
+      string? sortBy = "createdAt",
+      string? search = null,
+      DateTime? fromDate = null,
+      DateTime? toDate = null,
+      DateTime? publishedFrom = null,
+      DateTime? publishedTo = null,
+      int pageNumber = 1,
+      int pageSize = 12,
+      CancellationToken cancellationToken = default)
         {
             try
             {
-                const int verticalId = 4; 
+                const int verticalId = 4;
 
+                
                 var query = _dbContext.Services
-                    .Where(ad => ad.IsActive)
-                    .AsQueryable();
+                    .AsNoTracking()
+                    .Where(ad => ad.IsActive && ad.AdType == ServiceAdType.Subscription);
 
+               
                 if (!string.IsNullOrWhiteSpace(search))
                 {
                     var lowerSearch = search.ToLowerInvariant();
                     query = query.Where(ad =>
                         (!string.IsNullOrEmpty(ad.Title) && ad.Title.ToLower().Contains(lowerSearch)) ||
-                        ad.Id.ToString().ToLower().Contains(lowerSearch) ||
+                        ad.Id.ToString().Contains(lowerSearch) ||
                         (!string.IsNullOrEmpty(ad.CreatedBy) && ad.CreatedBy.ToLower().Contains(lowerSearch)) ||
                         (!string.IsNullOrEmpty(ad.UserName) && ad.UserName.ToLower().Contains(lowerSearch))
                     );
                 }
 
+               
                 if (fromDate.HasValue)
                     query = query.Where(ad => ad.CreatedAt >= fromDate.Value);
 
@@ -566,13 +577,16 @@ namespace QLN.Classified.MS.Service.ServicesBoService
                 if (publishedTo.HasValue)
                     query = query.Where(ad => ad.PublishedDate.HasValue && ad.PublishedDate.Value <= publishedTo.Value);
 
+                
                 sortBy = sortBy?.ToLowerInvariant();
                 query = sortBy == "asc"
                     ? query.OrderBy(ad => ad.CreatedAt)
                     : query.OrderByDescending(ad => ad.CreatedAt);
 
+               
                 var totalCount = await query.CountAsync(cancellationToken);
 
+              
                 var pagedAds = await query
                     .Skip((pageNumber - 1) * pageSize)
                     .Take(pageSize)
@@ -585,6 +599,7 @@ namespace QLN.Classified.MS.Service.ServicesBoService
                     .Where(p => (int)p.Vertical == verticalId && adIds.Contains((long)p.AdId))
                     .ToListAsync(cancellationToken);
 
+                // Build response DTOs
                 var result = pagedAds.Select(ad =>
                 {
                     var matchingPayment = matchingPayments.FirstOrDefault(p => p.AdId == ad.Id);
@@ -623,6 +638,7 @@ namespace QLN.Classified.MS.Service.ServicesBoService
                 throw new Exception("Error retrieving service ads", ex);
             }
         }
+
         public async Task<BulkAdActionResponseitems> ModerateBulkService(BulkModerationRequest request, string? userId, CancellationToken ct)
         {
             var ads = await _dbContext.Services
