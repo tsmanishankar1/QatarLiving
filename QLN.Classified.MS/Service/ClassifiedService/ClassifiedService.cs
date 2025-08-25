@@ -1528,7 +1528,7 @@ namespace QLN.Classified.MS.Service
                 existingAd.Price = existingAd.Price;
                 existingAd.PriceType = existingAd.PriceType;
                 existingAd.Location = existingAd.Location;
-                existingAd.Status = existingAd.Status;
+                existingAd.Status = existingAd.Status == AdStatus.Published ? AdStatus.PendingApproval : existingAd.Status;
                 existingAd.Location = dto.Location;
                 existingAd.Latitude = dto.Latitude;
                 existingAd.Longitude = dto.Longitude;
@@ -1536,6 +1536,7 @@ namespace QLN.Classified.MS.Service
                 existingAd.WhatsAppNumber = dto.WhatsAppNumber;
                 existingAd.ContactEmail = dto.ContactEmail;
                 existingAd.StreetNumber = dto.StreetNumber;
+                existingAd.Status = AdStatus.PendingApproval;
                 existingAd.BuildingNumber = dto.BuildingNumber;
                 existingAd.Slug = existingAd.Slug;
                 existingAd.zone = dto.zone;
@@ -1624,7 +1625,7 @@ namespace QLN.Classified.MS.Service
                 existingAd.Slug = existingAd.Slug;
                 existingAd.zone = dto.zone;
                 existingAd.Images = dto.Images;
-                existingAd.Attributes = dto.Attributes;
+                existingAd.Status = existingAd.Status == AdStatus.Published && existingAd.AdType == AdTypeEnum.P2P ? AdStatus.PendingApproval: existingAd.Status; existingAd.Attributes = dto.Attributes;
                 existingAd.UpdatedAt = DateTime.UtcNow;
                 existingAd.SubscriptionId = existingAd.SubscriptionId;
                 existingAd.ExpiryDate = existingAd.ExpiryDate;
@@ -1686,7 +1687,7 @@ namespace QLN.Classified.MS.Service
                 existingAd.Description = dto.Description;
                 existingAd.Price = dto.Price;
                 existingAd.PriceType = dto.PriceType;
-                existingAd.Status = existingAd.Status;
+                existingAd.Status = existingAd.Status == AdStatus.Published ? AdStatus.PendingApproval: existingAd.Status;
                 existingAd.Location = dto.Location;
                 existingAd.Latitude = dto.Latitude;
                 existingAd.Longitude = dto.Longitude;
@@ -1785,7 +1786,7 @@ namespace QLN.Classified.MS.Service
                 existingAd.FeaturedExpiryDate = null;
                 existingAd.IsPromoted = false;
                 existingAd.PromotedExpiryDate = null;
-                existingAd.Status = AdStatus.Draft;
+                existingAd.Status = existingAd.Status;
                 existingAd.SubscriptionId = existingAd.SubscriptionId;
                 existingAd.Offertitle = dto.Offertitle;
                 existingAd.Description = dto.Description;
@@ -1996,7 +1997,8 @@ namespace QLN.Classified.MS.Service
                                 deal.Id, userId, deal.UserId);
                             failedAds.Add(deal.Id);
                         }
-                        else if (deal.Status == targetStatus)
+                        else if ((isPublished && deal.Status == AdStatus.Published) ||
+                            (!isPublished && deal.Status == AdStatus.Unpublished))
                         {
                             _logger.LogWarning("Deal {DealId} failed validation: Already has target status {Status}.",
                                 deal.Id, deal.Status);

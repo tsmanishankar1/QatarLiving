@@ -1568,7 +1568,6 @@ namespace QLN.Backend.API.Service.ClassifiedService
                         break;
 
                     case (int)SubVertical.Preloved:
-                    case (int)SubVertical.Deals:
                         if (isPublished && subscriptionId != Guid.Empty)
                         {
                             var ads = await Task.WhenAll(
@@ -1576,7 +1575,21 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
                             if (ads.All(ad =>
                                 string.Equals(ad.AdType.ToString(), "subscription", StringComparison.OrdinalIgnoreCase) ||
-                                string.Equals(ad.AdType.ToString(), "p2p", StringComparison.OrdinalIgnoreCase)))
+                                string.Equals(ad.AdType.ToString(), "p2p", StringComparison.OrdinalIgnoreCase)
+                                && ad.Status != AdStatus.Published))
+                            {
+                                requiresValidation = true;
+                            }
+                        }
+                        break;
+                    case (int)SubVertical.Deals:
+                        if (isPublished && subscriptionId != Guid.Empty)
+                        {
+                            var ads = await Task.WhenAll(
+                                adIds.Select(id => GetDealsAdById(id, cancellationToken)));
+
+                            if (ads.All(ad =>
+                                ad.Status != AdStatus.Published))
                             {
                                 requiresValidation = true;
                             }
