@@ -14,7 +14,7 @@ namespace QLN.Common.Infrastructure.IService.IService
     {
         Task<string> CreateCategory(CategoryDto dto, CancellationToken cancellationToken);
         Task<List<CategoryDto>> GetAllCategories(string? vertical, string? subVertical, CancellationToken cancellationToken = default);
-        Task<ResponseDto> CreateServiceAd(string uid, string userName, Guid subscriptionId, ServiceDto dto, CancellationToken cancellationToken = default);
+        Task<ResponseDto> CreateServiceAd(string uid, string userName, Guid? subscriptionId, ServiceDto dto, CancellationToken cancellationToken = default);
         Task<string> UpdateServiceAd(string userId, Services dto, CancellationToken cancellationToken = default);
         Task<Services?> GetServiceAdById(long id, CancellationToken cancellationToken = default);
         Task<Services?> GetServiceAdBySlug(string? slug, CancellationToken cancellationToken = default);
@@ -25,7 +25,7 @@ namespace QLN.Common.Infrastructure.IService.IService
         Task<Services> RefreshService(RefreshServiceRequest request, string uid, Guid? subscriptionId, CancellationToken ct);
         Task<Services> PublishService(PublishServiceRequest request, string uid, Guid? subscriptionId, CancellationToken ct);
         Task<string> MigrateServiceAd(Services dto, CancellationToken cancellationToken = default);
-        Task<BulkAdActionResponseitems> ModerateBulkService(BulkModerationRequest request, string userId, string subscriptionId, DateTime? expiryDate, CancellationToken cancellationToken = default);
+        Task<BulkAdActionResponseitems> ModerateBulkService(BulkModerationRequest request, string userId, Guid? subscriptionId, DateTime? expiryDate, CancellationToken cancellationToken = default);
         Task<SubscriptionBudgetDto> GetSubscriptionBudgetsAsyncBySubVertical(Guid subscriptionIdFromToken, Vertical verticalId, SubVertical? subVerticalId, CancellationToken cancellationToken = default);
         Task<List<CategoryAdCountDto>> GetCategoryAdCount(CancellationToken ct = default);
         Task<Services> P2PromoteService(PayToPromote request, string uid, Guid addonId, CancellationToken ct);

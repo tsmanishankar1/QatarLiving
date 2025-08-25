@@ -174,7 +174,7 @@ namespace QLN.Classified.MS.Service.Services
             }
         }
 
-        public async Task<ResponseDto> CreateServiceAd(string uid, string userName, Guid subscriptionId, ServiceDto dto, CancellationToken cancellationToken = default)
+        public async Task<ResponseDto> CreateServiceAd(string uid, string userName, Guid? subscriptionId, ServiceDto dto, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -906,7 +906,7 @@ namespace QLN.Classified.MS.Service.Services
 
             return serviceAd;
         }
-        public async Task<BulkAdActionResponseitems> ModerateBulkService(BulkModerationRequest request, string? userId, string subscriptionId, DateTime? expiryDate, CancellationToken ct)
+        public async Task<BulkAdActionResponseitems> ModerateBulkService(BulkModerationRequest request, string userId, Guid? subscriptionId, DateTime? expiryDate, CancellationToken ct)
         {
             var ads = await _dbContext.Services
                 .Where(s => request.AdIds.Contains(s.Id))
@@ -926,7 +926,7 @@ namespace QLN.Classified.MS.Service.Services
             };
             var subscription = await _qLSubscriptionContext.Subscriptions
             .FirstOrDefaultAsync(sub =>
-            sub.SubscriptionId == Guid.Parse(subscriptionId) &&
+            sub.SubscriptionId == (Guid)subscriptionId &&
             (int)sub.Status == (int)SubscriptionStatus.Active, ct);
 
             if (subscription == null)
@@ -1028,10 +1028,10 @@ namespace QLN.Classified.MS.Service.Services
                             break;
 
                         case BulkModerationAction.Remove:
-                            ad.Status = ServiceStatus.Rejected;
+                            ad.Status = ServiceStatus.Removed;
                             ad.IsActive = false;
-                            actionReason = "Ad Removed (Rejected)";
-                            reason = "Ad rejected by admin.";
+                            actionReason = "Ad Removed (Removed)";
+                            reason = "Ad Removed.";
                             shouldUpdate = true;
                             break;
 
@@ -1379,10 +1379,8 @@ namespace QLN.Classified.MS.Service.Services
 
             if (serviceAd == null)
                 throw new KeyNotFoundException("Service Ad not found.");
-
-            var subscription = await _qLSubscriptionContext.Subscriptions
-                .FirstOrDefaultAsync();
             serviceAd.Status = ServiceStatus.PendingApproval;
+            serviceAd.SubscriptionId = request.SubscriptionId;
             serviceAd.AdType = ServiceAdType.PayToPublish;
             serviceAd.UpdatedBy = uid;
             serviceAd.UpdatedAt = DateTime.UtcNow;
