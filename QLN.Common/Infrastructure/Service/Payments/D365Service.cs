@@ -409,9 +409,9 @@ namespace QLN.Common.Infrastructure.Service.Payments
                 case ProductType.ADDON_FEATURE:
                     return await ProcessAddonFeature(order, product, cancellationToken);
                 case ProductType.ADDON_PROMOTE:
-                    return await ProcessAddonPromote(order, product, cancellationToken);
+                    //return await ProcessAddonPromote(order, product, cancellationToken);
                 case ProductType.ADDON_REFRESH:
-                    return await ProcessAddonRefresh(order, product, cancellationToken);
+                    //return await ProcessAddonRefresh(order, product, cancellationToken);
                 default:
                     await SendD365ErrorEmail(order.OrderId, $"Unknown D365 ItemID : {order.D365Itemid}", cancellationToken);
                     return $"Unknown D365 ItemID : {order.D365Itemid}";
@@ -627,7 +627,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
                         switch (product.SubVertical)
                         {
                             case SubVertical.Items:
-                                result = await ProcessPaytoFeatureItemsAsync(order.AdId, order.D365Itemid, price, product.Vertical, cancellationToken);
+                                //result = await ProcessPaytoFeatureItemsAsync(order.AdId, order.D365Itemid, price, product.Vertical, cancellationToken);
                                 break;
                             default:
                                 break;
