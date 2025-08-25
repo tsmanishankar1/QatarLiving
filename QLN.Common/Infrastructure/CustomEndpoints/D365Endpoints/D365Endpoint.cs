@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Options;
 using QLN.Common.DTO_s.Payments;
+using QLN.Common.Infrastructure.CustomException;
 using QLN.Common.Infrastructure.IService.IPayments;
 using System;
 using System.Collections.Generic;
@@ -17,7 +18,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.D365Endpoints
     {
         public static RouteGroupBuilder MapD365PayEndpoint(this RouteGroupBuilder group)
         {
-            group.MapGet("/d365", async Task<IResult> (
+            group.MapPost("/d365", async Task<IResult> (
                 [FromServices] IOptions<D365Config> config,
                 [FromServices] ID365Service service,
                 [FromBody] D365Orders request,
@@ -36,14 +37,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.D365Endpoints
 
                 try
                 {
-                    var result = await service.D365OrdersAsync(request.Orders, cancellationToken);
+                    var results = await service.D365OrdersAsync(request.Orders, cancellationToken);
 
-                    if(result)
-                    {
-                        return TypedResults.Ok(new { Message = "Order Processed successfully" });
-                    }
+                    var resultString = results.Count > 1 ? string.Join(",", results) : results.First();
 
-                    return TypedResults.BadRequest("Failed to process the order.");
+                    //return TypedResults.Ok(new { Message = resultString });
+
+                    return TypedResults.Ok(new { Message = results });
 
                 }
                 catch (Exception ex)

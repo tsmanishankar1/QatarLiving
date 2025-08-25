@@ -110,26 +110,25 @@ namespace QLN.Backend.API.Service.ProductService
                 "Getting all active SUBSCRIPTION-type V2 subscriptions for user: {UserId}, VerticalId: {VerticalId}, SubVerticalId: {SubVerticalId}",
                 userId, verticalId, subVerticalId);
 
-            var query = _context.Subscriptions
+            var query = await _context.Subscriptions
                 .Where(s =>
                     s.UserId == userId &&
                     s.Status == SubscriptionStatus.Active &&
                     s.ProductType == ProductType.SUBSCRIPTION &&
-                    s.EndDate > DateTime.UtcNow);
+                    s.EndDate > DateTime.UtcNow).ToListAsync();
 
             if (verticalId.HasValue)
             {
-                query = query.Where(s => (int)s.Vertical == verticalId.Value);
+                query = query.Where(s => (int)s.Vertical == verticalId.Value).ToList();
             }
 
             if (subVerticalId.HasValue)
             {
-                query = query.Where(s => (int)s.SubVertical == subVerticalId.Value);
+                query = query.Where(s => (int)s.SubVertical == subVerticalId.Value).ToList();
             }
 
-            var subscriptionIds = await query
-                .Select(s => s.SubscriptionId)
-                .ToListAsync(cancellationToken);
+            var subscriptionIds = query
+                .Select(s => s.SubscriptionId).ToList();
 
             var subscriptions = new List<V2SubscriptionResponseDto>();
 
@@ -1146,7 +1145,19 @@ namespace QLN.Backend.API.Service.ProductService
 
             return subscriptions;
         }
-
+        public async Task<int> RefundFreeAdsUsageAsync(Guid subscriptionId, string category, string? l1Category, string? l2Category, int amount, CancellationToken ct = default)
+        {
+            try
+            {
+                var actor = GetV2SubscriptionActorProxy(subscriptionId);
+                return await actor.RefundFreeAdsUsageAsync(category, l1Category, l2Category, amount, ct);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error refunding FREE ads usage for subscription {SubscriptionId}", subscriptionId);
+                return 0;
+            }
+        }
         #endregion
     }
 }

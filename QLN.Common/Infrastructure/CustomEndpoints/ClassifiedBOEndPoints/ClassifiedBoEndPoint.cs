@@ -2971,7 +2971,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
 
             group.MapPost("deals/post-by-id", async Task<IResult> (
                 Deals dto,
-                SaveIntent indent,
                 IClassifiedService service,
                 CancellationToken token) =>
             {

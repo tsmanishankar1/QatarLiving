@@ -19,6 +19,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.CreateAd
         [Inject] public IClassifiedService ClassifiedService { get; set; }
         [Inject] public IFileUploadService FileUploadService { get; set; }
         [Inject] protected IDialogService DialogService { get; set; }
+        [Inject] protected ICollectiblesService CollectiblesService { get; set; }
 
         protected List<LocationZoneDto> Zones { get; set; } = new();
         [Inject] ILogger<CreateAdBase> Logger { get; set; }
@@ -73,7 +74,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.CreateAd
             await LoadCategoryTreesAsync();
         }
 
-         protected List<ClassifiedsCategory> CategoryTrees { get; set; } = new();
+        protected List<ClassifiedsCategory> CategoryTrees { get; set; } = new();
         protected ClassifiedsCategory SelectedCategory => CategoryTrees.FirstOrDefault(x => x.Id.ToString() == adPostModel.SelectedCategoryId);
         protected ClassifiedsCategoryField SelectedSubcategory => SelectedCategory?.Fields?.FirstOrDefault(x => x.Id.ToString() == adPostModel.SelectedSubcategoryId);
         protected ClassifiedsCategoryField SelectedSubSubcategory => SelectedSubcategory?.Fields?.FirstOrDefault(x => x.Id.ToString() == adPostModel.SelectedSubSubcategoryId);
@@ -84,7 +85,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.CreateAd
                                         new List<ClassifiedsCategoryField>();
         protected string[] ExcludedFields => new[]
         {
-                "L2Category" 
+                "L2Category"
 
         };
 
@@ -138,7 +139,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.CreateAd
 
             if (SelectedSubcategory?.Fields?.Any() == true && string.IsNullOrEmpty(adPostModel.SelectedSubSubcategoryId))
             {
-                 var firstField = SelectedSubcategory.Fields.FirstOrDefault();
+                var firstField = SelectedSubcategory.Fields.FirstOrDefault();
                 if (firstField != null && firstField.Type == "L2Category")
                 {
                     messageStore.Add(() => adPostModel.SelectedSubSubcategoryId, "Section is required.");
@@ -167,7 +168,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.CreateAd
                     var value = adPostModel.DynamicFields.ContainsKey(field.CategoryName)
                         ? adPostModel.DynamicFields[field.CategoryName]
                         : null;
-                
+
                     if (string.IsNullOrWhiteSpace(value))
                     {
                         messageStore.Add(
@@ -215,14 +216,14 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.CreateAd
                 FullWidth = true
             };
 
-            var dialog = DialogService.Show<ConfirmationDialog>("", parameters, options);
+            var dialog = await DialogService.ShowAsync<ConfirmationDialog>("", parameters, options);
             var result = await dialog.Result;
         }
-         private async Task HandleAdConfirmedAsync()
+        private async Task HandleAdConfirmedAsync()
         {
             await PostAdToApiAsync();
         }
-          protected async Task OpenDiscardDialog()
+        protected async Task OpenDiscardDialog()
         {
             var parameters = new DialogParameters
             {
@@ -231,14 +232,14 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.CreateAd
                 { "OnDiscard", EventCallback.Factory.Create(this, HandleDiscardAsync) }
             };
 
-                 var options = new DialogOptions
+            var options = new DialogOptions
             {
                 CloseButton = false,
                 MaxWidth = MaxWidth.Small,
                 FullWidth = true
             };
 
-            var dialog = DialogService.Show<DiscardDialog>("", parameters, options);
+            var dialog = await DialogService.ShowAsync<DiscardDialog>("", parameters, options);
             var result = await dialog.Result;
 
         }
@@ -271,7 +272,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.CreateAd
         }
 
 
-         private string GetCategoryNameById(string? id)
+        private string GetCategoryNameById(string? id)
         {
             if (string.IsNullOrEmpty(id)) return string.Empty;
 
@@ -338,10 +339,20 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.CreateAd
                     images = uploadedImages,
                     attributes = adPostModel.DynamicFields
                         .Where(kv => !IsBasicField(kv.Key))
-                        .ToDictionary(kv => kv.Key, kv => (object)kv.Value)
+                        .ToDictionary(kv => kv.Key, kv => (object)kv.Value),
+
+                    // New fields
+                    subVertical = SubVerticalTypeEnum.Collectibles,
+                    status = AdStatusEnum.PendingApproval,
+                    userId = UserId,
+                    userName = UserEmail,
+                    isSold = false,
+                    isFeatured = false,
+                    isPromoted = false,
+                    yearOrEra = adPostModel.DynamicFields.GetValueOrDefault("YearOrEra")
                 };
-                // await JS.InvokeVoidAsync("console.log", payload);
-                var response = await ClassifiedService.PostCollectiblesAdAsync(payload);
+
+                var response = await CollectiblesService.CreateAd(payload);
                 if (response != null)
                 {
                     var responseContent = await response.Content.ReadAsStringAsync();
@@ -358,29 +369,29 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.CreateAd
                             using var doc = JsonDocument.Parse(responseContent);
                             if (doc.RootElement.TryGetProperty("detail", out var detail))
                             {
-                                Snackbar.Add(detail.GetString() ?? "Failed to post ad.", Severity.Error);
+                                Snackbar.Add(detail.GetString() ?? "Failed to create ad.", Severity.Error);
                             }
                             else
                             {
-                                Snackbar.Add("Failed to post ad.", Severity.Error);
+                                Snackbar.Add("Failed to create ad.", Severity.Error);
                             }
                         }
                         catch
                         {
-                            Snackbar.Add("Failed to post ad.", Severity.Error);
+                            Snackbar.Add("Failed to create ad.", Severity.Error);
                         }
                     }
                     else
                     {
-                        Snackbar.Add("Failed to post ad.", Severity.Error);
+                        Snackbar.Add("Failed to create ad.", Severity.Error);
                     }
                 }
-    
+
 
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "Error posting ad");
+                Logger.LogError(ex, "Error create ad");
                 Snackbar.Add("Unexpected error occurred while posting your ad.", Severity.Error);
             }
             finally
@@ -389,7 +400,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.CreateAd
             }
         }
 
-         private async Task<List<object>> UploadImagesAsync(List<AdImage> images)
+        private async Task<List<object>> UploadImagesAsync(List<AdImage> images)
         {
             var uploadedImages = new List<object>();
 
@@ -518,7 +529,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.CreateAd
                 IsLoadingZones = false;
             }
         }
-             protected async Task TrySetCoordinatesFromAddressAsync()
+        protected async Task TrySetCoordinatesFromAddressAsync()
         {
             // Ensure all required fields are available
             if (string.IsNullOrWhiteSpace(adPostModel.Zone) ||
@@ -552,8 +563,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.CreateAd
                         adPostModel.Latitude = latitude;
                         adPostModel.Longitude = longitude;
 
-                        // Logger?.LogInformation($"Coordinates set: {latitude}, {longitude}");
-                        // Trigger JS to update the map without manual interaction
+
                         await JS.InvokeVoidAsync("updateMapCoordinates", latitude, longitude);
                     }
 

@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using QLN.Common.DTO_s.InstagramDto;
 using QLN.Common.Infrastructure.EventLogger;
-using QLN.Common.Infrastructure.IService; // Assuming you put IInstagramService here
+using QLN.Common.Infrastructure.IService; 
 using QLN.Common.Infrastructure.IService.IInstagramPost;
 using System.Threading;
 

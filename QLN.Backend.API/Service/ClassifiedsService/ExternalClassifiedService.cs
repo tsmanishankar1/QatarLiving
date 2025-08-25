@@ -1,6 +1,7 @@
 ﻿using Dapr;
 using Dapr.Client;
 using Google.Apis.Auth.OAuth2;
+using Google.Apis.Discovery;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Spatial;
@@ -21,6 +22,7 @@ using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.QLDbContext;
 using QLN.Common.Infrastructure.Subscriptions;
 using QLN.Common.Infrastructure.Utilities;
+using System;
 using System.Net;
 using System.Text;
 using System.Text.Json;
@@ -39,6 +41,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
         private readonly IFileStorageBlobService _fileStorageBlob;
         private readonly ISearchService _searchService;
         private readonly IV2SubscriptionService _subscriptionContext;
+        
 
 
         public ExternalClassifiedService(DaprClient dapr, IEventlogger log, IHttpContextAccessor httpContextAccessor, IFileStorageBlobService fileStorageBlob, ISearchService searchService, IV2SubscriptionService subscriptionService)
@@ -49,6 +52,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
             _fileStorageBlob = fileStorageBlob;
             _searchService = searchService ?? throw new ArgumentNullException(nameof(searchService));
             _subscriptionContext = subscriptionService;
+           
         }
 
         public async Task<bool> SaveSearchByVertical(SaveSearchRequestDto dto, string userId, CancellationToken cancellationToken = default)
@@ -475,8 +479,12 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 throw;
             }
         }
-          
-        public async Task<DeleteAdResponseDto> DeleteClassifiedAd(SubVertical subVertical, long adId, string userId, CancellationToken cancellationToken = default)
+
+        public async Task<DeleteAdResponseDto> DeleteClassifiedAd(
+    SubVertical subVertical,
+    long adId,
+    string userId,
+    CancellationToken cancellationToken = default)
         {
             try
             {
@@ -486,13 +494,72 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 if (string.IsNullOrWhiteSpace(userId))
                     throw new ArgumentException("UserId must not be empty.", nameof(userId));
 
+                
+                dynamic? adInfo = subVertical switch
+                {
+                    SubVertical.Preloved => await GetPrelovedAdById(adId, cancellationToken),
+                    SubVertical.Deals => await GetDealsAdById(adId, cancellationToken),
+                    SubVertical.Items => await GetItemAdById(adId, cancellationToken),
+                    SubVertical.Collectibles => await GetCollectiblesAdById(adId, cancellationToken),
+                    _ => null
+                };
+
+                if (adInfo == null)
+                    throw new InvalidOperationException($"Ad not found for adId {adId} in subVertical {subVertical}");
+                
+
+                var adType = adInfo.AdType.ToString().ToLowerInvariant();
+                bool isPublished = adInfo.Status == AdStatus.Published;
+                Guid? subscriptionId = adInfo.SubscriptionId;
+
+                
                 var response = await _dapr.InvokeMethodAsync<DeleteAdResponseDto>(
                     HttpMethod.Delete,
                     SERVICE_APP_ID,
                     $"api/classifieds/{subVertical}/delete-by-id/{adId}/{userId}",
                     cancellationToken
                 );
+
                 
+                if ((subVertical == SubVertical.Preloved || subVertical == SubVertical.Deals)
+                    && (adType == "subscription")
+                    && subscriptionId.HasValue && subscriptionId != Guid.Empty)
+                {
+                    var success = await _subscriptionContext.RecordSubscriptionUsageAsync(
+                        subscriptionId.Value,
+                        "unpublish",
+                        1,
+                        cancellationToken
+                    );
+
+                    if (!success)
+                        _log.LogWarning(
+                            "Failed to decrement subscription usage for SubscriptionId {SubscriptionId}",
+                            GuidToLong(subscriptionId.Value)
+                        );
+                }
+
+                
+                if (subVertical == SubVertical.Items
+                    && adType == "free"
+                    && isPublished
+                    && subscriptionId.HasValue && subscriptionId != Guid.Empty)
+                {
+                    var success = await _subscriptionContext.RecordSubscriptionUsageAsync(
+                        subscriptionId.Value,
+                        "unpublish",
+                        1,
+                        cancellationToken
+                    );
+
+                    if (!success)
+                        _log.LogWarning(
+                            "Failed to decrement free ad usage for SubscriptionId {SubscriptionId}",
+                            GuidToLong(subscriptionId.Value)
+                        );
+                }
+
+                // Delete from search index
                 string indexName = subVertical switch
                 {
                     SubVertical.Items => ConstantValues.IndexNames.ClassifiedsItemsIndex,
@@ -509,9 +576,14 @@ namespace QLN.Backend.API.Service.ClassifiedService
             catch (Exception ex)
             {
                 _log.LogException(ex);
-                throw new InvalidOperationException($"Failed to delete classified ad from subvertical {subVertical}.", ex);
+                throw new InvalidOperationException(
+                    $"Failed to delete classified ad from subvertical {subVertical}.", ex);
             }
         }
+
+
+
+
 
         public async Task<Items> GetItemAdById(long adId, CancellationToken cancellationToken = default)
         {
@@ -1280,8 +1352,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
             try
             {
-                //var subscriptionid = Guid.Parse("5a024f96-7414-4473-80b8-f5d70297e262");
-
+             
                 if (subscriptionId != Guid.Empty && dto.IsFeatured == true)
                 {
                     var canUse = await _subscriptionContext.ValidateSubscriptionUsageAsync(
@@ -1466,12 +1537,12 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
 
         public async Task<BulkAdActionResponse> BulkUpdateAdPublishStatusAsync(
-     int subVertical,
-     string userId,
-     List<long> adIds,
-     bool isPublished,
-     Guid subscriptionId,
-     CancellationToken cancellationToken = default)
+    int subVertical,
+    string userId,
+    List<long> adIds,
+    bool isPublished,
+    Guid subscriptionId,
+    CancellationToken cancellationToken = default)
         {
             if (subVertical <= 0 || string.IsNullOrWhiteSpace(userId) || adIds == null || adIds.Count == 0)
             {
@@ -1479,8 +1550,38 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
 
             try
-            {                
-                if (subscriptionId != Guid.Empty && isPublished)
+            {
+                bool requiresValidation = false;
+
+                switch (subVertical)
+                {
+                    case (int)SubVertical.Items:
+                    case (int)SubVertical.Collectibles:
+                        requiresValidation = false;
+                        break;
+
+                    case (int)SubVertical.Preloved:
+                    case (int)SubVertical.Deals:
+                        if (isPublished && subscriptionId != Guid.Empty)
+                        {
+                            var ads = await Task.WhenAll(
+                                adIds.Select(id => GetPrelovedAdById(id, cancellationToken)));
+
+                            if (ads.All(ad =>
+                                string.Equals(ad.AdType.ToString(), "subscription", StringComparison.OrdinalIgnoreCase) ||
+                                string.Equals(ad.AdType.ToString(), "p2p", StringComparison.OrdinalIgnoreCase)))
+                            {
+                                requiresValidation = true;
+                            }
+                        }
+                        break;
+
+                    default:
+                        requiresValidation = isPublished && subscriptionId != Guid.Empty;
+                        break;
+                }
+
+                if (requiresValidation)
                 {
                     var canUse = await _subscriptionContext.ValidateSubscriptionUsageAsync(
                         subscriptionId,
@@ -1491,7 +1592,6 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
                     if (!canUse)
                     {
-                        
                         throw new InvalidOperationException("Insufficient subscription quota for publishing.");
                     }
                 }
@@ -1501,7 +1601,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                     $"api/classifieds/user-dashboard/bulk-action-by-id" +
                     $"?subVertical={Uri.EscapeDataString(subVerticalStr)}" +
                     $"&isPublished={isPublished.ToString().ToLowerInvariant()}" +
-                    $"&userId={Uri.EscapeDataString(userId)}"+
+                    $"&userId={Uri.EscapeDataString(userId)}" +
                     $"&subscriptionid={subscriptionId}";
 
                 var result = await _dapr.InvokeMethodAsync<List<long>, BulkAdActionResponse>(
@@ -1511,7 +1611,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                     adIds,
                     cancellationToken);
 
-                if (subscriptionId != Guid.Empty)
+                if (subscriptionId != Guid.Empty && requiresValidation)
                 {
                     if (isPublished)
                     {
@@ -1524,27 +1624,29 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
                         if (!success)
                         {
-                            _log.LogWarning(
-                                "Failed to record subscription usage for SubscriptionId {SubscriptionId}",
-                                GuidToLong(subscriptionId)
-                            );
+                            _log.LogWarning("Failed to record subscription usage for SubscriptionId {SubscriptionId}", GuidToLong(subscriptionId));
                         }
                     }
                     else
                     {
-                        var success = await _subscriptionContext.RecordSubscriptionUsageAsync(
-                            subscriptionId,
-                            "unpublish",
-                            adIds.Count,
-                            cancellationToken
+                        var ads = await Task.WhenAll(
+                            adIds.Select(id => GetPrelovedAdById(id, cancellationToken))
                         );
 
-                        if (!success)
+                        if (ads.All(ad =>
+                            string.Equals(ad.AdType.ToString(), "subscription", StringComparison.OrdinalIgnoreCase)))
                         {
-                            _log.LogWarning(
-                                "Failed to decrement subscription usage for SubscriptionId {SubscriptionId}",
-                                GuidToLong(subscriptionId)
+                            var success = await _subscriptionContext.RecordSubscriptionUsageAsync(
+                                subscriptionId,
+                                "unpublish",
+                                adIds.Count,
+                                cancellationToken
                             );
+
+                            if (!success)
+                            {
+                                _log.LogWarning("Failed to decrement subscription usage for SubscriptionId {SubscriptionId}", GuidToLong(subscriptionId));
+                            }
                         }
                     }
                 }
@@ -1560,6 +1662,9 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 );
             }
         }
+
+
+
 
         private static long GuidToLong(Guid guid)
         {
@@ -1810,80 +1915,240 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
         #region payToPromote with addons for items
 
-        public async Task<Items> P2PromoteItems(ItemsPayToPromote promote, string uid, CancellationToken ct)
+        //public async Task<object> P2Promote(PayToPromote promote, string uid, CancellationToken ct)
+        //{
+        //    try
+        //    {
+        //        var quotaAction = ActionTypes.Promote;
+
+        //        var result = await _subscriptionContext.ValidateAddonUsageAsync(
+        //            promote.AddonId,
+        //            quotaAction,
+        //            1,
+        //            ct);
+
+        //        if (!result)
+        //        {
+        //            throw new InvalidDataException($"Insufficient addon quota for {quotaAction.ToLower()}.");
+        //        }
+
+        //        var url = $"/api/classifieds/p2promotebyuserid?uid={uid}&addonId={promote.AddonId}";
+
+        //        var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, SERVICE_APP_ID, url);
+
+        //        request.Content = new StringContent(JsonSerializer.Serialize(promote), Encoding.UTF8, "application/json");
+
+        //        var response = await _dapr.InvokeMethodWithResponseAsync(request, ct);
+
+        //        if (response.StatusCode == HttpStatusCode.OK)
+        //        {
+        //            var json = await response.Content.ReadAsStringAsync(ct);
+        //            var itemsDto = JsonSerializer.Deserialize<Items>(json, new JsonSerializerOptions
+        //            {
+        //                PropertyNameCaseInsensitive = true
+        //            });
+
+        //            if (itemsDto is null)
+        //                throw new InvalidDataException("Invalid data returned from items.");
+
+        //            if (itemsDto.SubscriptionId != Guid.Empty)
+        //            {
+        //                var success = await _subscriptionContext.RecordAddonUsageAsync(
+        //                    promote.AddonId,
+        //                    quotaAction,
+        //                    1,
+        //                    ct
+        //                );
+
+        //                if (!success)
+        //                {
+        //                    throw new Exception("Failed to record subscription usage for Addon {AddonId}");
+        //                }
+        //            }
+
+
+        //            return itemsDto;
+        //        }
+        //        else if (response.StatusCode == HttpStatusCode.NotFound)
+        //        {
+        //            throw new KeyNotFoundException("Service not found");
+        //        }
+        //        else
+        //        {
+        //            var errorJson = await response.Content.ReadAsStringAsync(ct);
+        //            throw new InvalidDataException(errorJson);
+        //        }
+
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        throw new Exception("Error promoting items");
+        //    }
+        //}
+
+        public async Task<Object> P2Promote(ClassifiedsPayToPromote promote, string uid, CancellationToken ct)
         {
             try
             {
+                if (promote == null || promote.AdId <= 0)
+                {
+                    throw new ArgumentException("Invalid request. AdId must be a positive number.");
+                }
+
+                if (string.IsNullOrWhiteSpace(uid))
+                {
+                    throw new ArgumentException("User id (uid) is required.");
+                }
+
+                switch (promote.SubVertical)
+                {
+                    case SubVertical.Items:
+                    case SubVertical.Preloved:
+                    case SubVertical.Collectibles:
+                        break;
+
+                    default:
+                        throw new NotSupportedException(
+                            $"Promotion is not supported for sub-vertical: {promote.SubVertical}");
+                }
+
                 var quotaAction = ActionTypes.Promote;
 
-                var result = await _subscriptionContext.ValidateAddonUsageAsync(
+                var hasQuota = await _subscriptionContext.ValidateAddonUsageAsync(
                     promote.AddonId,
                     quotaAction,
                     1,
                     ct);
 
-                if (!result)
+                if (!hasQuota)
                 {
                     throw new InvalidDataException($"Insufficient addon quota for {quotaAction.ToLower()}.");
                 }
 
-                var url = $"/api/classifieds/items/p2promotebyuserid?uid={uid}&addonId={promote.AddonId}";
+                var url = $"/api/classifieds/classifiedsp2promotebyuserid?uid={uid}";
 
                 var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, SERVICE_APP_ID, url);
-
-                request.Content = new StringContent(JsonSerializer.Serialize(promote), Encoding.UTF8, "application/json");
+                request.Content = new StringContent(
+                    JsonSerializer.Serialize(promote),
+                    Encoding.UTF8,
+                    "application/json");
 
                 var response = await _dapr.InvokeMethodWithResponseAsync(request, ct);
 
                 if (response.StatusCode == HttpStatusCode.OK)
                 {
                     var json = await response.Content.ReadAsStringAsync(ct);
-                    var itemsDto = JsonSerializer.Deserialize<Items>(json, new JsonSerializerOptions
+
+                    object promotedEntity = promote.SubVertical switch
                     {
-                        PropertyNameCaseInsensitive = true
-                    });
+                        SubVertical.Items => JsonSerializer.Deserialize<Items>(json, new JsonSerializerOptions
+                        {
+                            PropertyNameCaseInsensitive = true
+                        }),
+                        SubVertical.Preloved => JsonSerializer.Deserialize<Preloveds>(json, new JsonSerializerOptions
+                        {
+                            PropertyNameCaseInsensitive = true
+                        }),
+                        SubVertical.Collectibles => JsonSerializer.Deserialize<Collectibles>(json, new JsonSerializerOptions
+                        {
+                            PropertyNameCaseInsensitive = true
+                        }),
+                        _ => throw new NotSupportedException(
+                                $"Deserialization for sub-vertical {promote.SubVertical} not supported")
+                    };
 
-                    if (itemsDto is null)
-                        throw new InvalidDataException("Invalid data returned from items.");
+                    if (promotedEntity == null)
+                    {
+                        throw new InvalidDataException("Invalid data returned from classifieds service.");
+                    }
 
-                    if (itemsDto.SubscriptionId != Guid.Empty)
+                    if (promote.AddonId != Guid.Empty)
                     {
                         var success = await _subscriptionContext.RecordAddonUsageAsync(
                             promote.AddonId,
                             quotaAction,
                             1,
-                            ct
-                        );
+                            ct);
 
                         if (!success)
                         {
-                            throw new Exception("Failed to record subscription usage for Addon {AddonId}");
-                        }                        
+                            throw new Exception(
+                                $"Failed to record addon usage for Addon {promote.AddonId}");
+                        }
                     }
 
-
-                    return itemsDto;
+                    return promotedEntity;
                 }
                 else if (response.StatusCode == HttpStatusCode.NotFound)
                 {
-                    throw new KeyNotFoundException("Service not found");
+                    throw new KeyNotFoundException("Ad not found in classifieds service.");
+                }
+                else
+                {
+                    var errorJson = await response.Content.ReadAsStringAsync(ct);
+                    throw new InvalidDataException($"Service returned error: {errorJson}");
+                }
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
+        }
+
+        public async Task<object> P2Publish(ClassifiedsPayToPublish request, string uid, CancellationToken ct)
+        {
+            try
+            {
+                var url = $"/api/classifieds/classifiedspaytopublishbyuserid?uid={uid}";
+                var serviceRequest = _dapr.CreateInvokeMethodRequest(
+                    HttpMethod.Post,
+                    ConstantValues.Services.ServiceAppId, // External Service App Id for Classifieds
+                    url
+                );
+
+                serviceRequest.Content = new StringContent(
+                    JsonSerializer.Serialize(request),
+                    Encoding.UTF8,
+                    "application/json"
+                );
+
+                var response = await _dapr.InvokeMethodWithResponseAsync(serviceRequest, ct);
+
+                if (response.StatusCode == HttpStatusCode.OK)
+                {
+                    var json = await response.Content.ReadAsStringAsync(ct);
+                  
+                    var result = JsonSerializer.Deserialize<object>(json, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+
+                    if (result is null)
+                        throw new InvalidDataException("Invalid data returned from classifieds service.");
+
+                    return result;
+                }
+                else if (response.StatusCode == HttpStatusCode.NotFound)
+                {
+                    throw new KeyNotFoundException("Classifieds service not found");
                 }
                 else
                 {
                     var errorJson = await response.Content.ReadAsStringAsync(ct);
                     throw new InvalidDataException(errorJson);
                 }
-
             }
             catch (Exception ex)
-            {
-                throw new Exception("Error promoting items");
+            {               
+                throw;
             }
         }
 
+        #endregion
+
         //public async Task<List<CategoryCountDto>> GetCategoryCountsAsync(CancellationToken cancellationToken)
         //{
-            
+
         //    try
         //    {
         //        var response = await _dapr.InvokeMethodAsync<List<CategoryCountDto>>(
@@ -1922,6 +2187,130 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
         #endregion
+        #region PayToFeature with addons (generic for all subVerticals)
+
+        public async Task<string> P2PFeature(
+      ClassifiedsPayToFeature dto,
+      string userId,
+      Guid subscriptionAddonId,
+      CancellationToken cancellationToken = default)
+        {
+            if (dto.AdId <= 0)
+            {
+                throw new ArgumentException("AdId is required.");
+            }
+
+            HttpStatusCode? failedStatusCode = null;
+
+            try
+            {
+               
+                
+                
+                    var canUse = await _subscriptionContext.ValidateAddonUsageAsync(
+                        subscriptionAddonId,
+                        "feature",
+                        1,
+                        cancellationToken
+                    );
+
+                    if (!canUse)
+                    {
+                        _log.LogWarning(
+                            "Addon {AddonId} has insufficient quota for feature.",
+                            GuidToLong(subscriptionAddonId)
+                        );
+                        throw new InvalidOperationException("Insufficient addon quota for feature.");
+                    }
+                
+
+                // Build query params
+                var queryParams = new Dictionary<string, string>
+        {
+            { "adId", dto.AdId.ToString() },
+            { "subVertical", ((int)dto.SubVertical).ToString() },
+            { "userId", userId }
+        };
+
+                var queryString = "?" + string.Join("&", queryParams.Select(kv =>
+                    $"{Uri.EscapeDataString(kv.Key)}={Uri.EscapeDataString(kv.Value)}"));
+
+                var url = $"/api/classifieds/classifiedsfeaturedid/{queryString}&addonId={subscriptionAddonId}";
+
+                var serviceRequest = _dapr.CreateInvokeMethodRequest(HttpMethod.Put, SERVICE_APP_ID, url);
+                serviceRequest.Content = new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
+
+                var response = await _dapr.InvokeMethodWithResponseAsync(serviceRequest, cancellationToken);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorJson = await response.Content.ReadAsStringAsync(cancellationToken);
+                    string errorMessage;
+
+                    if (!string.IsNullOrWhiteSpace(errorJson))
+                    {
+                        try
+                        {
+                            var problem = JsonSerializer.Deserialize<ProblemDetails>(errorJson);
+                            errorMessage = problem?.Detail ?? "Unknown validation error.";
+                        }
+                        catch (JsonException)
+                        {
+                            errorMessage = errorJson;
+                        }
+                    }
+                    else
+                    {
+                        errorMessage = "No error details returned from service.";
+                    }
+
+                    failedStatusCode = response.StatusCode;
+                    throw new InvalidDataException(errorMessage);
+                }
+
+                
+                if (subscriptionAddonId != Guid.Empty)
+                {
+                    
+                    
+                    var success = await _subscriptionContext.RecordAddonUsageAsync(
+                        subscriptionAddonId,
+                        "feature",
+                        1,
+                        cancellationToken
+                    );
+
+                    if (!success)
+                    {
+                        _log.LogWarning(
+                            "Failed to record addon usage for AddonId {AddonId}",
+                            GuidToLong(subscriptionAddonId)
+                        );
+                    }
+                }
+
+                return $"Ad {dto.AdId} has been featured successfully in {dto.SubVertical}.";
+            }
+            catch (Exception ex)
+            {
+                if (failedStatusCode == HttpStatusCode.Conflict)
+                {
+                    throw new ConflictException(ex.Message);
+                }
+                else if (failedStatusCode == HttpStatusCode.NotFound)
+                {
+                    throw new KeyNotFoundException(ex.Message);
+                }
+                _log.LogException(ex);
+                throw new InvalidOperationException("Failed to feature the ad due to an unexpected error.", ex);
+            }
+        }
+
+
+        #endregion
+
+
+
     }
 }
 

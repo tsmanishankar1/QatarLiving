@@ -235,5 +235,20 @@ namespace QLN.DataMigration.Services
         {
             throw new NotImplementedException();
         }
+
+        public Task<List<V2SubscriptionResponseDto>> GetActiveSubscriptionsAsync(string userId, int? verticalId, int? subVerticalId, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<List<V2SubscriptionResponseDto>> GetUserActivePublishSubscriptionsAsync(string userId, int? verticalId, int? subVerticalId, long? adId, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<int> RefundFreeAdsUsageAsync(Guid subscriptionId, string category, string? l1Category, string? l2Category, int amount, CancellationToken ct = default)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

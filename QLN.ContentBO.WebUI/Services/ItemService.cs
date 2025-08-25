@@ -77,5 +77,33 @@ namespace QLN.ContentBO.WebUI.Services
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
+
+        public async Task<HttpResponseMessage?> CreateAd(object payload)
+        {
+            try
+            {
+                var endpoint = $"/api/v2/classifiedbo/items/admin/post-by-id";
+
+                var serializeOptions = new JsonSerializerOptions
+                {
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                    WriteIndented = false
+                };
+                var jsonPayload = JsonSerializer.Serialize(payload, serializeOptions);
+                using var request = new HttpRequestMessage(HttpMethod.Post, endpoint)
+                {
+                    Content = new StringContent(jsonPayload, Encoding.UTF8, "application/json")
+                };
+
+                var response = await _httpClient.SendAsync(request);
+
+                return response;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("PostAdAsync " + ex);
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
     }
 }

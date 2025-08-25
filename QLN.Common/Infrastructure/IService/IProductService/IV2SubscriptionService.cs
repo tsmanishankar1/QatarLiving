@@ -286,17 +286,9 @@ namespace QLN.Common.Infrastructure.IService.IProductService
         Task<int> GetRemainingFreeAdsQuotaAsync(Guid subscriptionId, string category, string? l1Category, string? l2Category, CancellationToken cancellationToken = default);
         Task<int> GetRemainingFreeAdsQuotaForUserAsync(string userId, string category, string? l1Category, string? l2Category, CancellationToken cancellationToken = default);
         Task<List<V2SubscriptionResponseDto>> GetUserFreeSubscriptionsAsync(string userId, CancellationToken cancellationToken = default);
-        Task<List<V2SubscriptionResponseDto>> GetActiveSubscriptionsAsync(
-     string userId,
-     int? verticalId,
-     int? subVerticalId,
-     CancellationToken cancellationToken = default);
-        Task<List<V2SubscriptionResponseDto>> GetUserActivePublishSubscriptionsAsync(
-    string userId,
-    int? verticalId,
-    int? subVerticalId,
-    long? adId,
-    CancellationToken cancellationToken = default);
+        Task<List<V2SubscriptionResponseDto>> GetActiveSubscriptionsAsync(string userId, int? verticalId, int? subVerticalId, CancellationToken cancellationToken = default);
+        Task<List<V2SubscriptionResponseDto>> GetUserActivePublishSubscriptionsAsync(string userId, int? verticalId, int? subVerticalId, long? adId, CancellationToken cancellationToken = default);
+        Task<int> RefundFreeAdsUsageAsync(Guid subscriptionId, string category, string? l1Category, string? l2Category,int amount, CancellationToken ct = default);
     }
     #endregion
 }

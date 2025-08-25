@@ -28,6 +28,8 @@ builder.Services.AddDbContext<QLSubscriptionContext>(options =>
     options.UseNpgsql(dataSource));
 builder.Services.AddDbContext<QLNotificationContext>(options =>
     options.UseNpgsql(dataSource));
+builder.Services.AddDbContext<QLClassifiedContext>(options =>
+    options.UseNpgsql(dataSource));
 #endregion
 var app = builder.Build();
 
