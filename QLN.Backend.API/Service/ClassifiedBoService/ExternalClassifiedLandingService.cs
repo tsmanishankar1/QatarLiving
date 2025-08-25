@@ -1032,15 +1032,15 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
 
 
         public async Task<BulkAdActionResponseitems> BulkItemsAction(
-            BulkActionRequest request,
-            string userId, string userName,
-            CancellationToken cancellationToken = default)
+     BulkActionRequest request,
+     string userId, string userName,
+     CancellationToken cancellationToken = default)
         {
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
 
             if (string.IsNullOrWhiteSpace(userId))
-                throw new ArgumentException("UserId cannot be null or empty.");
+                throw new ArgumentException("UserId cannot be null or empty.", nameof(userId));
 
             var failedIds = new List<long>();
             var succeededIds = new List<long>();
@@ -1106,53 +1106,70 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
                     if (requiresQuota)
                     {
                         var sampleAd = group.First();
-                        bool canUse = false;
                         bool reserved = false;
 
                         if (sampleAd.AdType == AdTypeEnum.Free)
                         {
-                            
-                            canUse = await _subscriptionContext.ValidateFreeAdsUsageAsync(
-                                subscriptionId,
-                                sampleAd.Category,
-                                sampleAd.L1Category,
-                                sampleAd.L2Category,
-                                usageCount,
-                                cancellationToken
-                            );
-
-                            if (!canUse)
+                            if (group.Key.ActionType is BulkActionEnum.Publish or BulkActionEnum.Approve or BulkActionEnum.Promote or BulkActionEnum.Feature)
                             {
-                                _logger.LogWarning("FREE Ads quota exceeded for Subscription {SubscriptionId}.", subscriptionId);
-                                failedIds.AddRange(group.Select(x => x.Id));
-                                continue;
-                            }
+                                //// Publish or promote free ads
+                                //var canUse = await _subscriptionContext.ValidateFreeAdsUsageAsync(
+                                //    subscriptionId,
+                                //    sampleAd.Category,
+                                //    sampleAd.L1Category,
+                                //    sampleAd.L2Category,
+                                //    usageCount,
+                                //    cancellationToken
+                                //);
 
-                            reserved = await _subscriptionContext.RecordFreeAdsUsageAsync(
-                                subscriptionId,
-                                sampleAd.Category,
-                                sampleAd.L1Category,
-                                sampleAd.L2Category,
-                                usageCount,
-                                cancellationToken
-                            );
+                                //if (!canUse)
+                                //{
+                                //    _logger.LogWarning("FREE Ads quota exceeded for Subscription {SubscriptionId}.", subscriptionId);
+                                //    failedIds.AddRange(group.Select(x => x.Id));
+                                //    continue;
+                                //}
+
+                                reserved = await _subscriptionContext.RecordFreeAdsUsageAsync(
+                                    subscriptionId,
+                                    sampleAd.Category,
+                                    sampleAd.L1Category,
+                                    sampleAd.L2Category,
+                                    usageCount,
+                                    cancellationToken
+                                );
+                            }
+                            else if (group.Key.ActionType is BulkActionEnum.Unpublish or BulkActionEnum.UnFeature or BulkActionEnum.UnPromote)
+                            {
+                                // Refund quota for unpublishing free ads
+                                int refunded = await _subscriptionContext.RefundFreeAdsUsageAsync(
+                                    subscriptionId,
+                                    sampleAd.Category,
+                                    sampleAd.L1Category,
+                                    sampleAd.L2Category,
+                                    usageCount,
+                                    cancellationToken
+                                );
+
+                                _logger.LogInformation("{RefundedCount} FREE Ads quota refunded for Subscription {SubscriptionId}.", refunded, subscriptionId);
+                                reserved = true; // refund always succeeds
+                            }
                         }
                         else
                         {
-                            
-                            canUse = await _subscriptionContext.ValidateSubscriptionUsageAsync(
-                                subscriptionId,
-                                actionName,
-                                usageCount,
-                                cancellationToken
-                            );
+                            // Paid subscription logic
+                            //var canUse = await _subscriptionContext.ValidateSubscriptionUsageAsync(
+                            //    subscriptionId,
+                            //    actionName,
+                            //    usageCount,
+                            //    cancellationToken
+                            //);
 
-                            if (!canUse)
-                            {
-                                _logger.LogWarning("Subscription {SubscriptionId} cannot perform {ActionName}. Insufficient quota.", subscriptionId, actionName);
-                                failedIds.AddRange(group.Select(x => x.Id));
-                                continue;
-                            }
+                            //if (!canUse)
+                            //{
+                            //    _logger.LogWarning("Subscription {SubscriptionId} cannot perform {ActionName}. Insufficient quota.", subscriptionId, actionName);
+                            //    failedIds.AddRange(group.Select(x => x.Id));
+                            //    continue;
+                            //}
 
                             reserved = await _subscriptionContext.RecordSubscriptionUsageAsync(
                                 subscriptionId,
@@ -1223,6 +1240,7 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
                 throw;
             }
         }
+
 
 
         private string ExtractErrorMessage(string errorJson)
