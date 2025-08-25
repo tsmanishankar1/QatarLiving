@@ -167,7 +167,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
    {
        try
        {
-           var result = await service.GetProcessStoresCSV(Url, CsvPlatform, CompanyId, SubscriptionId, UserId, Domain, cancellationToken);
+           var (userId, userName) = UserTokenHelper.ExtractUserAsync(context);
+
+           if (string.IsNullOrWhiteSpace(userId))
+           {
+               return TypedResults.Forbid();
+           }
+           var result = await service.GetProcessStoresCSV(Url, CsvPlatform, CompanyId, SubscriptionId, userId, Domain, cancellationToken);
            return TypedResults.Ok(result);
 
        }

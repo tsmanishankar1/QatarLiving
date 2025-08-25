@@ -47,7 +47,37 @@ namespace QLN.Common.Infrastructure.Utilities
             var uri = new Uri(url);
             return Path.GetFileName(uri.LocalPath);
         }
-
+        public static StoreProducts MapWooCommerceToStore(WooCommerceProduct sp, Guid flyerId)
+        {
+            var productId = Guid.NewGuid();
+            string SlugId = productId.ToString().Substring(0, 8);
+            return new StoreProducts
+            {
+                StoreProductId = productId,
+                ProductName = sp.Name ?? "Unnamed Product",
+                ProductLogo = sp.Images?.Split(',')?.FirstOrDefault()?.Trim() ??string.Empty,
+                ProductPrice = sp.RegularPrice ?? 0,
+                Currency = "QAR",
+                ProductSummary = sp.ShortDescription ?? string.Empty,
+                ProductDescription = sp.Description ?? string.Empty,
+                PageNumber = 1,
+                PageCoordinates = null,
+                Slug = "Stores-" + sp.Name ?? "Unnamed Product" + "-" + SlugId,
+                Category = sp.Categories?.Split('>')?.FirstOrDefault()?.Trim() ?? "Others",
+                Qty = sp.Stock ?? 0,
+                ProductBarcode = sp.Name ?? "",
+                FlyerId = flyerId,
+                Features = new List<ProductFeatures>(),
+                Images = (sp.Images ?? "")
+                        .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                        .Select(img => new ProductImages
+                        {
+                            Images = img.Trim(),
+                            StoreProductId = productId
+                        })
+                        .ToList()
+            };
+        }
     }
 
 

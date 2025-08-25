@@ -5868,8 +5868,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                     Text = "*",
                     Filters = null,
                     //  OrderBy = req.OrderBy,
-                    PageNumber = 1,
-                    PageSize = 100,
+                    //PageNumber = 1,
+                    //PageSize = 100,
 
                 };
                 var results = await svc.GetAllAsync(indexName, request); // You may need to pass indexName/request appropriately
@@ -6265,7 +6265,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 }
             })
                     .WithName("StoresDashboardHeaders")
-                   .ExcludeFromDescription()
+                    .ExcludeFromDescription()
                     .WithTags("Classified")
                     .WithSummary("To display the stores dashboard header information.")
                     .WithDescription("Fetches all stores dashboard header information.")
@@ -6868,65 +6868,72 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
        string Domain,
        [FromServices] IClassifiedsFoService service,
        HttpContext context,
+       [FromServices] IV2SubscriptionService subsService,
        CancellationToken cancellationToken
    ) =>
    {
        try
        {
-           var (userId, error) = GenericClaimsHelper.GetValidUserId(context.User);
-           if (!string.IsNullOrEmpty(error))
-           {
-               return TypedResults.Problem(
-               title: "Subscription issue in token.",
-               detail: error,
-               statusCode: StatusCodes.Status500InternalServerError,
-               instance: context.Request.Path
-               );
-           }
+           var (userId, userName) = UserTokenHelper.ExtractUserAsync(context);
 
-           if (string.IsNullOrEmpty(userId))
+           if (string.IsNullOrWhiteSpace(userId))
            {
                return TypedResults.Forbid();
            }
 
-           var result = await service.GetFOProcessStoresCSV(Url, CsvPlatform, CompanyId, SubscriptionId, userId?.ToString(), Domain, cancellationToken);
+           var subscriptions = await subsService.GetActiveSubscriptionsAsync(
+              userId,
+              (int)Vertical.Classifieds,
+              (int)SubVertical.Stores,
+              cancellationToken
+          );
 
-           switch (result?.ToString())
+           if (subscriptions != null && subscriptions.Any())
            {
-               case "created":
-                   return TypedResults.Ok("Products have been successfully created at the specified store(s).");
 
-               case "No products":
-                   return TypedResults.BadRequest(new ProblemDetails
-                   {
-                       Title = "No Products Found",
-                       Detail = "The CSV did not contain any valid products to process.",
-                       Status = StatusCodes.Status400BadRequest
-                   });
+               var result = await service.GetFOProcessStoresCSV(Url, CsvPlatform, CompanyId, SubscriptionId, userId?.ToString(), Domain, cancellationToken);
 
-               case "Insufficient quota":
-                   return TypedResults.BadRequest(new ProblemDetails
-                   {
-                       Title = "Insufficient quota",
-                       Detail = "The CSV did not contain any valid quota to process.",
-                       Status = StatusCodes.Status400BadRequest
-                   });
+               switch (result?.ToString())
+               {
+                   case "created":
+                       return TypedResults.Ok("Products have been successfully created at the specified store(s).");
 
-               case "Fail to reserve quota":
-                   return TypedResults.BadRequest(new ProblemDetails
-                   {
-                       Title = "Fail to reserve quota",
-                       Detail = "The CSV fail to reserve quota to process.",
-                       Status = StatusCodes.Status400BadRequest
-                   });
+                   case "No products":
+                       return TypedResults.BadRequest(new ProblemDetails
+                       {
+                           Title = "No Products Found",
+                           Detail = "The CSV did not contain any valid products to process.",
+                           Status = StatusCodes.Status400BadRequest
+                       });
 
-               default:
-                   return TypedResults.BadRequest(new ProblemDetails
-                   {
-                       Title = "Store Processing Failed",
-                       Detail = result?.ToString() ?? "Unknown error occurred.",
-                       Status = StatusCodes.Status400BadRequest
-                   });
+                   case "Insufficient quota":
+                       return TypedResults.BadRequest(new ProblemDetails
+                       {
+                           Title = "Insufficient quota",
+                           Detail = "The CSV did not contain any valid quota to process.",
+                           Status = StatusCodes.Status400BadRequest
+                       });
+
+                   case "Fail to reserve quota":
+                       return TypedResults.BadRequest(new ProblemDetails
+                       {
+                           Title = "Fail to reserve quota",
+                           Detail = "The CSV fail to reserve quota to process.",
+                           Status = StatusCodes.Status400BadRequest
+                       });
+
+                   default:
+                       return TypedResults.BadRequest(new ProblemDetails
+                       {
+                           Title = "Store Processing Failed",
+                           Detail = result?.ToString() ?? "Unknown error occurred.",
+                           Status = StatusCodes.Status400BadRequest
+                       });
+               }
+           } 
+           else
+           {
+               return TypedResults.Forbid();
            }
        }
        catch (Exception ex)
