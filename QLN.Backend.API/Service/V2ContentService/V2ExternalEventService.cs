@@ -436,12 +436,10 @@ namespace QLN.Backend.API.Service.V2ContentService
 
             var filters = new List<string> { "IsActive eq true" };
 
-            // status
             if (request.Status.HasValue)
             {
                 if (request.Status.Value == EventStatus.Expired)
                 {
-                    // when explicitly asking for expired, include both status+date guard to be safe
                     filters.Add($"(Status eq 'Expired' or {ExpiredClause()})");
                 }
                 else
@@ -452,7 +450,6 @@ namespace QLN.Backend.API.Service.V2ContentService
             }
             else
             {
-                // default: exclude expired
                 filters.Add(NotExpiredClause());
             }
 
@@ -462,25 +459,34 @@ namespace QLN.Backend.API.Service.V2ContentService
             if (request.LocationId is { Count: > 0 })
                 filters.Add($"({OrList("LocationId", request.LocationId!)})");
 
-
             if (request.FreeOnly == true)
                 filters.Add("(EventType eq 'FreeAcess' or EventType eq 'OpenRegistrations')");
 
             if (request.FromDate.HasValue || request.ToDate.HasValue)
             {
                 if (request.FromDate.HasValue && request.ToDate.HasValue)
-                    filters.Add($"EventSchedule/StartDate ge {request.FromDate.Value.ToDateTime(TimeOnly.MinValue):o} and EventSchedule/EndDate le {request.ToDate.Value.ToDateTime(TimeOnly.MinValue):o}");
+                {
+                    var fromDateTime = request.FromDate.Value.ToDateTime(TimeOnly.MinValue);
+                    var toDateTime = request.ToDate.Value.ToDateTime(TimeOnly.MaxValue);
+                    filters.Add($"EventSchedule/StartDate ge {FormatDateTimeForAzureSearch(fromDateTime)} and EventSchedule/EndDate le {FormatDateTimeForAzureSearch(toDateTime)}");
+                }
                 else if (request.FromDate.HasValue)
-                    filters.Add($"EventSchedule/EndDate ge {request.FromDate.Value.ToDateTime(TimeOnly.MinValue):o}");
+                {
+                    var fromDateTime = request.FromDate.Value.ToDateTime(TimeOnly.MinValue);
+                    filters.Add($"EventSchedule/EndDate ge {FormatDateTimeForAzureSearch(fromDateTime)}");
+                }
                 else if (request.ToDate.HasValue)
-                    filters.Add($"EventSchedule/StartDate le {request.ToDate.Value.ToDateTime(TimeOnly.MinValue):o}");
+                {
+                    var toDateTime = request.ToDate.Value.ToDateTime(TimeOnly.MaxValue);
+                    filters.Add($"EventSchedule/StartDate le {FormatDateTimeForAzureSearch(toDateTime)}");
+                }
             }
 
             if (!string.IsNullOrWhiteSpace(request.FilterType))
             {
                 var today = DateOnly.FromDateTime(DateTime.UtcNow.Date);
                 var startOfWeek = today.AddDays(-(int)today.DayOfWeek);
-                var endOfWeek   = startOfWeek.AddDays(6);
+                var endOfWeek = startOfWeek.AddDays(6);
 
                 switch (request.FilterType.ToLowerInvariant())
                 {
@@ -488,10 +494,13 @@ namespace QLN.Backend.API.Service.V2ContentService
                         filters.Add("IsFeatured eq true");
                         break;
                     case "thisweek":
-                        filters.Add($"EventSchedule/StartDate ge {startOfWeek.ToDateTime(TimeOnly.MinValue):o} and EventSchedule/StartDate le {endOfWeek.ToDateTime(TimeOnly.MinValue):o}");
+                        var startOfWeekDateTime = startOfWeek.ToDateTime(TimeOnly.MinValue);
+                        var endOfWeekDateTime = endOfWeek.ToDateTime(TimeOnly.MaxValue);
+                        filters.Add($"EventSchedule/StartDate ge {FormatDateTimeForAzureSearch(startOfWeekDateTime)} and EventSchedule/StartDate le {FormatDateTimeForAzureSearch(endOfWeekDateTime)}");
                         break;
                     case "upcoming":
-                        filters.Add($"EventSchedule/StartDate ge {DateTime.UtcNow.Date:o}");
+                        var todayDateTime = DateTime.UtcNow.Date;
+                        filters.Add($"EventSchedule/StartDate ge {FormatDateTimeForAzureSearch(todayDateTime)}");
                         break;
                 }
             }
@@ -537,6 +546,12 @@ namespace QLN.Backend.API.Service.V2ContentService
                 FeaturedCount = items.Count(e => e.IsFeatured),
                 FeaturedInCurrentPage = items.Count(e => e.IsFeatured)
             };
+        }
+        private static string FormatDateTimeForAzureSearch(DateTime dateTime)
+        {
+            var utcDateTime = dateTime.Kind == DateTimeKind.Utc ? dateTime : dateTime.ToUniversalTime();
+
+            return utcDateTime.ToString("yyyy-MM-ddTHH:mm:ss.fffZ", System.Globalization.CultureInfo.InvariantCulture);
         }
 
         public async Task<List<V2Slot>> GetAllEventSlot(CancellationToken cancellationToken = default)

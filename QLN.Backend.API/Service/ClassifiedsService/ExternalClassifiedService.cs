@@ -1352,8 +1352,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
             try
             {
-                //var subscriptionid = Guid.Parse("5a024f96-7414-4473-80b8-f5d70297e262");
-
+             
                 if (subscriptionId != Guid.Empty && dto.IsFeatured == true)
                 {
                     var canUse = await _subscriptionContext.ValidateSubscriptionUsageAsync(

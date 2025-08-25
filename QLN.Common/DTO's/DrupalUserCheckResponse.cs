@@ -13,10 +13,10 @@ namespace QLN.Common.DTO_s
         public bool Status { get; set; }
 
         [JsonPropertyName("user")]
-        public DrupalUser User { get; set; }
+        public DrupalCheckUser User { get; set; }
     }
 
-    public class DrupalUser
+    public class DrupalCheckUser
     {
         [JsonPropertyName("uid")]
         public string Uid { get; set; }

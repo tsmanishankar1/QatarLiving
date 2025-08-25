@@ -370,9 +370,7 @@ namespace QLN.Classified.MS.Service
                 subVertical, adId, userId);
 
             try
-            {
-               // subscriptionId = Guid.Parse("5a024f96-7414-4473-80b8-f5d70297e262");
-                //var subcription = await _subscriptionContext.Subscriptions.AsNoTracking().FirstOrDefaultAsync(s => s.SubscriptionId == subscriptionid,cancellationToken);
+            {              
                 string? adTitle;
 
                 object? adItem = subVertical switch
@@ -1820,7 +1818,7 @@ namespace QLN.Classified.MS.Service
                 string? searchLower = string.IsNullOrWhiteSpace(search) ? null : search.ToLowerInvariant();
                 
                 IQueryable<Items> ItemsFilter(IQueryable<Items> q)
-                    => q.Where(i => i.UserId == userId && i.IsActive)
+                    => q.Where(i => i.UserId == userId && i.IsActive && i.Status != AdStatus.Draft)
                         .Where(i => searchLower == null || (i.Title ?? "").ToLower().Contains(searchLower))
                         .Where(i => !isPublished.HasValue
                             || (isPublished.Value
@@ -1829,7 +1827,7 @@ namespace QLN.Classified.MS.Service
                         .OrderByDescending(i => i.UpdatedAt ?? i.CreatedAt);
 
                 IQueryable<Preloveds> PrelovedFilter(IQueryable<Preloveds> q)
-                    => q.Where(p => p.UserId == userId && p.IsActive)
+                    => q.Where(p => p.UserId == userId && p.IsActive && p.Status != AdStatus.Draft)
                         .Where(p => searchLower == null || (p.Title ?? "").ToLower().Contains(searchLower))
                         .Where(p => !isPublished.HasValue
                             || (isPublished.Value
@@ -1838,7 +1836,7 @@ namespace QLN.Classified.MS.Service
                         .OrderByDescending(p => p.UpdatedAt ?? p.CreatedAt);
 
                 IQueryable<Collectibles> CollectiblesFilter(IQueryable<Collectibles> q)
-                    => q.Where(c => c.UserId == userId && c.IsActive)
+                    => q.Where(c => c.UserId == userId && c.IsActive && c.Status != AdStatus.Draft)
                         .Where(c => searchLower == null || (c.Title ?? "").ToLower().Contains(searchLower))
                         .Where(c => !isPublished.HasValue
                             || (isPublished.Value
@@ -1847,7 +1845,7 @@ namespace QLN.Classified.MS.Service
                         .OrderByDescending(c => c.UpdatedAt ?? c.CreatedAt);
 
                 IQueryable<Deals> DealsFilter(IQueryable<Deals> q)
-                    => q.Where(d => d.UserId == userId && d.IsActive)
+                    => q.Where(d => d.UserId == userId && d.IsActive && d.Status != AdStatus.Draft)
                         .Where(d => searchLower == null || (d.Offertitle ?? "").ToLower().Contains(searchLower))
                         .Where(d => !isPublished.HasValue
                             || (isPublished.Value
@@ -1898,28 +1896,28 @@ namespace QLN.Classified.MS.Service
 
                 var counts = new UserAdCountsDto
                 {
-                    ItemsPublished = await _context.Item.CountAsync(i => i.UserId == userId && i.IsActive &&
+                    ItemsPublished = await _context.Item.CountAsync(i => i.UserId == userId && i.IsActive && i.Status != AdStatus.Draft &&
                     (i.Status == AdStatus.Published || i.Status == AdStatus.Approved), cancellationToken),
 
-                    ItemsUnpublished = await _context.Item.CountAsync(i => i.UserId == userId && i.IsActive &&
+                    ItemsUnpublished = await _context.Item.CountAsync(i => i.UserId == userId && i.IsActive && i.Status != AdStatus.Draft &&
                     (i.Status != AdStatus.Published && i.Status != AdStatus.Approved), cancellationToken),
 
-                    PrelovedPublished = await _context.Preloved.CountAsync(p => p.UserId == userId && p.IsActive &&
+                    PrelovedPublished = await _context.Preloved.CountAsync(p => p.UserId == userId && p.IsActive && p.Status != AdStatus.Draft &&
                     (p.Status == AdStatus.Published || p.Status == AdStatus.Approved), cancellationToken),
 
-                    PrelovedUnpublished = await _context.Preloved.CountAsync(p => p.UserId == userId && p.IsActive &&
+                    PrelovedUnpublished = await _context.Preloved.CountAsync(p => p.UserId == userId && p.IsActive && p.Status != AdStatus.Draft &&
                     (p.Status != AdStatus.Published && p.Status != AdStatus.Approved), cancellationToken),
 
-                    CollectiblesPublished = await _context.Collectible.CountAsync(c => c.UserId == userId && c.IsActive &&
+                    CollectiblesPublished = await _context.Collectible.CountAsync(c => c.UserId == userId && c.IsActive && c.Status != AdStatus.Draft &&
                     (c.Status == AdStatus.Published || c.Status == AdStatus.Approved), cancellationToken),
 
-                    CollectiblesUnpublished = await _context.Collectible.CountAsync(c => c.UserId == userId && c.IsActive &&
+                    CollectiblesUnpublished = await _context.Collectible.CountAsync(c => c.UserId == userId && c.IsActive && c.Status != AdStatus.Draft &&
                     (c.Status != AdStatus.Published && c.Status != AdStatus.Approved), cancellationToken),
 
-                    DealsPublished = await _context.Deal.CountAsync(d => d.UserId == userId && d.IsActive &&
+                    DealsPublished = await _context.Deal.CountAsync(d => d.UserId == userId && d.IsActive && d.Status != AdStatus.Draft &&
                     (d.Status == AdStatus.Published || d.Status == AdStatus.Approved), cancellationToken),
 
-                    DealsUnpublished = await _context.Deal.CountAsync(d => d.UserId == userId && d.IsActive &&
+                    DealsUnpublished = await _context.Deal.CountAsync(d => d.UserId == userId && d.IsActive && d.Status != AdStatus.Draft &&
                     (d.Status != AdStatus.Published && d.Status != AdStatus.Approved), cancellationToken)
                 };
 
@@ -2404,7 +2402,7 @@ namespace QLN.Classified.MS.Service
                 CreatedBy = dto.CreatedBy ?? string.Empty,            
                 CreatedAt = dto.CreatedAt,
                 XMLlink = dto.XMLlink ?? string.Empty,                
-                SubscriptionId = dto.SubscriptionId,                 
+                SubscriptionId = dto.SubscriptionId.ToString(),                 
                 UpdatedAt = dto.UpdatedAt,
                 UpdatedBy = dto.UpdatedBy,
                 ExpiryDate = dto.ExpiryDate,
@@ -2663,10 +2661,6 @@ namespace QLN.Classified.MS.Service
         }
 
 
-
-
-
-
         #region WishList
 
         public async Task<string> Favourite(WishlistCreateDto dto, string userId, CancellationToken cancellationToken)
@@ -2899,6 +2893,7 @@ namespace QLN.Classified.MS.Service
                         itemsAd.AdType = AdTypeEnum.P2P;
                         itemsAd.UpdatedBy = uid;
                         itemsAd.UpdatedAt = DateTime.UtcNow;
+                        itemsAd.ExpiryDate = DateTime.UtcNow.AddMonths(1);
 
                         await _context.SaveChangesAsync(ct);
                         

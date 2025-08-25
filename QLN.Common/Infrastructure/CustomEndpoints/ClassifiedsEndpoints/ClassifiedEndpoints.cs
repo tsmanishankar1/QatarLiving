@@ -738,23 +738,37 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 string? name = null;
                 try
                 {
-                    uid = httpContext.User.FindFirst("sub")?.Value;
-                    var userName = httpContext.User.FindFirst("preferred_username")?.Value;
+                    var (extractedUid, username) = UserTokenHelper.ExtractUserAsync(httpContext);
+                    uid = extractedUid;
+                    name = username;
+
+                    if (string.IsNullOrWhiteSpace(uid))
+                    {
+                        return TypedResults.Problem(new ProblemDetails
+                        {
+                            Title = "Unauthorized",
+                            Detail = "Unable to resolve user id from token.",
+                            Status = StatusCodes.Status401Unauthorized
+                        });
+                    }
+
                     var slug = SlugHelper.GenerateSlug(dto.Title, dto.Category, "Classifieds", Guid.NewGuid());
                     var freeSub = (await subscriptionService.GetUserFreeSubscriptionsAsync(uid, token))
                                                              .OrderBy(s => s.EndDate)
                                                              .FirstOrDefault();
                     var subscriptionId = Guid.Empty;
                     var expiryDate = DateTime.MinValue;
+                    var adStatus = AdStatus.Draft;
                     if (freeSub is not null)
                     {
                         subscriptionId = freeSub.Id;
                         expiryDate = freeSub.EndDate;
+                        adStatus = AdStatus.PendingApproval;
                     }
                     var request = new Items
                     {
                         UserId = uid,
-                        UserName = userName,
+                        UserName = name,
                         L2CategoryId = dto.L2CategoryId,
                         BuildingNumber = dto.BuildingNumber,
                         SubVertical = SubVertical.Items,
@@ -790,10 +804,10 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         LastRefreshedOn = null,
                         PromotedExpiryDate = null,
                         PublishedDate = null,
-                        Status = AdStatus.Draft,
+                        Status = adStatus,
                         SubscriptionId = subscriptionId,
                         IsActive = true,
-                        CreatedBy = userName,
+                        CreatedBy = name,
                         CreatedAt = DateTime.UtcNow,
                         Images = dto.Images.Select(i => new ImageInfo
                         {
@@ -1095,68 +1109,52 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
 
             group.MapPost("preloved", async Task<IResult> (
-     HttpContext httpContext,
-     [FromBody] ClassifiedsPrelovedDTO dto,
-     IClassifiedService service,
-     AuditLogger auditLogger,
-     CancellationToken token) =>
+                HttpContext httpContext,
+                [FromBody] ClassifiedsPrelovedDTO dto,
+                IClassifiedService service,
+                AuditLogger auditLogger,
+                [FromServices] IV2SubscriptionService v2Subs,
+                CancellationToken token) =>
             {
+                const int CLASSIFIEDS_VERTICAL = 3;
+
                 string? uid = "unknown";
                 string? subId = null;
                 string? name = null;
                 try
                 {
-                    uid = httpContext.User.FindFirst("sub")?.Value;
-                    var userName = httpContext.User.FindFirst("preferred_username")?.Value;
+                    (uid, name) = UserTokenHelper.ExtractUserAsync(httpContext);
 
-                    // Get all subscription claims
-                    var subscriptionClaims = httpContext.User.FindAll("subscriptions").ToList();
-                    Guid? subscriptionId = null;
-                    DateTime? expiryDate = null;
-
-                    // Find Preloved subscription (Vertical=3 and SubVertical=4)
-                    foreach (var claim in subscriptionClaims)
+                    if (string.IsNullOrWhiteSpace(uid))
                     {
-                        try
+                        return TypedResults.Problem(new ProblemDetails
                         {
-                            using (var doc = JsonDocument.Parse(claim.Value))
-                            {
-                                var subscription = doc.RootElement;
-
-                                if (subscription.TryGetProperty("Vertical", out var verticalProp) &&
-                                    verticalProp.GetInt32() == 3 &&
-                                    subscription.TryGetProperty("SubVertical", out var subVerticalProp) &&
-                                    subVerticalProp.GetInt32() == 4)
-                                {
-                                    //subscriptionId = Guid.Parse(subscription.GetProperty("Id").GetString());
-                                    //expiryDate = DateTime.Parse(subscription.GetProperty("EndDate").GetString());
-                                    //break;
-                                    if (subscription.TryGetProperty("EndDate", out var endDateProp) &&
-                                    endDateProp.ValueKind == JsonValueKind.String)
-                                    {
-                                        // Parse to DateTime and ensure UTC
-                                        expiryDate = DateTime.Parse(endDateProp.GetString()).ToUniversalTime();
-                                        subscriptionId = Guid.Parse(subscription.GetProperty("Id").GetString());
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-                        catch
-                        {
-                            continue;
-                        }
+                            Title = "Unauthorized",
+                            Detail = "Unable to resolve user id from token.",
+                            Status = StatusCodes.Status401Unauthorized
+                        });
                     }
+                    
+                    var activeSubs = await v2Subs.GetActiveSubscriptionsAsync(
+                        userId: uid,
+                        verticalId: CLASSIFIEDS_VERTICAL,
+                        subVerticalId: (int)SubVertical.Preloved,
+                        cancellationToken: token
+                        );
 
-                    if (subscriptionId == null)
+                    if (activeSubs == null || !activeSubs.Any())
                     {
                         return TypedResults.BadRequest(new ProblemDetails
                         {
                             Title = "Subscription Required",
-                            Detail = "No Preloved subscription found for this user.",
+                            Detail = "No active Preloved subscription found for this user.",
                             Status = StatusCodes.Status400BadRequest
                         });
                     }
+
+                    var subscription = activeSubs
+                        .OrderByDescending(s => s.EndDate)
+                        .First();
 
                     var slug = SlugHelper.GenerateSlug(dto.Title, dto.Category, "Classifieds", Guid.NewGuid());
                     var request = new Preloveds
@@ -1191,7 +1189,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         StreetNumber = dto.StreetNumber,
                         ContactNumberCountryCode = dto.ContactNumberCountryCode,
                         WhatsappNumberCountryCode = dto.WhatsappNumberCountryCode,
-                        ExpiryDate = expiryDate,
+                        ExpiryDate = subscription.EndDate,
                         FeaturedExpiryDate = null,
                         IsFeatured = false,
                         IsPromoted = false,
@@ -1199,12 +1197,12 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         PromotedExpiryDate = null,
                         PublishedDate = null,
                         Status = AdStatus.Draft,
-                        SubscriptionId = subscriptionId.Value,
+                        SubscriptionId = subscription.Id,
                         Inclusion = dto.Inclusion,
-                        UserName = userName,
+                        UserName = name,
                         zone = dto.zone,
                         IsActive = true,
-                        CreatedBy = userName,
+                        CreatedBy = name,
                         CreatedAt = DateTime.UtcNow,
                         Images = dto.Images.Select(i => new ImageInfo
                         {
@@ -1337,24 +1335,19 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 string? uid = "unknown";
                 try
                 {
-                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                    if (string.IsNullOrEmpty(userClaim))
-                    {
-                        return Results.Unauthorized();
-                    }
+                    var (extractedUid, username) = UserTokenHelper.ExtractUserAsync(httpContext);
+                    uid = extractedUid;
 
-                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                    uid = userData.GetProperty("uid").GetString();
-
-                    if (uid == null)
+                    if (string.IsNullOrWhiteSpace(uid))
                     {
-                        return TypedResults.BadRequest(new ProblemDetails
+                        return TypedResults.Problem(new ProblemDetails
                         {
-                            Title = "Validation Error",
-                            Detail = "Authenticated user ID is missing or invalid.",
-                            Status = StatusCodes.Status400BadRequest
+                            Title = "Unauthorized",
+                            Detail = "Unable to resolve user id from token.",
+                            Status = StatusCodes.Status401Unauthorized
                         });
                     }
+
                     var slug = SlugHelper.GenerateSlug(dto.Title, dto.Category, "Classifieds", Guid.NewGuid());
                     dto.UpdatedBy = uid;
                     dto.Slug = slug;
@@ -1530,49 +1523,17 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 string? name = null;
                 try
                 {
-                    uid = httpContext.User.FindFirst("sub")?.Value;
-                    var userName = httpContext.User.FindFirst("preferred_username")?.Value;
+                    var (extractedUid, username) = UserTokenHelper.ExtractUserAsync(httpContext);
+                    uid = extractedUid;
+                    name = username;
 
-                    var subscriptionClaims = httpContext.User.FindAll("subscriptions").ToList();
-                    Guid? subscriptionId = null;
-                    DateTime? expiryDate = null;
-
-                    foreach (var claim in subscriptionClaims)
+                    if (string.IsNullOrWhiteSpace(uid))
                     {
-                        try
+                        return TypedResults.Problem(new ProblemDetails
                         {
-                            using (var doc = JsonDocument.Parse(claim.Value))
-                            {
-                                var subscription = doc.RootElement;
-
-                                if (subscription.TryGetProperty("Vertical", out var verticalProp) &&
-                                    verticalProp.GetInt32() == 3 &&
-                                    subscription.TryGetProperty("SubVertical", out var subVerticalProp) &&
-                                    subVerticalProp.GetInt32() == 4)
-                                {
-                                    if (subscription.TryGetProperty("EndDate", out var endDateProp) &&
-                                    endDateProp.ValueKind == JsonValueKind.String)
-                                    {
-                                        expiryDate = DateTime.Parse(endDateProp.GetString()).ToUniversalTime();
-                                        subscriptionId = Guid.Parse(subscription.GetProperty("Id").GetString());
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-                        catch
-                        {
-                            continue;
-                        }
-                    }
-
-                    if (subscriptionId == null)
-                    {
-                        return TypedResults.BadRequest(new ProblemDetails
-                        {
-                            Title = "Subscription Required",
-                            Detail = "No Preloved subscription found for this user.",
-                            Status = StatusCodes.Status400BadRequest
+                            Title = "Unauthorized",
+                            Detail = "Unable to resolve user id from token.",
+                            Status = StatusCodes.Status401Unauthorized
                         });
                     }
 
@@ -1748,49 +1709,16 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 string uid = "unknown";
                 try
                 {
-                    uid = httpContext.User.FindFirst("sub")?.Value;
-                    var userName = httpContext.User.FindFirst("preferred_username")?.Value;
+                    var (extractedUid, username) = UserTokenHelper.ExtractUserAsync(httpContext);
+                    uid = extractedUid;
 
-                    var subscriptionClaims = httpContext.User.FindAll("subscriptions").ToList();
-                    Guid? subscriptionId = null;
-                    DateTime? expiryDate = null;
-
-                    foreach (var claim in subscriptionClaims)
+                    if (string.IsNullOrWhiteSpace(uid))
                     {
-                        try
+                        return TypedResults.Problem(new ProblemDetails
                         {
-                            using (var doc = JsonDocument.Parse(claim.Value))
-                            {
-                                var subscription = doc.RootElement;
-
-                                if (subscription.TryGetProperty("Vertical", out var verticalProp) &&
-                                    verticalProp.GetInt32() == 3 &&
-                                    subscription.TryGetProperty("SubVertical", out var subVerticalProp) &&
-                                    subVerticalProp.GetInt32() == 1)
-                                {
-                                    if (subscription.TryGetProperty("EndDate", out var endDateProp) &&
-                                    endDateProp.ValueKind == JsonValueKind.String)
-                                    {
-                                        expiryDate = DateTime.Parse(endDateProp.GetString()).ToUniversalTime();
-                                        subscriptionId = Guid.Parse(subscription.GetProperty("Id").GetString());
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-                        catch
-                        {
-                            continue;
-                        }
-                    }
-
-                    if (subscriptionId == null)
-                    {
-                        return TypedResults.BadRequest(new ProblemDetails
-                        {
-                            Title = "Subscription Required",
-                            Detail = "No Collectibles subscription found for this user.",
-                            Status = StatusCodes.Status400BadRequest
+                            Title = "Unauthorized",
+                            Detail = "Unable to resolve user id from token.",
+                            Status = StatusCodes.Status401Unauthorized
                         });
                     }
 
@@ -1964,51 +1892,20 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
              CancellationToken token) =>
             {
                 string uid = "unknown";
+                string userName;
                 try
                 {
-                    uid = httpContext.User.FindFirst("sub")?.Value;
-                    var userName = httpContext.User.FindFirst("preferred_username")?.Value;
+                    var (extractedUid, username) = UserTokenHelper.ExtractUserAsync(httpContext);
+                    uid = extractedUid;
+                    userName = username;
 
-                    var subscriptionClaims = httpContext.User.FindAll("subscriptions").ToList();
-                    Guid? subscriptionId = null;
-                    DateTime? expiryDate = null;
-
-                    foreach (var claim in subscriptionClaims)
+                    if (string.IsNullOrWhiteSpace(uid))
                     {
-                        try
+                        return TypedResults.Problem(new ProblemDetails
                         {
-                            using (var doc = JsonDocument.Parse(claim.Value))
-                            {
-                                var subscription = doc.RootElement;
-
-                                if (subscription.TryGetProperty("Vertical", out var verticalProp) &&
-                                    verticalProp.GetInt32() == 3 &&
-                                    subscription.TryGetProperty("SubVertical", out var subVerticalProp) &&
-                                    subVerticalProp.GetInt32() == 2)
-                                {
-                                    if (subscription.TryGetProperty("EndDate", out var endDateProp) &&
-                                    endDateProp.ValueKind == JsonValueKind.String)
-                                    {
-                                        expiryDate = DateTime.Parse(endDateProp.GetString()).ToUniversalTime();
-                                        subscriptionId = Guid.Parse(subscription.GetProperty("Id").GetString());
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-                        catch
-                        {
-                            continue;
-                        }
-                    }
-
-                    if (subscriptionId == null)
-                    {
-                        return TypedResults.BadRequest(new ProblemDetails
-                        {
-                            Title = "Subscription Required",
-                            Detail = "No Deals subscription found for this user.",
-                            Status = StatusCodes.Status400BadRequest
+                            Title = "Unauthorized",
+                            Detail = "Unable to resolve user id from token.",
+                            Status = StatusCodes.Status401Unauthorized
                         });
                     }
 
@@ -2182,58 +2079,21 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 AuditLogger auditLogger,
                 CancellationToken token) =>
             {
-                string? uid = "unknown";
-                string? subId = null;
+                string? uid = "unknown";                
                 string? name = null;
                 try
                 {
-                    uid = httpContext.User.FindFirst("sub")?.Value;
-                    var userName = httpContext.User.FindFirst("preferred_username")?.Value;
+                    var (extractedUid, username) = UserTokenHelper.ExtractUserAsync(httpContext);
+                    uid = extractedUid;
+                    name = username;
 
-                    // Get all subscription claims
-                    var subscriptionClaims = httpContext.User.FindAll("subscriptions").ToList();
-                    Guid? subscriptionId = null;
-                    DateTime? expiryDate = null;
-
-                    // Find collectible subscription (Vertical=3 and SubVertical=4)
-                    foreach (var claim in subscriptionClaims)
+                    if (string.IsNullOrWhiteSpace(uid))
                     {
-                        try
+                        return TypedResults.Problem(new ProblemDetails
                         {
-                            using (var doc = JsonDocument.Parse(claim.Value))
-                            {
-                                var subscription = doc.RootElement;
-
-                                if (subscription.TryGetProperty("Vertical", out var verticalProp) &&
-                                    verticalProp.GetInt32() == 3 &&
-                                    subscription.TryGetProperty("SubVertical", out var subVerticalProp) &&
-                                    subVerticalProp.GetInt32() == 4)
-                                {
-
-                                    if (subscription.TryGetProperty("EndDate", out var endDateProp) &&
-                                    endDateProp.ValueKind == JsonValueKind.String)
-                                    {
-                                        // Parse to DateTime and ensure UTC
-                                        expiryDate = DateTime.Parse(endDateProp.GetString()).ToUniversalTime();
-                                        subscriptionId = Guid.Parse(subscription.GetProperty("Id").GetString());
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-                        catch
-                        {
-                            continue;
-                        }
-                    }
-
-                    if (subscriptionId == null)
-                    {
-                        return TypedResults.BadRequest(new ProblemDetails
-                        {
-                            Title = "Subscription Required",
-                            Detail = "No Collectibles subscription found for this user.",
-                            Status = StatusCodes.Status400BadRequest
+                            Title = "Unauthorized",
+                            Detail = "Unable to resolve user id from token.",
+                            Status = StatusCodes.Status401Unauthorized
                         });
                     }
 
@@ -2241,7 +2101,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                     var request = new Collectibles
                     {
                         UserId = uid,
-                        UserName = userName,
+                        UserName = name,
                         L2CategoryId = dto.L2CategoryId,
                         BuildingNumber = dto.BuildingNumber,
                         AuthenticityCertificateName = dto.AuthenticityCertificateName,
@@ -2272,20 +2132,20 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         StreetNumber = dto.StreetNumber,
                         ContactNumberCountryCode = dto.ContactNumberCountryCode,
                         WhatsappNumberCountryCode = dto.WhatsappNumberCountryCode,
-                        ExpiryDate = expiryDate,
+                        ExpiryDate = null,
                         FeaturedExpiryDate = null,
                         IsFeatured = false,
                         IsPromoted = false,
                         PromotedExpiryDate = null,
                         PublishedDate = null,
                         Status = AdStatus.Draft,
-                        SubscriptionId = subscriptionId,
+                        SubscriptionId = Guid.Empty,
                         HasWarranty = dto.HasWarranty,
                         IsHandmade = dto.IsHandmade,
                         YearOrEra = dto.YearOrEra,
                         zone = dto.zone,
                         IsActive = true,
-                        CreatedBy = userName,
+                        CreatedBy = name,
                         CreatedAt = DateTime.UtcNow,
                         Images = dto.Images.Select(i => new ImageInfo
                         {
@@ -2648,8 +2508,22 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 CancellationToken cancellationToken
                 ) =>
             {
-                string uid = context.User.FindFirst("sub")?.Value;
-                string userName = context.User.FindFirst("preferred_username")?.Value;
+                string? uid = "unknown";
+                string? name = null;
+
+                var (extractedUid, username) = UserTokenHelper.ExtractUserAsync(context);
+                uid = extractedUid;
+                name = username;
+
+                if (string.IsNullOrWhiteSpace(uid))
+                {
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Unauthorized",
+                        Detail = "Unable to resolve user id from token.",
+                        Status = StatusCodes.Status401Unauthorized
+                    });
+                }
 
                 if (adId <= 0)
                 {
@@ -3237,10 +3111,24 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 CancellationToken cancellationToken
                 ) =>
             {
+                string? uid = "unknown";
+                string? name = null;
+
                 try
                 {
-                    string uid = context.User.FindFirst("sub")?.Value;
-                    string userName = context.User.FindFirst("preferred_username")?.Value;
+                    var (extractedUid, username) = UserTokenHelper.ExtractUserAsync(context);
+                    uid = extractedUid;
+                    name = username;
+
+                    if (string.IsNullOrWhiteSpace(uid))
+                    {
+                        return TypedResults.Problem(new ProblemDetails
+                        {
+                            Title = "Unauthorized",
+                            Detail = "Unable to resolve user id from token.",
+                            Status = StatusCodes.Status401Unauthorized
+                        });
+                    }
 
                     var ads = await service.GetAllItemsAdByUser(uid, cancellationToken);
 
@@ -3364,10 +3252,23 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 CancellationToken cancellationToken
                 ) =>
             {
+                string? uid = "unknown";
+                string? name = null;
                 try
                 {
-                    string uid = context.User.FindFirst("sub")?.Value;
-                    string userName = context.User.FindFirst("preferred_username")?.Value;
+                    var (extractedUid, username) = UserTokenHelper.ExtractUserAsync(context);
+                    uid = extractedUid;
+                    name = username;
+
+                    if (string.IsNullOrWhiteSpace(uid))
+                    {
+                        return TypedResults.Problem(new ProblemDetails
+                        {
+                            Title = "Unauthorized",
+                            Detail = "Unable to resolve user id from token.",
+                            Status = StatusCodes.Status401Unauthorized
+                        });
+                    }
 
                     if (string.IsNullOrWhiteSpace(uid))
                     {
@@ -3502,19 +3403,22 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 CancellationToken cancellationToken
                 ) =>
             {
+                string? uid = "unknown";
+                string? name = null;
+
                 try
                 {
-                    string uid = context.User.FindFirst("sub")?.Value;
-                    string userName = context.User.FindFirst("preferred_username")?.Value;
+                    var (extractedUid, username) = UserTokenHelper.ExtractUserAsync(context);
+                    uid = extractedUid;
+                    name = username;
 
                     if (string.IsNullOrWhiteSpace(uid))
                     {
-                        return TypedResults.BadRequest(new ProblemDetails
+                        return TypedResults.Problem(new ProblemDetails
                         {
-                            Title = "Validation Error",
-                            Detail = "UserId must not be empty.",
-                            Status = StatusCodes.Status400BadRequest,
-                            Instance = context.Request.Path
+                            Title = "Unauthorized",
+                            Detail = "Unable to resolve user id from token.",
+                            Status = StatusCodes.Status401Unauthorized
                         });
                     }
 
@@ -3640,19 +3544,21 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 CancellationToken cancellationToken
                 ) =>
             {
+                string? uid = "unknown";
+                string? name = null;
                 try
                 {
-                    string uid = context.User.FindFirst("sub")?.Value ?? "unknown";
-                    string userName = context.User.FindFirst("preferred_username")?.Value ?? "unknown";
+                    var (extractedUid, username) = UserTokenHelper.ExtractUserAsync(context);
+                    uid = extractedUid;
+                    name = username;
 
                     if (string.IsNullOrWhiteSpace(uid))
                     {
-                        return TypedResults.BadRequest(new ProblemDetails
+                        return TypedResults.Problem(new ProblemDetails
                         {
-                            Title = "Validation Error",
-                            Detail = "UserId must not be empty.",
-                            Status = StatusCodes.Status400BadRequest,
-                            Instance = context.Request.Path
+                            Title = "Unauthorized",
+                            Detail = "Unable to resolve user id from token.",
+                            Status = StatusCodes.Status401Unauthorized
                         });
                     }
 
@@ -4438,16 +4344,20 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 IClassifiedService service,
                 CancellationToken token) =>
                     {
-                        var uid = context.User.FindFirst("sub")?.Value ?? "unknown";
-                        var userName = context.User.FindFirst("preferred_username")?.Value ?? "unknown";
+                        string? uid = "unknown";
+                        string? name = null;
 
-                        if (uid == null)
+                        var (extractedUid, username) = UserTokenHelper.ExtractUserAsync(context);
+                        uid = extractedUid;
+                        name = username;
+
+                        if (string.IsNullOrWhiteSpace(uid))
                         {
-                            return TypedResults.BadRequest(new ProblemDetails
+                            return TypedResults.Problem(new ProblemDetails
                             {
-                                Title = "Validation Error",
-                                Detail = "Authenticated user ID is missing or invalid.",
-                                Status = StatusCodes.Status400BadRequest
+                                Title = "Unauthorized",
+                                Detail = "Unable to resolve user id from token.",
+                                Status = StatusCodes.Status401Unauthorized
                             });
                         }
 
@@ -4540,66 +4450,68 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
 
             group.MapPut("/items/promote", async Task<IResult> (
-    HttpContext httpContext,
-    ClassifiedsPromoteDto dto,
-    IClassifiedService service,
-    AuditLogger auditLogger,
-    CancellationToken token) =>
+                HttpContext httpContext,
+                ClassifiedsPromoteDto dto,
+                IClassifiedService service,
+                [FromServices] IV2SubscriptionService v2Subs,
+                AuditLogger auditLogger,
+                CancellationToken token) =>
             {
+                const int CLASSIFIEDS_VERTICAL = 3;
+
                 string? uid = "unknown";
                 string? subId = null;
                 string? name = null;
                 try
                 {
-                    uid = httpContext.User.FindFirst("sub")?.Value;
-                    var userName = httpContext.User.FindFirst("preferred_username")?.Value;
 
-                    // Get all subscription claims
-                    var subscriptionClaims = httpContext.User.FindAll("subscriptions").ToList();
-                    Guid? subscriptionId = null;
-                    DateTime? expiryDate = null;
+                    var (extractedUid, username) = UserTokenHelper.ExtractUserAsync(httpContext);
+                    uid = extractedUid;
 
-                    // Find Preloved subscription (Vertical=3 and SubVertical=4)
-                    foreach (var claim in subscriptionClaims)
+                    if (string.IsNullOrWhiteSpace(uid))
                     {
-                        try
+                        return TypedResults.Problem(new ProblemDetails
                         {
-                            using (var doc = JsonDocument.Parse(claim.Value))
-                            {
-                                var subscription = doc.RootElement;
-
-                                if (subscription.TryGetProperty("Vertical", out var verticalProp) &&
-                                    verticalProp.GetInt32() == 3 &&
-                                    subscription.TryGetProperty("SubVertical", out var subVerticalProp) &&
-                                    subVerticalProp.GetInt32() == (int)dto.SubVertical)
-                                {
-                                    if (subscription.TryGetProperty("EndDate", out var endDateProp) &&
-                                    endDateProp.ValueKind == JsonValueKind.String)
-                                    {
-
-                                        expiryDate = DateTime.Parse(endDateProp.GetString()).ToUniversalTime();
-                                        subscriptionId = Guid.Parse(subscription.GetProperty("Id").GetString());
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-                        catch
-                        {
-                            continue;
-                        }
+                            Title = "Unauthorized",
+                            Detail = "Unable to resolve user id from token.",
+                            Status = StatusCodes.Status401Unauthorized
+                        });
                     }
 
-                    if (subscriptionId == null)
+                    if (dto.SubVertical != SubVertical.Deals && dto.SubVertical != SubVertical.Preloved)
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Unsupported Sub-Vertical",
+                            Detail = "Only Deals (2) and Preloved (4) are supported for this action.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    var activeSubs = await v2Subs.GetActiveSubscriptionsAsync(
+                        userId: uid,
+                        verticalId: CLASSIFIEDS_VERTICAL,
+                        subVerticalId: (int)dto.SubVertical,
+                        cancellationToken: token
+                        );
+
+                    if (activeSubs == null)
                     {
                         return TypedResults.BadRequest(new ProblemDetails
                         {
                             Title = "Subscription Required",
-                            Detail = "No items subscription found for this user.",
+                            Detail = "No active subscription found for the chosen sub-vertical.",
                             Status = StatusCodes.Status400BadRequest
                         });
                     }
-                    await service.PromoteClassifiedAd(dto, uid, subscriptionId.Value, token);
+
+                    var subscriptionId = activeSubs
+                        .OrderByDescending(s => s.EndDate)
+                        .Select(s => s.Id)
+                        .First();
+
+
+                    await service.PromoteClassifiedAd(dto, uid, subscriptionId, token);
 
                     // Audit log
                     await auditLogger.LogAuditAsync(
@@ -4712,62 +4624,62 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
              ClassifiedsPromoteDto dto,
              AuditLogger auditLogger,
              IClassifiedService service,
+             [FromServices] IV2SubscriptionService v2Subs,
              CancellationToken token) =>
             {
+                const int CLASSIFIEDS_VERTICAL = 3;                
+
                 string? uid = "unknown";
                 string? subId = null;
                 string? name = null;
                 try
                 {
-                    uid = httpContext.User.FindFirst("sub")?.Value;
-                    var userName = httpContext.User.FindFirst("preferred_username")?.Value;
+                    var (extractedUid, username) = UserTokenHelper.ExtractUserAsync(httpContext);
+                    uid = extractedUid;
 
-                    // Get all subscription claims
-                    var subscriptionClaims = httpContext.User.FindAll("subscriptions").ToList();
-                    Guid? subscriptionId = null;
-                    DateTime? expiryDate = null;
-
-                    // Find Preloved subscription (Vertical=3 and SubVertical=4)
-                    foreach (var claim in subscriptionClaims)
+                    if (string.IsNullOrWhiteSpace(uid))
                     {
-                        try
+                        return TypedResults.Problem(new ProblemDetails
                         {
-                            using (var doc = JsonDocument.Parse(claim.Value))
-                            {
-                                var subscription = doc.RootElement;
-
-                                if (subscription.TryGetProperty("Vertical", out var verticalProp) &&
-                                    verticalProp.GetInt32() == 3 &&
-                                    subscription.TryGetProperty("SubVertical", out var subVerticalProp) &&
-                                    subVerticalProp.GetInt32() == (int)dto.SubVertical)
-                                {
-                                    if (subscription.TryGetProperty("EndDate", out var endDateProp) &&
-                                    endDateProp.ValueKind == JsonValueKind.String)
-                                    {
-
-                                        expiryDate = DateTime.Parse(endDateProp.GetString()).ToUniversalTime();
-                                        subscriptionId = Guid.Parse(subscription.GetProperty("Id").GetString());
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-                        catch
-                        {
-                            continue;
-                        }
+                            Title = "Unauthorized",
+                            Detail = "Unable to resolve user id from token.",
+                            Status = StatusCodes.Status401Unauthorized
+                        });
                     }
 
-                    if (subscriptionId == null)
+                    if (dto.SubVertical != SubVertical.Deals && dto.SubVertical != SubVertical.Preloved)
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Unsupported Sub-Vertical",
+                            Detail = "Only Deals (2) and Preloved (4) are supported for this action.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    var activeSubs = await v2Subs.GetActiveSubscriptionsAsync(
+                        userId: uid,
+                        verticalId: CLASSIFIEDS_VERTICAL,
+                        subVerticalId: (int)dto.SubVertical,
+                        cancellationToken: token
+                        );
+
+                    if (activeSubs == null)
                     {
                         return TypedResults.BadRequest(new ProblemDetails
                         {
                             Title = "Subscription Required",
-                            Detail = "No Items subscription found for this user.",
+                            Detail = "No active subscription found for the chosen sub-vertical.",
                             Status = StatusCodes.Status400BadRequest
                         });
                     }
-                    await service.FeatureClassifiedAd(dto, uid, subscriptionId.Value, token);
+
+                    var subscriptionId = activeSubs
+                        .OrderByDescending(s => s.EndDate)
+                        .Select(s => s.Id)
+                        .First();
+
+                    await service.FeatureClassifiedAd(dto, uid, subscriptionId, token);
 
                     await auditLogger.LogAuditAsync(
                         module: "Classified",
@@ -5075,7 +4987,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                                 detail: ex.Message,
                                 statusCode: StatusCodes.Status500InternalServerError);
                         }
-                    }).WithName("BulkPublishDynamicbyid")
+                    })
+        .WithName("BulkPublishDynamicbyid")
         .WithTags("Classified")
         .WithSummary("Admin: Bulk publish/unpublish ads for any user")
         .WithDescription("Used by admins to bulk update ad publish status for any user across sub-verticals.")
