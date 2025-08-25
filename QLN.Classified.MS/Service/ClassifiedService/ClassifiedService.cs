@@ -2923,6 +2923,7 @@ namespace QLN.Classified.MS.Service
                         itemsAd.UpdatedBy = uid;
                         itemsAd.UpdatedAt = DateTime.UtcNow;
                         itemsAd.ExpiryDate = DateTime.UtcNow.AddMonths(1);
+                        itemsAd.SubscriptionId = publish.SubscriptionId;
 
                         await _context.SaveChangesAsync(ct);
                         
@@ -2942,7 +2943,7 @@ namespace QLN.Classified.MS.Service
                         prelovedAd.AdType = AdTypeEnum.P2P;
                         prelovedAd.UpdatedBy = uid;
                         prelovedAd.UpdatedAt = DateTime.UtcNow;
-
+                        prelovedAd.SubscriptionId= publish.SubscriptionId;
                         await _context.SaveChangesAsync(ct);
                         await IndexPrelovedToAzureSearch(prelovedAd, ct);
 
@@ -2960,6 +2961,7 @@ namespace QLN.Classified.MS.Service
                         collectibleAd.AdType = AdTypeEnum.P2P;
                         collectibleAd.UpdatedBy = uid;
                         collectibleAd.UpdatedAt = DateTime.UtcNow;
+                        collectibleAd.SubscriptionId=publish.SubscriptionId;
 
                         await _context.SaveChangesAsync(ct);
                         await IndexCollectiblesToAzureSearch(collectibleAd, ct);

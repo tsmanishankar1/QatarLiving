@@ -41,10 +41,7 @@ namespace QLN.DataMigration.Services
             throw new NotImplementedException();
         }
 
-        public Task<ResponseDto> CreateServiceAd(string uid, string userName, Guid subscriptionId, ServiceDto dto, CancellationToken cancellationToken = default)
-        {
-            throw new NotImplementedException();
-        }
+       
 
         public Task<string> DeleteServiceAdById(string userId, long id, CancellationToken cancellationToken = default)
         {
