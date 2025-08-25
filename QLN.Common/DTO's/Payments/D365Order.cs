@@ -13,7 +13,7 @@ namespace QLN.Common.DTO_s.Payments
         /// QL User id
         /// </summary>
         [JsonPropertyName("QLUserId")]
-        public int QLUserId { get; set; }
+        public string QLUserId { get; set; }
 
         /// <summary>
         /// QL User name
@@ -52,10 +52,16 @@ namespace QLN.Common.DTO_s.Payments
         public string D365CustId { get; set; }
 
         /// <summary>
-        /// Classification for properties
+        /// Classification
         /// </summary>
         [JsonPropertyName("Classification")]
         public string Classification { get; set; }
+
+        /// <summary>
+        /// SubClassification
+        /// </summary>
+        [JsonPropertyName("subClassification")]
+        public string SubClassification { get; set; }
 
         /// <summary>
         /// Ad ID
@@ -67,13 +73,13 @@ namespace QLN.Common.DTO_s.Payments
         /// Price of the item
         /// </summary>
         [JsonPropertyName("Price")]
-        public decimal? Price { get; set; }
+        public string Price { get; set; }
 
         /// <summary>
         /// Qty of the item
         /// </summary>
         [JsonPropertyName("Qty")]
-        public int? Qty { get; set; }
+        public string Qty { get; set; }
 
         /// <summary>
         /// Start date of the advertisement

@@ -5,6 +5,33 @@
 # @QLN.Backend.API_HostAddress = https://qlm-bo.qatarliving.com
 
 ###
+POST {{QLN.Backend.API_HostAddress}}/api/pay/d365
+Accept: application/json
+X-Api-Key: 43terg454gf456dgdy!e098
+Content-Type: application/json
+{
+  "order": [
+    {
+      "QLUserId": "10047515",
+      "QLUsername": "ramez@qatarliving.com",
+      "Classification": "",
+      "SubClassification": "",
+      "D365CustId": "C027550",
+      "OrderId": "SO-0024618",
+      "Mobile": "",
+      "Email": "",
+      "D365Itemid": "QLC-SUB-6MO-006",
+      "Price": "6000.00",
+      "Qty": "1.00",
+      "start_date": "2025-08-21",
+      "end_date": "2025-08-21",
+      "SalesType": "New",
+      "AdId": 0
+    }
+  ]
+}
+
+###
 GET {{QLN.Backend.API_HostAddress}}/auth/sync
 Accept: application/json
 Content-Type: application/json
@@ -215,6 +242,9 @@ Accept: application/json
 GET {{QLN.Drupal.API_HostAddress}}/q/api/rest-points/banners/qln_banners
 Accept: application/json
 
+###
+GET {{QLN.Drupal.API_HostAddress}}/api/v4/user?email=khurramfraz%40gmail.com
+Accept: application/json
 
 ###
 GET {{QLN.Drupal.API_HostAddress}}/qlnapi/comments/46438975?page=1&page_size=10

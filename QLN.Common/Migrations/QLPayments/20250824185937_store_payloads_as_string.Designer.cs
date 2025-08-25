@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using QLN.Common.Infrastructure.QLDbContext;
@@ -12,9 +13,11 @@ using QLN.Common.Infrastructure.QLDbContext;
 namespace QLN.Common.Migrations.QLPayments
 {
     [DbContext(typeof(QLPaymentsContext))]
-    partial class QLPaymentsContextModelSnapshot : ModelSnapshot
+    [Migration("20250824185937_store_payloads_as_string")]
+    partial class store_payloads_as_string
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
