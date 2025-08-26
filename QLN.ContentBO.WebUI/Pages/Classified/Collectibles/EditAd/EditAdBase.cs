@@ -170,7 +170,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.EditAd
                                         new List<ClassifiedsCategoryField>();
         protected string[] ExcludedFields => new[]
         {
-               "L2 Category" // Add any other fields you want to hide here
+               "L2Category" 
         };
 
         protected Dictionary<string, List<string>> DynamicFieldErrors { get; set; } = new();
@@ -191,9 +191,13 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.EditAd
 
             foreach (var field in AvailableFields.Where(f => !ExcludedFields.Contains(f.CategoryName)))
             {
-                if (string.IsNullOrWhiteSpace(adPostModel.DynamicFields.GetValueOrDefault(field.CategoryName)))
+                if (field.Type.Equals("dropdown", StringComparison.OrdinalIgnoreCase) ||
+           field.Type.Equals("string", StringComparison.OrdinalIgnoreCase))
                 {
-                    messageStore.Add(new FieldIdentifier(adPostModel.DynamicFields, field.CategoryName), $"{field.CategoryName} is required.");
+                    if (string.IsNullOrWhiteSpace(adPostModel.DynamicFields.GetValueOrDefault(field.CategoryName)))
+                    {
+                        messageStore.Add(new FieldIdentifier(adPostModel.DynamicFields, field.CategoryName), $"{field.CategoryName} is required.");
+                    }
                 }
             }
         }
@@ -201,8 +205,10 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.EditAd
         {
             messageStore.Clear();
             DynamicFieldErrors.Clear();
-            // Run automatic validation
+
             var isValid = editContext.Validate();
+            var validationMessages = editContext.GetValidationMessages().ToList();
+
             if (adPostModel.HasAuthenticityCertificate)
             {
                 if (string.IsNullOrWhiteSpace(adPostModel.AuthenticityCertificateName))
@@ -220,9 +226,14 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.EditAd
 
             if (SelectedSubcategory?.Fields?.Any() == true && adPostModel.L2CategoryId == null)
             {
-                messageStore.Add(() => adPostModel.L2CategoryId, "Section is required.");
-                isValid = false;
+                var firstField = SelectedSubcategory.Fields.FirstOrDefault();
+                if (firstField != null && firstField.Type == "L2Category")
+                {
+                    messageStore.Add(() => adPostModel.L2CategoryId, "Section is required.");
+                    isValid = false;
+                }
             }
+
             int imagesWithUrlCount = adPostModel.Images.Count(i => !string.IsNullOrEmpty(i.Url));
 
             if (imagesWithUrlCount < 4)
@@ -236,38 +247,49 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.EditAd
                 isValid = false;
             }
 
-            // Manual validation: Dynamic fields
+
             foreach (var field in AvailableFields.Where(f => !ExcludedFields.Contains(f.CategoryName)))
             {
-                var value = adPostModel.DynamicFields.ContainsKey(field.CategoryName) ? adPostModel.DynamicFields[field.CategoryName] : null;
-
-                if (string.IsNullOrWhiteSpace(value))
+                if (field.Type.Equals("checkbox", StringComparison.OrdinalIgnoreCase))
                 {
-                    messageStore.Add(new FieldIdentifier(adPostModel.DynamicFields, field.CategoryName), $"{field.CategoryName} is required.");
-                    if (!DynamicFieldErrors.ContainsKey(field.CategoryName))
-                        DynamicFieldErrors[field.CategoryName] = new List<string>();
-                    DynamicFieldErrors[field.CategoryName].Add($"{field.CategoryName} is required.");
-                    isValid = false;
+                    continue;
+                }
+                if (field.Type.Equals("dropdown", StringComparison.OrdinalIgnoreCase) ||
+                    field.Type.Equals("string", StringComparison.OrdinalIgnoreCase))
+                {
+                    var value = adPostModel.DynamicFields.ContainsKey(field.CategoryName)
+                        ? adPostModel.DynamicFields[field.CategoryName]
+                        : null;
+
+                    if (string.IsNullOrWhiteSpace(value))
+                    {
+                        messageStore.Add(
+                            new FieldIdentifier(adPostModel.DynamicFields, field.CategoryName),
+                            $"{field.CategoryName} is required."
+                        );
+
+                        if (!DynamicFieldErrors.ContainsKey(field.CategoryName))
+                            DynamicFieldErrors[field.CategoryName] = new List<string>();
+
+                        DynamicFieldErrors[field.CategoryName].Add($"{field.CategoryName} is required.");
+                        isValid = false;
+                    }
                 }
             }
 
-            // Show the errors
             editContext.NotifyValidationStateChanged();
-
             if (!isValid)
             {
                 Snackbar.Add("Please check highlighted fields before creating ad.", Severity.Error);
                 return;
             }
-            // All good!
-            // Snackbar.Add("Form is valid and ready to submit!", Severity.Success);
-            // Proceed with form submission
-            await OpenConfirmationDialog();
 
+            await OpenConfirmationDialog();
         }
-        private async Task OpenConfirmationDialog()
+
+               private async Task OpenConfirmationDialog()
         {
-           var parameters = new DialogParameters
+            var parameters = new DialogParameters
             {
                 { "Title", "Confirm Update Ad" },
                 { "Descrption", "Are you sure you want to update this ad?" },
