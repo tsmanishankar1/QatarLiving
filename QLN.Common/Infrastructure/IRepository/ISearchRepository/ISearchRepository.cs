@@ -14,5 +14,6 @@ namespace QLN.Common.Infrastructure.IRepository.ISearchServiceRepository
         Task<string> UploadAsync<T>(string IndexName, T document);
         Task<T?> GetByIdAsync<T>(string IndexName, string key);
         Task DeleteAsync(string IndexName, string key);
+        Task<List<string>> GetSuggestionsAsync(string indexName, string searchText, int maxSuggestions = 10);
     }
 }

@@ -58,28 +58,30 @@ namespace QLN.Backend.API.Service.ClassifiedService
         public async Task<bool> SaveSearchByVertical(SaveSearchRequestDto dto, string userId, CancellationToken cancellationToken = default)
         {
             try
-            {             
+            {
+                // Validate search query
                 if (dto.SearchQuery == null || string.IsNullOrWhiteSpace(dto.SearchQuery.Text))
                 {
                     _log.LogError("Search query is invalid. Text is required.");
                     return false;
                 }
 
-               
+                // Construct the search DTO with ALL required properties
                 var searchDto = new SaveSearchRequestByIdDto
                 {
                     UserId = userId,
                     Name = dto.Name,
                     CreatedAt = dto.CreatedAt,
                     SearchQuery = dto.SearchQuery,
-                    Vertical = dto.Vertical,        
-                    SubVertical = dto.SubVertical   
+                    Vertical = dto.Vertical,        // Added missing property
+                    SubVertical = dto.SubVertical   // Added missing property
                 };
-                
+
+                // Invoke the INTERNAL service (not the external endpoint)
                 var result = await _dapr.InvokeMethodAsync<SaveSearchRequestByIdDto, string>(
                     HttpMethod.Post,
                     SERVICE_APP_ID,
-                    $"api/{Vertical}/savesearchinternal", 
+                    $"api/{Vertical}/savesearchinternal", // Call internal endpoint, not external
                     searchDto,
                     cancellationToken
                 );
@@ -100,6 +102,8 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
+
+        ///2 .getsavesearch
         public async Task<List<SavedSearchResponseDto>> GetSearches(string userId, Vertical vertical, SubVertical? subVertical = null, CancellationToken cancellationToken = default)
         {
             try
@@ -107,11 +111,12 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 if (string.IsNullOrWhiteSpace(userId))
                     throw new ArgumentException("User ID is required", nameof(userId));
 
+                // Build query parameters - vertical is now mandatory
                 var queryParams = new List<string>
-                {
-                    $"userId={Uri.EscapeDataString(userId)}",
-                    $"vertical={vertical}"
-                };
+        {
+            $"userId={Uri.EscapeDataString(userId)}",
+            $"vertical={vertical}"  // Always include vertical since it's mandatory
+        };
 
                 if (subVertical.HasValue)
                     queryParams.Add($"subVertical={subVertical.Value}");
@@ -128,11 +133,13 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 return result ?? new List<SavedSearchResponseDto>();
             }
             catch (DaprException dex)
-            {               
+            {
+               
                 throw new InvalidOperationException("Failed to retrieve saved searches due to external service error.", dex);
             }
             catch (Exception ex)
-            {                
+            {
+                
                 throw;
             }
         }
@@ -1352,8 +1359,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
             try
             {
-                //var subscriptionid = Guid.Parse("5a024f96-7414-4473-80b8-f5d70297e262");
-
+             
                 if (subscriptionId != Guid.Empty && dto.IsFeatured == true)
                 {
                     var canUse = await _subscriptionContext.ValidateSubscriptionUsageAsync(
@@ -1562,7 +1568,6 @@ namespace QLN.Backend.API.Service.ClassifiedService
                         break;
 
                     case (int)SubVertical.Preloved:
-                    case (int)SubVertical.Deals:
                         if (isPublished && subscriptionId != Guid.Empty)
                         {
                             var ads = await Task.WhenAll(
@@ -1570,7 +1575,21 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
                             if (ads.All(ad =>
                                 string.Equals(ad.AdType.ToString(), "subscription", StringComparison.OrdinalIgnoreCase) ||
-                                string.Equals(ad.AdType.ToString(), "p2p", StringComparison.OrdinalIgnoreCase)))
+                                string.Equals(ad.AdType.ToString(), "p2p", StringComparison.OrdinalIgnoreCase)
+                                && ad.Status != AdStatus.Published))
+                            {
+                                requiresValidation = true;
+                            }
+                        }
+                        break;
+                    case (int)SubVertical.Deals:
+                        if (isPublished && subscriptionId != Guid.Empty)
+                        {
+                            var ads = await Task.WhenAll(
+                                adIds.Select(id => GetDealsAdById(id, cancellationToken)));
+
+                            if (ads.All(ad =>
+                                ad.Status != AdStatus.Published))
                             {
                                 requiresValidation = true;
                             }
@@ -2145,9 +2164,11 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
+        #endregion
+
         //public async Task<List<CategoryCountDto>> GetCategoryCountsAsync(CancellationToken cancellationToken)
         //{
-            
+
         //    try
         //    {
         //        var response = await _dapr.InvokeMethodAsync<List<CategoryCountDto>>(
@@ -2185,7 +2206,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 throw new InvalidOperationException("Unexpected exception while retrieving count", ex);
             }
         }
-        #endregion
+   
         #region PayToFeature with addons (generic for all subVerticals)
 
         public async Task<string> P2PFeature(

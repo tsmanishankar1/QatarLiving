@@ -23,6 +23,7 @@ namespace QLN.Common.DTO_s
         public int Count { get; set; }
         public List<long> Ids { get; set; } = new();
         public string? Reason { get; set; }
+        public Dictionary<long, string>? ErrorMessages { get; set; }
     }
 
 }

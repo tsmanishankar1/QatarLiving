@@ -36,6 +36,13 @@ namespace QLN.DataMigration.Services
             throw new NotImplementedException();
         }
 
+        public Task<ResponseDto> CreateServiceAd(string uid, string userName, Guid? subscriptionId, ServiceDto dto, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+
+       
+
         public Task<string> DeleteServiceAdById(string userId, long id, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
@@ -147,6 +154,11 @@ namespace QLN.DataMigration.Services
         }
 
         public Task<BulkAdActionResponseitems> ModerateBulkService(BulkModerationRequest request, string userId, string subscriptionId, DateTime? expiryDate, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<BulkAdActionResponseitems> ModerateBulkService(BulkModerationRequest request, string userId, Guid? subscriptionId, DateTime? expiryDate, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }
