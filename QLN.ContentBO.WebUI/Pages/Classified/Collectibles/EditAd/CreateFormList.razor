@@ -48,6 +48,9 @@
 
     @if (Ad.L1CategoryId != null && SelectedSubcategory?.Fields?.Any() == true)
     {
+         var firstField = SelectedSubcategory.Fields.FirstOrDefault();
+            if (firstField != null && firstField.Type == "L2Category")
+            {
         <MudSelect T="long?" Class="white-bg" Label="Section" Variant="Variant.Outlined"
                    Value="@Ad.L2CategoryId"
                    ValueChanged="@OnSubSubCategoryChanged"
@@ -61,6 +64,7 @@
                 }
             }
         </MudSelect>
+        }
 
     }
     @if (AvailableFields != null)
@@ -88,7 +92,7 @@
                         }
                     </MudSelect>
                 }
-                else if (field.Type == "Free Text")
+                else if (field.Type == "string")
                 {
                     <MudTextField T="string"
                                   Label="@field.CategoryName"

@@ -33,7 +33,7 @@
     <div class="filter-row">
         <div class="filter-button @(showCreatedPopover ? "active-filter" : "")" @onclick="ToggleCreatedPopover">
             <img src="/qln-images/date_icon.svg" class="filter-icon @(showCreatedPopover ? "active-icon" : "")" style="width:16px;" />
-            <span>@(dateCreated.HasValue ? dateCreated.Value.ToString("dd MMM yyyy") : "Deal Star Date")</span>
+            <span>@(dateCreated.HasValue ? dateCreated.Value.ToString("dd MMM yyyy") : "Deal Start Date")</span>
             <MudPopover Open="@showCreatedPopover"
                         AnchorOrigin="Origin.BottomCenter"
                         TransformOrigin="Origin.TopCenter"

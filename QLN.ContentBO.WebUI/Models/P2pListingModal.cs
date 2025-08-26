@@ -29,11 +29,11 @@ namespace QLN.ContentBO.WebUI.Models
     }
     public class DealsListingModal
     {
-        public string Id {  get; set; }
-        public long? AdId { get; set; } 
+        public string Id { get; set; }
+        public long? AdId { get; set; }
         public string DealTitle { get; set; } = string.Empty;
         public List<string> Location { get; set; } = new List<string>();
-        public string ContactNumber {  get; set; } = string.Empty;
+        public string ContactNumber { get; set; } = string.Empty;
         public string WhatsappNumber { get; set; } = string.Empty;
         public string? WhatsAppLeads { get; set; } = string.Empty;
         public string? PhoneLeads { get; set; } = string.Empty;
@@ -49,10 +49,10 @@ namespace QLN.ContentBO.WebUI.Models
         public DateTime? DateCreated { get; set; }
         public DateTime? ExpiryDate { get; set; }
         public List<ImageUpload>? ImageUpload { get; set; }
-        public long? OrderId { get; set; } 
+        public long? OrderId { get; set; }
         public int WebClick { get; set; }
         public int Views { get; set; }
-        public int Impression {  get; set; }
+        public int Impression { get; set; }
         public int PhoneLead { get; set; }
     }
     public class ImageUpload
@@ -62,12 +62,12 @@ namespace QLN.ContentBO.WebUI.Models
     }
     public class DealsModal
     {
-        public string Id { get; set; }
+        public long Id { get; set; }
         public string Subvertical { get; set; }
         public string SubscriptionId { get; set; }
         public string UserId { get; set; }
         public string BusinessName { get; set; }
-        public List<string> BranchNames { get; set; } = new List<string>();
+        public string BranchNames { get; set; }
         public string BusinessType { get; set; }
         public string Title { get; set; }
         public string Description { get; set; }
@@ -83,7 +83,7 @@ namespace QLN.ContentBO.WebUI.Models
         public string WebsiteUrl { get; set; }
         public string SocialMediaLinks { get; set; }
         public bool IsActive { get; set; }
-        public List<string> Locations { get; set; } = new List<string>();
+        public LocationsWrapper Locations { get; set; }
         public string CreatedBy { get; set; }
         public DateTime CreatedAt { get; set; }
         public string UpdatedBy { get; set; }
@@ -100,7 +100,7 @@ namespace QLN.ContentBO.WebUI.Models
         [Range(typeof(bool), "true", "true", ErrorMessage = "You must agree to the terms.")]
         public bool IsAgreed { get; set; } = true;
 
-     
+
         public List<AdImage> Images { get; set; } = new()
         {
             new AdImage { Order = 0 },
@@ -108,4 +108,9 @@ namespace QLN.ContentBO.WebUI.Models
             new AdImage { Order = 2 }
         };
     }
+    public class LocationsWrapper
+    {
+        public List<string> Locations { get; set; } = new List<string>();
+    }
+
 }

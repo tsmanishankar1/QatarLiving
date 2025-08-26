@@ -21,8 +21,10 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
         [Parameter] public ItemEditAdPost AdModel { get; set; } = new();
         [Parameter] public int OrderId { get; set; } = 24578;
 
-        protected bool CanPublish => AdModel?.Status == (int)AdStatus.Unpublished;
-        protected bool CanUnpublish => AdModel?.Status == (int)AdStatus.Published;
+       protected bool CanPublish => AdModel?.Status == (int)AdStatus.Unpublished || AdModel?.Status == (int)AdStatus.NeedsModification;
+        protected bool CanUnpublish => AdModel?.Status == (int)AdStatus.Published || AdModel?.Status == (int)AdStatus.NeedsModification;
+        protected bool IsNeedChange => AdModel?.Status == (int)AdStatus.NeedsModification;
+        protected bool IsPendingApproval => AdModel?.Status == (int)AdStatus.PendingApproval;
 
         private void OpenRemoveReasonDialog()
         {
@@ -109,6 +111,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
         {
             return title.ToLowerInvariant() switch
             {
+                  "approve" => AdBulkActionType.Approve,
                 "feature" => AdBulkActionType.Feature,
                 "unfeature" => AdBulkActionType.UnFeature,
                 "promote" => AdBulkActionType.Promote,
@@ -117,6 +120,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
                 "unpublish" => AdBulkActionType.Unpublish,
                 "remove" => AdBulkActionType.Remove,
                 "refresh" => AdBulkActionType.Refresh,
+                "need change" => AdBulkActionType.NeedChanges,
                 _ => throw new ArgumentException($"Unknown action title: {title}")
             };
         }
@@ -125,7 +129,13 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
             switch (actionType)
             {
                 case AdBulkActionType.Publish:
-                    AdModel.Status = 1;
+                    AdModel.Status = 3;
+                    break;
+                case AdBulkActionType.Approve:
+                    AdModel.Status = 3;
+                    break;
+                case AdBulkActionType.NeedChanges:
+                    AdModel.Status = 7;
                     break;
                 case AdBulkActionType.Unpublish:
                     AdModel.Status = 4;

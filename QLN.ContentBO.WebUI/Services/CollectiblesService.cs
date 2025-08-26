@@ -29,20 +29,13 @@ namespace QLN.ContentBO.WebUI.Services
                 {
                     AdIds = adIds,
                     Action = action,
-                    Reason = "reason",
-                    Comments = "comments"
+                    Reason = reason, 
+                    Comments = comments
                 };
-
-                // Serialize separately so we can log
                 var jsonPayload = JsonSerializer.Serialize(payload, new JsonSerializerOptions
                 {
                     WriteIndented = true
                 });
-
-                // Print/log JSON
-                Console.WriteLine("Payload JSON:");
-                Console.WriteLine(jsonPayload);
-
                 var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
                 var requestUrl = "/api/v2/classifiedbo/bulk-collectibles-action";
                 return await _httpClient.PostAsync(requestUrl, content);

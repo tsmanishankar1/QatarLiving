@@ -236,8 +236,12 @@ protected ClassifiedsCategoryField? SelectedSubSubcategory =>
 
             if (SelectedSubcategory?.Fields?.Any() == true && adPostModel.L2CategoryId == null)
             {
-                messageStore.Add(() => adPostModel.L2CategoryId, "Section is required.");
-                isValid = false;
+                var firstField = SelectedSubcategory.Fields.FirstOrDefault();
+                if (firstField != null && firstField.Type == "L2Category")
+                {
+                    messageStore.Add(() => adPostModel.L2CategoryId, "Section is required.");
+                    isValid = false;
+                }
             }
             int imagesWithUrlCount = adPostModel.Images.Count(i => !string.IsNullOrEmpty(i.Url));
 
