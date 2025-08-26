@@ -549,7 +549,8 @@ namespace QLN.SearchService.Service
 
                     BuildOrderBy<T>(allResultsOpts, req.OrderBy);
 
-                    var allResults = await _repo.SearchAsync<T>(indexName, allResultsOpts, req.Text);
+                    var enhancedSearchText = EnhanceSearchTextForPartialMatch(req.Text);
+                    var allResults = await _repo.SearchAsync<T>(indexName, allResultsOpts, enhancedSearchText);
                     var allFilteredItems = ApplyJsonFilters(allResults.Items, jsonFilters);
 
                     response.TotalCount = allFilteredItems.Count();
@@ -573,7 +574,8 @@ namespace QLN.SearchService.Service
 
                     BuildOrderBy<T>(paginatedOpts, req.OrderBy);
 
-                    var paginatedResult = await _repo.SearchAsync<T>(indexName, paginatedOpts, req.Text);
+                    var enhancedSearchText = EnhanceSearchTextForPartialMatch(req.Text);
+                    var paginatedResult = await _repo.SearchAsync<T>(indexName, paginatedOpts, enhancedSearchText);
                     response.TotalCount = (int)paginatedResult.TotalCount;
 
                     assignResults(response, paginatedResult.Items.ToList());
@@ -1522,6 +1524,75 @@ namespace QLN.SearchService.Service
             {
                 _logger.LogError(ex, "RAW search failed for index '{IndexName}'", indexName);
                 throw new InvalidOperationException($"RAW search failed for index '{indexName}'.", ex);
+            }
+        }
+        private string EnhanceSearchTextForPartialMatch(string searchText)
+        {
+            if (string.IsNullOrWhiteSpace(searchText) || searchText == "*")
+                return "*";
+
+            try
+            {
+                // If it's already a sophisticated query, don't modify it
+                if (searchText.Contains("\"") || searchText.Contains("~") || searchText.Contains("*"))
+                    return searchText;
+
+                // Clean the text
+                var cleanText = System.Text.RegularExpressions.Regex.Replace(searchText, @"[^\w\s]", "").Trim();
+
+                if (string.IsNullOrWhiteSpace(cleanText))
+                    return "*";
+
+                var terms = cleanText.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+                if (terms.Length == 1)
+                {
+                    var term = terms[0];
+                    if (term.Length >= 3)
+                    {
+                        // For single terms, create a comprehensive OR query
+                        return $"({term} OR {term}* OR *{term}* OR {term}~1)";
+                    }
+                    else
+                    {
+                        // Short terms: just prefix matching
+                        return $"{term}*";
+                    }
+                }
+                else
+                {
+                    // Multiple terms: use phrase search with wildcards
+                    var phraseSearch = $"\"{cleanText}\"";
+                    var wildcardTerms = string.Join(" AND ", terms.Select(t => $"{t}*"));
+                    var exactTerms = string.Join(" AND ", terms);
+
+                    return $"({phraseSearch} OR {wildcardTerms} OR {exactTerms})";
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Error enhancing search text '{SearchText}', using original", searchText);
+                return searchText;
+            }
+        }
+
+        // ADD THIS NEW PUBLIC METHOD FOR SUGGESTIONS
+        public async Task<List<string>> GetSearchSuggestionsAsync(string indexName, string searchText, int maxSuggestions = 10)
+        {
+            if (string.IsNullOrWhiteSpace(indexName))
+                throw new ArgumentException("IndexName is required.", nameof(indexName));
+
+            if (string.IsNullOrWhiteSpace(searchText) || searchText.Length < 2)
+                return new List<string>();
+
+            try
+            {
+                return await _repo.GetSuggestionsAsync(indexName, searchText, maxSuggestions);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting suggestions for index '{IndexName}', text '{SearchText}'", indexName, searchText);
+                return new List<string>();
             }
         }
     }

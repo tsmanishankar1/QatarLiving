@@ -175,6 +175,30 @@ namespace QLN.Common.DTO_s.Subscription
         public string ProductName { get; set; } = string.Empty;
         public ProductType? ProductType { get; set; }
         public string? UserId { get; set; }
+        public Guid? CompanyId { get; set; }
+        public string VerticalName { get; set; } = string.Empty;
+        public Vertical Vertical { get; set; }
+        public SubVertical? SubVertical { get; set; }
+        public decimal Price { get; set; }
+        public string Currency { get; set; } = string.Empty;
+        public SubscriptionQuota Quota { get; set; } = new();
+        public DateTime StartDate { get; set; }
+        public DateTime EndDate { get; set; }
+        public SubscriptionStatus StatusId { get; set; }
+        public string StatusName { get; set; } = string.Empty;
+        public bool IsActive { get; set; }
+        public int DaysRemaining { get; set; }
+        public string Version { get; set; } = "V2";
+    }
+    public class V2SubscriptionCompanyResponse
+    {
+        public Guid Id { get; set; }
+        public string ProductCode { get; set; } = string.Empty;
+        public string ProductName { get; set; } = string.Empty;
+        public ProductType? ProductType { get; set; }
+        public string CompanyName { get; set; } = string.Empty;
+        public string CompanyLogo { get; set; } = string.Empty;
+        public string? UserId { get; set; }
         public string VerticalName { get; set; } = string.Empty;
         public Vertical Vertical { get; set; }
         public SubVertical? SubVertical { get; set; }

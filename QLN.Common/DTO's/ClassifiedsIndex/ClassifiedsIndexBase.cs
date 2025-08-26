@@ -133,6 +133,15 @@ namespace QLN.Common.DTO_s
 
         [SimpleField(IsFilterable = true)]
         public bool? IsSold { get; set; } = false;
+
+        [SimpleField(IsFilterable = true)]
+        public bool? IsFavourite { get; set; } = false;
+
+        [SearchableField(IsFilterable = true)]
+        public string? CompanyName { get; set; }
+
+        [SimpleField(IsFilterable = true)]
+        public string? CompanyLogoUrl { get; set; }
     }
 
     public class ImageInfo

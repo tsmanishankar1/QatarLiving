@@ -19,14 +19,14 @@ namespace QLN.Common.Infrastructure.IService.IAuthService
         Task<Results<Ok<string>, BadRequest<ProblemDetails>, NotFound<ProblemDetails>, ValidationProblem, ProblemHttpResult>> ResetPassword(ResetPasswordRequest request);
         Task<Results<Ok<LoginResponse>, BadRequest<ProblemDetails>, UnauthorizedHttpResult, ProblemHttpResult, ValidationProblem>> Login(LoginRequest request);
         Task<Results<Ok<LoginResponse>, BadRequest<ProblemDetails>, ProblemHttpResult>> Verify2FA(Verify2FARequest request);
-        Task<Results<Ok<RefreshTokenResponse>, BadRequest<ProblemDetails>, ProblemHttpResult, UnauthorizedHttpResult>> RefreshToken(Guid userId,DrupalUser drupalUser, string refreshToken);
+        Task<Results<Ok<RefreshTokenResponse>, BadRequest<ProblemDetails>, ProblemHttpResult, UnauthorizedHttpResult>> RefreshToken(Guid userId, QLN.Common.Infrastructure.Model.DrupalUser drupalUser, string refreshToken);
         Task<Results<Ok<string>, Accepted<string>, BadRequest<ProblemDetails>, ProblemHttpResult>> Toggle2FA(TwoFactorToggleRequest request);
         Task<Results<Ok<object>, BadRequest<ProblemDetails>, NotFound<ProblemDetails>, ProblemHttpResult>> GetProfile(Guid Id);
         Task<Results<Ok<string>, BadRequest<ProblemDetails>, NotFound<ProblemDetails>, ProblemHttpResult>> UpdateProfile(Guid id, UpdateProfileRequest request);
         Task<Results<Ok<string>, NotFound<ProblemDetails>, ProblemHttpResult>> Logout(Guid id);
         Task<Results<Ok<string>, BadRequest<ProblemDetails>, ProblemHttpResult>> SendTwoFactorOtp(Send2FARequest request);
 
-        Task<Results<Ok<LoginResponse>, BadRequest<ProblemDetails>, UnauthorizedHttpResult, ProblemHttpResult, ValidationProblem>> UserSync(DrupalUser drupalUser, DateTime expiry);
+        Task<Results<Ok<LoginResponse>, BadRequest<ProblemDetails>, UnauthorizedHttpResult, ProblemHttpResult, ValidationProblem>> UserSync(QLN.Common.Infrastructure.Model.DrupalUser drupalUser, DateTime expiry);
         Task<Results<Ok<UseMeResponseDto>, BadRequest<ProblemDetails>, NotFound<ProblemDetails>, UnauthorizedHttpResult, ProblemHttpResult>> UseMe(Guid userId);
     }
 }

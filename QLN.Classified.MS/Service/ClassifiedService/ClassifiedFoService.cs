@@ -167,7 +167,7 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-        public async Task<string> GetFOProcessStoresCSV(string Url, string CsvPlatform, string? CompanyId, string? SubscriptionId,
+        public async Task<string> GetFOProcessStoresCSVOld(string Url, string CsvPlatform, string? CompanyId, string? SubscriptionId,
           string? UserId, string Domain, CancellationToken cancellationToken = default)
         {
             try
@@ -288,7 +288,7 @@ namespace QLN.Classified.MS.Service
                         StoreSlug = storeIndexDto.StoreSlug,
                         ProductSlug = storeProducts.Slug,
                         ProductCategory = storeProducts.Category,
-                        ProductUrl = Domain + "Products/" + storeProducts.ProductBarcode
+                        ProductUrl = Domain + "products/" + storeProducts.ProductBarcode
 
                     };
                     storesIndexList.Add(classifiedStoresIndex);
@@ -326,7 +326,184 @@ namespace QLN.Classified.MS.Service
 
         }
 
+        public async Task<string> GetFOProcessStoresCSV(string Url, string CsvPlatform, string? CompanyId, string? SubscriptionId,
+  string? UserId, string Domain, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                List<ClassifiedStoresIndex> storesIndexList = new List<ClassifiedStoresIndex>();
+                StoreIndexDto storeIndexDto = new StoreIndexDto();
+                var allProducts = new List<StoreProducts>();
+                Type productType = CsvPlatform switch
+                {
+                    "Shopify" => typeof(ShopifyProduct),
+                    "WooCommerce" => typeof(WooCommerceProduct),
+                    _ => throw new ArgumentException("Unsupported CsvPlatform")
+                };
 
+                var readCsvMethod = typeof(GenericCSVReader)
+                    .GetMethod("ReadCsv")
+                    ?.MakeGenericMethod(productType);
+
+                if (readCsvMethod == null)
+                {
+                    throw new InvalidOperationException("Could not find ReadCsv method");
+                }
+
+                var readTask = (Task)readCsvMethod.Invoke(null, new object[] { Url });
+                await readTask.ConfigureAwait(false);
+
+                var resultProperty = readTask.GetType().GetProperty("Result");
+                var rawProducts = resultProperty?.GetValue(readTask);
+
+
+                string FileName = StoresMapper.GetFileNameFromUrl(Url);
+                StoreFlyers storeFlyers = new StoreFlyers();
+                Guid StoreFlyersId = Guid.NewGuid();
+                Guid FlyerId = Guid.NewGuid();
+                if (_context.StoreFlyer.Where(x => x.SubscriptionId.ToString() == SubscriptionId && x.CompanyId.ToString() == CompanyId).Any())
+                {
+                    if (Guid.TryParse(SubscriptionId, out var subId) && Guid.TryParse(CompanyId, out var compId))
+                    {
+                        StoreFlyersId = _context.StoreFlyer.Where(x => x.SubscriptionId.ToString() == SubscriptionId && x.CompanyId.ToString() == CompanyId).FirstOrDefault().StoreFlyersId;
+
+                        FlyerId = _context.StoreFlyer
+                    .Where(x => x.SubscriptionId == subId && x.CompanyId == compId)
+                    .Select(x => x.FlyerId)
+                    .FirstOrDefault()
+                    ?? Guid.Empty;
+
+                    }
+                    storeFlyers.StoreFlyersId = StoreFlyersId;
+                    storeFlyers.FlyerId = FlyerId;
+                    storeFlyers.CompanyId = Guid.Parse(CompanyId);
+                    storeFlyers.SubscriptionId = Guid.Parse(SubscriptionId);
+                    if (string.IsNullOrEmpty(FileName))
+                    {
+                        storeFlyers.FileName = string.Empty;
+                    }
+                    else
+                    {
+                        storeFlyers.FileName = FileName;
+                    }
+                }
+                else
+                {
+                    storeFlyers.StoreFlyersId = StoreFlyersId;
+                    storeFlyers.FlyerId = FlyerId;
+                    storeFlyers.CompanyId = Guid.Parse(CompanyId);
+                    storeFlyers.SubscriptionId = Guid.Parse(SubscriptionId);
+                    if (string.IsNullOrEmpty(FileName))
+                    {
+                        storeFlyers.FileName = string.Empty;
+                    }
+                    else
+                    {
+                        storeFlyers.FileName = FileName;
+                    }
+
+                }
+                if (storeFlyers.CompanyId.HasValue && storeFlyers.CompanyId.Value != Guid.Empty && !string.IsNullOrEmpty(storeFlyers.CompanyId.ToString()))
+                {
+                    var company = _context.StoreCompanyDto.AsQueryable().Where(x => x.Id == storeFlyers.CompanyId).FirstOrDefault();
+
+                    if (company != null)
+                    {
+                        await _context.Database.ExecuteSqlRawAsync(
+    "CALL updatecompanystoresurl(@companyId, @storesUrl, @importType);",
+    new[]
+    {
+                            new NpgsqlParameter("companyId", company.Id),
+                            new NpgsqlParameter("storesUrl", Domain),
+                            new NpgsqlParameter("importType", CsvPlatform)
+    });
+                        storeIndexDto.CompanyId = company.Id.ToString();
+                        storeIndexDto.CompanyName = company.CompanyName;
+                        storeIndexDto.ImageUrl = company.CompanyLogo;
+                        storeIndexDto.BannerUrl = company.CoverImage1;
+                        storeIndexDto.ContactNumber = company.PhoneNumber.ToString();
+                        storeIndexDto.Email = company.Email.ToString();
+                        storeIndexDto.WebsiteUrl = company.WebsiteUrl;
+                        storeIndexDto.SubscriptionId = storeFlyers.SubscriptionId.ToString();
+                        storeIndexDto.Locations = company.BranchLocations;
+                        storeIndexDto.StoreSlug = company.Slug;
+                    }
+                }
+
+                foreach (var rawProduct in (IEnumerable<object>)rawProducts)
+                {
+                    StoreProducts storeProducts = CsvPlatform switch
+                    {
+                        "Shopify" => StoresMapper.MapShopifyToStore((ShopifyProduct)rawProduct, StoreFlyersId),
+                        "WooCommerce" => StoresMapper.MapWooCommerceToStore((WooCommerceProduct)rawProduct, StoreFlyersId),
+                        _ => throw new InvalidOperationException("Unsupported platform")
+                    };
+                    allProducts.Add(storeProducts);
+
+                    ClassifiedStoresIndex classifiedStoresIndex = new ClassifiedStoresIndex()
+                    {
+
+                        CompanyId = storeIndexDto.CompanyId.ToString(),
+                        CompanyName = storeIndexDto.CompanyName,
+                        SubscriptionId = storeIndexDto.SubscriptionId,
+                        BannerUrl = storeIndexDto.BannerUrl,
+                        ImageUrl = storeIndexDto.ImageUrl,
+                        WebsiteUrl = storeIndexDto.WebsiteUrl,
+                        Locations = storeIndexDto.Locations,
+                        ContactNumber = storeIndexDto.ContactNumber.ToString(),
+                        Email = storeIndexDto.Email.ToString(),
+                        IsActive = true,
+                        ProductId = storeProducts.StoreProductId.ToString(),
+                        ProductName = storeProducts.ProductName,
+                        ProductSummary = storeProducts.ProductSummary,
+                        ProductLogo = storeProducts.ProductLogo,
+                        ProductDescription = storeProducts.ProductDescription,
+                        ProductPrice = Convert.ToDouble(storeProducts.ProductPrice),
+                        Images = storeProducts.Images
+    .Select(img => img.Images)
+    .ToList(),
+                        Currency = storeProducts.Currency.ToString(),
+                        Features = storeProducts.Features.Select(x => x.Features).ToList(),
+                        StoreSlug = storeIndexDto.StoreSlug,
+                        ProductSlug = storeProducts.Slug,
+                        ProductCategory = storeProducts.Category,
+                        ProductUrl = Domain + "products/" + storeProducts.ProductBarcode
+
+                    };
+                    storesIndexList.Add(classifiedStoresIndex);
+                }
+
+                await DeleteStoreFlyer((Guid)storeFlyers.FlyerId);
+                storeFlyers.Products = new List<StoreProducts>();
+                _context.StoreFlyer.Add(storeFlyers);
+                var sw = Stopwatch.StartNew();
+                await _context.SaveChangesAsync();
+                sw.Stop();
+                Console.WriteLine($"SaveChangesAsync took {sw.Elapsed.TotalSeconds} seconds");
+
+                foreach (var chunk in allProducts.Chunk(50))
+                {
+                    foreach (var product in chunk)
+                    {
+                        product.FlyerId = storeFlyers.StoreFlyersId;
+                        product.StoreFlyer = storeFlyers;
+                    }
+
+                    _context.StoreProduct.AddRange(chunk);
+                    await _context.SaveChangesAsync();
+                }
+                await IndexStoresToAzureSearch(storesIndexList, cancellationToken);
+
+                return "created";
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                //_logger.LogError(ex, "Error while processing stores csv file.");
+                return ex.Message;
+            }
+
+        }
 
         #region Reuseable utility methods
         public async Task DeleteStoreFlyer(Guid FlyerId)

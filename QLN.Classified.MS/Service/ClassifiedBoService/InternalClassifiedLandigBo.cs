@@ -1,9 +1,11 @@
 ﻿using Amazon.Runtime.Internal.Endpoints.StandardLibrary;
+using Amazon.S3.Model;
 using Dapr.Client;
 using Google.Apis.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using QLN.Classified.MS.Utilities;
 using QLN.Common.DTO_s;
 using QLN.Common.DTO_s.ClassifiedsBo;
@@ -2820,63 +2822,113 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
 
                 await Task.Delay(50, cancellationToken);
 
-                var allTransactions = _mockPrelovedTransactions.AsQueryable();
+                //  var allTransactions = _mockPrelovedTransactions.AsQueryable();
+
+                DateTime? createdDateParsed = DateTime.TryParse(dateCreated, out var tempCreatedDate) ? tempCreatedDate : (DateTime?)null;
+                DateTime? publishedDateParsed = DateTime.TryParse(datePublished, out var tempPublishedDate) ? tempPublishedDate : (DateTime?)null;
+
+                DateTime? StartDate = DateTime.TryParse(dateStart, out var tempStartDate) ? tempStartDate : (DateTime?)null;
+                DateTime? EndDate = DateTime.TryParse(dateEnd, out var tempEndDate) ? tempEndDate : (DateTime?)null;
+
+                string searchLower = searchText?.ToLower();
+
+                var prelovedList = await _context.Preloved.ToListAsync(cancellationToken);
+                var subscriptionList = await _subscriptioncontext.Subscriptions.ToListAsync(cancellationToken);
+                var companyList = await _company.Companies.ToListAsync(cancellationToken);
+                var paymentList = await _Paymentcontext.Payments.ToListAsync(cancellationToken);
 
 
-                if (!string.IsNullOrWhiteSpace(status))
-                {
-                    allTransactions = allTransactions.Where(t =>
-                    t.Status.Equals(status, StringComparison.OrdinalIgnoreCase));
-                }
+
+                var allTransactions = (
+    from preloved in prelovedList
+    join subscription in subscriptionList on preloved.SubscriptionId equals subscription.SubscriptionId
+    join company in companyList on subscription.CompanyId equals company.Id
+    join payment in paymentList on subscription.PaymentId equals payment.PaymentId
+    select new PrelovedTransactionDto
+    {
+        AdId = preloved.Id.ToString(),
+        OrderId = payment.PaymentId.ToString(),
+        SubscriptionType = subscription.ProductName,
+        UserId=preloved.UserId.ToString(),
+        Username = company.CompanyName,
+        Email = company.Email,
+        Mobile = company.PhoneNumber,
+        Whatsapp = company.WhatsAppNumber,
+        Amount = payment.Fee,
+        StartDate = subscription.StartDate.ToString(),
+        EndDate = subscription.EndDate.ToString(),
+        CreationDate = preloved.CreatedAt.ToString(),
+        PublishedDate = preloved.PublishedDate.ToString() ?? DateTime.MinValue.ToString(),
+        Status = Enum.GetName(typeof(Status), subscription.Status) ?? "Unknown"
+    })
+    .Where(x =>  
+        (
+            string.IsNullOrEmpty(searchLower) ||
+            x.OrderId.ToString().Contains(searchLower) ||
+            x.AdId.ToString().Contains(searchLower) ||
+            (!string.IsNullOrEmpty(x.Username) && x.Username.ToLower().Contains(searchLower)) ||
+            (!string.IsNullOrEmpty(x.Email) && x.Email.ToLower().Contains(searchLower)) ||
+            (!string.IsNullOrEmpty(x.Mobile) && x.Mobile.ToLower().Contains(searchLower)) ||
+            (!string.IsNullOrEmpty(x.Status) && x.Status.ToLower().Contains(searchLower))
+        )
+    )
+    .ToList();
+
+
+
 
                 if (!string.IsNullOrWhiteSpace(dateCreated))
                 {
-                    allTransactions = allTransactions.Where(t =>
+                    allTransactions = (List<PrelovedTransactionDto>)allTransactions.Where(t =>
                     t.CreationDate.Equals(dateCreated, StringComparison.OrdinalIgnoreCase));
                 }
 
                 if (!string.IsNullOrWhiteSpace(datePublished))
                 {
-                    allTransactions = allTransactions.Where(t =>
+                    allTransactions = (List<PrelovedTransactionDto>)allTransactions.Where(t =>
                     t.PublishedDate.Equals(datePublished, StringComparison.OrdinalIgnoreCase));
                 }
 
                 if (!string.IsNullOrWhiteSpace(dateStart))
                 {
-                    allTransactions = allTransactions.Where(t =>
+                    allTransactions = (List<PrelovedTransactionDto>)allTransactions.Where(t =>
                     t.StartDate.Equals(dateStart, StringComparison.OrdinalIgnoreCase));
                 }
 
                 if (!string.IsNullOrWhiteSpace(dateEnd))
                 {
-                    allTransactions = allTransactions.Where(t =>
+                    allTransactions = (List<PrelovedTransactionDto>)allTransactions.Where(t =>
                     t.EndDate.Equals(dateEnd, StringComparison.OrdinalIgnoreCase));
                 }
 
-                if (!string.IsNullOrWhiteSpace(searchText))
-                {
-                    var search = searchText.ToLower();
-                    allTransactions = allTransactions.Where(t =>
-                    t.AdId.ToLower().Contains(search) ||
-                    t.OrderId.ToLower().Contains(search) ||
-                    t.Username.ToLower().Contains(search) ||
-                    t.Email.ToLower().Contains(search) ||
-                    t.Status.ToLower().Contains(search) ||
-                    t.Mobile.Contains(search)
-                    );
-                }
+                //if (!string.IsNullOrWhiteSpace(searchText))
+                //{
+                //    var search = searchText.ToLower();
+                //    allTransactions = allTransactions.Where(t =>
+                //    t.AdId.ToLower().Contains(search) ||
+                //    t.OrderId.ToLower().Contains(search) ||
+                //    t.Username.ToLower().Contains(search) ||
+                //    t.Email.ToLower().Contains(search) ||
+                //    t.Status.ToLower().Contains(search) ||
+                //    t.Mobile.Contains(search)
+                //    );
+                //}
 
                 allTransactions = sortBy.ToLower() switch
                 {
                     "amount" => sortOrder == "desc" ?
-                   allTransactions.OrderByDescending(t => t.Amount) :
-                   allTransactions.OrderBy(t => t.Amount),
+                   allTransactions.OrderByDescending(t => t.Amount).ToList() :
+                   allTransactions.OrderBy(t => t.Amount).ToList(),
                     "status" => sortOrder == "desc" ?
-                   allTransactions.OrderByDescending(t => t.Status) :
-                   allTransactions.OrderBy(t => t.Status),
-                    _ => sortOrder == "desc" ?
-                    allTransactions.OrderByDescending(t => ParseDate(t.CreationDate)) :
-                    allTransactions.OrderBy(t => ParseDate(t.CreationDate))
+                  allTransactions.OrderByDescending(t => t.Status).ToList() :
+                  allTransactions.OrderBy(t => t.Status).ToList(),
+                    //_ => sortOrder == "desc" ?
+                    //(List<PrelovedTransactionDto>)allTransactions.OrderByDescending(t => ParseDate(t.CreationDate)) :
+                    //(List<PrelovedTransactionDto>)allTransactions.OrderBy(t => ParseDate(t.CreationDate))
+                    "CreationDate" => sortOrder?.ToLower() == "desc"
+                    ? allTransactions.OrderByDescending(t => t.CreationDate).ToList()
+                    : allTransactions.OrderBy(t => t.CreationDate).ToList(),
+                    _ => allTransactions.OrderByDescending(t => t.CreationDate).ToList()
                 };
 
                 var totalRecords = allTransactions.Count();
@@ -3259,6 +3311,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                     L1Category = c.L1Category,
                     Location = c.Location,
                     Brand = c.Brand,
+                    Images=c.Images,
                     Model = c.Model,
                     Condition = c.Condition,
                     Color = c.Color,
@@ -3570,7 +3623,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                 CreatedBy = dto.CreatedBy,
                 CreatedAt = dto.CreatedAt,
                 XMLlink = dto.XMLlink,
-                SubscriptionId = dto.SubscriptionId,
+                SubscriptionId = dto.SubscriptionId.ToString(),
                 UpdatedAt = dto.UpdatedAt,
                 UpdatedBy = dto.UpdatedBy,
                 ExpiryDate = dto.ExpiryDate,

@@ -40,7 +40,7 @@
             }
             else
             {
-                <MudButton Color="Color.Primary" Variant="Variant.Filled" Class="action-btn"
+                <MudButton Color="Color.Primary" Variant="Variant.Filled" Class="action-btn" Disabled="@(AdModel.Status == (int)AdStatusEnum.PendingApproval || AdModel.Status == (int)AdStatusEnum.Draft)"
                            OnClick='@(() => ShowConfirmation("Feature Ad", "Do you want to feature this ad?", "Feature"))'>
                     <img src="/qln-images/unfeatured_icon.svg" class="btn-icon" />
                     Feature
@@ -58,7 +58,7 @@
             }
             else
             {
-                <MudButton Color="Color.Primary" Variant="Variant.Filled" Class="action-btn"
+                <MudButton Color="Color.Primary" Variant="Variant.Filled" Class="action-btn" Disabled="@(AdModel.Status == (int)AdStatusEnum.PendingApproval || AdModel.Status == (int)AdStatusEnum.Draft)"
                            OnClick='@(() => ShowConfirmation("Promote Ad", "Do you want to promote this ad?", "Promote"))'>
                     <img src="/qln-images/unfeatured_icon.svg" class="btn-icon" />
                     Promote
@@ -68,7 +68,7 @@
             @* Refresh Button *@
             @if (!AdModel.IsRefreshed)
             {
-                <MudButton Color="Color.Primary" Variant="Variant.Filled" Class="action-btn"
+                <MudButton Color="Color.Primary" Variant="Variant.Filled" Class="action-btn" Disabled="@(AdModel.Status == (int)AdStatusEnum.PendingApproval || AdModel.Status == (int)AdStatusEnum.Draft)"
                            OnClick='@(() => ShowConfirmation("Refresh Ad", "Do you want to refresh this ad?", "Refresh"))'>
                     <img src="/qln-images/refresh_icon.svg" class="btn-icon" />
                     Refresh
@@ -91,8 +91,8 @@
             }
             else if (CanPublish)
             {
-                <MudButton Color="Color.Primary" Variant="Variant.Filled" Class="action-btn"
-                           StartIcon="@Icons.Material.Rounded.PublishedWithChanges"
+                <MudButton Color="Color.Primary" Variant="Variant.Filled" Class="action-btn" Disabled="@(AdModel.Status == (int)AdStatusEnum.PendingApproval || AdModel.Status == (int)AdStatusEnum.Draft)"
+                           StartIcon="@Icons.Material.Rounded.PublishedWithChanges" 
                            OnClick='@(() => ShowConfirmation("Publish Ad", "Do you want to publish this ad?", "Publish"))'>
                     Publish
                 </MudButton>

@@ -47,7 +47,7 @@ namespace QLN.Backend.API.ServiceConfiguration
             services.AddTransient<IClassifiedsFoService, ExternalClassifiedFoService>();
             services.AddScoped<IFileStorageBlobService, FileStorageBlobService>();
             services.AddScoped<IInstaService, InstagramPostService>();
-
+            services.AddTransient<ISearchService, ExternalSearchService>();
             return services;
         }
         public static IServiceCollection AnalyticsServicesConfiguration(this IServiceCollection services, IConfiguration configuration)
