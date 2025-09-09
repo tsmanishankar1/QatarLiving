@@ -1,0 +1,105 @@
+﻿@using QLN.Web.Shared.Models
+@using MudBlazor
+@using QLN.Web.Shared.Components.CustomButton
+
+
+<MudPaper Class="p-4 hover:shadow-lg cursor-pointer transition-all duration-200 relative"
+          Style=" height: 162px; border-radius: 8px; padding: 12px 20px; background-color: white"
+          OnClick="HandleSelect">
+
+    <!-- Radio Button Top Right -->
+    <div style="position: absolute; top: 12px; right: 12px;">
+        <MudIcon Icon="@(IsSelected ? Icons.Material.Filled.RadioButtonChecked : Icons.Material.Filled.RadioButtonUnchecked)"
+                 Style=@($"color:{(IsSelected ? "#F26D1E" : "#E0E0E0")}") />
+    </div>
+
+    <!-- Center Content -->
+    <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center" Spacing="1" Class="mb-4">
+        <MudText Class="font-semibold text-center"
+                 Style="font-family: 'Public Sans', sans-serif; font-size: 15px; line-height: 26px; color: #242424;">
+            @($"{Plan.SubscriptionName}")
+        </MudText>
+
+        <MudText Class="font-semibold text-center"
+                 Style="font-family: 'Public Sans', sans-serif; font-size: 25px; line-height: 26px; color: #00426D;">
+            @($"{Plan.Price:N0} QAR") /  <MudText Class="text-center font-medium"
+                                                  Style="font-family: 'Public Sans', sans-serif; font-size: 14px; line-height: 22px; color: #646464;">
+                @Plan.DurationName
+            </MudText>
+        </MudText>
+
+      
+    </MudStack>
+
+    <!-- Button at bottom -->
+    <MudBox Class="mt-4" Style="width: 100%; display: flex; justify-content: center; align-items: center">
+        <MudButton Class="font-semibold"
+                   Style="@(IsSelected
+        ? "background-color: #E0E0E0; color: white; width: 200px;"
+        : "background-color: #F26D1E; color: white; width: 200px;")"
+                   Disabled="@IsSelected"
+                   OnClick="HandleSelect">
+            @(IsSelected ? "Selected" : "Select")
+        </MudButton>
+
+    </MudBox>
+
+    <!-- Confirmation Dialog -->
+    <MudDialog @bind-IsOpen="_isDeleteDialogOpen">
+        <DialogContent>
+            <MudText Typo="Typo.h6">Confirm Deletion</MudText>
+            <MudText>Are you sure you want to delete this subscription?</MudText>
+        </DialogContent>
+        <DialogActions>
+            <MudButton Variant="Variant.Text" OnClick="() => _isDeleteDialogOpen = false">No</MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="ConfirmDelete">Yes</MudButton>
+        </DialogActions>
+    </MudDialog>
+    @if (_isDeleteDialogOpen)
+    {
+        <div style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: rgba(0,0,0,0.5); z-index: 9999;"
+             @onclick="() => _isDeleteDialogOpen = false">
+            <MudPaper Style="width: 300px; padding: 24px; background-color: white; border-radius: 8px; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);"
+            @onclick:stopPropagation>
+                <MudText Typo="Typo.h6" Class="mb-2">Confirm Deletion</MudText>
+                <MudText Class="mb-4">Are you sure you want to delete this subscription?</MudText>
+                <div style="display: flex; justify-content: flex-end; gap: 12px;">
+                    <MudButton Variant="Variant.Text" OnClick="() => _isDeleteDialogOpen = false">No</MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="ConfirmDelete">Yes</MudButton>
+                </div>
+            </MudPaper>
+        </div>
+    }
+
+</MudPaper>
+
+@code {
+    [Parameter] public SubscriptionPlan Plan { get; set; } = default!;
+    [Parameter] public bool IsSelected { get; set; }
+    [Parameter] public EventCallback<SubscriptionPlan> OnSelect { get; set; }
+    [Parameter] public EventCallback<SubscriptionPlan> OnDelete { get; set; }
+
+    private bool _isDeleteDialogOpen = false;
+
+    private void OpenDeleteDialog()
+    {
+        _isDeleteDialogOpen = true;
+    }
+
+    private void ShowDeleteConfirm()
+    {
+        _isDeleteDialogOpen = true;
+    }
+    private async Task ConfirmDelete()
+    {
+        _isDeleteDialogOpen = false;
+        await OnDelete.InvokeAsync(Plan);
+    }
+    private async Task HandleSelect()
+    {
+        Console.WriteLine($"[SELECT] Plan Id: {Plan?.Id} Plan clicked: {Plan?.SubscriptionName} SubscriptionName - {Plan?.Price} QAR - Duration: {Plan?.DurationName}");
+
+        await OnSelect.InvokeAsync(Plan);
+    }
+
+}

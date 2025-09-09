@@ -1,0 +1,22 @@
+@page "/qln/classifieds/items"
+@using MudBlazor
+@inherits ItemsComponentBase
+@inject SearchStateService SearchState
+@using QLN.Web.Shared.Pages.Classifieds.Items.Components
+@layout ClassifiedsLayout
+
+<div style="width: 100%; background-color: var(--color-secondary-background);">
+    <div class="search-section-container">
+    <div class="max-container">
+        
+        <SearchSection IsSaveSearch="IsSaveSearch" SaveSearchAsync="SaveSearchAsync" IsLoadingSaveSearch="IsLoadingSaveSearch" OnSearch="OnSearchTriggered" OnCategoryChanged="OnCategoryChanged" Loading="IsLoadingSearch"  OnViewModeChanged="HandleViewModeChange" />
+    </div>
+ </div>
+  <div class="max-container">
+        <div class="category-banner-wrapper">
+            <img src="/qln-images/banner_image.svg" alt="Category Banner" class="category-banner-image" />
+        </div>
+        <ItemListSection TotalCount="TotalCount"ViewMode="@SearchState.ItemViewMode" Items="SearchResults" Loading="IsLoadingSearch" IsSearchPerformed="@SearchState.IsSearchActive" OnSearch="OnSearchTriggered"/>
+ </div>
+</div>
+

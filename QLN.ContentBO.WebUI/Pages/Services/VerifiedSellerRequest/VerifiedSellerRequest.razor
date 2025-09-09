@@ -1,0 +1,22 @@
+@page "/manage/services/listing/vertified/seller/request"
+@using QLN.ContentBO.WebUI.Models;
+@using QLN.ContentBO.WebUI.Pages.Services.VerifiedSellerRequest;
+@using QLN.ContentBO.WebUI.Components.ToggleTabs;
+@inherits VerifiedSellerRequestBase
+@layout ServicesLayout
+
+<MudGrid Style="padding-top: 18px">
+    <!-- Left Form Section -->
+    <MudItem xs="12" md="12">
+            <ToggleTabs Options="@tabOptions"
+                ActiveValue="@selectedTab"
+                OnChange="@OnTabChanged" />
+              <div class="community-table">
+                    @* <VerifiedSellerRequestTable Listings="Listings" OnPageChange="HandlePageChange"
+                OnPageSizeChange="HandlePageSizeChange"
+                OnStatusChanged="HandleStatusChange"/> *@
+                <UserVerificationProfileTableComponent Listings="@Listings" />
+             </div> 
+    </MudItem>
+</MudGrid>
+

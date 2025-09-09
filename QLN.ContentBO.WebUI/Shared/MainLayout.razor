@@ -1,0 +1,82 @@
+﻿@using System.Security.Claims
+@using Microsoft.Extensions.Options
+@using QLN.ContentBO.WebUI.Handlers
+@using QLN.ContentBO.WebUI.Models
+@using QLN.ContentBO.WebUI.Components.Sidebar
+@inherits LayoutComponentBase
+@inject NavigationManager NavManager
+@inject CookieAuthStateProvider CookieAuthenticationStateProvider;
+@inject IOptions<NavigationPath> options;
+
+<PageTitle>Qatar Living Back Office</PageTitle>
+
+<MudThemeProvider Theme="defaultTheme" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+    
+<MudLayout>
+   <Sidebar IsLoggedIn="@IsLoggedIn" Name="@Name" Email="@Email" />
+    <MudMainContent class="main-content-style">
+        @Body
+    </MudMainContent>
+</MudLayout>
+
+@code {
+    bool _drawerOpen = true;
+    protected bool _isNewsGroupExpanded = true;
+    protected bool _isReportGroupExpanded = false;
+    private string searchText;
+
+    private NavigationPath navigationPath;
+    public string Name { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public string Alias { get; set; } = string.Empty;
+    public bool IsLoggedIn { get; set; } = false;
+    public int CurrentUserId { get; set; }
+
+    /// <summary>
+    /// Default Theme MudBlazor color variables.
+    /// https://mudblazor.com/customization/default-theme#mudtheme
+    /// </summary>
+    MudTheme defaultTheme = new MudTheme()
+    {
+        PaletteLight = new PaletteLight()
+        {
+            Primary = "#FF7F38",
+            TextPrimary = "#646464",
+            TextSecondary = "#242424",
+        },
+        LayoutProperties = new LayoutProperties()
+        {
+            DefaultBorderRadius = "6px"
+        }
+    };
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        navigationPath = options.Value;
+
+        var authState = await CookieAuthenticationStateProvider.GetAuthenticationStateAsync();
+        if (authState != null)
+        {
+            var user = authState.User;
+            if (user.Identity != null && user.Identity.IsAuthenticated)
+            {
+                Name = user.FindFirst(ClaimTypes.Name)?.Value;
+                Email = user.FindFirst(ClaimTypes.Email)?.Value ?? user.FindFirst("email")?.Value;
+                Alias = user.FindFirst("alias")?.Value;
+                CurrentUserId = int.TryParse(user.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var uid) ? uid : 0;
+                IsLoggedIn = true;
+            }
+        }
+
+    }
+}
+<style>
+    .main-content-style {
+        background-color: #FAFAFA;
+        padding: 10px 25px 25px 25px;
+    }
+</style>

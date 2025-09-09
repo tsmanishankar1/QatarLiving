@@ -1,0 +1,61 @@
+﻿@using MudBlazor.Utilities
+
+<MudDropContainer T="ArticleRow"
+                  Items="@Articles"
+                  ItemDropped="OnItemDropped"
+                  Class="d-flex flex-column"
+                  DropZoneClass="d-block"
+                  Horizontal="false">
+    <ChildContent>
+        <MudSimpleTable>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Title</th>
+                    <th>Author</th>
+                    <th>Slot</th>
+                </tr>
+            </thead>
+            <tbody>
+                <MudDropZone T="ArticleRow" Identifier="main" Class="w-100" AllowReorder="true" />
+            </tbody>
+        </MudSimpleTable>
+    </ChildContent>
+    <ItemRenderer Context="item">
+        <tr>
+            <td>@item.Id</td>
+            <td>@item.Title</td>
+            <td>@item.Author</td>
+            <td>@item.Slot</td>
+        </tr>
+    </ItemRenderer>
+</MudDropContainer>
+
+@code {
+    public List<ArticleRow> Articles = new()
+    {
+        new ArticleRow { Id = 1, Title = "Article A", Author = "Author A", Slot = "1" },
+        new ArticleRow { Id = 2, Title = "Article B", Author = "Author B", Slot = "2" },
+        new ArticleRow { Id = 3, Title = "Article C", Author = "Author C", Slot = "3" },
+        new ArticleRow { Id = 4, Title = "Article D", Author = "Author D", Slot = "4" }
+    };
+
+    private void OnItemDropped(MudItemDropInfo<ArticleRow> dropInfo)
+    {
+        // Optional: Assign new slot (if using zone IDs)
+        dropInfo.Item.Slot = dropInfo.DropzoneIdentifier;
+
+        // Reorder the list in-place
+        var item = dropInfo.Item;
+        Articles.Remove(item);
+        Articles.Insert(dropInfo.IndexInZone, item);
+    }
+
+    public class ArticleRow
+    {
+        public int Id { get; set; }
+        public string Title { get; set; } = "";
+        public string Author { get; set; } = "";
+        public string Slot { get; set; } = "";
+    }
+}

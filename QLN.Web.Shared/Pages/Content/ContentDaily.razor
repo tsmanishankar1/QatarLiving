@@ -1,0 +1,21 @@
+﻿@page "/content/daily"
+@page "/content/v2/daily"
+@using Microsoft.Extensions.Options
+@using QLN.Web.Shared.Pages.Content.Daily
+@using QLN.Web.Shared.Pages.Content.DailyV2
+@using QLN.Web.Shared.Services
+@inject NavigationManager NavManager
+@layout ContentLayout
+
+@if (ShouldRenderV2Component)
+{
+    <DailyComponentV2 />
+}
+else
+{
+    <DailyComponent />
+}
+
+@code {
+    private bool ShouldRenderV2Component => NavManager.Uri.Contains("/v2", StringComparison.OrdinalIgnoreCase);
+}

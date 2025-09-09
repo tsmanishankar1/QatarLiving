@@ -1,0 +1,30 @@
+﻿using QLN.Common.DTO_s;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using static QLN.Common.DTO_s.CommunityBo;
+using static QLN.Common.DTO_s.LocationDto;
+
+namespace QLN.Common.Infrastructure.IService.V2IContent
+{
+    public interface IV2CommunityPostService
+    {
+        Task<string> CreateCommunityPostAsync(string userId, V2CommunityPostDto dto, CancellationToken cancellationToken = default);
+        Task<ForumCategoryListDto> GetAllForumCategoriesAsync(CancellationToken cancellationToken = default);
+        Task<bool> SoftDeleteCommunityPostAsync(Guid postId, string userId, CancellationToken ct = default);
+        Task<PaginatedCommunityPostResponseDto> GetAllCommunityPostsAsync(string? categoryId = null, string? search = null, int? page = null, int? pageSize = null, string? sortDirection = null, CancellationToken ct = default);
+     
+        Task<V2CommunityPostDto?> GetCommunityPostByIdAsync(Guid id, CancellationToken ct = default);
+        Task<bool> LikePostForUser(CommunityPostLikeDto dto, CancellationToken ct = default);
+        Task AddCommentToCommunityPostAsync(CommunityCommentDto dto, CancellationToken ct = default);
+        Task<CommunityCommentListResponse> GetAllCommentsByPostIdAsync(Guid postId, string? userId, int? page = null, int? perPage = null, CancellationToken ct = default);
+        Task<bool> LikeCommentAsync(LikeCommentsDto dto, string userId, CancellationToken ct = default);
+        Task<V2CommunityPostDto?> GetCommunityPostBySlugAsync(string slug, CancellationToken cancellationToken = default);
+        Task<CommunityCommentApiResponse> SoftDeleteCommunityCommentAsync(Guid postId, Guid commentId, string userId, CancellationToken ct = default);
+        Task<CommunityCommentApiResponse> EditCommunityCommentAsync(Guid postId, Guid commentId, string userId, string updatedText, CancellationToken ct = default);
+        Task<string> BulkMigrateCommunityPostsAsync(List<V2CommunityPostDto> posts, CancellationToken ct = default);
+        Task<string> MigrateCommunityPostAsync(V2CommunityPostDto post, CancellationToken ct = default);
+    }
+}

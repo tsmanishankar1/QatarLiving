@@ -1,0 +1,215 @@
+@inherits EditServiceFormBase
+@using QLN.ContentBO.WebUI.Components.PhoneNumberInput;
+@using QLN.ContentBO.WebUI.Components.FilePreviewDialog;
+@using PSC.Blazor.Components.MarkdownEditor.Enums
+@using QLN.ContentBO.WebUI.Models
+
+<EditForm EditContext="@editContext" OnSubmit="@SubmitForm">
+    <DataAnnotationsValidator />
+    <div class="create-form-list">
+        <h3 class="form-heading">Ad Category</h3>
+            <MudSelect T="long" Label="Category" Variant="Variant.Outlined" Class="white-bg" FullWidth="true"
+           Value="selectedService.CategoryId"
+           ValueChanged="@OnCategoryChanged">
+   
+        @foreach (var cat in CategoryTrees)
+        {
+            <MudSelectItem T="long" Value="@cat.Id">@cat.CategoryName</MudSelectItem>
+        }
+    
+</MudSelect>
+
+<MudSelect T="long" Label="Subcategory" Variant="Variant.Outlined" Class="white-bg" FullWidth="true"
+           Value="selectedService.L1CategoryId"
+           ValueChanged="@OnL1CategoryChanged"
+           Disabled="@(_selectedL1Categories.Count == 0)">
+    @foreach (var l1 in _selectedL1Categories)
+    {
+        <MudSelectItem T="long" Value="@l1.Id">@l1.CategoryName</MudSelectItem>
+    }
+</MudSelect>
+
+<MudSelect T="long" Label="Section" Variant="Variant.Outlined" Class="white-bg" FullWidth="true"
+           @bind-Value="selectedService.L2CategoryId"
+           Disabled="@(_selectedL2Categories.Count == 0)">
+    @foreach (var l2 in _selectedL2Categories)
+    {
+        <MudSelectItem T="long" Value="@l2.Id">@l2.CategoryName</MudSelectItem>
+    }
+</MudSelect>
+       
+        <h3 class="form-heading">Price</h3>
+        <MudCheckBox T="bool" @bind-Value="@_priceOnRequest" Label="This Price on request services" />
+        
+        <div class="services-custom-alert" style="margin-bottom: 20px;">
+            <div class="services-icon-box">
+                <img src="qln-images/services_bulb_icon.svg" alt="Bulb Icon"/>
+            </div>
+            <div class="services-alert-text">
+                If your service is marked as 'price on request', the price will not appear on the offer card or details page.
+            </div>
+        </div>
+
+        <MudTextField Class="white-bg" Variant="Variant.Outlined" T="decimal?" Label="Price"
+                      @bind-Value="selectedService.Price" For="@(() => selectedService.Price)" FullWidth="true" />
+
+        <h3 class="form-heading">Description and Features</h3>
+        <MudTextField Class="white-bg" Variant="Variant.Outlined" T="string" Label="Title"
+                      @bind-Value="selectedService.Title" For="@(() => selectedService.Title)" FullWidth="true" />
+
+        <MarkdownEditor @bind-Value="@selectedService.Description" Placeholder="Start Typing" HideIcons="@HiddenIcons" CustomButtonClicked="@OnCustomButtonClicked" @ref="MarkdownEditorRef">
+                <Toolbar>
+                    <MarkdownToolbarButton Action="MarkdownAction.Bold" Icon="fa fa-bold" Title="Bold" />
+                    <MarkdownToolbarButton Action="MarkdownAction.Italic" Icon="fa fa-italic" Title="Italic" />
+                    <MarkdownToolbarButton Action="MarkdownAction.Heading" Icon="fa fa-header" Title="Heading" />
+                    <MarkdownToolbarButton Action="MarkdownAction.Strikethrough" Icon="fa fa-strikethrough" Title="Strikethrough" />
+
+                    <MarkdownToolbarButton Separator Action="MarkdownAction.Code" Icon="fa fa-code" Title="Code Block" />
+                    <MarkdownToolbarButton Action="MarkdownAction.Quote" Icon="fa fa-quote-right" Title="Quote" />
+                    <MarkdownToolbarButton Action="MarkdownAction.HorizontalRule" Icon="fa fa-minus" Title="Horizontal Rule" />
+                    <MarkdownToolbarButton Action="MarkdownAction.UnorderedList" Icon="fa fa-list-ul" Title="Unordered List" />
+                    <MarkdownToolbarButton Action="MarkdownAction.OrderedList" Icon="fa fa-list-ol" Title="Ordered List" />
+
+                    <MarkdownToolbarButton Separator Action="MarkdownAction.Link" Icon="fa fa-link" Title="Link" />
+                    <MarkdownToolbarButton Action="MarkdownAction.Custom" Name="@UploadImageButtonName" Icon="fa fa-upload" Title="Upload Image" />
+                    <MarkdownToolbarButton Action="MarkdownAction.Image" Icon="fa fa-image" Title="Image" />
+
+                    <MarkdownToolbarButton Separator Action="MarkdownAction.Custom" Name="CustomPreview" Icon="fa fa-eye no-disable" Title="Toggle Preview (Ctrl-P)" />
+                    <MarkdownToolbarButton Action="MarkdownAction.SideBySide" Icon="fa fa-columns no-disable no-mobile" Title="Side by Side" />
+                    <MarkdownToolbarButton Action="MarkdownAction.Guide" Icon="fa fa-question-circle" Title="Markdown Guide" />
+                </Toolbar>
+            </MarkdownEditor>
+            <MudText Typo="Typo.caption" Color="Color.Error">
+                <ValidationMessage For="@(() => selectedService.Description)" />
+            </MudText>
+
+        <MudPaper Class="catification-upload-section" Style="margin-top: 20px;">
+            <div class="catification-upload-info">
+                <h3 class="catification-upload-label">Certificate / Warranty*</h3>
+
+                @if (!string.IsNullOrEmpty(selectedFileName))
+                {
+                    <div class="catification-file-info">
+                        <span class="catification-file-name">
+                            @ShortFileName(selectedFileName, 10)
+                        </span>
+                        <MudIconButton Icon="@Icons.Material.Outlined.Close"
+                                    Size="Size.Small"
+                                    Color="Color.Error"
+                                    OnClick="ClearFile"
+                                    />
+                    </div>
+                }
+            </div>
+
+            <MudFileUpload T="IBrowserFile"
+                        Accept=".pdf,.png,.jpg,.jpeg"
+                        MaxFileSize="10485760"
+                        FilesChanged="OnCrFileSelected">
+                <ActivatorContent>
+                    @if (!string.IsNullOrWhiteSpace(selectedService.LicenseCertificate))
+                    {
+                        <MudButton Variant="Variant.Filled"
+                            Color="Color.Primary"
+                            StartIcon="@Icons.Material.Outlined.Visibility"
+                            OnClick="@(() => PreviewFile(selectedService.LicenseCertificate))"
+                            Class="catification-upload-button">
+                        Download
+                    </MudButton>
+                        
+                    }
+                    else {
+                        <MudButton Variant="Variant.Filled"
+                            Color="Color.Primary"
+                            Class="catification-upload-button">
+                        Upload
+                        <img src="/qln-images/upload_white_icon.svg" width="20" height="20" />
+                    </MudButton>
+
+                    }
+                </ActivatorContent>
+            </MudFileUpload>
+        </MudPaper> 
+        <MudText Typo="Typo.caption">Supported file formats: PDF, PNG, JPG. Max: 10MB</MudText>              
+
+        <h3 class="form-heading">Contact Details</h3>
+        <div class="form-group">
+
+                <!-- Phone -->
+                    <PhoneNumberInput
+                        SelectedCountry="@SelectedPhoneCountry"
+                        Placeholder="Phone Number"
+                        SelectedCountryChanged="@OnPhoneCountryChanged"
+                        PhoneNumber="@selectedService.PhoneNumber"
+                        PhoneNumberChanged="@OnPhoneChanged"
+                        DefaultCountryCode="@selectedService.PhoneNumberCountryCode" />
+                <ValidationMessage For="@(() => @selectedService.PhoneNumber)" />
+                </div>
+                <div class="form-group">
+                    <!-- WhatsApp -->
+                    <PhoneNumberInput
+                        SelectedCountry="@SelectedWhatsappCountry"
+                        Placeholder="WhatsApp Number"
+                        SelectedCountryChanged="@OnWhatsappCountryChanged"
+                        PhoneNumber="@selectedService.WhatsappNumber"
+                        PhoneNumberChanged="@OnWhatsappChanged" 
+                        DefaultCountryCode="@selectedService.WhatsappNumberCountryCode"/>
+                <ValidationMessage For="@(() => selectedService.WhatsappNumber)" />
+                </div>
+                <div class="form-group">
+                    <!-- WhatsApp -->
+                    <MudTextField Class="white-bg" Variant="Variant.Outlined" T="string" Label="Email Address"
+                      @bind-Value="selectedService.EmailAddress" For="@(() => selectedService.EmailAddress)" FullWidth="true" />
+                </div>
+
+        <h3 class="form-heading">Location</h3>
+
+        <MudSelect T="string"
+           Label="Zone"
+           Value="selectedService.ZoneId"
+           ValueChanged="@OnZoneChanged"
+           For="@(() => selectedService.ZoneId)"
+           Variant="Variant.Outlined"
+           Class="white-bg"
+           FullWidth="true">
+    @foreach (var zone in Zones)
+    {
+        <MudSelectItem T="string" Value="@zone.Id">@zone.Name</MudSelectItem>
+    }
+</MudSelect>
+
+
+        <MudTextField Class="white-bg" Variant="Variant.Outlined" T="string" Label="Street Number"
+                    Value="@selectedService.StreetNumber"
+                    ValueChanged="@OnStreetNumberChanged"
+                    Immediate="true"
+                    For="@(() => selectedService.StreetNumber)" FullWidth="true" />
+
+        <MudTextField Class="white-bg" Variant="Variant.Outlined" T="string" Label="Building Number"
+                    Value="@selectedService.BuildingNumber"
+                    ValueChanged="@OnBuildingNumberChanged"
+                    Immediate="true"
+                    For="@(() => selectedService.BuildingNumber)" FullWidth="true" />
+
+        <div id="map" style="height: 300px; width: 100%;"></div>
+
+         <div class="checkbox-section">
+            <div class="checkbox-left">
+                <MudCheckBox @bind-Value="IsAgreed" Color="Color.Primary" />
+            </div>
+            <div class="checkbox-right">
+                <span>
+                    I agree to the
+                    <a href="https://www.qatarliving.com/rules-advertising" target="_blank">Rules for Advertising</a>
+                    and the
+                    <a href="https://www.qatarliving.com/terms-of-use" target="_blank">Terms of Use</a>.
+                </span>
+            </div>
+        </div>
+        <ValidationMessage For="@(() => Ad.IsAgreed)" />
+            <div class="custom-button-group">
+                <MudButton Class="custom-button" Variant="Variant.Outlined">Cancel</MudButton>
+                <MudButton Class="custom-button" Variant="Variant.Filled" Color="Color.Primary" ButtonType="ButtonType.Submit">Submit</MudButton>
+            </div>
+    </div>
+</EditForm>

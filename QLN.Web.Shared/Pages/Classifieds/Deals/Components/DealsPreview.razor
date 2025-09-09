@@ -1,0 +1,100 @@
+@page "/qln/classifieds/deals/details/preview"
+@using MudBlazor
+@inherits DealsPreviewBase
+<div class="deal-details-container">
+ <div class="deal-max-container">
+    <a href="/qln/classifieds/deals" class="deal-back-link">
+     <MudIcon Icon="@Icons.Material.Filled.KeyboardArrowLeft"
+                    Class="back-to-login-icon" />
+    <span class="back-text">Back to Deals</span>
+</a>
+    <div class="carousel-wrapper">
+        @if (currentIndex > 0)
+        {
+            <MudIconButton Icon="@Icons.Material.Filled.ChevronLeft"
+                       Class="nav-button-inline"
+                       OnClick="@PreviousImage" />
+        }
+
+        <div class="desktop-only">
+            <div style="display: flex; flex-direction: column;">
+                <img src="@imageUrls[currentIndex]"
+                alt="Deal Image"
+                class="carousel-image-inline" />
+
+                <div class="mobile-store-center-info">
+                    <div class="store-location">
+                        Page @(currentIndex + 1) out of @imageUrls.Count
+                    </div>
+                    <div class="store-location">Al Sadd, Wefyfyst Bay, Dukhan, Mansoura</div>
+                </div>
+            </div>
+        </div>
+        @if (currentIndex < imageUrls.Count - 1)
+        {
+            <MudIconButton Icon="@Icons.Material.Filled.ChevronRight"
+                       Class="nav-button-inline"
+                       OnClick="@NextImage" />
+        }
+    </div>
+
+
+<div class="mobile-only">
+    <MudCarousel 
+    ShowArrows="false"
+    ShowBullets="false"
+    EnableSwipeGesture="true"
+    AutoCycle="false"
+    TData="string"
+    Class="mud-width-full"
+    Style="height: 467px; width: 100%;"
+     ActiveIndex="@currentIndex"
+    ActiveIndexChanged="@OnImageChanged">
+    
+    @foreach (var imageUrl in imageUrls)
+    {
+        <MudCarouselItem>
+            <img src="@imageUrl"
+                 alt="Deal Image"
+                 style="width: 100%; height: 467px;" />
+        </MudCarouselItem>
+    }
+</MudCarousel>
+
+    <div class="mobile-store-center-info mt-1" style="padding-bottom: 100px;">
+        Page @(currentIndex + 1) out of @imageUrls.Count
+        <div class="store-location">Al Sadd, Wefyfyst Bay, Dukhan, Mansoura</div>
+    </div>
+</div>
+    <div class="deal-footer">
+        <div class="footer-left">
+            <img src="qln-images/stores/hypermarket.svg" alt="Store Logo" class="store-logo" />
+            <div class="store-info">
+                <div class="store-name">Lulu Hypermarket</div>
+                <div class="store-meta">Ramadan Savers · End in 2 Days</div>
+            </div>
+        </div>
+        <div class="store-center-info">
+                <div class="store-location">Page @(currentIndex + 1) out of @imageUrls.Count</div>
+                <div class="store-location">Al Sadd, West Bay, Dukhan, Mansoura</div>
+        </div>
+
+        <div class="footer-right">
+            <MudButton 
+                       Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       Style="border-radius: 20px; text-transform: none; font-size: 14px; 
+           font-family: 'Public Sans', sans-serif;
+           font-weight: 500; "
+                       Href="https://luluwebsite.com"
+                       Target="_blank">
+                       <StartContent>
+                        <img src="qln-images/classifieds/world_outline.svg" alt="World" style="width: 20px; height: 20px; margin-right: 8px;" />
+                        </StartContent>
+                Visit Website
+            </MudButton>
+        </div>
+    </div>
+    </div>
+</div>
+

@@ -1,0 +1,158 @@
+@inherits SearchSectionBase
+@using MudBlazor
+@using QLN.Web.Shared.Components.ViewToggleButtons
+@using QLN.Web.Shared.Components.NewCustomSelect
+@using QLN.Web.Shared.Components.SaveSearchPopup
+@using QLN.Web.Shared.Components.CustomSelectCategory
+@using QLN.Web.Shared.Components.PriceRangeSelect
+@using QLN.Web.Shared.Pages.Classifieds.Items.Components
+@using QLN.Web.Shared.Helpers
+@using QLN.Common.DTO_s;
+
+<div class="item-search-container">
+    <div class="item-search-row">
+
+        <!-- FIRST ROW: Search + Category -->
+       <div class="@($"item-first-row {(_isSearchFocused ? "search-focused" : "")}")">
+            <!-- Search Input -->
+            <div class="item-search-bar" @onfocusin="() => _isSearchFocused = true" @onfocusout="() => _isSearchFocused = false">
+                @if (!_isSearchFocused)
+                {
+                    <div class="item-search-icon-left">
+                        <img src="/qln-images/classifieds/iteam_search_icon.svg" alt="Search-left" class="item-action-icon-img-left" />
+                    </div>
+                }
+
+                <input id="itemSearch" type="text" class="item-search-input" placeholder="Search..." @bind="SearchState.ItemSearchText" @bind:event="oninput" />
+
+                @if (!string.IsNullOrWhiteSpace(SearchState.ItemSearchText))
+                {
+                    <div class="item-search-actions">
+                        <MudIconButton OnClick="PerformSearch" Class="item-search-action-btn item-search-btn">
+                            <div class="item-search-icon-container">
+                                @if (Loading)
+                                {
+                                    <MudProgressCircular Indeterminate="true" Style="color: white;width: 20px; height: 20px;" />
+                                }
+                                else
+                                {
+                                    <img src="/qln-images/classifieds/search_icon.svg" alt="Search" class="item-action-icon-img" />
+                                }
+                            </div>
+                        </MudIconButton>
+                        <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small" OnClick="ClearSearch" Class="item-search-action-btn" />
+                    </div>
+                }
+            </div>
+  @if (!_isSearchFocused)
+        {
+            <div class="item-brand-select">
+                <CustomSelectCategory TItem="CategoryTreeDto"
+                    Items="@CategoryTrees"
+                    SelectedId="@SearchState.ItemCategory"
+                    SelectedIdChanged="v => OnCategorySelected(v)"
+                    GetId="x => x.Id.ToString()"
+                    GetLabel="x => x.Name"
+                    Placeholder="Category"
+                    BorderRadius="4px"
+                    Padding="13px 10px" />
+            </div>
+            }
+        </div>
+      
+
+        @if (!_isSearchFocused)
+        {
+        <div class="item-second-row">
+         <div class="item-brand-select">
+           <CustomSelectCategory TItem="CategoryTreeDto"
+            Items="@SelectedCategory.Children"
+            SelectedId="@SearchState.ItemSubCategory"
+            SelectedIdChanged="v => OnSubCategorySelected(v)"
+            GetId="x => x.Id.ToString()"
+            GetLabel="x => x.Name"
+            BorderRadius="4px"
+            IsDisabled="@(!(SelectedCategory?.Children?.Any() ?? false))" 
+            Padding="13px 10px" 
+            Placeholder="Subcategory" />
+          </div>
+           @if (!isBrandFieldAvailable)
+                {
+            <div class="item-brand-select">
+             <CustomSelectCategory TItem="CategoryTreeDto"
+                Items="@SelectedSubCategory.Children"
+                SelectedId="@SearchState.ItemSubSubCategory"
+                SelectedIdChanged="v => OnSubSubCategorySelected(v)"
+                GetId="x => x.Id.ToString()"
+                GetLabel="x => x.Name"
+                BorderRadius="4px"
+                Padding="13px 10px" 
+                IsDisabled="@(!(SelectedSubCategory?.Children?.Any() ?? false))"
+                Placeholder="Sub subcategory" />
+                </div>
+        }
+
+         @if (isBrandFieldAvailable)
+        {
+                <div class="item-brand-select">
+                    <CustomSelectCategory TItem="string"
+                    Items="brandField?.Options"
+                    SelectedId="@SearchState.ItemBrand"
+                    SelectedIdChanged="v => OnFilterChanged(nameof(SearchState.ItemBrand), v)"
+                    GetId="x => x"
+                    GetLabel="x => x"
+                    BorderRadius="4px"
+                    Padding="13px 10px"
+                    IsDisabled="@(!isBrandFieldAvailable)"
+                    Placeholder="Brand" />
+              
+                </div>
+                }
+             </div>
+            <!-- SECOND ROW: Brand + Price + More + Save Search -->
+            <div class="item-second-row">
+                <div class="item-price-short-select">
+                   <PriceRangeSelect SelectedMin="SearchState.ItemMinPrice"
+                        SelectedMax="SearchState.ItemMaxPrice"
+                        SelectedMinChanged="v => SearchState.ItemMinPrice = v"
+                        SelectedMaxChanged="v => SearchState.ItemMaxPrice = v"
+                        OnApplyClicked="PerformSearch"
+                        IsDisabled="@string.IsNullOrWhiteSpace(SearchState.ItemCategory)"
+                        OnResetClicked="() => { SearchState.ItemMinPrice = null; SearchState.ItemMaxPrice = null; PerformSearch(); }" />
+                </div>
+
+                <!-- More -->
+                <div class="short-select">
+                        <MoreFiltersList SelectedFields="SelectedFields" OnFiltersChanged="PerformSearch"/>
+                </div>
+
+                <!-- Save Search -->
+                <div class="item-save-search">
+                    <button class="item-save-search-btn" @onclick="() => ShowSaveSearchPopup = true">Save Search</button>
+                </div>
+            </div>
+        }
+
+        <!-- View Toggle Buttons (Hidden on Mobile) -->
+        <div class="item-right-actions">
+            <ViewToggleButtons Items="@_viewOptions" Height="48px" SelectedValue="@SearchState.ItemViewMode" OnSelected="SetViewMode" />
+        </div>
+
+    </div>
+    @if (ShowSaveSearchPopup)
+{
+    <SaveSearchPopup 
+        Title="Save this Search"
+        Description="Give a name to your search and access it anytime"
+        PrimaryButtonText="@(IsSaveSearch ? "Close" : "Save Search")"
+        SecondaryButtonText="@(IsSaveSearch ? "View Saved Searches" : "Cancel")"
+        ShowTextField="IsSaveSearch"
+        IsVisible="ShowSaveSearchPopup"
+        Loading="IsLoadingSaveSearch"
+        OnPrimaryClick="HandlePrimaryClick"
+        OnSecondaryClick="HandleSecondaryClick"
+        />
+}
+
+</div>
+

@@ -1,0 +1,15 @@
+@page "/manage/classified/collectibles/verification/preview/{CompanyId:guid}"
+@inherits VerificationPreviewBase
+@layout CollectiblesLayout
+
+<div >
+    <VerificationActions OnCompanyAction="UpdateStatus" CompanyDetails="@CompanyDetails"/>
+    <MudGrid>
+        <MudItem xs="12" md="3">
+            <UserImageCard ImageUrl="@CompanyDetails.CompanyLogo" />
+        </MudItem>
+        <MudItem xs="12" md="8">
+            <UserProfileFields CompanyDetails="@CompanyDetails" />
+        </MudItem>
+    </MudGrid>
+</div>

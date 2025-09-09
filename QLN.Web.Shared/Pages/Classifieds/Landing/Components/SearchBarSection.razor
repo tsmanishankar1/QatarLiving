@@ -1,0 +1,40 @@
+@using MudBlazor
+@inherits SearchBarSectionBase
+@using QLN.Web.Shared.Components.NewCustomSelect
+@using QLN.Common.DTO_s;
+        <div class="landing-search-bar">
+            <!-- Search Field -->
+            <div class="landing-search-field-container">
+                <div class="landing-search-field landing-search-input">
+                    <span class="landing-left-icon">
+                        <img src="/qln-images/content/Search.svg" alt="mail icon" class="landing-left-search-icon" height="23" width="23"  />
+                    </span>
+                    <input id="search-input" type="text" placeholder="Search..." class="landing-text-input"
+                           @bind="searchText" />
+                </div>
+            </div>
+
+            <!-- Category Dropdown -->
+            <div class="landing-category-field-container">
+                <NewCustomSelect TItem="CategoryTreeDto" Items="@CategoryTrees" SelectedId="@selectedCategory"
+                                 SelectedIdChanged="v => selectedCategory = v"   GetId="x => x.Id.ToString()"
+                                  GetLabel="x => x.Name"
+                                 Label="Category" Placeholder="Choose" Padding="8px 10px 7.5px 10px" BorderRadius="0px" />
+            </div>
+
+            <!-- Search Button -->
+            <div class="landing-button-container">
+                <button type="button" @onclick="PerformSearch" disabled="@loading" class="landing-search-button">
+                    @if (loading)
+                    {
+                        <span>Loading...</span>
+                    }
+                    else
+                    {
+                        <span>Show Results</span>
+                    }
+                </button>
+            </div>
+        </div>
+
+

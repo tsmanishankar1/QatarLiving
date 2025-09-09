@@ -1,0 +1,57 @@
+@using MudBlazor
+@using System.Collections.Generic
+
+<MudButton 
+            @attributes="AdditionalAttributes"
+            OnClick="OnClick"
+           Disabled="Disabled || Loading"
+           Loading="Loading"
+           FullWidth="true"
+           Style="@ButtonStyle"
+           Class="@($"{Class} glow-button")">
+    @if (Loading)
+    {
+        <MudProgressCircular Indeterminate="true" Size="Size.Small" Class="me-2" Style="@($"color: {TextColor};")" />
+
+    }
+    else
+    {
+        <MudText Typo="Typo.button" Class="button-text" Style="text-transform: capitalize;">@Text</MudText>
+    }
+</MudButton>
+
+@code {
+    [Parameter] public string BackgroundColor { get; set; } = "#FF7F38";
+    [Parameter] public string TextColor { get; set; } = "#FFFFFF";
+    [Parameter] public string Text { get; set; } = "Button";
+    [Parameter] public string? BorderColor { get; set; }
+    [Parameter] public bool Disabled { get; set; }
+    [Parameter] public bool Loading { get; set; }
+    [Parameter] public EventCallback OnClick { get; set; }
+    [Parameter] public string? Class { get; set; }
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object> AdditionalAttributes { get; set; }
+
+    [Parameter] public string? Height { get; set; }
+
+    private string ButtonStyle =>
+    $"background-color: {BackgroundColor}; color: {TextColor}; border-radius: 4px;"
+    + (string.IsNullOrWhiteSpace(Height) ? "" : $" height: {Height};");
+
+}
+<style>
+    .button-text{
+         font-family: 'Public Sans', sans-serif;
+        font-weight: 600;
+        font-size: 14px;
+    }
+    .glow-button {
+        @* background-color: #FF7F38; *@
+        transition: box-shadow 0.3s ease;
+    }
+
+    .glow-button:hover {
+        background-color: #FF6916 !important;
+        box-shadow: 0 0 10px 2px rgba(255, 127, 56, 0.2); 
+    }
+</style>

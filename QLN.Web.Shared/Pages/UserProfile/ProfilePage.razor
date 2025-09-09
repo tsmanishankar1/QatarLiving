@@ -1,0 +1,329 @@
+@page "/qln/profilePage"
+@using MudBlazor
+@using QLN.Web.Shared.Components.ProfileCard
+@using QLN.Web.Shared.Components.CustomButton
+@using QLN.Web.Shared.Models
+@using static QLN.Web.Shared.Helpers.HttpErrorHelper;
+@using QLN.Web.Shared.Models;
+@using QLN.Web.Shared.Services;
+@inject NavigationManager NavManager
+@using Microsoft.JSInterop;
+@using static System.Runtime.InteropServices.JavaScript.JSType;
+@inject ApiService Api;
+@inject ISnackbar Snackbar
+@inject IJSRuntime _jsRuntime
+
+    <MudGrid Style="padding: 16px;">
+        <MudItem xs="12" sm="4" md="3">
+            <ProfileCard ProfileImageUrl="/qln-images/sample_profile.jpg"
+                         Name="@user.FirstName"
+                         IsPremium="true"
+                         Email="@user.Email"
+                         Phone="@user.PhoneNumber"
+                         Location="Doha,Qatar"
+                         Gender="@user.Gender"
+                         Nationality="@user.Nationality"
+                          Languages="@user.LanguagePreferences"
+                         OnEditClicked="@(() => Console.WriteLine("Edit clicked"))" />
+        </MudItem>
+
+        <MudItem xs="12" sm="8" md="9">
+            <MudStack Spacing="3">
+
+                <!-- Rewards Status Card -->
+                <MudPaper Class="pa-4" Elevation="1" Style="border-radius: 8px;">
+    <MudGrid AlignItems="Center" Justify="Justify.SpaceBetween">
+        <MudItem xs="12" sm="8">
+            <MudText Typo="Typo.h6" Class="text-dark-blue">Your Rewards Status</MudText>
+            <MudText Typo="Typo.caption" Class="text-success mb-1">Active Member</MudText>
+            <MudText Typo="Typo.body2" Class="text-gray">Expiry: October 15, 2025</MudText>
+            <MudText Typo="Typo.body2" Class="text-gray">Remaining listings: 25 | Featured spots: 5 | Refreshes: 20</MudText>
+        </MudItem>
+        <MudItem xs="12" sm="4" Class="d-flex justify-end mt-2">
+           <div style="height: 36px; width: 194px;">
+        <CustomButton 
+        BackgroundColor="var(--color-accent)"
+        TextColor="var(--color-text-white)"
+        Text="View Details"
+        OnClick="@OnEditProfileClicked"
+        Class="mt-4" />
+        </div>
+        </MudItem>
+    </MudGrid>
+</MudPaper>
+
+
+
+
+<MudGrid GutterSize="20px" Class="mt-4">
+
+    <!-- TOP CARDS (Capstone / Pay to Publish) -->
+    @foreach (var item in CompanyProfiles)
+    {
+      <MudItem xs="12" sm="4">
+    <MudPaper Elevation="1"
+              Class="pa-4 rounded text-center d-flex flex-column align-items-center">
+
+        <!-- Name -->
+        <MudText Typo="Typo.h6"
+                 Class="mb-2 text-primary bold-text public-sans" Align="Align.Center">
+            @item.Name
+        </MudText>
+
+        <!-- Icon Container -->
+        <MudPaper Class="mx-auto mb-2 d-flex justify-center align-center"
+                  Style="background-color: #FFF8E7; width: 50px; height: 50px; border-radius: 8px;">
+            <MudIcon Icon="@Icons.Material.Filled.Apartment"
+                     Size="Size.Medium"
+                     Color="Color.Primary" />
+        </MudPaper>
+
+        <!-- Subtitle -->
+        <MudText Typo="Typo.subtitle2"
+                 Class="mb-1 text-primary bold-text public-sans" Align="Align.Center">
+            Real estate 20 - 12 months
+        </MudText>
+
+        <!-- Valid from Label -->
+        <MudText Typo="Typo.caption"
+                 Class="mb-0 gray-text bold-text public-sans" Align="Align.Center">
+            Valid from
+        </MudText>
+
+        <!-- Valid from Dates -->
+        <MudText Typo="Typo.caption"
+                 Class="mb-3 gray-text public-sans" Align="Align.Center">
+            July 28, 2023 to July 28, 2024
+        </MudText>
+
+        @if (@item.Name == "Subscription"){
+        <!-- Button -->
+        <MudButton Variant="Variant.Outlined"
+           Class="public-sans"
+           Style="border: 2px solid var(--color-primary); color: var(--color-primary); padding: 8px 16px;"
+           OnClick="@ViewSubscriptionDetails">
+            View Subscription Details
+        </MudButton>
+        }
+        else{
+            <MudButton Variant="Variant.Outlined"
+                   Class="public-sans"
+                   Style="border: 2px solid var(--color-primary); color: var(--color-primary); padding: 8px 16px;">
+            Edit Company Profile
+        </MudButton>
+        }
+
+    </MudPaper>
+</MudItem>
+    }
+
+    <!-- BOTTOM CARDS (Active Listings / Total Views / View All) -->
+    <MudItem xs="12" sm="4">
+        <MudPaper Elevation="1" Class="pa-4 rounded">
+            <MudText Typo="Typo.subtitle2"  Class="mb-1">Active Listings</MudText>
+            <MudText Typo="Typo.h4" Class="mb-2" style="color: var(--color-primary); font-weight: bold;">18</MudText>
+            <MudProgressLinear Value="72" style="height: 6px; color: var(--color-primary); " Rounded="true" Class="mb-1" />
+            <div class="d-flex justify-space-between">
+                <MudText style="color: var(--color-text-gray);" Typo="Typo.caption" >Monthly limit: 25</MudText>
+                <MudText Typo="Typo.caption" >72%</MudText>
+            </div>
+        </MudPaper>
+    </MudItem>
+
+    <MudItem xs="12" sm="4">
+        <MudPaper Elevation="1" Class="pa-4 rounded">
+            <MudText Typo="Typo.subtitle2" style="color: var(--color-text-gray);"  Class="mb-1">Total Views</MudText>
+            <MudText Typo="Typo.h4" Class="mb-1" style="color: var(--color-primary); font-weight: bold;">2,456</MudText>
+            <MudText Typo="Typo.caption" style="color: var(--color-text-green);" Class="mb-2">↑ 18% from last month</MudText>
+            <MudProgressLinear Value="90" style="height: 6px; color: height: 10px; var(--color-primary);" Rounded="true" />
+        </MudPaper>
+    </MudItem>
+
+    <MudItem xs="12" sm="4">
+        <MudPaper Elevation="1" Class="pa-4 rounded d-flex justify-center align-center" Style="height: 100%;">
+            <MudText Typo="Typo.h6" style="color: var(--color-primary); font-weight: bold;">View All</MudText>
+        </MudPaper>
+    </MudItem>
+
+</MudGrid>
+
+
+                
+<!-- Recent Activity List Card -->
+                 <MudPaper Class="p-4 m-4" Elevation="2" Style="padding: 16px; border-radius: 8px;">
+                    <MudText Typo="Typo.h6" Class="text-dark-blue mb-4">Recent Activity</MudText>
+
+                    <MudDivider Class="mb-2" />
+
+                    @foreach (var activity in RecentActivities)
+                    {
+                        <MudGrid AlignItems="Center" Class="p-3 activity-row mb-2">
+                            <MudItem xs="9">
+                                <MudText Typo="Typo.body1" Class="text-dark-blue">@activity.Title</MudText>
+                                <MudText Typo="Typo.caption" Class="text-gray">@activity.Timestamp</MudText>
+                            </MudItem>
+                            <MudItem xs="3" Class="d-flex justify-end">
+                                <div style="height: 27px; width: 61px; border-radius: 15px;">
+        <CustomButton 
+        BackgroundColor="var(--color-primary)"
+        TextColor="var(--color-text-white)"
+        Text="View"
+        OnClick="@OnEditProfileClicked"
+        Class="m-4" />
+        </div>
+                                
+                            </MudItem>
+    
+                             <MudDivider Class="my-2 p-5 mx-4" />
+                        </MudGrid>
+                    }
+                </MudPaper> 
+            </MudStack>
+        </MudItem>
+    </MudGrid>
+
+@code {
+    private QLN.Web.Shared.Models.UserProfile? user = new();
+    private string _authToken;
+    private List<CompanyProfile> CompanyProfiles = new()
+    {
+        new CompanyProfile { Name = "Capstone Property", Plan = "Real estate 12 - 20 months", ValidFrom = "July 28, 2023", ValidTo = "July 28, 2024" },
+        new CompanyProfile { Name = "Pay To Publish", Plan = "Real estate 12 - 20 months", ValidFrom = "July 28, 2023", ValidTo = "July 28, 2024" },
+        new CompanyProfile { Name = "Subscription", Plan = "Real estate 12 - 20 months", ValidFrom = "July 28, 2023", ValidTo = "July 28, 2024" }
+    };
+
+    private List<ActivityItem> RecentActivities = new()
+    {
+        new ActivityItem { Title = "iPhone 14 Pro listing received a new offer", Timestamp = "Today, 10:45 AM" },
+        new ActivityItem { Title = "Samsung Galaxy S23 listing was refreshed", Timestamp = "Yesterday, 3:22 PM" },
+        new ActivityItem { Title = "New message from user @sarah_qatar about your MacBook Pro", Timestamp = "Apr 07, 2025" },
+        new ActivityItem { Title = "Payment received for Sony PlayStation 5", Timestamp = "Apr 05, 2025" },
+        new ActivityItem { Title = "Toyota Camry listing marked as featured", Timestamp = "Apr 03, 2025" },
+    };
+
+    public class ActivityItem
+    {
+        public string Title { get; set; }
+        public string Timestamp { get; set; }
+    }
+
+    public class CompanyProfile
+    {
+        public string Name { get; set; }
+        public string Plan { get; set; }
+        public string ValidFrom { get; set; }
+        public string ValidTo { get; set; }
+    }
+
+    [Inject]
+    private HttpClient Http { get; set; }
+
+     protected override async Task OnInitializedAsync()
+    {
+       @* await fetchProfile(); *@
+    } 
+     private void OnEditProfileClicked()
+    {
+        // Replace this with your logic
+        Console.WriteLine("Edit Profile button clicked");
+
+    }
+    private void ViewSubscriptionDetails()
+    {
+
+        NavManager.NavigateTo("/subscription-details");
+    }
+
+    private async Task fetchProfile()
+        {
+            try
+            {
+                 @* _authToken = await _jsRuntime.InvokeAsync<string>("localStorage.getItem", "authToken"); *@
+            user = await Api.GetAsyncWithToken<QLN.Web.Shared.Models.UserProfile>("auth/manage/info", _authToken);
+            }
+            catch (HttpRequestException ex)
+            {
+                HandleHttpException(ex, Snackbar);
+            }
+        }
+        protected override async Task OnAfterRenderAsync(bool firstRender)
+        {
+            if (firstRender)
+            {
+                _authToken = await _jsRuntime.InvokeAsync<string>("localStorage.getItem", "authToken");
+                if (string.IsNullOrWhiteSpace(_authToken))
+                {
+                    _authToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1laWRlbnRpZmllciI6IjU0NTZhZTY0LTNjMGMtNDJjYS04MGIxLTBjOWQ2YjBkYmY5MiIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL25hbWUiOiJqYXNyMjciLCJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9lbWFpbGFkZHJlc3MiOiJqYXN3YW50aC5yQGtyeXB0b3NpbmZvc3lzLmNvbSIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL21vYmlsZXBob25lIjoiKzkxOTAwMzczODEzOCIsIlVzZXJJZCI6IjU0NTZhZTY0LTNjMGMtNDJjYS04MGIxLTBjOWQ2YjBkYmY5MiIsIlVzZXJOYW1lIjoiamFzcjI3IiwiRW1haWwiOiJqYXN3YW50aC5yQGtyeXB0b3NpbmZvc3lzLmNvbSIsIlBob25lTnVtYmVyIjoiKzkxOTAwMzczODEzOCIsImV4cCI6MTc0NjY5NTE0NywiaXNzIjoiUWF0YXIgTGl2aW5nIiwiYXVkIjoiUWF0YXIgTGl2aW5nIn0.KYxgzCBr5io7jm9SDzh2GE7GADKZ38k3kivgx6gC3PQ";
+                }
+                 await fetchProfile();
+                StateHasChanged();
+
+            }
+
+            await base.OnAfterRenderAsync(firstRender);
+        }
+
+
+}
+
+<style>
+    .custom-background {
+        background-color: var(--color-background);
+    }
+
+    .text-dark-blue {
+        color: #003366;
+        font-weight: 700;
+    }
+
+    .text-success {
+        color: green;
+        font-weight: 600;
+    }
+
+    .text-gray {
+        color: #666666;
+    }
+
+    .view-details-button {
+        background-color: #ff6600;
+        color: white;
+        width: 160px;
+        height: 35px;
+        font-weight: 600;
+    }
+
+    .edit-profile-button {
+        border-color: #1976d2;
+        color: #1976d2;
+        font-weight: 600;
+        width: 180px;
+        text-transform: none;
+    }
+
+    .view-activity-button {
+        background-color: #003366;
+        color: white;
+        min-width: 80px;
+        height: 36px;
+        font-weight: 600;
+        border-radius: 8px;
+        text-transform: none;
+        font-size: 0.8rem;
+    }
+    .public-sans {
+        font-family: 'Public Sans', sans-serif !important;
+    }
+
+    .text-primary {
+        color: var(--color-primary) !important;
+    }
+
+    .gray-text {
+        color: gray !important;
+    }
+
+    .bold-text {
+        font-weight: 700 !important;
+    }
+</style>

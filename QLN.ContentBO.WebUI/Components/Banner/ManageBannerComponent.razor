@@ -1,0 +1,27 @@
+﻿@page "/manage/banner"
+@using QLN.ContentBO.WebUI.Pages.Community
+@using QLN.ContentBO.WebUI.Components.ToggleTabs
+@using QLN.ContentBO.WebUI.Components.Banner
+@using QLN.ContentBO.WebUI.Components.Banner.ManageBanner
+@inherits ManageBannerComponentBase
+<MudTabs @ref="mudTabs" Elevation="0" Rounded="true" Class="pt-4">
+    <MudTabPanel>
+        <ChildContent>
+            <ManageBanner/>
+        </ChildContent>
+        <TabContent>
+            <MudText>Manage Banners</MudText>
+        </TabContent>
+    </MudTabPanel>
+    <MudTabPanel>
+        <ChildContent>
+            <CreateBannerComponent OnBannerCreated="SwitchToFirstTab" />
+        </ChildContent>
+        <TabContent>
+            <MudText>Create Banner</MudText>
+        </TabContent>
+    </MudTabPanel>
+</MudTabs>
+
+
+

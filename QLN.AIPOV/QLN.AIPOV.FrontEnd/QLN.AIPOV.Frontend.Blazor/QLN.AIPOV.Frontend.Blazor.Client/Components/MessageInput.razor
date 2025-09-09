@@ -1,0 +1,16 @@
+﻿<MudPaper Class="pa-2 d-flex align-center" Elevation="1">
+    <MudTextField @bind-Value="Message"
+                  Placeholder="Type your message..."
+                  Variant="Variant.Outlined"
+                  Class="flex-grow-1"
+                  Adornment="Adornment.Start"
+                  AdornmentIcon="@Icons.Material.Filled.Message"
+                  OnKeyDown="HandleKeyDown" />
+    <MudButton Color="Color.Primary"
+               Variant="Variant.Filled"
+               Disabled="@string.IsNullOrWhiteSpace(Message)"
+               OnClick="Send"
+               Class="ml-2">
+        <MudIcon Icon="@Icons.Material.Filled.Send" />
+    </MudButton>
+</MudPaper>

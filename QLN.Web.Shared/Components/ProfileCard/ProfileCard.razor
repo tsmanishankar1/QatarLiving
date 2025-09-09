@@ -1,0 +1,209 @@
+@using MudBlazor
+@using QLN.Web.Shared.Components.CustomButton
+@inject NavigationManager Navigation
+
+<MudPaper Elevation="1" Class="pa-6 rounded d-flex flex-column align-center" Style="max-width: 350px; margin: auto;">
+
+    <!-- Profile Image -->
+    <MudAvatar Size="Size.Large" Image="@ProfileImageUrl" Class="mb-3" Style="width:100px; height:100px;" />
+
+    <!-- Name -->
+    <MudText Typo="Typo.h6" Class="user-name mb-1" Align="Align.Center">@Name</MudText>
+
+    <!-- Premium Badge -->
+    @if (IsPremium)
+    {
+        <MudChip T="object"  Variant="Variant.Outlined" Class="premium-chip mb-3">
+            Premium User
+        </MudChip>
+    }
+
+    <!-- Personal Info Header -->
+    <MudText Typo="Typo.subtitle1" Class="info-heading mb-2" Align="Align.Left">Personal Information</MudText>
+
+    <!-- Personal Info Items -->
+    <div style="width: 100%;">
+        @foreach (var field in InfoItems)
+        {
+            <div class="d-flex justify-space-between mb-1">
+                <MudText Class="label-text">@field.Key</MudText>
+                <MudText Class="value-text">@field.Value</MudText>
+            </div>
+        }
+    </div>
+
+    <!-- Edit Button -->
+    <div style="width: 100%; margin-top: 20px;">
+        <CustomButton 
+            BackgroundColor="#00426D"
+            TextColor="var(--color-text-white)"
+            Text="Edit Profile"
+            OnClick="@OnEditProfileClicked"
+            Class="edit-button" />
+    </div>
+
+    <!-- Divider -->
+    <MudDivider Class="mb-3 mt-4" />
+
+    <!-- Help Resources -->
+    <MudText Class="help-resources-title mb-2">HELP RESOURCES</MudText>
+    <MudText Class="help-item mb-1">Help Center</MudText>
+    <MudText Class="help-item mb-1">Contact Support</MudText>
+    <MudText Class="help-item" Style="padding-bottom: 800px;">Safety Tips</MudText>
+
+</MudPaper>
+<style>
+    .profile-container {
+        padding: 5px;
+        border-radius: 10px;
+        background-color: #f9fafb;
+    }
+
+    .responsive-avatar {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+
+    .text-style {
+        font-size: 18px;
+        font-weight: 700;
+        font-family: 'Public Sans', sans-serif;
+        color: #212121;
+    }
+
+    .heading-style {
+        font-size: 16px;
+        font-weight: 700;
+        font-family: 'Public Sans', sans-serif;
+        color: #333;
+    }
+
+    .label-text {
+        width: 100px;
+        font-weight: 500;
+        color: #555;
+        font-size: 12px;
+        flex-shrink: 0;
+    }
+
+    .value-text {
+        font-weight: 400;
+        color: #1976d2;
+        font-size: 12px;
+        word-break: break-word;
+        margin-left: 10px;
+    }
+
+    .edit-button {
+        width: 180px;
+        font-family: 'Public Sans', sans-serif;
+    }
+
+    .help-resources-title {
+        color: #666;
+        font-weight: 600;
+        font-size: 14px;
+    }
+
+    .help-item {
+        font-size: 14px;
+        font-weight: 500;
+        color: #333;
+    }
+
+    .premium-chip {
+        font-family: 'Public Sans', sans-serif;
+        font-size: 14px;
+        background-color: var(--color-primary-container);
+        color: var(--color-primary);
+    }
+    .user-name {
+        font-family: 'Public Sans', sans-serif;
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--color-text-primary);
+    }
+
+    .premium-chip {
+        font-family: 'Public Sans', sans-serif;
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+    .info-heading {
+        font-family: 'Public Sans', sans-serif;
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--color-text-primary);
+    }
+
+    .label-text {
+        font-family: 'Public Sans', sans-serif;
+        font-size: 12px;
+        font-weight: 500;
+        color: #757575; /* Gray for label */
+    }
+
+    .value-text {
+        font-family: 'Public Sans', sans-serif;
+        font-size: 12px;
+        font-weight: 400;
+        color: var(--color-primary);
+        word-break: break-word;
+        text-align: right;
+        max-width: 60%;
+    }
+
+    .edit-button {
+        width: 100%;
+        font-family: 'Public Sans', sans-serif;
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+    .help-resources-title {
+        font-family: 'Public Sans', sans-serif;
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--color-text-primary);
+    }
+
+    .help-item {
+        font-family: 'Public Sans', sans-serif;
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--color-primary);
+    }
+</style>
+
+@code {
+    [Parameter] public string ProfileImageUrl { get; set; } = string.Empty;
+    [Parameter] public string Name { get; set; } = string.Empty;
+    [Parameter] public bool IsPremium { get; set; } = false;
+    [Parameter] public string Email { get; set; } = string.Empty;
+    [Parameter] public string Phone { get; set; } = string.Empty;
+    [Parameter] public string Location { get; set; } = string.Empty;
+    [Parameter] public string Gender { get; set; } = string.Empty;
+    [Parameter] public string Nationality { get; set; } = string.Empty;
+    [Parameter] public string Languages { get; set; } = string.Empty;
+
+    [Parameter] public EventCallback OnEditClicked { get; set; }
+
+    private Dictionary<string, string> InfoItems => new()
+    {
+        { "Email", Email },
+        { "Phone", Phone },
+        { "Location", Location },
+        { "Gender", Gender },
+        { "Nationality", Nationality },
+        { "Languages", Languages }
+    };
+     private void OnEditProfileClicked()
+    {
+        Console.WriteLine("Edit Profile button clicked");
+    }
+
+}
+

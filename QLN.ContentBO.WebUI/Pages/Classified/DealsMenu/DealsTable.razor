@@ -1,0 +1,172 @@
+@inherits DealsTableBase
+@using QLN.ContentBO.WebUI.Components.ToggleTabs
+@using MudBlazor
+@using QLN.ContentBO.WebUI.Components.PaginationFooter
+@using QLN.ContentBO.WebUI.Extensions
+@using QLN.ContentBO.WebUI.Models
+@using QLN.ContentBO.WebUI.Components.EmptyCard
+
+<MudPaper Class="pa-4">
+
+    <ToggleTabs Options="@tabOptions"
+                ActiveValue="@_activeTab"
+                OnChange="HandleTabChanged" />
+    @if (IsLoading)
+    {
+        <MudSkeleton Height="40px" Width="100%" Count="10" />
+        <MudSkeleton Height="40px" Width="100%" Count="10" />
+        <MudSkeleton Height="40px" Width="100%" Count="10" />
+        <MudSkeleton Height="40px" Width="100%" Count="10" />
+
+    }
+    else if (IsEmpty)
+    {
+        <div class="empty-card-wrapper">
+            <EmptyCard Title="No Deals found" Subtitle="Please check back later " />
+        </div>
+    }
+    else
+    {
+
+        <div class="tab-content">
+            @if (SelectedListings.Count > 0)
+            {
+                <div class="action-buttons">
+
+                    @if(SelectedTab == "published"){
+                        <MudButton Class="capitalize-button" Color="Color.Error" Variant="Variant.Filled" StartIcon="@Icons.Material.Rounded.Close"
+                               OnClick='() => ShowConfirmation("UnPublish Deal", "Are you sure you want to UnPublish selected Deals?", "UnPublish", UnpublishSelected)'>
+                        Un Publish
+                    </MudButton>
+                    }
+                    @if(SelectedTab == "unPublished"){
+                        <MudButton Class="capitalize-button" Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Rounded.Close"
+                               OnClick='() => ShowConfirmation("Publish Deal", "Are you sure you want to Publish selected Deal?", "Publish", PublishSelected)'>
+                        Publish
+                        </MudButton>
+                    }
+                    <MudButton Class="capitalize-button" Color="Color.Error" Variant="Variant.Filled" StartIcon="@Icons.Material.Rounded.Close"
+                               OnClick='() => ShowConfirmation("Remove Deal", "Are you sure you want to remove selected Deal?", "Remove", RemoveSelected)'>
+                        Remove
+                    </MudButton>
+
+                </div>
+
+                <div class="alert-container">
+                    <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Primary" />
+                    @($"{SelectedListings.Count} item(s) selected.")
+                </div>
+            }
+        </div>
+
+        <MudDataGrid T="DealsItem"
+                     Items="@Listings"
+                     Hover="true"
+                     Bordered="true"
+                     Elevation="0"
+                     Dense="true"
+                     Filterable="true"
+                     MultiSelection="true"
+                     RowCheckBoxVisible="true"
+                     @bind-SelectedItems="SelectedListings"
+                     Class="mud-table event-custom-table">
+
+            <Columns>
+                <TemplateColumn Title="S.No.">
+                    <CellTemplate>
+                        @(Listings.IndexOf(context.Item) + 1)
+                    </CellTemplate>
+                </TemplateColumn>
+
+
+                <TemplateColumn Title="Ad ID">
+                    <CellTemplate>
+                        <MudLink Href="#"> @(context.Item.AdId == 0 ? "-" : context.Item.AdId)</MudLink>
+                    </CellTemplate>
+                </TemplateColumn>
+
+                <TemplateColumn Title="Deals Title">
+                    <CellTemplate>
+                        <MudLink Href="#"> @(string.IsNullOrWhiteSpace(context.Item.Dealtitle) ? "-" : context.Item.Dealtitle)</MudLink>
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="Subscription Type">
+                    <CellTemplate>
+                        @(string.IsNullOrWhiteSpace(context.Item.subscriptiontype) ? "-" : context.Item.subscriptiontype)
+                    </CellTemplate>
+                </TemplateColumn>
+
+
+                <TemplateColumn Title="Date Created">
+                    <CellTemplate>
+                        @(context.Item.DateCreated.ToQatarTime("dd-MM-yyyy") ?? "-")
+                    </CellTemplate>
+                </TemplateColumn>
+
+                <TemplateColumn Title="Start Date">
+                    <CellTemplate>
+                        @(context.Item.StartDate.ToQatarTime("dd-MM-yyyy") ?? "-")
+                    </CellTemplate>
+                </TemplateColumn>
+
+                <TemplateColumn Title="Expiry Date">
+                    <CellTemplate>
+                        @(context.Item.EndDate.ToQatarTime("dd-MM-yyyy") ?? "-")
+                    </CellTemplate>
+                </TemplateColumn>
+                <PropertyColumn Property="x => x.ContactNumber" Title="Mobile">
+                    <CellTemplate>
+                        @(string.IsNullOrWhiteSpace(context.Item.ContactNumber) ? "-" : context.Item.ContactNumber)
+                    </CellTemplate>
+                </PropertyColumn>
+                <TemplateColumn Title="Whatsapp">
+                    <CellTemplate>
+                        @(string.IsNullOrWhiteSpace(context.Item.WhatsappNumber) ? "-" : context.Item.WhatsappNumber)
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="Web URL">
+                    <CellTemplate>
+                        @(string.IsNullOrWhiteSpace(context.Item.Weburl) ? "-" : context.Item.Weburl)
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="Web Clicks">
+                    <CellTemplate>
+                        @context.Item.WebClick
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="Views">
+                    <CellTemplate>
+                        @context.Item.Views
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="Impression">
+                    <CellTemplate>
+                        @context.Item.Impression
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="Phone Leads">
+                    <CellTemplate>
+                        @context.Item.Phonelead
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="Actions">
+                    <CellTemplate>
+                        <MudMenu Class="mud-table-menu" Icon="@Icons.Material.Filled.MoreVert" Dense="true" AnchorOrigin="Origin.BottomLeft"
+                                 TransformOrigin="Origin.BottomLeft">
+
+                            <MudMenuItem @onclick="() => OnEdit(context.Item.AdId)">
+                                <img src="/qln-images/edit_dark_icon.svg" class="menu-icon-style" alt="Ignore" />
+                                <span class="menu-text">Edit</span>
+                            </MudMenuItem>
+
+                        </MudMenu>
+                    </CellTemplate>
+                </TemplateColumn>
+
+            </Columns>
+        </MudDataGrid>
+
+        <PaginationFooter TotalItems="@TotalCount" CurrentPage="@currentPage" PageSize="@pageSize"
+                          OnPageChange="@HandlePageChange" OnPageSizeChange="@HandlePageSizeChange" />
+    }
+</MudPaper>

@@ -1,0 +1,131 @@
+@using QLN.ContentBO.WebUI.Pages.Community
+@using QLN.ContentBO.WebUI.Components.ToggleTabs
+@using QLN.ContentBO.WebUI.Components.Banner.BannerPreviewCard
+@using QLN.ContentBO.WebUI.Models;
+@using QLN.ContentBO.WebUI.Components.EmptyCard
+@inherits ManageBannerBase
+<MudPaper Style="padding: 20px; margin-top: 16px; background-color: white;" Elevation="0">
+    <MudGrid Class="mb-4">
+        <MudItem xs="12" sm="4">
+           <MudSelect T="int" Label="Vertical" Value="SelectedVertical" ValueChanged="OnVerticalChanged" Variant="Variant.Outlined" Style="background-color: white;">
+            <MudSelectItem T="int" Value="-1">All Verticals</MudSelectItem>
+            @foreach (var vertical in Verticals)
+            {
+                <MudSelectItem T="int" Value="@vertical.Value">@vertical.DisplayName</MudSelectItem>
+            }
+            </MudSelect>
+        </MudItem>
+         <MudItem xs="12" sm="4">
+      <MudSelect T="string"
+           Label="Status"
+           Value="@SelectedStatus"
+           ValueChanged="OnStatusChanged"
+           ValueExpression="() => SelectedStatus"
+           Variant="Variant.Outlined"
+           Style="background-color: white;">
+    @foreach (var status in StatusList)
+    {
+        <MudSelectItem T="string" Value="@status.Value">@status.DisplayName</MudSelectItem>
+    }
+</MudSelect>
+            
+        </MudItem>
+        <MudItem xs="12" sm="4" Class="d-flex align-end justify-end">
+            <MudButton Variant="Variant.Filled" Style="text-transform: none;" Color="Color.Primary" Class="py-20px" OnClick="ResetFilters">Reset
+                Filters</MudButton>
+        </MudItem>
+    </MudGrid>
+    @if(IsLoading){
+        <div style="display: flex; justify-content: center; align-items: center; height: 60vh;">
+
+        <MudProgressCircular Color="Color.Warning" Size="Size.Medium" Class="my-3" Style="display: block" Indeterminate="true"/>
+        </div>
+    }
+    else if (bannerPageTypes == null || !bannerPageTypes.Any())
+    {
+         <div>
+                <EmptyCard Title="No Banners Added" Subtitle="Please check back later or explore other Verticals" />
+        </div>
+    }
+   else
+   {
+    <MudExpansionPanels Elevation="0" Class="mt-2">
+        @foreach (var location in bannerPageTypes)
+        {
+            
+            @foreach (var Page in location.bannertypes)
+        {
+            <MudExpansionPanel Class="custom-expansion-panel" Style="border: 1px solid #e0e0e0;">
+                <TitleContent>
+                    <MudGrid>
+                        <MudItem xs="12">
+                            <div class="d-flex align-center flex-wrap">
+                                <MudText Typo="Typo.subtitle1" Style="font-weight:600;">@Page.BannerTypeName</MudText>
+                                @if (location?.SubVerticalId.HasValue == true)
+                                {
+                                <MudChip T="string" Color="Color.Primary" Variant="Variant.Text">
+                                @(location.SubVerticalId.HasValue
+                                ? ((SubVertical)location.SubVerticalId.Value).ToString() 
+                                : string.Empty)
+                                </MudChip>
+                                }
+                                <MudChip T="string" Color="Color.Primary" Variant="Variant.Filled" Class="ml-2 px-3"
+                                Size="Size.Medium">
+                                @{
+                                    var pageName = Enum.IsDefined(typeof(BannerPageId), location.PageId)
+                                    ? ((BannerPageId)location.PageId).ToString()
+                                    : "Unknown";
+                                    }
+                                    @pageName
+                                </MudChip>
+
+                            </div>
+                        </MudItem>
+                        <MudItem xs="12">
+                            <MudText Typo="Typo.body2">@Page?.BannerDetails?.Count banners</MudText>
+                        </MudItem>
+                    </MudGrid>
+                </TitleContent>
+                <ChildContent>
+                    <MudPaper Class="pa-4 mb-4" Style="border: 1px solid #dcdcdc; border-radius: 8px;">
+                        <MudGrid>
+                            <MudItem xs="6">
+                                <MudText Typo="Typo.subtitle1" Class="font-weight-bold" Style="display: inline; color: #242424;">Size:
+                                </MudText>
+                                <MudText Typo="Typo.subtitle1" Class="ml-1" Style="display: inline;">@Page.Dimensions</MudText>
+                            </MudItem>
+                            <MudItem xs="6">
+                                <MudText Typo="Typo.subtitle1" Class="font-weight-bold" Style="display: inline; color: #242424;">Rotation:
+                                </MudText>
+                                <MudText Typo="Typo.subtitle1" Class="ml-1" Style="display: inline;">sequential</MudText>
+                            </MudItem>
+                        </MudGrid>
+                    </MudPaper>
+                    @if (Page.BannerDetails != null && Page.BannerDetails.Any())
+                    {
+                        <BannerPreviewCard 
+                        BannerDetailsList="@Page.BannerDetails" 
+                        verticalId="@(location.VerticalId ?? 0)" 
+                        subVerticalId="@(location.SubVerticalId ?? 0)" 
+                        pageId="@location.PageId" 
+                        OnReorderCallBack="ReOrderBanners" />
+                    }
+                    else
+                    {
+                        <MudText Typo="Typo.body2" Style="padding-bottom: 20px;" Color="Color.Default">No banners available for this location.</MudText>
+                    }
+                    <MudButton Variant="Variant.Outlined"
+                    FullWidth="true"
+                    Color="Color.Primary"
+                    OnClick="@(() => NavigateToCreateBanner(@Page.Id))">
+                    Add Banner to this Location
+                    </MudButton>
+                </ChildContent>
+            </MudExpansionPanel>
+            }
+
+        }
+    </MudExpansionPanels>
+    }
+</MudPaper>
+

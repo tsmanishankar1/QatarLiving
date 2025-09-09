@@ -1,0 +1,146 @@
+@inherits DealsSubscriptionTableBase
+@using QLN.ContentBO.WebUI.Components.ToggleTabs
+@using MudBlazor
+@using QLN.ContentBO.WebUI.Components.PaginationFooter
+@using QLN.ContentBO.WebUI.Models
+@using QLN.ContentBO.WebUI.Components.EmptyCard
+@using QLN.ContentBO.WebUI.Extensions
+
+<MudPaper Class="pa-4" Elevation="0">
+    @if (IsLoading)
+    {
+        <MudSkeleton Height="40px" Width="100%" Count="10" />
+        <MudSkeleton Height="40px" Width="100%" Count="10" />
+        <MudSkeleton Height="40px" Width="100%" Count="10" />
+        <MudSkeleton Height="40px" Width="100%" Count="10" />
+    }
+    else if (IsEmpty)
+    {
+        <div class="empty-card-wrapper">
+            <EmptyCard Title="No Subscription listing found" Subtitle="Please check back later." />
+        </div>
+    }
+    else
+    {
+        <MudDataGrid T="DealsSubscriptionItem"
+                     Items="@Listings"
+                     Hover="true"
+                     Dense="true"
+                     Filterable="true"
+                     @bind-SelectedItems="SelectedListings"
+                     Class="mud-table event-custom-table">
+            <Columns>
+
+                <TemplateColumn Title="S.No.">
+                    <CellTemplate>
+                        @(Listings.IndexOf(context.Item) + 1)
+                    </CellTemplate>
+                </TemplateColumn>
+
+
+                <TemplateColumn Title="Order Id">
+                    <CellTemplate>
+                        @(context.Item.OrderId == 0 ? "-" : context.Item.OrderId)
+                    </CellTemplate>
+                </TemplateColumn>
+
+                <TemplateColumn Title="Subscription Type">
+                    <CellTemplate>
+                        @(string.IsNullOrWhiteSpace(context.Item.SubscriptionType) ? "-" : context.Item.SubscriptionType)
+                    </CellTemplate>
+                </TemplateColumn>
+
+                <PropertyColumn Property="x => x.UserName" Title="User Name">
+                    <CellTemplate>
+                        @(string.IsNullOrWhiteSpace(context.Item.UserName) ? "-" : context.Item.UserName)
+                    </CellTemplate>
+                </PropertyColumn>
+
+                <PropertyColumn Property="x => x.Email" Title="Email">
+                    <CellTemplate>
+                        @(string.IsNullOrWhiteSpace(context.Item.Email) ? "-" : context.Item.Email)
+                    </CellTemplate>
+                </PropertyColumn>
+
+
+                <TemplateColumn Title="Mobile">
+                    <CellTemplate>
+                        @(string.IsNullOrWhiteSpace(context.Item.ContactNumber) ? "-" : context.Item.ContactNumber)
+                    </CellTemplate>
+                </TemplateColumn>
+
+                <TemplateColumn Title="Whatsapp">
+                    <CellTemplate>
+                        @(string.IsNullOrWhiteSpace(context.Item.WhatsappNumber) ? "-" : context.Item.WhatsappNumber)
+                    </CellTemplate>
+                </TemplateColumn>
+
+                <TemplateColumn Title="Amount">
+                    <CellTemplate>
+                        @(string.IsNullOrWhiteSpace(context.Item.Price) ? "-" : context.Item.Price)
+                    </CellTemplate>
+                </TemplateColumn>
+
+                <TemplateColumn Title="Subscription Status">
+                    <CellTemplate>
+                        @(string.IsNullOrWhiteSpace(context.Item.Status) ? "-" : context.Item.Status)
+                    </CellTemplate>
+                </TemplateColumn>
+
+                <TemplateColumn Title="Start Date">
+                    <CellTemplate>
+                        @(
+                        context.Item.StartDate is not null
+                        ? DateTime.Parse(context.Item.StartDate.ToString()).ToString("dd-MMM-yyyy hh:mm tt")
+                        : "-"
+                    )
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="End Date">
+                   <CellTemplate>
+                    @(
+                        context.Item.EndDate is not null
+                        ? DateTime.Parse(context.Item.EndDate.ToString()).ToString("dd-MMM-yyyy hh:mm tt")
+                        : "-"
+                    )
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="Whatsapp Leads">
+                    <CellTemplate>
+                        @context.Item.WhatsAppLeads
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="Phone Leads">
+                    <CellTemplate>
+                        @context.Item.PhoneLeads
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="Actions">
+                    <CellTemplate>
+                        <MudMenu Class="mud-table-menu" Icon="@Icons.Material.Filled.MoreVert" Dense="true">
+                            <MudMenuItem OnClick="() => OnEdit(context.Item)">
+                                <img src="/qln-images/edit_dark_icon.svg" class="menu-icon-style" alt="Edit" />
+                                <span class="menu-text">Edit</span>
+                            </MudMenuItem>
+                            <MudMenuItem OnClick="() => OnPreview(context.Item)">
+                                <img src="/qln-images/preview_icon.svg" class="menu-icon-style" alt="Preview" />
+                                <span class="menu-text">Preview</span>
+                            </MudMenuItem>
+                            <MudMenuItem OnClick='() => ShowConfirmation("Remove Deal", "Are you sure you want to remove this Deal?", "Remove", () => OnRemove(context.Item))'
+                                         Class="mud-text-error">
+                                <img src="/qln-images/remove_icon.svg" class="menu-icon-style" alt="Remove" />
+                                <span class="menu-text">Remove</span>
+                            </MudMenuItem>
+                        </MudMenu>
+
+
+                    </CellTemplate>
+                </TemplateColumn>
+            </Columns>
+        </MudDataGrid>
+        <PaginationFooter TotalItems="@TotalCount" CurrentPage="@currentPage" PageSize="@pageSize"
+                          OnPageChange="@HandlePageChange" OnPageSizeChange="@HandlePageSizeChange" />
+    }
+
+
+</MudPaper>

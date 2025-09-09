@@ -1,0 +1,68 @@
+html{
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+}
+
+.site-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 2rem;
+    background-color: #00426D; 
+    color: white;
+}
+
+.header-left img {
+    height: 30px;
+}
+
+.nav-links {
+    display: flex;
+    gap: 1.5rem;
+}
+
+
+.nav-links .nav-link {
+    color: white !important;
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 0.95rem;
+}
+
+.nav-links .nav-link:hover {
+    color: #ff7b00 !important;
+} */
+
+.nav-links {
+    display: flex;
+    gap: 1.5rem;
+}
+
+.nav-links .nav-link {
+    color: white;
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 0.95rem;
+    transition: color 0.2s;
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.post-ad-btn {
+    background-color: #ff7b00 !important;
+    color: white !important;
+    font-weight: 600;
+    text-transform: none;
+}
+
+.user-name {
+    color: white;
+    font-size: 0.9rem;
+}

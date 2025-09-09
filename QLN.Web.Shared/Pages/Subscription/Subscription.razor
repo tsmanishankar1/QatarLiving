@@ -1,0 +1,372 @@
+﻿@page "/qln/subscription"
+
+@using QLN.Web.Shared.Components.ModalDialog
+@using QLN.Web.Shared.Components.BreadCrumb
+@using QLN.Web.Shared.Models
+@using MudBlazor
+@using QLN.Web.Shared.Components.EmptyCard
+
+
+
+@if (_actionSucess){
+    <div class="popup-overlay">
+        <ModalDialog
+        Title="Payment Success!"
+        Description="Payment was successful"
+        ButtonName="Continue"
+        StatusType="Success"
+        OnClick="CloseSuccessPopup" />
+    </div>
+}
+<div style="width: 100%;background-color: var(--color-secondary-background);">
+    <div class="responsive-container" >
+<MudContainer MaxWidth="MaxWidth.Large" Class="py-6 px-4" Style="background-color: #F2F4F7;width:100%">
+            <Breadcrumb Items="breadcrumbItems" />
+
+    <div style="width: 100%;display:flex;justify-content:center;align-items:center;">
+
+            <div style="text-align: center; margin-bottom: 24px;">
+                <MudText Typo="Typo.h5" Class="font-semibold mb-1" Style="color:#242424;">
+                    Subscription Packages
+                </MudText>
+                <MudText Typo="Typo.subtitle1" Class="mb-4" Style="color:#646464;">
+                    We offer tailored subscription packages for every need, Whether you're listing a property, selling a vehicle, or promoting a service. Choose a category to get started
+                </MudText>
+                <div class="vertical-tabs">
+                    <div class="vertical-tabs-toolbar">
+                                @foreach (var tab in _verticalTabs)
+                                {
+                                    <div class="vertical-tab @( _activeVerticalTabIndex == tab.Index ? "active" : "" )"
+                                         @onclick="() => SetVeritcalTab(tab.Index)">
+                                        <img src="@tab.Icon" class="vertical-tab-icon" alt="@tab.Label" />
+                                        <span class="vertical-tab-text">@tab.Label</span>
+                                        <div class="vertical-tab-indicator"></div>
+                                    </div>
+                                }
+
+                    </div>
+                </div>
+            </div>
+    </div>
+
+
+
+    <MudGrid GutterSize="4">
+
+        <!-- LEFT SECTION -->
+        <MudItem xs="12" md="8">
+            <div style="max-width: 800px; margin: 0 auto;">
+                 <div style="width: 100%;display:flex;justify-content:center;align-items:center;">
+        <div style="width: 90%;display:flex;justify-content:center;align-items:center;">
+            <div style="text-align: center; margin-bottom: 24px;">
+                <MudText Typo="Typo.h5" Class="font-semibold mb-1" Style="color:#242424;">
+                    Classifieds Subscriptions
+                </MudText>
+                <MudText Typo="Typo.subtitle1" Class="mb-4" Style="color:#646464;">
+                    Promote smarter. Sell quicker. Stay visible longer
+                </MudText>
+              </div></div>
+              </div>
+                <div class="custom-tabs">
+                    <div class="tabs-toolbar">
+                                @foreach (var category in _verticalTabs[_activeVerticalTabIndex].Categories)
+                                {
+                                    <div class="tab @( _activeTabIndex == category.Index ? "active" : "" )"
+                                         @onclick="() => SetTab(category.Index)">
+                                        <div style="display:flex;flex-direction:row;gap:10px">
+                                            <img src="@category.Icon" class="tab-icon" alt="@category.Label" />
+                                            <span class="tab-text">@category.Label</span>
+                                        </div>
+                                        <div class="tab-indicator"></div>
+                                    </div>
+                                }
+
+                    </div>
+                </div>
+
+
+                <MudGrid GutterSize="4" Style="margin-top: 16px;">
+
+                    @if (IsLoading)
+                    {
+                        <MudItem xs="12" >
+                            <div style="display: flex; justify-content: center; align-items: center; height: 200px; text-align: center;">
+                                <MudProgressCircular Indeterminate="true" Color="Color.Primary" />
+                            </div>
+                        </MudItem>
+                    }
+                    else if (HasError)
+                    {
+                     
+                        <EmptyCard Title="No subscription plans available at the moment." Subtitle="Please check back later for updates." />
+
+                    }
+                    else if (_plans != null && _plans.Any())
+                    {
+                        @foreach (var plan in _plans)
+                        {
+                            <MudItem  xs="12" sm="6" md="4" lg="4">
+                                                <div style="height: 100%; display: flex; flex-direction: column;">
+
+                                <SubscriptionCard Plan="plan"
+                                                  IsSelected="_selectedPlan?.SubscriptionName == plan.SubscriptionName &&
+                                              _selectedPlan?.Price == plan.Price &&
+                                              _selectedPlan?.DurationName == plan.DurationName"
+                                                  OnSelect="() => SelectPlan(plan)" />
+                                </div>
+
+                            </MudItem>
+                        }
+                    }
+                    else
+                    {
+                        <EmptyCard Title="No subscription plans available at the moment." Subtitle="Please check back later for updates." />
+
+                    }
+
+                </MudGrid>
+
+            </div>
+        </MudItem>
+
+        <!-- RIGHT SECTION -->
+        <MudItem xs="12" md="4">
+            <!-- Summary Card -->
+                    <MudPaper Elevation="2" Class="pa-4">
+                        <MudText Class="summary-header mb-4">Summary</MudText>
+
+                        @if (_selectedPlan != null)
+                        {
+                            <div class="d-flex justify-space-between align-center mb-3">
+                                <div class="d-flex flex-column">
+                                    <MudText Class="summary-title">@_selectedPlan.SubscriptionName</MudText>
+                                    <MudText Class="summary-duration">@_selectedPlan.DurationName</MudText>
+                                </div>
+                                <MudText Class="summary-price">@_selectedPlan.Price QAR</MudText>
+                            </div>
+
+                            <MudDivider Class="my-3" />
+
+                            <MudCheckBox T="bool" >
+                                <ChildContent>
+                                   <span class="confirmation-label mb-3"> I confirm that I have read and accepted the
+                                    <span class="refund-policy-link"> Refund policy.</span></span>
+                                </ChildContent>
+                            </MudCheckBox>
+
+                            <div class="d-flex justify-space-between align-center">
+                                <MudText Class="summary-total">Total</MudText>
+                                <MudText Class="summary-price">@_selectedPlan.Price QAR</MudText>
+                            </div>
+                        }
+                        else
+                        {
+                            <MudText Class="mb-4">No plan selected.</MudText>
+                        }
+
+                        <MudButton Variant="Variant.Filled"
+                                   FullWidth="true"
+                                   Disabled="_selectedPlan == null"
+                                   OnClick="OpenPaymentDialog"
+                                   Style="background-color: #FF7F38; color: white; height: 48px; font-weight: 600;margin-top:10px;text-transform: none;"
+                                   Class="@(_selectedPlan == null ? "disabled-button" : "")">
+                            Pay now
+                        </MudButton>
+
+
+                @if (_isPaymentDialogOpen)
+                {
+                    <MudOverlay Visible="true" Style="z-index: 1300; background-color: rgba(0,0,0,0.6);">
+                        <div style="display: flex; justify-content: center; align-items: center; height: 100vh;">
+                            <MudPaper Elevation="8"
+                                      Style="width: 100%; max-width: 480px; background-color: white; border-radius: 16px; padding: 32px;">
+                                <MudForm Model="@_model" @ref="_form">
+
+                                <MudStack Spacing="3">
+                                    <MudText Typo="Typo.h6" Style="color: #242424;">Card Details</MudText>
+
+                                    <MudTextField T="string"
+                                                  Label="Card Number"
+                                                  id="cardNumber"
+                                                  Variant="Variant.Outlined"
+                                                  Placeholder="1234 5678 9012 3456"
+                                                  Style="border-radius: 8px;"
+                                                      @bind-Value="_model.CardNumber"
+                                                      Immediate="true"
+                                                      For="@(() => _model.CardNumber)" />
+
+                                    <MudGrid GutterSize="2">
+                                        <MudItem xs="6">
+                                                <MudTextField T="string"
+                                                              Label="Expiry"
+                                                              id="expiry"
+                                                              Variant="Variant.Outlined"
+                                                              Placeholder="MM/YY"
+                                                              Style="border-radius: 8px;"
+                                                              Immediate="true"
+                                                              MaxLength="5"
+                                                              @bind-Value="_model.Expiry"
+                                                              For="@(() => _model.Expiry)" />
+                                        </MudItem>
+                                        <MudItem xs="6">
+                                            <MudTextField T="string"
+                                                          Label="CVV"
+                                                              id="cvv"
+                                                          Variant="Variant.Outlined"
+                                                          Placeholder="123"
+                                                              MaxLength="3"
+                                                              Style="border-radius: 8px;"
+                                                              @bind-Value="_model.CVV"
+                                                              Immediate="true"
+                                                              For="@(() => _model.CVV)" />
+                                        </MudItem>
+                                    </MudGrid>
+
+                                    <MudTextField T="string"
+                                                  Label="Card Holder Name"
+                                                      id="name"
+                                                  Variant="Variant.Outlined"
+                                                  Placeholder="John Doe"
+                                                  Style="border-radius: 8px;"
+                                                      @bind-Value="_model.CardHolderName"
+                                                      Immediate="true"
+                                                      For="@(() => _model.CardHolderName)" />
+
+                                    <MudStack Row Spacing="2" Class="justify-end mt-4">
+                                        <MudButton Variant="Variant.Outlined"
+                                                       id="cancelBtn"
+                                                   Color="Color.Default"
+                                                   OnClick="() => _isPaymentDialogOpen = false">
+                                            Cancel
+                                        </MudButton>
+
+                                        <MudButton id="paymentBtn" Variant="Variant.Filled"
+                                                   Style="background-color: #41979a; color: white;"
+                                                               OnClick="PaymentSubmit">
+                                            Pay ₹@_selectedPlan?.Price
+                                        </MudButton>
+                                    </MudStack>
+                                    <MudText Typo="Typo.body2" Class="text-center mt-4">
+                                        GURANTEED SAFE CHECKOUT
+                                    </MudText>
+                                </MudStack>
+                                </MudForm>
+                            </MudPaper>
+                        </div>
+                    </MudOverlay>
+              }
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+</div>
+
+</div>
+
+
+<style>
+    .popup-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(120, 120, 120, 1);
+        backdrop-filter: blur(8px);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+    }
+  
+        .responsive-container {
+        width: 100%;
+        padding: 0 40px;
+    }
+
+    .disabled-button {
+        background-color: #E0E0E0 !important;
+    }
+
+    .summary-header {
+        font-family: 'Public Sans', sans-serif;
+        font-weight: 600;
+        font-size: 20px;
+        line-height: 34px;
+        color: #242424;
+        border-bottom: 1px solid #D0D5DD;
+    }
+
+    .summary-title {
+        font-family: 'Public Sans', sans-serif;
+        font-weight: 500;
+        font-size: 16px;
+        line-height: 24px;
+        color: #242424;
+    }
+
+    .summary-duration {
+        font-family: 'Public Sans', sans-serif;
+        font-weight: 500;
+        font-size: 12px;
+        line-height: 18px;
+        color: #646464;
+    }
+
+    .summary-price {
+        font-family: 'Public Sans', sans-serif;
+        font-weight: 500;
+        font-size: 16px;
+        line-height: 24px;
+        color: #242424;
+    }
+
+    .summary-total {
+        font-family: 'Public Sans', sans-serif;
+        font-weight: 600;
+        font-size: 20px;
+        line-height: 34px;
+        color: #242424;
+    }
+
+    .confirmation-label {
+        font-family: 'Public Sans', sans-serif;
+        font-weight: 500;
+        font-size: 12px;
+        line-height: 18px;
+        color: #242424;
+    }
+
+    .refund-policy-link {
+        color: #FF7F38;
+        font-weight: 500;
+        font-size: 12px;
+        line-height: 18px;
+        text-decoration: underline;
+        cursor: pointer;
+    }
+
+    @@media (max-width: 600px) {
+        .vertical-tabs-toolbar {
+            display: flex;
+            flex-direction: row;
+            overflow-x: auto;
+            gap: 12px;
+            justify-content: center;
+        }
+
+        .vertical-tab {
+            min-width: 100px;
+            flex: 0 0 auto;
+        }
+
+        .mud-paper {
+            margin-top: 24px;
+        }
+        .mud-button {
+        width: 100% !important;
+    }
+    }
+
+</style>

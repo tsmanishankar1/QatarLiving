@@ -1,0 +1,22 @@
+@page "/qln/classifieds/preloved"
+@using MudBlazor
+@inherits PrelovedComponentBase
+@inject SearchStateService SearchState
+@using QLN.Web.Shared.Pages.Classifieds.Preloved.Components
+@layout ClassifiedsLayout
+
+
+<div style="width: 100%; background-color: var(--color-secondary-background);">
+    <div class="search-section-container">
+    <div class="max-container">
+        <PrelovedSearchSection  IsSaveSearch="IsSaveSearch" SaveSearchAsync="SaveSearchAsync" IsLoadingSaveSearch="IsLoadingSaveSearch"  OnSearch="OnSearchTriggered" Loading="IsLoadingSearch"  OnViewModeChanged="HandleViewModeChange"  />
+    </div>
+ </div>
+  <div class="max-container">
+        <div class="category-banner-wrapper">
+            <img src="/qln-images/banner_image.svg" alt="Category Banner" class="category-banner-image" />
+        </div>
+        <PrelovedListSection TotalCount="TotalCount" ViewMode="@SearchState.PrelovedViewMode" Items="SearchResults" Loading="IsLoadingSearch" IsSearchPerformed="@SearchState.IsPrelovedSearchActive" OnSearch="OnSearchTriggered" />
+ </div>
+</div>
+

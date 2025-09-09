@@ -1,0 +1,370 @@
+﻿using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Forms;
+using MudBlazor;
+using QLN.ContentBO.WebUI.Components.ConfirmationDialog;
+using QLN.ContentBO.WebUI.Components;
+using Microsoft.JSInterop;
+using QLN.ContentBO.WebUI.Interfaces;
+using QLN.ContentBO.WebUI.Models;
+using System.Text.Json;
+
+namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.Subscription
+{
+    public class SubscriptionListingBase : QLComponentBase
+    {
+        [Inject] protected ILogger<SubscriptionListingBase> _logger { get; set; } = default!;
+        [Inject] protected IDealsService DealsService { get; set; } = default!;
+        [Parameter] public EventCallback<(string from, string to)> OnDateChanged { get; set; }
+        [Inject] protected IDialogService DialogService { get; set; } = default!;
+        [Inject] protected IJSRuntime JS { get; set; } = default!;
+        protected string SearchText { get; set; } = string.Empty;
+        protected string SortIcon { get; set; } = Icons.Material.Filled.Sort;
+
+        protected DateTime? dateCreated { get; set; }
+        protected DateTime? datePublished { get; set; }
+
+        protected DateTime? tempCreatedDate { get; set; }
+        protected DateTime? tempPublishedDate { get; set; }
+
+        protected bool showCreatedPopover { get; set; } = false;
+        protected bool showPublishedPopover { get; set; } = false;
+
+        protected bool _showDatePicker = false;
+        public string? _timeTypeError;
+        public string? _eventTypeError;
+        protected List<LocationEventDto> Locations = [];
+        public string selectedLocation { get; set; } = string.Empty;
+        public bool _isTimeDialogOpen = true;
+        protected string? _DateError;
+        protected string? _timeError;
+        protected string? _PriceError;
+        protected string? _LocationError;
+        protected string? _descriptionerror;
+        protected string? _coverImageError;
+        public string? _timeRangeDisplay;
+        protected EditContext _editContext;
+        protected DateTime? EventDate;
+
+        protected DateRange SelectedDateRange = new DateRange(DateTime.Today, DateTime.Today.AddDays(1));
+        protected DateRange _confirmedDateRange = new();
+        protected string SelectedDateLabel;
+        protected string SelectedCategory { get; set; } = string.Empty;
+        protected bool IsLoading { get; set; } = true;
+        protected bool IsEmpty => !IsLoading && Listings.Count == 0;
+        protected int TotalCount { get; set; }
+        protected int currentPage { get; set; } = 1;
+        protected int pageSize { get; set; } = 12;
+
+        public class DayTimeEntry
+        {
+            public DateTime Date { get; set; }
+            public string Day => Date.ToString("dddd");
+            public bool IsSelected { get; set; }
+            public TimeSpan? StartTime { get; set; }
+            public TimeSpan? EndTime { get; set; }
+        }
+        protected List<DayTimeEntry> DayTimeList = new();
+        public double EventLat { get; set; } = 48.8584;
+        public double EventLong { get; set; } = 2.2945;
+        public bool _isDateRangeSelected = false;
+
+        protected ElementReference _popoverDiv;
+
+        protected List<string> SubscriptionTypes = [];
+        protected string SelectedSubscriptionType { get; set; } = string.Empty;
+        // Date range logic
+        protected DateRange? _dateRange = new();
+        protected DateRange? _tempDateRange = new();
+        protected bool showDatePopover = false;
+
+        protected List<DealsSubscriptionItem> Listings { get; set; } = [];
+
+        protected override async Task OnInitializedAsync()
+        {
+            await base.OnInitializedAsync();
+        }
+
+        protected override async Task OnAfterRenderAsync(bool firstRender)
+        {
+            try
+            {
+                if (firstRender)
+                {
+                    IsLoading = true;
+                    await LoadDealsAsync();
+                    var tListOfSubsctiptions = await GetSubscriptionProductsAsync((int)VerticalTypeEnum.Classifieds, (int)SubVerticalTypeEnum.Deals);
+                    if (tListOfSubsctiptions != null && tListOfSubsctiptions.Count != 0)
+                    {
+                        SubscriptionTypes = [.. tListOfSubsctiptions.Select(x => x.ProductName).ToList()];
+                    } 
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "OnAfterRenderAsync");
+            }
+            finally
+            {
+                IsLoading = false;
+                StateHasChanged();
+            }
+        }
+
+        private async Task LoadDealsAsync()
+        {
+            try
+            {
+                IsLoading = true;
+
+                var request = new DealsSubscriptionQuery
+                {
+                    Search = SearchText,
+                    StartDate = _dateRange.Start.ToString() ?? "",
+                    EndDate = _dateRange.End.ToString() ?? "",
+                    PageNumber = currentPage,
+                    PageSize = pageSize,
+                    SortBy = "CreatedDate",
+                    SubscriptionType = SelectedSubscriptionType
+                };
+
+                var response = await DealsService.GetAllDealsSubscription(request);
+
+                if (response?.IsSuccessStatusCode == true)
+                {
+                    var content = await response.Content.ReadAsStringAsync();
+                    var data = JsonSerializer.Deserialize<DealsSubscriptionResponse>(content, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+
+                    Listings = data?.Items ?? [];
+
+                    TotalCount = data?.TotalCount ?? 0;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Failed to load deals subscriptions data: {ex.Message}");
+            }
+            finally
+            {
+                IsLoading = false;
+            }
+        }
+
+        protected async Task ShowConfirmationExport()
+        {
+            var parameters = new DialogParameters
+            {
+                { "Title", "Export Classified Items" },
+                { "Descrption", "Do you want to export the current classified item data to Excel?" },
+                { "ButtonTitle", "Export" },
+                { "OnConfirmed", EventCallback.Factory.Create(this, ExportToExcel) }
+            };
+
+            var options = new DialogOptions
+            {
+                CloseButton = false,
+                MaxWidth = MaxWidth.Small,
+                FullWidth = true
+            };
+
+            var dialog = await DialogService.ShowAsync<ConfirmationDialog>("", parameters, options);
+            var result = await dialog.Result;
+        }
+
+        private async Task ExportToExcel()
+        {
+            try
+            {
+                if (Listings == null || !Listings.Any())
+                {
+                    Snackbar.Add("No data available to export.", Severity.Warning);
+                    return;
+                }
+                var exportData = Listings.Select((x, index) => new Dictionary<string, object?>
+                {
+                    ["S.No."] = index + 1,
+                    ["Order ID"] = x.OrderId,
+                    ["Subscription Type"] = string.IsNullOrWhiteSpace(x.SubscriptionType) ? "-" : x.SubscriptionType,
+                    ["User Name"] = string.IsNullOrWhiteSpace(x.UserName) ? "-" : x.UserName,
+                    ["Email"] = string.IsNullOrWhiteSpace(x.Email) ? "-" : x.Email,
+                    ["Mobile"] = string.IsNullOrWhiteSpace(x.ContactNumber) ? "-" : x.ContactNumber,
+                    ["Whatsapp"] = string.IsNullOrWhiteSpace(x.WhatsappNumber) ? "-" : x.WhatsappNumber,
+                    ["Amount"] = x.Price == null ? "-" : x.Price,
+                    ["Status"] = string.IsNullOrWhiteSpace(x.Status) ? "-" : x.Status,
+                    ["Start Date"] = x.StartDate ?? "-",
+                    ["Expiry Date"] = x.EndDate ?? "-",
+                    ["Web Clicks"] = x.WhatsAppLeads,
+                    ["Views"] = x.PhoneLeads,
+                }).ToList();
+                await JS.InvokeVoidAsync("exportToExcel", exportData, "Deals_SubscriptionListings.xlsx", "Deals Subscription Listings");
+
+                Snackbar.Add("Export successful!", Severity.Success);
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Export failed: {ex.Message}", Severity.Error);
+            }
+        }
+
+        protected async Task HandlePageChanged(int newPage)
+        {
+            currentPage = newPage;
+            await LoadDealsAsync();
+        }
+
+        protected async Task HandlePageSizeChanged(int newSize)
+        {
+            pageSize = newSize;
+            currentPage = 1;
+            await LoadDealsAsync();
+        }
+        protected async Task OnSearchChanged(ChangeEventArgs e)
+        {
+            SearchText = e.Value?.ToString() ?? string.Empty;
+            currentPage = 1;
+            await LoadDealsAsync();
+        }
+
+        protected void ToggleSort()
+        {
+            // Example: toggle sort direction and update SortIcon
+            SortIcon = SortIcon == Icons.Material.Filled.ArrowDownward
+                ? Icons.Material.Filled.ArrowUpward
+                : Icons.Material.Filled.ArrowDownward;
+
+            // TODO: Perform actual sort operation
+        }
+
+        protected void ToggleCreatedPopover()
+        {
+            showCreatedPopover = !showCreatedPopover;
+        }
+
+        protected void CancelCreatedPopover()
+        {
+            tempCreatedDate = dateCreated;
+            showCreatedPopover = false;
+        }
+
+        protected void ConfirmCreatedPopover()
+        {
+            dateCreated = tempCreatedDate;
+            showCreatedPopover = false;
+        }
+
+        protected void TogglePublishedPopover()
+        {
+            showPublishedPopover = !showPublishedPopover;
+        }
+
+        protected void CancelPublishedPopover()
+        {
+            tempPublishedDate = datePublished;
+            showPublishedPopover = false;
+        }
+
+        protected void ConfirmPublishedPopover()
+        {
+            datePublished = tempPublishedDate;
+            showPublishedPopover = false;
+        }
+
+        protected void ClearFilters()
+        {
+            dateCreated = null;
+            datePublished = null;
+            SearchText = string.Empty;
+            _dateRange = new();
+            _tempDateRange = new();
+            SelectedSubscriptionType = string.Empty;
+        }
+
+        protected async void CancelDatePicker()
+        {
+            _showDatePicker = false;
+            EventDate = null;
+            _confirmedDateRange = new();
+            if (_dateRange?.Start != null || _dateRange?.End != null)
+            {
+                await OnDateChanged.InvokeAsync((null, null));
+            }
+            StateHasChanged();
+        }
+
+        protected void ToggleDatePicker()
+        {
+            _showDatePicker = !_showDatePicker;
+
+            if (_showDatePicker)
+            {
+                _dateRange = new DateRange(_confirmedDateRange.Start, _confirmedDateRange.End);
+            }
+        }
+
+        protected void ClearSelectedDate()
+        {
+            if (!string.IsNullOrWhiteSpace(SelectedDateLabel))
+            {
+                SelectedDateLabel = string.Empty;
+            }
+            else
+            {
+                _showDatePicker = !_showDatePicker;
+
+                if (_showDatePicker)
+                {
+                    _dateRange = new DateRange(_confirmedDateRange.Start, _confirmedDateRange.End);
+                }
+            }
+        }
+
+        protected void GenerateDayTimeList()
+        {
+            DayTimeList.Clear();
+
+            if (_dateRange?.Start == null || _dateRange?.End == null)
+                return;
+
+            var start = _dateRange.Start.Value.Date;
+            var end = _dateRange.End.Value.Date;
+
+            for (var date = start; date <= end; date = date.AddDays(1))
+            {
+                DayTimeList.Add(new DayTimeEntry
+                {
+                    Date = date,
+                    IsSelected = false,
+                });
+            }
+        }
+
+        protected Task OnSubscriptionChanged(string selected)
+        {
+            SelectedSubscriptionType = selected;
+            return Task.CompletedTask;
+        }
+
+        protected void ToggleDatePopover()
+        {
+            _tempDateRange = new DateRange(_dateRange.Start, _dateRange.End);
+            showDatePopover = !showDatePopover;
+        }
+
+        protected void CancelDatePopover()
+        {
+            // _dateRange = null;
+            // _tempDateRange = null;
+            showDatePopover = false;
+            StateHasChanged();
+        }
+
+        protected void ApplyDatePopover()
+        {
+            _dateRange = new DateRange(_tempDateRange.Start, _tempDateRange.End);
+            showDatePopover = false;
+            StateHasChanged();
+        }
+    }
+}

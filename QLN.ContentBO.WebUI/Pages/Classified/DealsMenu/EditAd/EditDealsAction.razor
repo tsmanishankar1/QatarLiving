@@ -1,0 +1,178 @@
+@inherits EditDealsActionBase
+
+<div class="ad-preview-container">
+    <!-- Left Column -->
+    <div class="left-column">
+        <div class="user-info">
+            <div class="label">Company Name</div>
+            <div class="value">@(AdModel.BusinessName)</div>
+
+            @if (AdModel.ExpiryDate.HasValue && AdModel.ExpiryDate.Value < DateTime.Now)
+            {
+                <MudChip T="string" Color="Color.Warning" Variant="Variant.Outlined" Class="status-chip">
+                    <span class="dot warning-dot"></span> Expired
+                </MudChip>
+            }
+            else if (AdModel.IsFeatured)
+            {
+                <MudChip T="string" Color="Color.Info" Variant="Variant.Outlined" Class="status-chip">
+                    <span class="dot info-dot"></span> Featured
+                </MudChip>
+            }
+            else if (AdModel.IsPromoted)
+            {
+                <MudChip T="string" Color="Color.Primary" Variant="Variant.Outlined" Class="status-chip">
+                    <span class="dot primary-dot"></span> Promoted
+                </MudChip>
+            }
+            else if (AdModel.IsActive)
+            {
+                <MudChip T="string" Color="Color.Success" Variant="Variant.Outlined" Class="status-chip">
+                    <span class="dot success-dot"></span> Active
+                </MudChip>
+            }
+
+           
+        </div>
+
+        <div class="button-row">
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" Class="action-btn"
+                       OnClick='@(() => ShowConfirmation("Hold Deal", "Are you sure you want hold this Deal?", "Hold"))'>
+                <img src="/qln-images/hold.svg" class="btn-icon" />
+                Hold
+            </MudButton>
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" Class="action-btn"
+                       OnClick='@(() => ShowConfirmation("Feature Deal", "Are you sure you want to Feature this Deal?", "Feature"))'>
+                <img src="/qln-images/unfeatured_icon.svg" class="btn-icon" />
+                Feature
+            </MudButton>
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" Class="action-btn"
+                       OnClick='@(() => ShowConfirmation("Promote Deal", "Are you sure you want to promote this Deal?", "Promote"))'>
+                Promote
+            </MudButton>
+
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" Class="action-btn"
+                       OnClick='@(() => ShowConfirmation("Need Change", "Are you sure you want to request for the change?", "NeedChange"))'>
+                Need Change
+            </MudButton>
+
+            <MudButton Color="Color.Error" Variant="Variant.Filled" Class="action-btn"
+                       OnClick='@(() => ShowConfirmation("Unpublish Deal", "Are you sure you want to unpublish this Deal?", "Unpublish"))'>
+
+                <img src="/qln-images/eye_closed_white.svg" class="btn-icon" />
+                Unpublish
+            </MudButton>
+
+            <MudButton Color="Color.Error" Variant="Variant.Filled" Class="action-btn"
+                       OnClick='@(() => ShowConfirmation("Remove Deal", "Do you really want to delete this Deal?", "Remove"))'>
+                <img src="/qln-images/delete_icon.svg" class="btn-icon" />
+                Remove
+            </MudButton>
+        </div>
+    </div>
+
+    <!-- Right Column -->
+    <div class="right-column">
+        <div class="ad-info">
+            <div class="value"><span class="label">Ad ID: <span class="label">@AdModel.Id</span></span> </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .ad-preview-container {
+        display: flex;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        padding: 15px 0;
+        font-family: 'Public Sans', sans-serif;
+    }
+
+    .left-column {
+        flex: 1;
+        min-width: 300px;
+    }
+
+    .right-column {
+        text-align: right;
+        min-width: 200px;
+    }
+
+    .user-info .label {
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--color-text-heading);
+    }
+
+    .user-info .value {
+        font-weight: 600;
+        font-size: 18px;
+        color: var(--color-text-heading);
+        margin-bottom: 4px;
+    }
+
+    .ad-info .label {
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--color-text-heading);
+    }
+
+    .ad-info .value {
+        font-weight: 600;
+        font-size: 18px;
+        color: var(--color-text-heading);
+        margin-bottom: 4px;
+    }
+
+    .status-chip {
+        margin-top: 6px;
+    }
+
+        .status-chip .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 6px;
+        }
+
+    .warning-dot {
+        background-color: #ffa000 !important; /* amber/orange */
+    }
+
+    .info-dot {
+        background-color: #2196f3 !important; /* blue */
+    }
+
+    .primary-dot {
+        background-color: #1976d2 !important; /* dark blue */
+    }
+
+    .success-dot {
+        background-color: #2e7d32 !important; /* green */
+    }
+
+
+    .button-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 12px;
+    }
+
+    .action-btn {
+        text-transform: none;
+        font-weight: 500;
+        border-radius: 6px;
+        padding: 6px 14px;
+    }
+
+    .btn-icon {
+        height: 20px;
+        margin-right: 6px;
+    }
+
+    .ad-info {
+        font-size: 16px;
+    }
+</style>

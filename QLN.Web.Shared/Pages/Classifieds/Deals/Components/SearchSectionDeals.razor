@@ -1,0 +1,22 @@
+<div class="search-section">
+    <div class="search-input-group">
+        <span class="search-left-icon">
+            <img src="/qln-images/content/Search.svg" alt="search icon" class="left-search-icon" width="23" height="23" />
+        </span>
+        <input type="text" class="search-input" placeholder="Search..." @bind="searchText" />
+    </div>
+
+    <button class="search-section-button" @onclick="OnSearch">
+        Search
+    </button>
+</div>
+
+@code {
+    private string searchText = "";
+
+    private void OnSearch()
+    {
+        Console.WriteLine($"Searching for: {searchText}");
+    }
+}
+

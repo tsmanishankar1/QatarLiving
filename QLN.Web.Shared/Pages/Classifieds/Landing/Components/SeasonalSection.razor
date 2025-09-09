@@ -1,0 +1,55 @@
+@using MudBlazor
+@inject IJSRuntime JS
+@inherits SeasonalSectionBase
+@using QLN.Web.Shared.Components.Classifieds.SeasonalCard
+@using QLN.Web.Shared.Components.EmptyCard
+
+<div class="seasonal-wrapper">
+      <div class="seasonal-header">
+            <h3 class="seasonal-header-title">Seasonal Picks</h3>
+    </div>
+
+    @if (Loading)
+        {
+           <div class="seasonal-skeleton-scroll">
+            @for (int i = 0; i < 3; i++)
+            {
+                <div class="seasonal-skeleton-item">
+                    <MudSkeleton SkeletonType="SkeletonType.Rectangle"
+                                 Height="200px"
+                                 Width="100%"
+                                 Style="border-radius: 12px;" />
+                </div>
+            }
+        </div>
+        }
+        else if (Seasonal?.Any() != true)
+        {
+            <EmptyCard Title="No Seasonal items found." Subtitle="Please check back later or explore other categories." />
+        }
+        else
+        {
+    <!-- Parent container for arrows + swiper -->
+    <div class="swiper-container">
+        <!-- Arrow buttons OUTSIDE .swiper -->
+        <div class="swiper-seasonal-button-prev custom-arrow-button seasonalleft">
+            <MudIcon Icon="@Icons.Material.Filled.ChevronLeft" />
+        </div>
+        <div class="swiper-seasonal-button-next custom-arrow-button seasonalright">
+            <MudIcon Icon="@Icons.Material.Filled.ChevronRight" />
+        </div>
+
+        <!-- Swiper slider -->
+        <div class="swiper swiper-seasonal">
+            <div class="swiper-wrapper">
+                 <MudVirtualize Context="item" Items="Seasonal">
+                    <div class="swiper-slide seasonal-card">
+                            <SeasonalCard Item="item" OnClick="HandleCategoryClick"  />
+                    </div>
+                </MudVirtualize>
+            </div>
+        </div>
+    </div>
+    }
+</div>
+

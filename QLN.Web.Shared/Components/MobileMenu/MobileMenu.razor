@@ -1,0 +1,483 @@
+@using Microsoft.Extensions.Options
+@using QLN.Web.Shared.Services
+@using QLN.Web.Shared.Models
+@inject IJSRuntime JSRuntime
+@inject NavigationManager NavigationManager
+@inject IOptions<NavigationPath> options
+@{
+    var navigationPath = options.Value;
+}
+
+@if (IsOpen)
+{
+    <div class="mobile-menu-overlay">
+        <!-- Header -->
+        <div class="mobile-menu-header">
+            <img src="/qln-images/header/logo_mobile.svg" alt="Logo" class="logo" />
+            <MudIconButton Icon="@Icons.Material.Filled.Close" OnClick="() => OnClose.InvokeAsync()" class="close-btn" />
+        </div>
+        @if (IsLoggedIn)
+        {
+            <div class="user-profile-row"  @onclick="ToggleProfileMenu">
+
+                <div class="user-left" >
+                    <img src="/qln-images/header/user_Icons.svg" alt="User" class="user-avatar" />
+                    <div class="user-info">
+                        <div class="user-name"> @((Name?.Length > 20) ? Name.Substring(0, 20) + "..." :
+                                                Name)</div>
+                                                 <div class="user-email"> @((Email?.Length > 20) ? Email.Substring(0, 20) + "..." :
+                                                Email)</div>
+            </div>
+            
+        </div>
+        <!-- Right side: Arrow -->
+        <div class="right-arrow-icon">
+            <MudIcon Icon="@(_isProfileMenuOpen ? Icons.Material.Sharp.ArrowBackIosNew : Icons.Material.Sharp.ArrowForwardIos)" Class="arrow-icon-color" />
+        </div>
+            </div>
+        }
+
+        <!-- Buttons -->
+        <div class="auth-buttons">
+            @if (IsLoggedIn)
+            {
+                <MudButton class="signup-btn" OnClick="@(() => RedirectTo(navigationPath.Subscription))">Buy Premium</MudButton>
+                <MudButton class="post-btn" OnClick="() => OnPostAdClicked.InvokeAsync()">Post Ad</MudButton>
+            }
+            else
+            {
+                <MudButton class="signup-btn" OnClick="() => GoToRegister.InvokeAsync()">Sign Up</MudButton>
+                <MudButton class="login-btn" OnClick="() => GoToLogin.InvokeAsync()">Login</MudButton>
+            }
+        </div>
+        @if (_isProfileMenuOpen)
+        {
+                @foreach (var item in ProfileMenuItems)
+        {
+            var isDashboard = item.Text == "Dashboards";
+
+            if (isDashboard)
+            {
+                <div class="profile-item" @onclick="() => ToggleExpand(item.Text)">
+                    <img src="@item.ImageSrc" alt="icon" class="profile-icon" />
+                    <span class="menu-item-text">@item.Text</span>
+                </div>
+
+                <MudCollapse Expanded="@(_expandedItem == item.Text)">
+                    <div class="nested-items">
+                        @foreach (var nested in NestedProfileMenuItems)
+                        {
+                            <div class="nested-profile-item" @onclick="() => HandleProfileMenuClick.InvokeAsync(nested)">
+                                <img src="@nested.ImageSrc" alt="icon" class="profile-icon nested-icon-color" />
+                                <span  class="menu-item-text">@nested.Text</span>
+                            </div>
+                        }
+                    </div>
+                </MudCollapse>
+            }
+            else
+            {
+                <div class="profile-item" @onclick="() => HandleProfileMenuClick.InvokeAsync(item)">
+                    <img src="@item.ImageSrc" alt="icon" class="profile-icon" />
+                    <span  class="menu-item-text @(item.Text == "Logout" ? "logout-item" : "")">@item.Text</span>
+                </div>
+            }
+        }
+       }
+         @if (!_isProfileMenuOpen)
+        {
+        <!-- Main Links -->
+        <nav class="menu-links">
+            <a class="main-link" href="/" @onclick="HandleLinkClick">Home</a>
+
+            <div class="menu-section">
+                <a class="menu-section-title" href="@navigationPath.Properties" @onclick="HandleLinkClick">Properties</a>
+                <div class="section-links">
+                    <a href="@navigationPath.Residential" @onclick="HandleLinkClick">Residential</a>
+                    <a href="@navigationPath.Commercial" @onclick="HandleLinkClick">Commercial</a>
+                    <a href="@navigationPath.International" @onclick="HandleLinkClick">International</a>
+                </div>
+            </div>
+
+            <div class="menu-section">
+                <a class="menu-section-title" href="@navigationPath.Vehicles" @onclick="HandleLinkClick">Vehicles</a>
+
+                <div class="section-links">
+                    <a href="@navigationPath.Cars" @onclick="HandleLinkClick">Cars</a>
+                    <a href="@navigationPath.Showrooms" @onclick="HandleLinkClick">Showrooms</a>
+                    <a href="@navigationPath.CarRentals" @onclick="HandleLinkClick">Car Rentals</a>
+                    <a href="@navigationPath.Vehicles" @onclick="HandleLinkClick">More</a>
+                </div>
+            </div>
+
+            <div class="menu-section">
+
+                <a class="menu-section-title" href="@navigationPath.Classifieds" @onclick="HandleLinkClick">Classifieds</a>
+
+                <div class="section-links">
+                    <a href="@navigationPath.Furniture" @onclick="HandleLinkClick">Furniture & Decor</a>
+                    <a href="@navigationPath.Electronics" @onclick="HandleLinkClick">Electronics</a>
+                    <a href="@navigationPath.Fashion" @onclick="HandleLinkClick">Fashion & Beauty</a>
+                    <a href="@navigationPath.Phone" @onclick="HandleLinkClick">Phone & Tablets</a>
+                    <a href="@navigationPath.Classifieds" @onclick="HandleLinkClick">More</a>
+                </div>
+            </div>
+
+            <div class="menu-section">
+                <a class="menu-section-title" href="@navigationPath.Services" @onclick="HandleLinkClick">Services</a>
+                <div class="section-links">
+                    <a href="@navigationPath.Labour" @onclick="HandleLinkClick">Labour & Moving</a>
+                    <a href="@navigationPath.HouseholdServices" @onclick="HandleLinkClick">Household Services</a>
+                    <a href="@navigationPath.CleaningServices" @onclick="HandleLinkClick">Cleaning Services</a>
+                    <a href="@navigationPath.ComputerServices" @onclick="HandleLinkClick">Computer Services</a>
+                    <a href="@navigationPath.Services" @onclick="HandleLinkClick">More</a>
+                </div>
+            </div>
+
+            <div class="menu-section">
+                <a class="menu-section-title" href="@navigationPath.Jobs" @onclick="HandleLinkClick">Jobs</a>
+                <div class="section-links">
+                    <a href="@navigationPath.Jobs" @onclick="HandleLinkClick">Job Postings</a>
+                    <a href="@navigationPath.Jobs" @onclick="HandleLinkClick">Jobseekers</a>
+                    <a href="@navigationPath.Jobs" @onclick="HandleLinkClick">CV Writing</a>
+                </div>
+            </div>
+
+            <div class="menu-section">
+                <a class="menu-section-title" href="@navigationPath.Rewards" @onclick="HandleLinkClick">Rewards</a>
+            </div>
+        </nav>
+
+        <!-- Footer -->
+        <footer class="mobile-menu-footer">
+            <!-- Top Border Section with Links -->
+            <div class="footer-links-grid">
+                <div><a href="@navigationPath.ContentNews" @onclick="HandleLinkClick">News</a></div>
+                @* <div><a href="#">Business pages</a></div> *@
+                <div><a href="@navigationPath.ContentEvents" @onclick="HandleLinkClick">Events</a></div>
+                @* <div><a href="#">eShops</a></div> *@
+                <div><a href="@navigationPath.ContentCommunity" @onclick="HandleLinkClick">Community</a></div>
+            </div>
+
+            <!-- Social Icons -->
+            <div class="social-icons">
+                <a href="@navigationPath.SocialFacebook" @onclick="HandleLinkClick"><img
+                        src="/qln-images/header/facebook_icon_mobile.svg" alt="Facebook" /></a>
+                <a href="@navigationPath.SocialTwitter" @onclick="HandleLinkClick"><img
+                        src="/qln-images/header/twitter_icon_mobile.svg" alt="X" /></a>
+                <a href="@navigationPath.SocialInstagram" @onclick="HandleLinkClick"><img
+                        src="/qln-images/header/instagram_icon_mobile.svg" alt="Instagram" /></a>
+                <a href="@navigationPath.SocialLinkedIn" @onclick="HandleLinkClick"><img
+                        src="/qln-images/header/linkedin_icon_mobile.svg" alt="LinkedIn" /></a>
+                <a href="@navigationPath.SocialYouTube" @onclick="HandleLinkClick"><img
+                        src="/qln-images/header/youTube_icon_mobile.svg" alt="YouTube" /></a>
+                <a href="@navigationPath.SocialTikTok" @onclick="HandleLinkClick"><img
+                        src="/qln-images/header/tikTok_icon_mobile.svg" alt="TikTok" /></a>
+            </div>
+        </footer>
+       }
+    </div>
+}
+
+@code {
+    [Parameter] public bool IsOpen { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback GoToProfile { get; set; }
+    [Parameter] public EventCallback GoToRegister { get; set; }
+    [Parameter] public EventCallback GoToLogin { get; set; }
+    [Parameter] public EventCallback GoToLogout { get; set; }
+    [Parameter] public EventCallback OnPostAdClicked { get; set; }
+    [Parameter] public List<MenuItem> ProfileMenuItems { get; set; }
+    [Parameter] public List<MenuItem> NestedProfileMenuItems { get; set; }
+    [Parameter] public EventCallback<MenuItem> HandleProfileMenuClick { get; set; }
+
+    private string _expandedItem;
+
+    private bool _isProfileMenuOpen = false;
+
+    [Parameter] public bool IsLoggedIn { get; set; }
+    [Parameter] public string Name { get; set; }
+
+    [Parameter] public string Email { get; set; }
+    void ToggleExpand(string itemTitle)
+    {
+        _expandedItem = _expandedItem == itemTitle ? null : itemTitle;
+    }
+    void ToggleProfileMenu()
+    {
+        _isProfileMenuOpen = !_isProfileMenuOpen;
+    }  
+    async void RedirectTo(string url)
+    {
+        NavigationManager.NavigateTo(url, true); // `true` forces full page reload
+        await HandleLinkClick();
+    }
+
+    private async Task HandleLinkClick()
+    {
+        await OnClose.InvokeAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !_jsInitialized)
+        {
+            windowWidth = await JSRuntime.InvokeAsync<int>("getWindowWidth");
+            IsMobile = windowWidth <= MobileBreakpoint;
+
+            await JSRuntime.InvokeVoidAsync("registerResizeHandler",
+            DotNetObjectReference.Create(this));
+
+            _jsInitialized = true;
+            StateHasChanged();
+        }
+    }
+    private int windowWidth;
+    private const int MobileBreakpoint = 1000;
+    private bool IsMobile;
+    private bool _jsInitialized = false;
+
+
+    [JSInvokable]
+    public async Task UpdateWindowWidth(int width)
+    {
+        windowWidth = width;
+        bool newIsMobile = windowWidth <= MobileBreakpoint;
+
+        if (IsMobile != newIsMobile)
+        {
+            IsMobile = newIsMobile;
+
+            // ✅ Automatically close mobile menu if now in desktop view
+            if (!IsMobile && IsOpen)
+            {
+                IsOpen = false;
+                await OnClose.InvokeAsync(); // This triggers UI hide logic
+            }
+
+            StateHasChanged();
+        }
+    }
+
+}
+
+<style>
+    .mobile-menu-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 9999;
+        background: white;
+        width: 100vw;
+        height: 100vh;
+        overflow-y: auto;
+        padding: 1rem;
+        font-family: 'Public Sans', sans-serif;
+    }
+
+    .mobile-menu-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-bottom: 0.5rem;
+    }
+
+    .logo {
+        height: 40px;
+    }
+
+    .close-btn {
+        background: none;
+        border: none;
+        font-size: 1rem;
+        color: #454545;
+    }
+
+    .auth-buttons {
+        margin: 1rem 0;
+        display: flex;
+        justify-content: space-between;
+        gap: 0.5rem;
+    }
+
+    .signup-btn {
+        flex: 1;
+        background: #FF7F38;
+        color: white;
+        border: none;
+        padding: 0.5rem;
+        border-radius: 5px;
+        font-weight: 600;
+        font-size: 14px;
+        text-transform: capitalize;
+    }
+
+    .login-btn {
+        flex: 1;
+        background: #white;
+        color: #333;
+        border: 1px solid #E3E3E3;
+        padding: 0.5rem;
+        border-radius: 5px;
+        font-weight: 600;
+        font-size: 14px;
+        text-transform: capitalize;
+    }
+
+    .post-btn {
+        flex: 1;
+        background: #FFFFFF;
+        color: #FF7F38;
+        border: 1px solid #FF7F38;
+        padding: 0.5rem;
+        border-radius: 5px;
+        font-weight: 600;
+        font-size: 14px;
+        text-transform: capitalize;
+    }
+
+
+    .menu-links {
+        margin-top: 1rem;
+    }
+
+    .main-link {
+        margin-bottom: 1rem;
+        display: block;
+        text-decoration: none;
+        font-weight: 500;
+        font-size: 16px;
+        color: #FF7F38;
+    }
+
+    .menu-section {
+        margin-bottom: 1.25rem;
+    }
+
+    .menu-section-title {
+        font-weight: 500;
+        font-size: 16px;
+        color: #FF7F38;
+        margin-bottom: 0.25rem;
+        text-decoration: none;
+    }
+
+    .section-links {
+        padding-left: 1rem;
+    }
+
+    .section-links a {
+        display: block;
+        text-decoration: none;
+        color: #646464;
+        margin: 1rem 0 0.25rem 0;
+        font-weight: 500;
+        font-size: 15px;
+    }
+
+    .mobile-menu-footer {
+        padding-top: 1rem;
+    }
+
+    .footer-links-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.5rem 1.5rem;
+        font-size: 16px;
+        font-weight: 500;
+        color: #00426D;
+        padding: 1rem 0;
+        border-top: 1px solid #e0e0e0;
+    }
+
+    .footer-links-grid a {
+        color: #00426D;
+        text-decoration: none;
+    }
+
+    .social-icons {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+        padding: 1rem 0;
+        border-top: 1px solid #e0e0e0;
+    }
+
+    .social-icons img {
+        height: 32px;
+        width: 32px;
+    }
+
+    .user-profile-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 15px 10px 0;
+        cursor: pointer;
+    }
+
+    .user-left {
+        display: flex;
+        align-items: center;
+    }
+
+    .user-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        border: 2px solid #FF7F38;
+        padding: 2px;
+        margin-right: 0.75rem;
+    }
+
+    .user-info {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .user-name {
+        font-weight: 600;
+        color: #FF7F38;
+        font-size: 0.95rem;
+    }
+
+    .user-email {
+        font-size: 0.85rem;
+        color: #777;
+    }
+
+  .right-arrow-icon {
+    display: flex;
+    align-items: flex-start;
+}
+  .arrow-icon-color {
+    font-size: 1rem;
+    color: #454545;
+}
+    .profile-item, .nested-profile-item {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+        }
+    .profile-icon {
+        width: 24px;
+        height: 24px;
+        margin-right: 1rem;
+    }
+    .menu-item-text {
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--color-text-heading);
+        flex-grow: 1;
+    }
+   .logout-item {
+    color: #F04438 !important;
+    }
+    .nested-items {
+        padding-left: 2rem;
+    }
+  .nested-icon-color {
+           filter: brightness(0) saturate(100%) invert(38%) sepia(10%) saturate(1192%) hue-rotate(174deg) brightness(91%) contrast(86%);
+    }
+</style>

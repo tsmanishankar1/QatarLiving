@@ -1,0 +1,69 @@
+@page "/qln/classifieds"
+@layout ClassifiedsLayout
+@inherits LandingComponentBase
+@using MudBlazor
+@using QLN.Web.Shared.Services
+@using QLN.Web.Shared.Components.Carousel
+@using QLN.Web.Shared.Pages.Classifieds.Landing.Components
+
+<!-- Page: Classifieds -->
+
+<!-- Main Container -->
+<div style="width: 100%; background-color: var(--color-secondary-background);">
+    <div class="responsive-container">
+    <div class="max-container">
+        <!-- Carousel Banner -->
+        <CarouselBanner ImageUrls="CarouselImages" ShowArrows="true" EnableSwipeGesture="false" AutoCycle="true"
+            Transition="Transition.Slide" />
+
+        <!-- Search Bar Section -->
+        <SearchBarSection />
+
+        <!-- Featured item -->
+        <FeaturedItemSection FeaturedItems="FeaturedItemsList?.ToList()"  Loading="IsLoading" />
+    </div>
+    </div>
+    <div class="max-container">
+    <!-- Featured Categories -->
+    <FeaturedCategorySection FeaturedCategories="FeaturedCategoriesList?.ToList()" Loading="IsLoading" />
+
+    <!-- Subscription Card -->
+    <SubscriptionSection Data="ReadyToGrowList?.FirstOrDefault()" Loading="IsLoading" />
+
+   </div>
+
+    <div class="responsive-container">
+        <div class="max-container">
+        <!-- Store Deals -->
+        <StoreDealsSection  Stores="FeaturedStoresList?.ToList()" Loading="IsLoading"/>
+
+        <!-- Category Card 1: First 6 -->
+        <CategoryAdSection Categories="@CategoriesList?.Take(6).ToList()" Loading="IsLoading" />
+
+        <div class="category-banner-wrapper">
+            <img src="/qln-images/banner_image.svg" alt="Category Banner" class="category-banner-image" />
+        </div>
+        <!-- Category Card 2: Next 4 -->
+        <CategoryAdSection Categories="@CategoriesList?.Skip(6).Take(4).ToList()" Loading="IsLoading" />
+
+        <!-- Seasonal Section -->
+       <SeasonalSection Seasonal="SeasonalPicksList?.ToList()" Loading="IsLoading"/>
+
+    </div>
+    </div>
+    <div class="social-media-container">
+    <div class="max-container">
+    <!-- Social Media Section -->
+    <SocialMediaSection SocialPostDetails="SocialPostDetailList" SocialLinksList="SocialLinksList"SocialMediaVideosList="SocialMediaVideosList" Loading="IsLoading"/>
+
+    </div>
+    </div>
+  <div class="max-container">
+    <!-- FAQs Section -->
+    <FAQsSection FaqItemsList="FaqItemsList?.ToList()" Loading="IsLoading"/>
+
+    <!-- Popular Searches Section -->
+    <PopularSearchesSection  PopularSearchList="PopularSearchesList?.ToList()" Loading="IsLoading"/>
+    </div>
+</div>
+

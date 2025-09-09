@@ -1,0 +1,51 @@
+@page "/manage/reports"
+@inherits ReportsBase
+@using QLN.ContentBO.WebUI.Components.PaginationFooter
+@using QLN.ContentBO.WebUI.Models;
+
+<MudGrid Style="padding-top: 18px">
+    <MudItem xs="12" md="12">
+        <h2 class="main-title-name-style">Reports</h2>
+        <div class="sticky-search-bar">
+            <SearchSortBar OnSearch="HandleSearch" OnSort="HandleSort" />
+        </div>
+
+        <div class="reports-table">
+            <ReportsTable Type="@Type" TPost="ReportDto" IsLoading="IsLoading" Posts="_paginatedPosts"   OnIgnore="HandleIgnoreAction"
+              OnDelete="HandleDeleteAction" />
+          @if (!IsLoading && _paginatedPosts != null && _paginatedPosts.Any())
+            {
+            <PaginationFooter TotalItems="@TotalCount" CurrentPage="@currentPage" PageSize="@pageSize"
+                              OnPageChange="@HandlePageChange" OnPageSizeChange="@HandlePageSizeChange" />
+            }
+        </div>
+    </MudItem>
+</MudGrid>
+
+<style>
+    .reports-style {
+        font-family: 'Public Sans', sans-serif;
+        font-size: 30px;
+        font-weight: 600;
+        color: #242424;
+        text-transform: none;
+        padding-bottom: 32px;
+    }
+
+    .report-content-style {
+        background-color: #FFFFFF;
+        border-radius: 4px; 
+        width: 400px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);  
+    }
+    .reports-table {
+        margin-top: 20px;
+        }
+      .sticky-search-bar {
+        position: sticky;
+        top: 0; /* stick to top of viewport */
+        z-index: 10; /* keep above table rows */
+        background-color: #FAFAFA; /* prevent content behind showing */
+        padding: 10px 0;
+    }
+</style>

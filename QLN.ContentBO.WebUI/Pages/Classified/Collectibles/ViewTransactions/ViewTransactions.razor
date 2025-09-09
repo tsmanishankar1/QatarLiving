@@ -1,0 +1,30 @@
+@page "/manage/classified/collectibles/view/transactions"
+@inherits ViewTransactionsBase
+@using QLN.ContentBO.WebUI.Models
+@layout CollectiblesLayout
+
+<MudGrid Style="padding-top: 18px">
+    <MudItem xs="12" md="12">
+        
+        <!-- Search, Sort, and Date Filter Controls -->
+        <SearchSortBar 
+            Items="Transactions"
+            OnSearch="HandleSearch"
+            OnSort="HandleSort"
+            OnDateFilterChanged="HandleDateFilterChanged" 
+        />
+
+        <!-- Transactions Table -->
+        <div class="community-table">
+            <ViewTransactionsTable 
+                IsLoading="IsLoading"
+                Transactions="Transactions"
+                TotalRecords="TotalRecords"
+                OnTabChanged="HandleTabChanged"
+                OnPageChanged="HandlePageChanged"
+                OnPageSizeChanged="HandlePageSizeChanged"
+            />
+        </div>
+
+    </MudItem>
+</MudGrid>

@@ -1,0 +1,53 @@
+@QLN.DataMigration_HostAddress = http://localhost:5084
+
+###
+GET {{QLN.DataMigration_HostAddress}}/migrate_categories?environment=dev
+Accept: application/json
+
+###
+GET {{QLN.DataMigration_HostAddress}}/migrate_items?environment=prod&category_id=7216 // &sort_field=price&sort_order=desc&page_size=30&page=1
+Accept: application/json
+
+### Migrate Categories
+POST http://ql-migrate.westeurope.cloudapp.azure.com/qlnext-v2/items-categories.php
+Content-Type: application/x-www-form-urlencoded
+
+env=dev
+
+### Migrate Subscriptions
+POST http://ql-migrate.westeurope.cloudapp.azure.com/subscriptions.php
+Content-Type: application/x-www-form-urlencoded
+X-Api-Key: abc123
+
+env=dev
+&type=service
+
+### Migrate Ads
+GET http://ql-migrate.westeurope.cloudapp.azure.com/qlnext-v2/items.php?env=prod&page_size=30&page=1&type=classifieds
+Accept: application/json
+
+### Migrate Services
+GET http://ql-migrate.westeurope.cloudapp.azure.com/qlnext-v2/items.php?env=prod&page_size=30&page=1&type=services
+Accept: application/json
+
+#########
+
+### Migrate News
+GET https://www.qatarliving.com/qlnapi/articles?page=1&page_size=100&forum_id=20000040
+Content-Type: application/json
+
+### Migrate Events
+GET https://www.qatarliving.com/qlnapi/events?page=1&page_size=100
+Content-Type: application/json
+
+### Migrate community - https://test.qatarliving.com/qlnapi/migrate/community?page_size=2&forum_id=20000006&from=20190101&page=1'
+GET https://test.qatarliving.com/qlnapi/migrate/community?page=1&page_size=100
+Content-Type: application/json
+
+###
+GET https://test.qatarliving.com/qlnapi/comments/20486043?page=1&page_size=10
+Accept: application/json
+
+### Migrate categrories
+GET https://test.qatarliving.com/qlnapi/categories
+Content-Type: application/json

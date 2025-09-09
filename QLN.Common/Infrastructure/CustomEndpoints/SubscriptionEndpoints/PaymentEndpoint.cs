@@ -1,0 +1,545 @@
+﻿using Dapr;
+using Dapr.Actors;
+using Dapr.Actors.Client;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.Logging;
+using QLN.Common.DTO_s;
+using QLN.Common.DTOs;
+using QLN.Common.Infrastructure.IService.IAddonService;
+using QLN.Common.Infrastructure.IService.IPayToFeatureService;
+using QLN.Common.Infrastructure.IService.IPayToPublishService;
+using QLN.Common.Infrastructure.IService.ISubscriptionService;
+using System.Text.Json;
+using static QLN.Common.DTO_s.AddonDto;
+
+namespace QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints
+{
+    public static class PaymentEndpoint
+    {
+        public static RouteGroupBuilder MapProcessPaymentEndpoint(this RouteGroupBuilder group)
+        {
+            group.MapPost("/subscribe", async (
+                PaymentTransactionRequestDto request,
+                HttpContext context,
+                [FromServices] IExternalSubscriptionService service,
+                [FromServices] IActorProxyFactory actorProxyFactory,
+                [FromServices] ILogger<IExternalSubscriptionService> logger,
+                CancellationToken cancellationToken) =>
+            {
+                try
+                {
+                    var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+
+                    if (string.IsNullOrEmpty(userClaim))
+                    {
+                        logger.LogWarning("User claim not found in token");
+                        return Results.Unauthorized();
+                    }
+
+                    JsonElement userData;
+                    string uid;
+
+                    try
+                    {
+                        userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                        uid = userData.GetProperty("uid").GetString();
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogWarning(ex, "Failed to parse user claim or extract UID from token");
+                        return Results.Unauthorized();
+                    }
+
+                    if (string.IsNullOrEmpty(uid))
+                    {
+                        logger.LogWarning("Invalid or missing UID in user claim");
+                        return Results.Unauthorized();
+                    }
+
+                    var transactionId = await service.CreatePaymentAsync(request, uid, cancellationToken);
+
+                    logger.LogInformation("User {UserId} assigned Subscriber role after payment", uid);
+
+                    var actorId = new ActorId(transactionId.ToString());
+                    var paymentActor = actorProxyFactory.CreateActorProxy<IPaymentTransactionActor>(actorId, nameof(IPaymentTransactionActor));
+
+                    logger.LogInformation("Payment transaction {TransactionId} created and actor scheduled for user {UserId}",
+                        transactionId, uid);
+
+                    return Results.Ok(new
+                    {
+                        Message = "Payment done successfully and role updated.",
+                        TransactionId = transactionId
+                    });
+                }
+                catch (InvalidOperationException ex) when (ex.Message.Contains("already have an active subscription"))
+                {
+                    logger.LogWarning(ex, "User already has active subscription");
+                    return Results.Conflict(new ProblemDetails
+                    {
+                        Title = "Active Subscription Exists",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status409Conflict
+                    });
+                }
+                catch (InvalidDataException ex)
+                {
+                    logger.LogWarning(ex, "Invalid payment data");
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid Payment Data",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (UnauthorizedAccessException ex)
+                {
+                    logger.LogWarning(ex, "Unauthorized access attempt");
+                    return Results.Unauthorized();
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    logger.LogWarning(ex, "Subscription not found");
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Subscription Not Found",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "Error processing payment");
+                    return Results.Problem(
+                        title: "Payment Processing Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+            .WithName("ProcessPayment")
+            .WithTags("Payment")
+            .WithSummary("Process subscription payment")
+            .WithDescription("Processes payment and creates a payment transaction with scheduled expiry.")
+            .Produces(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapPost("/subscription-expiry",
+                [Topic("pubsub", "subscription-expiry")]
+            async (CloudEvent<SubscriptionExpiryMessage> cloudEvent,
+                [FromServices] IExternalSubscriptionService subscriptionService,
+                [FromServices] ILogger<IExternalSubscriptionService> logger,
+                HttpContext context) =>
+                {
+                    var message = cloudEvent.Data;
+
+                    try
+                    {
+                        logger.LogInformation("=== PUBSUB ENDPOINT === Received expiry CloudEvent from {IP} for user {UserId}, sub {SubId}, tx {TxId}",
+                            context.Connection.RemoteIpAddress?.ToString() ?? "Unknown",
+                            message?.UserId, message?.SubscriptionId, message?.PaymentTransactionId);
+
+                        if (message == null || message.UserId == string.Empty)
+                        {
+                            logger.LogWarning("Received a null or invalid SubscriptionExpiryMessage. Skipping processing.");
+                            return Results.BadRequest(new
+                            {
+                                Status = "Error",
+                                Message = "Invalid or empty message received"
+                            });
+                        }
+
+                        logger.LogInformation("Message details: UserId={UserId}, SubscriptionId={SubscriptionId}, PaymentId={PaymentId}, ExpiryDate={ExpiryDate}",
+                            message.UserId, message.SubscriptionId, message.PaymentTransactionId, message.ExpiryDate);
+
+                        await subscriptionService.HandleSubscriptionExpiryAsync(message);
+
+                        logger.LogInformation("Successfully processed subscription expiry for user {UserId}", message.UserId);
+
+                        return Results.Ok(new
+                        {
+                            Status = "Success",
+                            UserId = message.UserId,
+                            Message = "Subscription expiry processed successfully"
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogError(ex, "Failed to process subscription expiry CloudEvent for user {UserId}", message?.UserId);
+                        return Results.Problem(
+                            title: "Subscription Expiry Processing Error",
+                            detail: "An internal error occurred while processing the subscription expiry message.",
+                            statusCode: StatusCodes.Status500InternalServerError
+                        );
+                    }
+                })
+                .WithName("HandleSubscriptionExpiry")
+                .WithTags("Internal")
+                .AllowAnonymous()
+                .ExcludeFromDescription();
+
+            // Pub/Sub health check endpoint
+            group.MapGet("/health/pubsub", (
+                [FromServices] ILogger<IExternalSubscriptionService> logger) =>
+            {
+                logger.LogInformation("=== PUBSUB HEALTH CHECK === Accessed at {Time}", DateTime.UtcNow);
+                return Results.Ok(new
+                {
+                    Status = "Healthy",
+                    Timestamp = DateTime.UtcNow,
+                    Service = "SubscriptionService",
+                    PubSubTopic = "subscription-expiry"
+                });
+            })
+            .WithName("PubSubHealthCheck")
+            .WithTags("Health")
+            .AllowAnonymous()
+            .ExcludeFromDescription();
+
+            return group;
+        }
+        public static RouteGroupBuilder MapProcessPaytoPublishPaymentEndpoint(this RouteGroupBuilder group)
+        {
+            group.MapPost("/pay-to-publish", async (
+             PaymentRequestDto request,
+             HttpContext context,
+             [FromServices] IPayToPublishService service,
+             [FromServices] ILogger<IPayToPublishService> logger,
+             CancellationToken cancellationToken) =>
+            {
+                try
+                {
+                    // ✅ Extract UID from "user" claim (which is a JSON string)
+                    var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+
+                    if (string.IsNullOrEmpty(userClaim))
+                    {
+                        logger.LogWarning("User claim not found in token");
+                        return Results.Unauthorized();
+                    }
+
+                    string uid;
+                    try
+                    {
+                        var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                        uid = userData.GetProperty("uid").GetString();
+
+                        if (string.IsNullOrWhiteSpace(uid))
+                        {
+                            logger.LogWarning("UID is missing or empty in user claim");
+                            return Results.Unauthorized();
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogWarning(ex, "Failed to parse user claim or extract UID");
+                        return Results.Unauthorized();
+                    }
+
+                    // Call your service using uid (string)
+                    var transactionId = await service.CreatePaymentsAsync(request, uid, cancellationToken);
+
+                    logger.LogInformation("User {UserId} made a PayToPublish payment. TransactionId: {TransactionId}", uid, transactionId);
+
+                    return Results.Ok(new
+                    {
+                        Message = "Payment done successfully",
+                        TransactionId = transactionId
+                    });
+                }
+                catch (InvalidDataException ex)
+                {
+                    logger.LogWarning(ex, "Invalid payment data");
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid Payment Data",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (UnauthorizedAccessException)
+                {
+                    logger.LogWarning("Unauthorized access attempt");
+                    return Results.Unauthorized();
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    logger.LogWarning(ex, "Subscription not found");
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Subscription Not Found",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "Error processing PayToPublish payment");
+                    return Results.Problem(
+                        title: "Payment Processing Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+         .WithName("PayToPublishPayment")
+         .WithTags("Payment")
+         .WithSummary("Process PayToPublish payment")
+         .WithDescription("Processes payment for a PayToPublish and creates a payment transaction record.")
+         .Produces(StatusCodes.Status200OK)
+         .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+         .Produces(StatusCodes.Status401Unauthorized)
+         .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+            group.MapGet("/yearly-subscription", async (
+      HttpContext context,
+      [FromServices] IExternalSubscriptionService service,
+      [FromServices] ILogger<IExternalSubscriptionService> logger,
+      CancellationToken cancellationToken) =>
+            {
+                try
+                {
+                    // Extract UID from token using the new format
+                    var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+
+                    if (string.IsNullOrEmpty(userClaim))
+                    {
+                        logger.LogWarning("User claim not found in token");
+                        return Results.Unauthorized();
+                    }
+
+                    JsonElement userData;
+                    string uid;
+
+                    try
+                    {
+                        userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                        uid = userData.GetProperty("uid").GetString();
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogWarning(ex, "Failed to parse user claim or extract UID from token");
+                        return Results.Unauthorized();
+                    }
+
+                    if (string.IsNullOrEmpty(uid))
+                    {
+                        logger.LogWarning("Invalid or missing UID in user claim");
+                        return Results.Unauthorized();
+                    }
+
+                    logger.LogInformation("Checking yearly subscription status for user {UserId}", uid);
+                    var result = await service.CheckYearlySubscriptionAsync(uid, cancellationToken);
+
+                    if (result == null)
+                    {
+                        return Results.NotFound(new
+                        {
+                            Message = "No subscription data found for user",
+                            UserId = uid
+                        });
+                    }
+
+                    logger.LogInformation("Yearly subscription check completed for user {UserId}. IsYearly: {IsYearly}",
+                        uid, result.IsRewardsYearlySubscription);
+
+                    return Results.Ok(result);
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "Error checking yearly subscription");
+                    return Results.Problem(
+                        title: "Yearly Subscription Check Error",
+                        detail: "An internal error occurred while checking yearly subscription status.",
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+  .WithName("CheckYearlySubscription")
+  .WithTags("Payment")
+  .WithSummary("Check if user has yearly subscription")
+  .WithDescription("Checks if the authenticated user has an active yearly subscription and returns subscription details.")
+  .Produces<YearlySubscriptionResponseDto>(StatusCodes.Status200OK)
+  .Produces(StatusCodes.Status401Unauthorized)
+  .Produces(StatusCodes.Status404NotFound)
+  .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+            return group;
+        }
+
+        public static RouteGroupBuilder MapProcessAddonPaymentEndpoint(this RouteGroupBuilder group)
+        {
+            group.MapPost("/addon", async (
+                PaymentAddonRequestDto request,
+                HttpContext context,
+                [FromServices] IAddonService service,
+                CancellationToken cancellationToken) =>
+            {
+                try
+                {
+                    // ✅ Extract UID from "user" claim
+                    var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+
+                    if (string.IsNullOrEmpty(userClaim))
+                    {
+                        return Results.Unauthorized();
+                    }
+
+                    string uid;
+                    try
+                    {
+                        var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                        uid = userData.GetProperty("uid").GetString();
+
+                        if (string.IsNullOrWhiteSpace(uid))
+                        {
+                            return Results.Unauthorized();
+                        }
+                    }
+                    catch
+                    {
+                        return Results.Unauthorized();
+                    }
+                    var transactionId = await service.CreateAddonPaymentsAsync(request, uid, cancellationToken);
+
+                    return Results.Ok(new
+                    {
+                        Message = "Payment done successfully",
+                        TransactionId = transactionId
+                    });
+                }
+                catch (InvalidDataException ex)
+                {
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid Payment Data",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (UnauthorizedAccessException)
+                {
+                    return Results.Unauthorized();
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Addon Not Found",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return Results.Problem(
+                        title: "Payment Processing Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+            .WithName("AddonPayment")
+            .WithTags("Payment")
+            .WithSummary("Process Addon payment")
+            .WithDescription("Processes payment for an Addon and creates a payment transaction record.")
+            .Produces(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            return group;
+        }
+
+        public static RouteGroupBuilder MapProcessPaytoFeaturePaymentEndpoint(this RouteGroupBuilder group)
+        {
+            group.MapPost("/paytofeature", async (
+                PayToFeaturePaymentRequestDto request,
+                HttpContext context,
+                [FromServices] IPayToFeatureService service,
+                CancellationToken cancellationToken) =>
+            {
+                try
+                {
+                    // ✅ Extract UID from "user" claim in token
+                    var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+
+                    if (string.IsNullOrEmpty(userClaim))
+                    {
+                        return Results.Unauthorized();
+                    }
+
+                    string uid;
+                    try
+                    {
+                        var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                        uid = userData.GetProperty("uid").GetString();
+
+                        if (string.IsNullOrWhiteSpace(uid))
+                        {
+                            return Results.Unauthorized();
+                        }
+                    }
+                    catch (Exception)
+                    {
+                        return Results.Unauthorized();
+                    }
+
+                    // 🔄 Call service with uid (string)
+                    var transactionId = await service.CreatePaymentsAsync(request, uid, cancellationToken);
+
+                    return Results.Ok(new
+                    {
+                        Message = "Payment done successfully",
+                        TransactionId = transactionId
+                    });
+                }
+                catch (InvalidDataException ex)
+                {
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid Payment Data",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (UnauthorizedAccessException)
+                {
+                    return Results.Unauthorized();
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Subscription Not Found",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return Results.Problem(
+                        title: "Payment Processing Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+            .WithName("PaytoFeaturePayment")
+            .WithTags("Payment")
+            .WithSummary("Process PayToFeature payment")
+            .WithDescription("Processes payment for a PayToFeature and creates a payment transaction record.")
+            .Produces(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            return group;
+        }
+
+    }
+}

@@ -1,0 +1,126 @@
+@page "/manage/services/editform/{Id:long}/{source?}"
+@page "/manage/services/editform"
+
+@using QLN.ContentBO.WebUI.Models
+@inherits EditServiceBase
+
+<button class="back-button" @onclick="GoBack">
+    <MudIcon Icon="@Icons.Material.Rounded.KeyboardArrowLeft" Class="back-icon" />
+    Back
+</button>
+<div class="button-row">
+    @if (selectedService.Status == ServiceStatus.Draft)
+    {
+        <MudAlert Severity="Severity.Error">This Ad is under Draft</MudAlert>
+    }
+    @if (selectedService.Status == ServiceStatus.Unpublished)
+    {
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" Class="action-btn"
+                   StartIcon="@Icons.Material.Outlined.Visibility"
+                   OnClick='@(() => ShowConfirmation("Publish Ad", "Are you sure you want to Publish this ad?", "Publish",BulkModerationAction.Publish))'>
+            Publish
+        </MudButton>
+        <MudButton Color="Color.Error" Variant="Variant.Filled" Class="action-btn"
+                   OnClick='@(() => OpenNeedChangesDialog())'>
+            Need Changes
+        </MudButton>
+        <MudButton Color="Color.Error" Variant="Variant.Filled" Class="action-btn"
+                   OnClick='@(() => ShowConfirmation("Remove Ad", "Are you sure you want to Remove this ad?", "Remove",BulkModerationAction.Remove))'>
+            <img src="/qln-images/delete_icon.svg" class="btn-icon" />
+            Remove
+        </MudButton>
+    }
+    else if (selectedService.Status == ServiceStatus.Published)
+    {
+        <MudButton Color="Color.Warning" Variant="Variant.Filled" Class="action-btn"
+                   OnClick='@(() => ShowConfirmation("Unpublish Ad", "Are you sure you want to Unpublish this ad?", "Unpublish",BulkModerationAction.Unpublish))'>
+            Unpublish
+        </MudButton>
+        <MudButton Color="Color.Error" Variant="Variant.Filled" Class="action-btn"
+                   OnClick='@(() => OpenNeedChangesDialog())'>
+            Need Changes
+        </MudButton>
+    }
+    else if (selectedService.Status == ServiceStatus.PendingApproval)
+    {
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" Class="action-btn"
+                   StartIcon="@Icons.Material.Outlined.Visibility"
+                   OnClick='@(() => ShowConfirmation("Publish Ad", "Are you sure you want to Publish this ad?", "Publish",BulkModerationAction.Publish))'>
+            Publish
+        </MudButton>
+        <MudButton Color="Color.Error" Variant="Variant.Filled" Class="action-btn"
+                   OnClick='@(() => OpenNeedChangesDialog())'>
+            Need Changes
+        </MudButton>
+        <MudButton Color="Color.Error" Variant="Variant.Filled" Class="action-btn"
+                   OnClick='@(() => ShowConfirmation("Remove Ad", "Are you sure you want to Remove this ad?", "Remove",BulkModerationAction.Remove))'>
+            <img src="/qln-images/delete_icon.svg" class="btn-icon" />
+            Remove
+        </MudButton>
+    }
+    else if (selectedService.Status == ServiceStatus.NeedsModification)
+    {
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" Class="action-btn"
+                   StartIcon="@Icons.Material.Outlined.Visibility"
+                   OnClick='@(() => ShowConfirmation("Publish Ad", "Are you sure you want to Publish this ad?", "Publish",BulkModerationAction.Publish))'>
+            Publish
+        </MudButton>
+        <MudButton Color="Color.Warning" Variant="Variant.Filled" Class="action-btn"
+                   OnClick='@(() => ShowConfirmation("Unpublish Ad", "Are you sure you want to Unpublish this ad?", "Unpublish",BulkModerationAction.Unpublish))'>
+            Unpublish
+        </MudButton>
+        <MudButton Color="Color.Error" Variant="Variant.Filled" Class="action-btn"
+                   OnClick='@(() => OpenNeedChangesDialog())'>
+            Need Changes
+        </MudButton>
+        <MudButton Color="Color.Error" Variant="Variant.Filled" Class="action-btn"
+                   OnClick='@(() => ShowConfirmation("Remove Ad", "Are you sure you want to Remove this ad?", "Remove",BulkModerationAction.Remove))'>
+            <img src="/qln-images/delete_icon.svg" class="btn-icon" />
+            Remove
+        </MudButton>
+    }
+    @if (selectedService.Status == ServiceStatus.Published)
+    {
+        @if (selectedService.IsFeatured)
+        {
+            <MudButton Color="Color.Error" Variant="Variant.Filled" Class="action-btn"
+                       OnClick='@(() => ShowConfirmation("Un Feature Ad", "Are you sure you want to Unfeature this ad?", "Un Feature",BulkModerationAction.UnFeature))'>
+                Un Feature
+            </MudButton>
+        }
+        else
+        {
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" Class="action-btn"
+                       OnClick='@(() => OpenFeatureUnfeatureDialog(BulkModerationAction.Feature))'>
+                Feature
+            </MudButton>
+        }
+        @if (selectedService.IsPromoted)
+        {
+            <MudButton Color="Color.Error" Variant="Variant.Filled" Class="action-btn"
+                       OnClick='@(() => ShowConfirmation("Un Promote Ad", "Are you sure you want to Unpromote this ad?", "Un Promote",BulkModerationAction.UnPromote))'>
+                Un Promote
+            </MudButton>
+        }
+        else
+        {
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" Class="action-btn"
+                       OnClick='@(() => OpenFeatureUnfeatureDialog(BulkModerationAction.Promote))'>
+                Promote
+            </MudButton>
+        }
+    }
+
+
+</div>
+<div class="create-form-container">
+    <MudGrid GutterSize="24px">
+        <MudItem xs="12" md="5">
+            <EditServiceForm selectedService="@selectedService" />
+        </MudItem>
+
+        <MudItem xs="12" md="7">
+            <UploadPhotos Images="@selectedService.PhotoUpload" />
+        </MudItem>
+    </MudGrid>
+</div>

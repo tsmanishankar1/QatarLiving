@@ -1,0 +1,46 @@
+@using MudBlazor
+
+<MudPaper Class="p-4" Elevation="0">
+    <!-- Top Skeleton Tabs -->
+    <div class="skeleton-row top-row" Style="background-color: transparent;">
+        @for (int i = 0; i < 4; i++)
+        {
+            <div class="skeleton-wrapper">
+                <MudSkeleton Width="120px" Height="44px" SkeletonType="SkeletonType.Rectangle" Class="rounded-skeleton"  />
+            </div>
+        }
+    </div>
+
+    <!-- Bottom Skeleton Tabs -->
+    <div class="skeleton-row bottom-row">
+        @for (int i = 0; i < 6; i++)
+        {
+            <div class="skeleton-wrapper">
+                <MudSkeleton Width="180px" Height="44px" SkeletonType="SkeletonType.Rectangle" Class="rounded-skeleton" />
+            </div>
+        }
+    </div>
+</MudPaper>
+
+<style>
+    .skeleton-row {
+        display: flex;
+        justify-content: center;
+        gap: 16px;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+    }
+      .rounded-skeleton {
+        border-radius: 6px;
+    }
+
+    .bottom-row {
+        margin-bottom: 0;
+    }
+
+    .skeleton-wrapper {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+</style>

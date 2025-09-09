@@ -1,0 +1,874 @@
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Hosting;
+using QLN.Common.DTO_s;
+using QLN.Common.Infrastructure.Constants;
+using QLN.Common.Infrastructure.DTO_s;
+using QLN.Common.Infrastructure.IService.IFileStorage;
+using QLN.Common.Infrastructure.Utilities;
+using QLN.Common.Migrations.QLLog;
+using QLN.DataMigration.Models;
+using System;
+using System.Diagnostics;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Text.Json;
+using System.Text.RegularExpressions;
+
+namespace QLN.DataMigration.Services
+{
+    public class MigrationService : IMigrationService
+    {
+        private readonly ILogger<MigrationService> _logger;
+        private readonly IDataOutputService _dataOutputService;
+        private readonly IDrupalSourceService _drupalSourceService;
+        private readonly IFileStorageBlobService _fileStorageBlobService;
+        private readonly HttpClient _httpClient;
+        private readonly IConfiguration _config;
+
+        public MigrationService(
+            ILogger<MigrationService> logger,
+            IDataOutputService dataOutputService,
+            IDrupalSourceService drupalSourceService,
+            IFileStorageBlobService fileStorageBlobService,
+            IHttpClientFactory httpClientFactory,
+            IConfiguration config
+            )
+        {
+            _logger = logger;
+            _dataOutputService = dataOutputService;
+            _drupalSourceService = drupalSourceService;
+            _fileStorageBlobService = fileStorageBlobService;
+            _httpClient = httpClientFactory.CreateClient();
+            _config = config;
+        }
+
+        public async Task<IResult> MigrateMobileDevices(CancellationToken cancellationToken)
+        {
+            var environment = _config["LegacyMigrations:Environment"];
+
+            if (string.IsNullOrEmpty(environment))
+            {
+                return Results.Problem("Environment is not configured for legacy migrations.");
+            }
+
+            _logger.LogInformation($"Starting Migrations @ {DateTime.UtcNow}");
+
+            // first fetch all results from source
+
+            var categories = await _drupalSourceService.GetMobileDevicesAsync(environment, cancellationToken);
+
+            if (categories == null || categories.Makes == null || !categories.Makes.Any())
+            {
+                // if we have no results return an error
+                return Results.Problem("No categories found or deserialized data is invalid.");
+            }
+
+            // convert all categories to an object we ewant to store permanently
+            // (this is an example, may be replaced with a formal object definition from Kishore/Mujay)
+
+            var itemsCategories = (ItemsCategories)categories;
+
+            _logger.LogInformation($"Completed Data Denormalization @ {DateTime.UtcNow}");
+
+            // then we write the data away to a permanent store (in this case DAPR state)
+
+            await _dataOutputService.SaveCategoriesAsync(itemsCategories, cancellationToken);
+
+            // return that this was successful
+
+            return Results.Ok(new
+            {
+                Message = $"Migrated {itemsCategories.Models.Count} Categories for {environment} - Completed @ {DateTime.UtcNow}.",
+            });
+        }
+
+        public async Task<IResult> MigrateItems(List<ItemsCategoryMapper> csvImport, bool importImages, bool isFreeAds, CancellationToken cancellationToken)
+        {
+            int pageSize = 30;
+            int page = 1;
+            string type = "classifieds";
+            var adType = isFreeAds ? "Free" : "Paid";
+
+            var environment = _config["LegacyMigrations:Environment"];
+
+            if (string.IsNullOrEmpty(environment))
+            {
+                return Results.Problem("Environment is not configured for legacy migrations.");
+            }
+
+            var startTime = DateTime.Now;
+
+            _logger.LogInformation($"Starting Items Migration @ {startTime}");
+
+            var drupalItems = await _drupalSourceService.GetItemsAsync(environment, pageSize, page, type, cancellationToken);
+
+            if (drupalItems == null || drupalItems.Items == null || !drupalItems.Items.Any())
+            {
+                return Results.Problem("No items found or deserialized data is invalid.");
+            }
+
+            var migrationItems = new List<DrupalItem>();
+            int totalCount = 0;
+
+            // iterate over each drupal item and fetch its data from current storage
+            // and upload it into Azure Blob
+            foreach (var drupalItem in drupalItems.Items)
+            {
+                await ProcessMigrationItem(drupalItem, importImages: importImages);
+                
+                migrationItems.Add(drupalItem);
+                totalCount += 1;
+            }
+
+            await _dataOutputService.SaveMigrationItemsAsync(csvImport, migrationItems, cancellationToken, isFreeAds); 
+            
+            var totalItemCount = drupalItems.Total;
+
+            _logger.LogInformation($"Migrated {totalCount} out of {totalItemCount} {adType} Items");
+
+            while (totalItemCount > totalCount)
+            {
+                page += 1;
+                _logger.LogInformation($"Fetching data for page {page}");
+                drupalItems = await _drupalSourceService.GetItemsAsync(environment, pageSize, page, type, cancellationToken);
+                migrationItems = new List<DrupalItem>();
+                if (drupalItems != null && drupalItems.Items.Count > 0)
+                {
+                    foreach (var drupalItem in drupalItems.Items)
+                    {
+                        await ProcessMigrationItem(drupalItem, importImages: importImages);
+
+                        migrationItems.Add(drupalItem);
+                        totalCount += 1;
+                    }
+
+                    await _dataOutputService.SaveMigrationItemsAsync(csvImport, migrationItems, cancellationToken, isFreeAds);
+
+                    _logger.LogInformation($"Migrated {totalCount} out of {totalItemCount} {adType} Items");
+                }
+            }
+
+            _logger.LogInformation($"Completed Items Migration @ {DateTime.UtcNow}");
+
+            return Results.Ok(new
+            {
+                Message = $"Migrated {totalCount} out of {totalItemCount} {adType} Items - Started @ {startTime} - Completed @ {DateTime.UtcNow}.",
+            });
+        }
+
+        public async Task<IResult> MigrateServices(List<ServicesCategoryMapper> csvImport, bool importImages, bool isFreeAds, CancellationToken cancellationToken)
+        {
+            int pageSize = 30;
+            int page = 1;
+            string type = "services";
+            var adType = isFreeAds ? "Free" : "Paid";
+
+            var environment = _config["LegacyMigrations:Environment"];
+
+            if (string.IsNullOrEmpty(environment))
+            {
+                return Results.Problem("Environment is not configured for legacy migrations.");
+            }
+
+            var startTime = DateTime.Now;
+
+            _logger.LogInformation($"Starting Services Migration @ {startTime}");
+
+            var drupalItems = await _drupalSourceService.GetServicesAsync(environment, pageSize, page, type, cancellationToken);
+
+            if (drupalItems == null || drupalItems.Items == null || !drupalItems.Items.Any())
+            {
+                return Results.Problem("No items found or deserialized data is invalid.");
+            }
+
+            var migrationItems = new List<DrupalItem>();
+            int totalCount = 0;
+
+            // iterate over each drupal item and fetch its data from current storage
+            // and upload it into Azure Blob
+            foreach (var drupalItem in drupalItems.Items)
+            {
+                await ProcessMigrationItem(drupalItem, importImages: importImages);
+
+                migrationItems.Add(drupalItem);
+                totalCount += 1;
+            }
+
+            await _dataOutputService.SaveMigrationServicesAsync(csvImport, migrationItems, cancellationToken, isFreeAds);
+
+            var totalItemCount = drupalItems.Total;
+
+            
+            _logger.LogInformation($"Migrated {totalCount} out of {totalItemCount} {adType} Services");
+
+            while (totalItemCount > totalCount)
+            {
+                page += 1;
+                _logger.LogInformation($"Fetching data for page {page}");
+                drupalItems = await _drupalSourceService.GetServicesAsync(environment, pageSize, page, type, cancellationToken);
+                migrationItems = new List<DrupalItem>();
+                if (drupalItems != null && drupalItems.Items.Count > 0)
+                {
+                    foreach (var drupalItem in drupalItems.Items)
+                    {
+                        await ProcessMigrationItem(drupalItem, importImages: importImages);
+
+                        migrationItems.Add(drupalItem);
+                        totalCount += 1;
+                    }
+
+                    await _dataOutputService.SaveMigrationServicesAsync(csvImport, migrationItems, cancellationToken, isFreeAds);
+
+                    _logger.LogInformation($"Migrated {totalCount} out of {totalItemCount} {adType} Services");
+                }
+            }
+
+            _logger.LogInformation($"Completed Services Migration @ {DateTime.UtcNow}");
+
+            return Results.Ok(new
+            {
+                Message = $"Migrated {totalCount} out of {totalItemCount} {adType} Services - Started @ {startTime} - Completed @ {DateTime.UtcNow}.",
+            });
+        }
+
+        public async Task<IResult> MigrateArticles(bool importImages, CancellationToken cancellationToken)
+        {
+            int pageSize = 200;
+            int page = 1;
+            string sourceCategory= "20000040"; // News
+            int destinationCategory = 101; // News
+            int destinationSubCategory = 1001; // News
+
+            var startTime = DateTime.Now;
+
+            _logger.LogInformation($"Starting Items Migration @ {startTime}");
+
+            var drupalItems = await _drupalSourceService.GetNewsFromDrupalAsync(sourceCategory, cancellationToken, page: page, page_size: pageSize);
+
+            if (drupalItems == null || drupalItems.Items == null || !drupalItems.Items.Any())
+            {
+                return Results.Problem("No items found or deserialized data is invalid.");
+            }
+
+            var migrationItems = new List<ArticleItem>(); 
+            var migrationComments = new Dictionary<string, List<ContentComment>>();
+            int totalCount = 0;
+            int totalCommentCount = 0;
+
+            // iterate over each drupal item and fetch its data from current storage
+            // and upload it into Azure Blob
+            foreach (var drupalItem in drupalItems.Items)
+            {
+                await ProcessMigrationArticle(drupalItem, importImages: importImages);
+
+                if (int.TryParse(drupalItem.CommentCount, out var commentCount) && commentCount > 0)
+                {
+                    int comment_page = 1;
+                    int comment_page_size = 30;
+
+                    // Fetch comments for this community post
+                    var comments = await _drupalSourceService.GetCommentsByIdAsync(drupalItem.Nid, cancellationToken, comment_page, comment_page_size);
+
+                    if (comments != null && comments.Comments != null && comments.Comments.Any())
+                    {
+                        migrationComments.Add(drupalItem.Nid, comments.Comments);
+
+                        totalCommentCount = +comments.Comments.Count;
+
+                        _logger.LogInformation($"Found {comments.Comments.Count} comments for post {drupalItem.Nid}");
+                    }
+                }
+
+                migrationItems.Add(drupalItem);
+                totalCount += 1;
+            }
+
+            await _dataOutputService.SaveContentNewsAsync(migrationItems, destinationCategory, destinationSubCategory, cancellationToken);
+
+            int.TryParse(drupalItems.Total, out var totalItemCount);
+
+            _logger.LogInformation($"Migrated {totalCount} out of {totalItemCount} Items");
+
+            while (totalItemCount > totalCount)
+            {
+                page += 1;
+                _logger.LogInformation($"Fetching data for page {page}");
+                drupalItems = await _drupalSourceService.GetNewsFromDrupalAsync(sourceCategory, cancellationToken, page: page, page_size: pageSize);
+                migrationItems = new List<ArticleItem>();
+                if (drupalItems != null && drupalItems.Items.Count > 0)
+                {
+                    foreach (var drupalItem in drupalItems.Items)
+                    {
+                        await ProcessMigrationArticle(drupalItem, importImages: importImages);
+
+                        if (int.TryParse(drupalItem.CommentCount, out var commentCount) && commentCount > 0)
+                        {
+                            int comment_page = 1;
+                            int comment_page_size = 30;
+
+                            // Fetch comments for this community post
+                            var comments = await _drupalSourceService.GetCommentsByIdAsync(drupalItem.Nid, cancellationToken, comment_page, comment_page_size);
+
+                            if (comments != null && comments.Comments != null && comments.Comments.Any())
+                            {
+                                migrationComments.Add(drupalItem.Nid, comments.Comments);
+
+                                totalCommentCount = +comments.Comments.Count;
+
+                                _logger.LogInformation($"Found {comments.Comments.Count} comments for post {drupalItem.Nid}");
+                            }
+                        }
+
+                        migrationItems.Add(drupalItem);
+                        totalCount += 1;
+                    }
+
+                    await _dataOutputService.SaveContentNewsAsync(migrationItems, destinationCategory, destinationSubCategory, cancellationToken);
+                    await _dataOutputService.SaveContentCommunityCommentsAsync(migrationComments, cancellationToken);
+
+                    _logger.LogInformation($"Migrated {totalCount} out of {totalItemCount} Posts with {totalCommentCount} Comments");
+                }
+            }
+
+            _logger.LogInformation($"Completed Items Migration @ {DateTime.UtcNow}");
+
+            return Results.Ok(new
+            {
+                Message = $"Migrated {totalCount} out of {totalItemCount} Posts with {totalCommentCount} Comments - Started @ {startTime} - Completed @ {DateTime.UtcNow}.",
+            });
+        }
+
+        public async Task<IResult> MigrateEvents(bool importImages, CancellationToken cancellationToken)
+        {
+            int pageSize = 200;
+            int page = 1;
+
+            var startTime = DateTime.Now;
+
+            _logger.LogInformation($"Starting Items Migration @ {startTime}");
+
+            var drupalItems = await _drupalSourceService.GetEventsFromDrupalAsync(cancellationToken, page: page, page_size: pageSize);
+
+            if (drupalItems == null || drupalItems.Items == null || !drupalItems.Items.Any())
+            {
+                return Results.Problem("No items found or deserialized data is invalid.");
+            }
+
+            var migrationItems = new List<ContentEvent>();
+            int totalCount = 0;
+
+            // iterate over each drupal item and fetch its data from current storage
+            // and upload it into Azure Blob
+            foreach (var drupalItem in drupalItems.Items)
+            {
+                await ProcessMigrationEvent(drupalItem, importImages: importImages);
+
+                migrationItems.Add(drupalItem);
+                totalCount += 1;
+            }
+
+            await _dataOutputService.SaveContentEventsAsync(migrationItems, cancellationToken);
+
+            //int.TryParse(drupalItems.Total, out var totalItemCount);
+            int totalItemCount = drupalItems.Total;
+
+            _logger.LogInformation($"Migrated {totalCount} out of {totalItemCount} Items");
+
+            while (totalItemCount > totalCount)
+            {
+                page += 1;
+                _logger.LogInformation($"Fetching data for page {page}");
+                drupalItems = await _drupalSourceService.GetEventsFromDrupalAsync(cancellationToken, page: page, page_size: pageSize);
+                migrationItems = new List<ContentEvent>();
+
+                if (drupalItems != null && drupalItems.Items.Count > 0)
+                {
+                    foreach (var drupalItem in drupalItems.Items)
+                    {
+                        await ProcessMigrationEvent(drupalItem, importImages: importImages);
+
+                        migrationItems.Add(drupalItem);
+                        totalCount += 1;
+                    }
+
+                    await _dataOutputService.SaveContentEventsAsync(migrationItems, cancellationToken);
+
+                    _logger.LogInformation($"Migrated {totalCount} out of {totalItemCount} Items");
+                }
+            }
+
+            _logger.LogInformation($"Completed Items Migration @ {DateTime.UtcNow}");
+
+            return Results.Ok(new
+            {
+                Message = $"Migrated {totalCount} out of {totalItemCount} Items - Started @ {startTime} - Completed @ {DateTime.UtcNow}.",
+            });
+        }
+
+        public async Task<IResult> MigrateCommunityPosts(
+            //string sourceCategory, 
+            //int destinationCategory, 
+            bool importImages, 
+            CancellationToken cancellationToken
+            )
+        {
+            int pageSize = 200;
+            int page = 1;
+
+            var startTime = DateTime.Now;
+
+            _logger.LogInformation($"Starting Items Migration @ {startTime}");
+
+            var drupalItems = await _drupalSourceService.GetCommunitiesFromDrupalAsync(cancellationToken, page: page, page_size: pageSize);
+
+            if (drupalItems == null || drupalItems.Items == null || !drupalItems.Items.Any())
+            {
+                return Results.Problem("No items found or deserialized data is invalid.");
+            }
+
+            var migrationItems = new List<CommunityPost>();
+            var migrationComments = new Dictionary<string, List<ContentComment>>();
+            int totalCount = 0;
+            int totalCommentCount = 0;
+
+            // iterate over each drupal item and fetch its data from current storage
+            // and upload it into Azure Blob
+            foreach (var drupalItem in drupalItems.Items)
+            {
+                await ProcessMigrationCommunity(drupalItem, importImages: importImages);
+
+                if (int.TryParse(drupalItem.CommentCount, out var commentCount) && commentCount > 0)
+                {
+                    int comment_page = 1;
+                    int comment_page_size = 30;
+
+                    // Fetch comments for this community post
+                    var comments = await _drupalSourceService.GetCommentsByIdAsync(drupalItem.Nid, cancellationToken, comment_page, comment_page_size);
+
+                    if (comments != null && comments.Comments != null && comments.Comments.Any())
+                    {
+                        migrationComments.Add(drupalItem.Nid, comments.Comments);
+
+                        totalCommentCount =+ comments.Comments.Count;
+
+                        _logger.LogInformation($"Found {comments.Comments.Count} comments for post {drupalItem.Nid}");
+                    }
+                }
+
+                migrationItems.Add(drupalItem);
+                totalCount += 1;
+            }
+
+            await _dataOutputService.SaveContentCommunityPostsAsync(migrationItems, cancellationToken);
+
+            int.TryParse(drupalItems.Total, out var totalItemCount);
+            //int totalItemCount = drupalItems.Total;
+
+            _logger.LogInformation($"Migrated {totalCount} out of {totalItemCount} Items");
+
+            while (totalItemCount > totalCount)
+            {
+                page += 1;
+                _logger.LogInformation($"Fetching data for page {page}");
+                drupalItems = await _drupalSourceService.GetCommunitiesFromDrupalAsync(cancellationToken, page: page, page_size: pageSize);
+                migrationItems = new List<CommunityPost>();
+                if (drupalItems != null && drupalItems.Items.Count > 0)
+                {
+                    foreach (var drupalItem in drupalItems.Items)
+                    {
+                        await ProcessMigrationCommunity(drupalItem, importImages: importImages);
+
+                        if (int.TryParse(drupalItem.CommentCount, out var commentCount) && commentCount > 0)
+                        {
+                            int comment_page = 1;
+                            int comment_page_size = 30;
+
+                            // Fetch comments for this community post
+                            var comments = await _drupalSourceService.GetCommentsByIdAsync(drupalItem.Nid, cancellationToken, comment_page, comment_page_size);
+
+                            if (comments != null && comments.Comments != null && comments.Comments.Any())
+                            {
+                                migrationComments.Add(drupalItem.Nid, comments.Comments);
+
+                                totalCommentCount = +comments.Comments.Count;
+
+                                _logger.LogInformation($"Found {comments.Comments.Count} comments for post {drupalItem.Nid}");
+                            }
+                        }
+
+                        migrationItems.Add(drupalItem);
+                        totalCount += 1;
+                    }
+
+                    await _dataOutputService.SaveContentCommunityPostsAsync(migrationItems, cancellationToken);
+                    await _dataOutputService.SaveContentCommunityCommentsAsync(migrationComments, cancellationToken);
+
+                    _logger.LogInformation($"Migrated {totalCount} out of {totalItemCount} Posts with {totalCommentCount} Comments");
+                }
+            }
+
+            _logger.LogInformation($"Completed Items Migration @ {DateTime.UtcNow}");
+
+            return Results.Ok(new
+            {
+                Message = $"Migrated {totalCount} out of {totalItemCount} Posts with {totalCommentCount} Comments - Started @ {startTime} - Completed @ {DateTime.UtcNow}.",
+            });
+        }
+
+        private async Task ProcessMigrationItem(DrupalItem drupalItem, bool importImages)
+        {
+            if (importImages)
+            {
+
+                var uploadedBlobKeys = new List<string>();
+
+                foreach (var item in drupalItem.Images)
+                {
+                    // Check if the item is a valid URL
+                    if (Uri.TryCreate(item, UriKind.Absolute, out var uriResult) &&
+                        (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps))
+                    {
+                        try
+                        {
+                            using var httpClient = new HttpClient();
+                            var fileBytes = await httpClient.GetByteArrayAsync(item);
+
+                            _logger.LogInformation($"Downloaded {Path.GetFileName(uriResult.LocalPath)} @ {DateTime.UtcNow}");
+
+                            // Generate a custom file name from the URL
+                            var customName = uriResult.AbsolutePath;
+
+                            // Upload to blob storage
+                            var url = await _fileStorageBlobService.SaveFile(fileBytes, customName, "migration-images");
+                            //var url = $"https://replacement.url{customName}";
+
+                            _logger.LogInformation($"Uploaded {customName} @ {DateTime.UtcNow}");
+
+                            uploadedBlobKeys.Add(url);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogInformation($"Failed to process image URL '{item}': {ex.Message}");
+                        }
+                    }
+                    else
+                    {
+                        _logger.LogInformation($"Skipped non-URL item: {item}");
+                    }
+                }
+
+                drupalItem.Images = uploadedBlobKeys;
+
+                _logger.LogInformation($"Processed {drupalItem.Images.Count} Images for {drupalItem.Slug}");
+            }
+
+            drupalItem.Slug = drupalItem.Slug?.Split('/')?.LastOrDefault() ?? ProcessingHelpers.GenerateSlug(drupalItem.Title);
+        }
+        private async Task ProcessMigrationArticle(ArticleItem drupalItem, bool importImages)
+        {
+            // Check if the item is a valid URL
+            if (importImages && Uri.TryCreate(drupalItem.ImageUrl, UriKind.Absolute, out var uriResult) &&
+                    (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps))
+            {
+                try
+                {
+                    using var httpClient = new HttpClient();
+                    var fileBytes = await httpClient.GetByteArrayAsync(drupalItem.ImageUrl);
+
+                    _logger.LogInformation($"Downloaded {Path.GetFileName(uriResult.LocalPath)} @ {DateTime.UtcNow}");
+
+                    // Generate a custom file name from the URL
+                    var customName = uriResult.AbsolutePath;
+
+                    // Upload to blob storage
+                    var url = await _fileStorageBlobService.SaveFile(fileBytes, customName, "migration-images");
+                    //var url = $"https://replacement.url{customName}";
+
+                    _logger.LogInformation($"Uploaded {customName} @ {DateTime.UtcNow}");
+
+                    drupalItem.ImageUrl = url;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogInformation($"Failed to process image URL '{drupalItem.ImageUrl}': {ex.Message}");
+                }
+
+                _logger.LogInformation($"Processed Image for {drupalItem.Slug}");
+            }
+            else
+            {
+                _logger.LogDebug($"Skipped migrating: {drupalItem.ImageUrl}");
+            }
+
+            //drupalItem.Slug = ProcessingHelpers.GenerateSlug(drupalItem.Title);
+            
+            drupalItem.Slug = drupalItem.Slug?.Split('/')?.LastOrDefault() ?? ProcessingHelpers.GenerateSlug(drupalItem.Title);
+
+            _logger.LogInformation($"Processed {drupalItem.Slug}");
+        }
+
+        private async Task ProcessMigrationEvent(ContentEvent drupalItem, bool importImages)
+        {
+            // Check if the item is a valid URL
+            if (importImages && Uri.TryCreate(drupalItem.ImageUrl, UriKind.Absolute, out var uriResult) &&
+                    (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps))
+            {
+                try
+                {
+                    using var httpClient = new HttpClient();
+                    var fileBytes = await httpClient.GetByteArrayAsync(drupalItem.ImageUrl);
+
+                    _logger.LogInformation($"Downloaded {Path.GetFileName(uriResult.LocalPath)} @ {DateTime.UtcNow}");
+
+                    // Generate a custom file name from the URL
+                    var customName = uriResult.AbsolutePath;
+
+                    // Upload to blob storage
+                    var url = await _fileStorageBlobService.SaveFile(fileBytes, customName, "migration-images");
+                    //var url = $"https://replacement.url{customName}";
+
+                    _logger.LogInformation($"Uploaded {customName} @ {DateTime.UtcNow}");
+
+                    drupalItem.ImageUrl = url;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogInformation($"Failed to process image URL '{drupalItem.ImageUrl}': {ex.Message}");
+                }
+
+                _logger.LogInformation($"Processed Image for {drupalItem.Slug}");
+            }
+            else
+            {
+                _logger.LogInformation($"Skipped migrating: {drupalItem.ImageUrl}");
+            }
+
+            //drupalItem.Slug = ProcessingHelpers.GenerateSlug(drupalItem.Title);
+
+            drupalItem.Slug = drupalItem.Slug?.Split('/')?.LastOrDefault() ?? ProcessingHelpers.GenerateSlug(drupalItem.Title);
+
+            _logger.LogInformation($"Processed {drupalItem.Slug}");
+
+        }
+
+        private async Task ProcessMigrationCommunity(CommunityPost drupalItem, bool importImages)
+        {
+            // Check if the item is a valid URL
+            if (importImages && Uri.TryCreate(drupalItem.ImageUrl, UriKind.Absolute, out var uriResult) &&
+                    (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps))
+            {
+                try
+                {
+                    using var httpClient = new HttpClient();
+                    var fileBytes = await httpClient.GetByteArrayAsync(drupalItem.ImageUrl);
+
+                    _logger.LogInformation($"Downloaded {Path.GetFileName(uriResult.LocalPath)} @ {DateTime.UtcNow}");
+
+                    // Generate a custom file name from the URL
+                    var customName = uriResult.AbsolutePath;
+
+                    // Upload to blob storage
+                    var url = await _fileStorageBlobService.SaveFile(fileBytes, customName, "migration-images");
+                    //var url = $"https://replacement.url{customName}";
+
+                    _logger.LogInformation($"Uploaded {customName} @ {DateTime.UtcNow}");
+
+                    drupalItem.ImageUrl = url;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogInformation($"Failed to process image URL '{drupalItem.ImageUrl}': {ex.Message}");
+                }
+
+                _logger.LogInformation($"Processed Image for {drupalItem.Slug}");
+            }
+            else
+            {
+                _logger.LogInformation($"Skipped migrating: {drupalItem.ImageUrl}");
+            }
+
+            //drupalItem.Slug = ProcessingHelpers.GenerateSlug(drupalItem.Title);
+
+            drupalItem.Slug = drupalItem.Slug?.Split('/')?.LastOrDefault() ?? ProcessingHelpers.GenerateSlug(drupalItem.Title);
+
+            _logger.LogInformation($"Processed {drupalItem.Slug}");
+
+        }
+
+        public async Task<IResult> MigrateEventCategories(CancellationToken cancellationToken)
+        {
+            _logger.LogInformation($"Starting Migrations @ {DateTime.UtcNow}");
+
+            // first fetch all results from source
+
+            var categories = await _drupalSourceService.GetCategoriesFromDrupalAsync(cancellationToken);
+
+            if (categories == null || categories.EventCategories == null || !categories.EventCategories.Any())
+            {
+                // if we have no results return an error
+                return Results.Problem("No categories found or deserialized data is invalid.");
+            }
+
+            _logger.LogInformation($"Completed Data Denormalization @ {DateTime.UtcNow}");
+
+            await _dataOutputService.SaveEventCategoriesAsync(categories.EventCategories, cancellationToken);
+
+            // return that this was successful
+
+            return Results.Ok(new
+            {
+                Message = $"Migrated {categories.EventCategories.Count} Categories - Completed @ {DateTime.UtcNow}.",
+            });
+        }
+
+        public async Task<IResult> MigrateNewsCategories(CancellationToken cancellationToken)
+        {
+            _logger.LogInformation($"Starting Migrations @ {DateTime.UtcNow}");
+            List<NewsCategory> categories = Constants.NewsCategories();
+
+            _logger.LogInformation($"Completed Data Denormalization @ {DateTime.UtcNow}");
+
+            await _dataOutputService.SaveNewsCategoriesAsync(categories, cancellationToken);
+
+            // return that this was successful
+
+            return Results.Ok(new
+            {
+                Message = $"Migrated {categories.Count} Primary Categories & {categories.SelectMany(x => x.SubCategories).ToList().Count} Subcategories - Completed @ {DateTime.UtcNow}."
+            });
+        }
+
+        public async Task<IResult> MigrateLocations(CancellationToken cancellationToken)
+        {
+            _logger.LogInformation($"Starting Migrations @ {DateTime.UtcNow}");
+
+            var categories = await _drupalSourceService.GetCategoriesFromDrupalAsync(cancellationToken);
+
+            if (categories == null || categories.Locations == null || !categories.Locations.Any())
+            {
+                // if we have no results return an error
+                return Results.Problem("No categories found or deserialized data is invalid.");
+            }
+
+            _logger.LogInformation($"Completed Data Denormalization @ {DateTime.UtcNow}");
+
+            await _dataOutputService.SaveLocationsAsync(categories.Locations, cancellationToken);
+
+            // return that this was successful
+
+            return Results.Ok(new
+            {
+                Message = $"Migrated {categories.Locations.Count} Locations & {categories.Locations.SelectMany(x => x.Areas ?? new List<Area>()).ToList().Count} Areas - Completed @ {DateTime.UtcNow}."
+            });
+        }
+
+        public async Task<IResult> MigrateLegacyServicesSubscriptions(CancellationToken cancellationToken = default)
+        {
+            string type = "service"; // default to service
+
+            var environment = _config["LegacySubscriptions:Environment"];
+
+            if (string.IsNullOrEmpty(environment))
+            {
+                return Results.Problem("Environment is not configured for legacy subscriptions.");
+            }
+
+            _logger.LogInformation($"Starting Legacy Subscription Migration @ {DateTime.UtcNow}");
+            var subscriptions = await GetLegacySubscriptions<LegacyServicesSubscriptionDrupal>(type, environment, cancellationToken);
+            if (subscriptions == null)
+            {
+                return Results.Problem("No legacy subscription found or deserialized data is invalid.");
+            }
+            _logger.LogInformation($"Completed Legacy Subscription Migration @ {DateTime.UtcNow}");
+
+            await _dataOutputService.SaveLegacyServicesSubscriptionsAsync(subscriptions, cancellationToken);
+            return Results.Ok(new
+            {
+                Message = $"Migrated {subscriptions.Count} Services Subscriptions - Completed @ {DateTime.UtcNow}."
+            });
+        }
+
+        public async Task<IResult> MigrateLegacyItemsSubscriptions(CancellationToken cancellationToken = default)
+        {
+            string type = "item"; // default to items
+
+            var environment = _config["LegacySubscriptions:Environment"];
+
+            if (string.IsNullOrEmpty(environment))
+            {
+                return Results.Problem("Environment is not configured for legacy subscriptions.");
+            }
+
+            _logger.LogInformation($"Starting Legacy Subscription Migration @ {DateTime.UtcNow}");
+            var subscriptions = await GetLegacySubscriptions<LegacyItemSubscriptionDrupal>(type, environment, cancellationToken);
+            if (subscriptions == null)
+            {
+                return Results.Problem("No legacy subscription found or deserialized data is invalid.");
+            }
+            _logger.LogInformation($"Completed Legacy Subscription Migration @ {DateTime.UtcNow}");
+
+            await _dataOutputService.SaveLegacyItemsSubscriptionsAsync(subscriptions, cancellationToken);
+            return Results.Ok(new
+            {
+                Message = $"Migrated {subscriptions.Count} Item Subscriptions - Completed @ {DateTime.UtcNow}."
+            });
+        }
+
+        private async Task<List<SubscriptionItem>?> GetLegacySubscriptions<T>(string type, string environment, CancellationToken cancellationToken = default) where T : ILegacySubscriptionDrupal
+        {
+
+            var formData = new List<KeyValuePair<string, string>>
+            {
+                new KeyValuePair<string, string>("env", environment),
+                new KeyValuePair<string, string>("type", type)
+            };
+            var content = new FormUrlEncodedContent(formData);
+
+            content.Headers.ContentType = new MediaTypeHeaderValue("application/x-www-form-urlencoded");
+
+            _httpClient.DefaultRequestHeaders.Add("x-api-key", _config["LegacySubscriptions:ApiKey"]);
+
+            var response = await _httpClient.PostAsync(ConstantValues.Subscriptions.SubscriptionsEndpoint, content);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogError($"Failed to migrate categories. Status: {response.StatusCode}");
+                return null;
+            }
+
+            _logger.LogInformation($"Got Response from migration endpoint {ConstantValues.Subscriptions.SubscriptionsEndpoint}");
+
+            var json = await response.Content.ReadAsStringAsync();
+
+            try
+            {
+                var jsonDeserialized = JsonSerializer.Deserialize<Dictionary<string, LegacyItemSubscriptionDto<T>>>(json, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+
+                if (jsonDeserialized == null)
+                {
+                    return null;
+                }
+
+                var subscriptions = new List<SubscriptionItem>();
+
+                foreach (var item in jsonDeserialized)
+                {
+                    SubscriptionItem subscription = item.Value.Drupal.Item;
+                    subscription.UserId = item.Key;
+                    subscriptions.Add(subscription);
+                }
+
+                return subscriptions;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Deserialization error: {ex.Message}");
+                return null;
+            }
+        }
+    }
+}

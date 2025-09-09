@@ -1,0 +1,18 @@
+﻿<MudList Dense="true" T="ChatMessageModel" SelectedValue="@SelectedValue" SelectedValueChanged="OnSelectedValueChanged">
+    @if (Messages != null)
+    {
+        @foreach (var msg in Messages)
+        {
+            <MudListItem Value="@msg">
+                <MudPaper Class="pa-2 mb-2" 
+                          Elevation="1" 
+                          Style=@($"max-width: 70%; background:{GetRoleColor(msg.Role.ToLower())}; margin-left: {(msg.Role.ToLower() == "user" ? "auto" : "0")}; margin-right: {(msg.Role.ToLower() == "user" ? "0" : "auto")};")>
+                    <b>@msg.Role:</b>
+                    <MudText Typo="Typo.body1">
+                        @((MarkupString)FormatContent(msg.Content))
+                    </MudText>
+                </MudPaper>
+            </MudListItem>
+        }
+    }
+</MudList>

@@ -1,0 +1,113 @@
+@using MudBlazor
+@using QLN.Web.Shared.Components.Classifieds.PromotedItemCards
+@using QLN.Web.Shared.Pages.Classifieds.Skeletons
+@using QLN.Web.Shared.Components.EmptyCard
+@using QLN.Web.Shared.Components.SearchNotFound
+@using QLN.Web.Shared.Components.PriceSelect
+@using QLN.Web.Shared.Components.BreadCrumb
+@using QLN.Web.Shared.Components.PaginationFooter
+@using QLN.Web.Shared.Components.CustomSelect
+@using QLN.Common.DTO_s   
+@inject NavigationManager NavigationManager
+@inherits CollectiblesListSectionBase
+
+<Breadcrumb Items="breadcrumbItems" />
+
+<div class="item-list">
+     <div class="item-list-header">
+        <h1 class="item-list-header-title">@($"Collectibles in Qatar ({TotalCount} results)")</h1>
+        <div class="item-list-header-sort-section">
+            <label class="item-list-header-sort-label">Sort by:</label>
+            <div class="item-list-header-sort-dropdown">
+                <PriceSelect TItem="SortOption"
+             Label=""
+             Placeholder="Default"
+             Items="sortOptions"
+             SelectedId="@selectedSort"
+             SelectedIdChanged="OnSortChanged"
+             GetId="option => option.Id"
+             GetLabel="option => option.Label" />
+
+            </div>
+        </div>
+</div>
+<div class="max-width-List">
+    @if (Loading)
+    {
+        <MudGrid GutterSize="3" >
+             @for (int i = 0; i < pageSize; i++)
+            {
+                <MudItem xs="12" sm="6" md="4">
+                    <FeaturedItemSkeletonCard />
+                </MudItem>
+            }
+        </MudGrid>
+    }
+    else if (Items == null || !Items.Any())
+{
+    <div class="empty-wrapper">
+        @if (IsSearchPerformed)
+        {
+            <SearchNotFound 
+                Title="No results found" 
+                Subtitle="Try adjusting your filters or keywords"
+                ButtonText="Clear Search"
+                OnClearSearch="ClearSearch" />
+        }
+        else
+        {
+            <EmptyCard Title="No items found." Subtitle="Browse the categories or check back later." />
+        }
+    </div>
+}
+
+    else
+    {
+        @if (ViewMode == "grid")
+        {
+             <MudGrid GutterSize="3" >
+               @foreach (var item in GetPageWithAd(Items, currentPage))
+                {
+                    <MudItem xs="12" sm="6" md="4">
+                        @if (item is ClassifiedsIndex classifiedItem)
+                        {
+                            <PromotedItemGridCard Item="classifiedItem" OnClickCard="OnClickCardItem" />
+                        }
+                        else if (item is string && item.ToString() == "ad")
+                        {
+                            <img src="/qln-images/classifieds/ad_image.svg" alt="Ad Banner" class="grid-ad-image" />
+                        }
+                    </MudItem>
+                }
+
+            </MudGrid>
+        }
+        else if (ViewMode == "list")
+        {
+            <div class="list-view-wrapper">
+                <div class="list-view-left">
+                    @foreach (var item in Items)
+                    {
+                        <PromotedItemListCard Item="item" OnClickCard="OnClickCardItem"/>
+                    }
+                </div>
+
+                <div class="list-view-right">
+                    <img src="/qln-images/classifieds/ad_image.svg" alt="Ad Banner" class="ad-image" />
+                </div>
+            </div>
+
+        }
+
+    }
+     @if (Items?.Any() == true)
+    {
+        <!-- Pagination -->
+        <PaginationFooter TotalItems="@TotalCount" CurrentPage="@currentPage" PageSize="@pageSize"
+            OnPageChange="@HandlePageChange" OnPageSizeChange="@HandlePageSizeChange" />
+    }
+
+    </div>
+
+</div>
+

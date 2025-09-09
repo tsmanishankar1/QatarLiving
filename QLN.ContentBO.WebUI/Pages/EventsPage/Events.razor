@@ -1,0 +1,47 @@
+@page "/manage/events"
+@using QLN.ContentBO.WebUI.Models
+@using QLN.ContentBO.WebUI.Pages.EventsPage
+@inherits EventsBase
+
+<MudGrid Style="padding-top: 18px">
+    <MudItem xs="12" md="12">
+        <h2 class="main-title-name-style">Events</h2>
+
+        <MudTabs @bind-ActivePanelIndex="@activeIndex"
+                 Rounded="false"
+                 Class="custom-tabs"
+                 DisableSlideAnimation="true">
+            @foreach (var tab in categories)
+            {
+                <MudTabPanel Text="@tab" />
+            }
+        </MudTabs>
+
+        @if (activeIndex == 0)
+        {
+           <AllEventList
+              PaginatedData="PaginatedData"
+                IsLoading="IsLoading"
+                Events="events"
+                Categories="Categories"
+                CurrentPage="currentPage"
+                PageSize="pageSize"
+                OnPageChange="HandlePageChange"
+                OnPageSizeChange="HandlePageSizeChange"
+                OnDelete="DeleteEvent"
+                AddEventCallback="NavigateToAddEvent"
+                OnSortOrderChanged="HandleSortOrderChange"
+                OnStatusChanged="HandleStatusChange"
+                EventStatusChanged="UpdateEventStatusAsync" />
+
+        }
+        else
+        {
+            <FeaturedEventSlotsList IsLoadingEvent="IsLoadingEvent" FeaturedEventSlots="featuredEventSlots"
+                                    Categories="Categories"
+                                    ReplaceSlot="ReplaceEventSlot"
+                                    OnDelete="DeleteEventOnClick" />
+        }
+    </MudItem>
+</MudGrid>
+

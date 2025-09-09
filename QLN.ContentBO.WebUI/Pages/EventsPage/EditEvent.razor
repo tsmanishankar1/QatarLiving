@@ -1,0 +1,371 @@
+@page "/content/events/edit"
+@page "/content/events/edit/{Id:guid}"
+@inherits EditEventBase;
+@using PSC.Blazor.Components.MarkdownEditor.Enums
+@using QLN.ContentBO.WebUI.Components.LoadingOverlay;
+@using QLN.ContentBO.WebUI.Models
+
+@if (IsPageLoading)
+{
+    <MudOverlay @bind-Visible="IsPageLoading" DarkBackground AutoClose="false">
+        <MudProgressCircular Color="Color.Warning" Rounded="true" Indeterminate="true" />
+    </MudOverlay>
+}
+<EditForm Model="CurrentEvent" OnValidSubmit="HandleValidSubmit">
+    <DataAnnotationsValidator />
+    <MudGrid Style="padding-top: 0">
+        <!-- Left Form Section -->
+        <MudItem xs="12" md="6">
+            <h2 class="mb-2 mt-3 event-form-title">Edit Event</h2>
+            <MudSelect T="int"
+                       Label="Category"
+                       Placeholder="Choose"
+                       Variant="Variant.Outlined"
+                       @bind-Value="CurrentEvent.CategoryId"
+                       Class="my-2 event-custom-textfield"
+                       Style="background-color: #FFFFFF;"
+                       For="@(() => CurrentEvent.CategoryId)">
+                @if (Categories != null && Categories.Any())
+                {
+                    @foreach (var category in Categories)
+                    {
+                        <MudSelectItem Value="@category.Id">@category.CategoryName</MudSelectItem>
+                    }
+                }
+                else
+                {
+                    <MudSelectItem Disabled="true" Value="0">Choose</MudSelectItem>
+                }
+            </MudSelect>
+            <MudTextField Variant="Variant.Outlined" Color="Color.Primary" Label="Event Title" Class="my-2 event-custom-textfield" @bind-Value="@CurrentEvent.EventTitle" For="@(() => CurrentEvent.EventTitle)" Style=" background-color: #FFFFFF;" MaxLength="255" />
+            <MudRadioGroup Required="true" RequiredError="Event type is required." T="EventType" @bind-Value="CurrentEvent.EventType" For="@(() => CurrentEvent.EventType)" Class="my-2">
+                <MudRadio Color="Color.Primary" T="EventType" Value="EventType.FreeAcess">Free Access</MudRadio>
+                <MudRadio Color="Color.Primary" T="EventType" Value="EventType.OpenRegistrations">Open Registrations</MudRadio>
+                <MudRadio Color="Color.Primary" T="EventType" Value="EventType.FeePrice">Fees</MudRadio>
+            </MudRadioGroup>
+            <MudNumericField T="int?"
+                             Variant="Variant.Outlined"
+                             HideSpinButtons="true"
+                             Label="Price"
+                             @bind-Value="CurrentEvent.Price"
+                             For="@(() => CurrentEvent.Price)"
+                             Adornment="Adornment.End"
+                             AdornmentText="QAR"
+                             Style="background-color: #FFFFFF;"
+                             Class="@PriceFieldClass"
+                             Disabled="@(!IsFeesSelected)"
+                             Immediate="true"
+                             Max=int.MaxValue
+                             InputMode="InputMode.numeric"
+                             Pattern="^\d*$" />
+            @if (!string.IsNullOrEmpty(_PriceError))
+            {
+                <div class="event-mud-error-text">@_PriceError</div>
+            }
+            <MudTextField Variant="Variant.Outlined" Label="Redirection Link" Class="my-2 event-custom-textfield" @bind-Value="@CurrentEvent.RedirectionLink" For="@(() => CurrentEvent.RedirectionLink)" Style=" background-color: #FFFFFF;" MaxLength="255" />
+
+
+            <MudSelect T="string"
+                       Label="Location"
+                       Placeholder="Choose"
+                       Variant="Variant.Outlined"
+                       Value="SelectedLocationId"
+                       ValueChanged="OnLocationChanged"
+                       ValueExpression="@(() => SelectedLocationId)"
+                       Class="my-2 custom-textfield"
+                       Style="background-color: #FFFFFF;">
+                @if (Locations?.Any() == true)
+                {
+                    @foreach (var location in Locations)
+                    {
+                        <MudSelectItem Value="@location.Id">@location.Name</MudSelectItem>
+                    }
+                }
+                else
+                {
+                    <MudSelectItem T="string" Disabled="true">Choose</MudSelectItem>
+                }
+            </MudSelect>
+            <ValidationMessage For="@(() => CurrentEvent.Location)" />
+            <MudTextField Variant="Variant.Outlined" Label="Venue" Class="my-2 event-custom-textfield" @bind-Value="@CurrentEvent.Venue" Style=" background-color: #FFFFFF;" MaxLength="255" />
+            <div id="map" style="height: 300px; width: 100%;"></div>
+
+            @* Date picker *@
+            <div class="event-select-field event-date-picker-field" @onclick="ToggleDatePicker">
+                <MudTextField Label="Date"
+                              Value="@SelectedDateLabel"
+                              ReadOnly="true"
+                              DisableUnderLine="true"
+                              Variant="Variant.Outlined"
+                              Style="background-color: #FFFFFF;"
+                              Class="event-cursor-pointer event-custom-textfield"
+                              Adornment="Adornment.End"
+                              AdornmentIcon="@Icons.Material.Filled.DateRange"
+                              OnClick="ToggleDatePicker" />
+                <MudPopover Open="@_showDatePicker" AnchorOrigin="Origin.BottomCenter"
+                            TransformOrigin="Origin.TopCenter" Elevation="6" Class="event-popover-container">
+                    <div class="event-picker-overlay event-my-orange-theme" @ref="_popoverDiv">
+                        <div style="display: flex; justify-content: space-between; gap: 24px; flex-wrap: wrap;">
+                            <MudDateRangePicker @bind-DateRange="_dateRange"
+                                                PickerVariant="PickerVariant.Static"
+                                                DisableToolbar="true"
+                                                ShowToolbar="false"
+                                                DisplayMonths="1"
+                                                Class="event-custom-date-range"
+                                                Style="min-width: 300px;"
+                                                MinDate="@DateTime.Today" />
+
+                            <!-- Start and End Summary -->
+                            <div style="display: flex; flex-direction: column; gap: 12px; min-width: 160px;">
+                                <div>
+                                    <div class="event-summary-box">
+                                        @( _dateRange?.Start != null ? _dateRange.Start?.ToString("dd-MM-yyyy") : "Start date" )
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="event-summary-box">
+                                        @( _dateRange?.End != null ? _dateRange.End?.ToString("dd-MM-yyyy") : "End date" )
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+
+                        <!-- Actions -->
+                        <div class="event-picker-actions" style="display: flex; justify-content: flex-end; gap: 8px;">
+                            <button class="event-cancel-button" @onclick="CancelDatePicker">Cancel</button>
+                            <button class="event-apply-button"
+                                    @onclick="ApplyDatePicker"
+                                    disabled="@(_dateRange?.Start == null && _dateRange?.End == null)">
+                                Apply
+                            </button>
+                        </div>
+                    </div>
+                </MudPopover>
+            </div>
+            @if (CurrentEvent?.EventSchedule != null)
+            {
+                <ValidationMessage For="@(() => CurrentEvent.EventSchedule.StartDate)" />
+            }
+
+
+            @if (CurrentEvent?.EventSchedule != null && _dateRange?.Start != null && _dateRange?.End != null)
+            {
+                <MudRadioGroup Color="Color.Primary" T="EventTimeType" @bind-Value="CurrentEvent.EventSchedule.TimeSlotType" Class="my-2">
+                    <MudRadio T="EventTimeType" Color="Color.Primary" Value="EventTimeType.GeneralTime">General time</MudRadio>
+                    <MudRadio T="EventTimeType" Color="Color.Primary" Value="EventTimeType.PerDayTime">Per day time</MudRadio>
+                </MudRadioGroup>
+            }
+            @if (CurrentEvent?.EventSchedule?.TimeSlotType == EventTimeType.GeneralTime  && !string.IsNullOrWhiteSpace(SelectedDateLabel))
+            {
+                <div style="display: flex; gap: 16px; align-items: center;">
+                    <MudTextField  MaxLength="50" @bind-Value="@FreeTextTimeField" Label="Time" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.AccessTime" />
+                </div>
+                @if (!string.IsNullOrEmpty(_timeError))
+                {
+                    <div class="mud-error-text">@_timeError</div>
+                }
+
+            }
+            else{
+                @foreach (var entry in DayTimeList.Take(7))
+                {
+                    <MudPaper Elevation="0" Style="padding: 8px; margin-bottom: 12px; background-color: #FAFAFA; border-radius: 8px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 12px;">
+                             <div style="width: 135px;display: flex; justify-content: flex-start; align-items: center;">
+                                <input type="checkbox"
+                                checked="@entry.IsSelected"
+                                class="eef--custom-accent"
+                                @onchange="(e) => OnDaySelectionChanged(entry, (bool)e.Value!)"/>
+                                <label style="font-size: 1rem;">@entry.Day</label>
+                            </div>
+                            <div style="display: flex; flex-direction: column;  align-items: flex-start; justify-content: center; flex-grow: 1;">
+                                <div style="display: flex; align-items: center; width: 100%;">
+                                    <MudTextField  MaxLength="50"ReadOnly="!entry.IsSelected" @bind-Value="@entry.FreeTextTime" Label="Time" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.AccessTime" />
+                                </div>
+                                @if (!string.IsNullOrEmpty(entry.ErrorMsg))
+                                {
+                                    <div class="mud-error-text">@entry.ErrorMsg</div>
+                                }
+                            </div>
+                        </div>
+                    </MudPaper>
+                }
+            }
+            <!-- START Custom Markdown Editor -->
+            <MarkdownEditor @bind-Value="@CurrentEvent.EventDescription" Placeholder="Start Typing" HideIcons="@HiddenIcons" CustomButtonClicked="@OnCustomButtonClicked" @ref="MarkdownEditorRef">
+                <Toolbar>
+                    <MarkdownToolbarButton Action="MarkdownAction.Bold" Icon="fa fa-bold" Title="Bold" />
+                    <MarkdownToolbarButton Action="MarkdownAction.Italic" Icon="fa fa-italic" Title="Italic" />
+                    <MarkdownToolbarButton Action="MarkdownAction.Heading" Icon="fa fa-header" Title="Heading" />
+                    <MarkdownToolbarButton Action="MarkdownAction.Strikethrough" Icon="fa fa-strikethrough" Title="Strikethrough" />
+
+                    <MarkdownToolbarButton Separator Action="MarkdownAction.Code" Icon="fa fa-code" Title="Code Block" />
+                    <MarkdownToolbarButton Action="MarkdownAction.Quote" Icon="fa fa-quote-right" Title="Quote" />
+                    <MarkdownToolbarButton Action="MarkdownAction.HorizontalRule" Icon="fa fa-minus" Title="Horizontal Rule" />
+                    <MarkdownToolbarButton Action="MarkdownAction.UnorderedList" Icon="fa fa-list-ul" Title="Unordered List" />
+                    <MarkdownToolbarButton Action="MarkdownAction.OrderedList" Icon="fa fa-list-ol" Title="Ordered List" />
+
+                    <MarkdownToolbarButton Separator Action="MarkdownAction.Link" Icon="fa fa-link" Title="Link" />
+                    <MarkdownToolbarButton Action="MarkdownAction.Custom" Name="@UploadImageButtonName" Icon="fa fa-upload" Title="Upload Image" />
+                    <MarkdownToolbarButton Action="MarkdownAction.Image" Icon="fa fa-image" Title="Image" />
+
+                    <MarkdownToolbarButton Separator Action="MarkdownAction.Custom" Name="CustomPreview" Icon="fa fa-eye no-disable" Title="Toggle Preview (Ctrl-P)" />
+                    <MarkdownToolbarButton Action="MarkdownAction.SideBySide" Icon="fa fa-columns no-disable no-mobile" Title="Side by Side" />
+                    <MarkdownToolbarButton Action="MarkdownAction.Guide" Icon="fa fa-question-circle" Title="Markdown Guide" />
+                </Toolbar>
+            </MarkdownEditor>
+            <MudText Typo="Typo.caption" Color="Color.Error">
+                <ValidationMessage For="@(() => CurrentEvent.EventDescription)" />
+            </MudText>
+            <MudFileUpload T="IBrowserFile" Accept="image/*" OnFilesChanged="@(e => HandleMarkdownFilesChanged(e))" MaximumFileCount="1" MaxFileSize="2097152" @ref="_markdownfileUploadRef">
+            </MudFileUpload>
+            <!-- END Custom Markdown Editor -->
+            @if (!string.IsNullOrEmpty(_descriptionerror))
+            {
+                <div class="mud-error-text">@_descriptionerror</div>
+            }
+            <MudStack Row Class="mt-4" Justify="Justify.SpaceBetween">
+                <button type="button" class="event-custom-close full-width" @onclick="OnCancelClicked">Cancel</button>
+                <button type="submit" class="event-custom-add full-width">
+                    @if (IsLoading)
+                    {
+                        <MudProgressCircular Color="Color.Inherit"
+                                             Size="Size.Small"
+                                             Indeterminate="true" />
+                    }
+                    else
+                    {
+                        <span>Edit</span>
+                    }
+                </button>
+            </MudStack>
+        </MudItem>
+
+        <!-- Right Cover Image Section -->
+        <MudItem xs="12" md="6">
+            <h2 class="mb-2 mt-3 event-form-title">Cover Image</h2>
+            <MudFileUpload T="IBrowserFile" Accept="image/png,image/jpeg" OnFilesChanged="@(e => HandleFilesChanged(e))" MaximumFileCount="1" MaxFileSize="2097152" @ref="_fileUpload">
+                <ActivatorContent>
+                    <MudPaper Class="pa-6 d-flex flex-column align-center justify-center" Style="min-height: 200px; border: 1px dashed #ccc; cursor: pointer;">
+                        @if (!string.IsNullOrEmpty(CurrentEvent.CoverImage))
+                        {
+                            <img src="@CurrentEvent.CoverImage" alt="Cover Image Preview" style="width: 100%; max-height: 200px; object-fit: cover;" />
+                        }
+                        else
+                        {
+                            <div class="d-flex flex-column align-center">
+                                <div class="event-icon-circle">
+                                    <img src="/qln-images/upload_icon.svg"
+                                         class="event-file-upload-style"
+                                         alt="Upload" />
+                                </div>
+                                <div class="mt-1" style="color: #FF7F38;">Cover Image</div>
+                            </div>
+                        }
+                    </MudPaper>
+                </ActivatorContent>
+            </MudFileUpload>
+            @if (!string.IsNullOrEmpty(_coverImageError))
+            {
+                <div class="mud-error-text">@_coverImageError</div>
+            }
+            @if (!string.IsNullOrEmpty(CurrentEvent.CoverImage))
+            {
+                <MudPaper Elevation="0" Class="event-image-picker-style" Style=" background-color: #000000CC; width: 100%; height: 39px; ">
+                    <div class="event-upload-action-style">
+                        <MudButton OnClick="EditImage">
+                            <img src="/qln-images/edit_icon.svg" alt="Edit" class="action-icon-style" />
+                        </MudButton>
+                        <MudButton OnClick="RemoveImage">
+                            <img src="/qln-images/delete_icon.svg" alt="delete" class="action-icon-style" />
+                        </MudButton>
+                    </div>
+                </MudPaper>
+            }
+        </MudItem>
+    </MudGrid>
+</EditForm>
+
+
+
+<style>
+    .event-custom-add {
+        background-color: #FF7F38;
+        font-family: 'Public Sans', sans-serif;
+        font-size: 16px;
+        font-weight: 500;
+        border-radius: 4px;
+        color: white;
+        text-transform: none;
+        border: none;
+        padding: 10px 1rem;
+        cursor: pointer;
+    }
+
+    .event-custom-close {
+        font-size: 16px;
+        font-weight: 500;
+        border-radius: 4px;
+        border: 1px solid #D5D7DA;
+        color: #242424;
+        text-transform: none;
+        background-color: transparent;
+        padding: 10px 1rem;
+        cursor: pointer;
+    }
+
+    .full-width {
+        width: 100%;
+    }
+
+    .no-spinner input::-webkit-outer-spin-button,
+    .no-spinner input::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+
+.no-spinner input[type=number] {
+    -moz-appearance: textfield; /* Firefox */
+}
+
+.eef--custom-accent {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  background-color: #fff;
+  border: 2px solid #D0D5DD; 
+  cursor: pointer;
+  position: relative;
+  margin-right: 4px;
+  margin-left: 6px;
+}
+
+.eef--custom-accent:checked {
+  background-color: var(--color-accent);
+  border:none
+}
+
+.eef--custom-accent::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 7px;
+  width: 7px;
+  height: 14px;
+  border: solid #fff; 
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+  opacity: 0;
+}
+
+.eef--custom-accent:checked::after {
+  opacity: 1;
+}
+</style>
+
+

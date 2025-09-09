@@ -1,0 +1,36 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <AssemblyName>QLN.Blazor.Base</AssemblyName>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>aspnet-QLN.Blazor.Base-1561b0f7-176a-44ee-b381-f8c42dc46f7f</UserSecretsId>
+	  <AutoAssignPort>false</AutoAssignPort>
+    <ScopedCssEnabled>true</ScopedCssEnabled>
+	  <DevelopmentServerPort>5047</DevelopmentServerPort>
+	  <DevelopmentServerV6Port>5048</DevelopmentServerV6Port>
+	  <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CodeBeam.MudBlazor.Extensions" Version="8.2.3" />
+    <PackageReference Include="Dapr.AspNetCore" Version="1.13.1" />
+    <PackageReference Include="Google.Apis.YouTube.v3" Version="1.69.0.3764" />
+    <PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="8.0.15" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.15" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.15" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.15" />
+    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.21.0" />
+    <PackageReference Include="MudBlazor" Version="8.6.0" />
+    <PackageReference Include="MudExRichTextEditor" Version="8.5.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\QLN.Web.Shared\QLN.Web.Shared.csproj" />
+    <ProjectReference Include="..\QLN.Common\QLN.Common.csproj" />
+  </ItemGroup>
+	
+
+
+</Project>

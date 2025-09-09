@@ -1,0 +1,1412 @@
+﻿using Dapr.Client;
+using Microsoft.EntityFrameworkCore;
+using QLN.Common.DTO_s;
+using QLN.Common.DTO_s.Services;
+using QLN.Common.Infrastructure.Auditlog;
+using QLN.Common.Infrastructure.Constants;
+using QLN.Common.Infrastructure.CustomException;
+using QLN.Common.Infrastructure.IService.IService;
+using QLN.Common.Infrastructure.Model;
+using QLN.Common.Infrastructure.QLDbContext;
+using QLN.Common.Infrastructure.Subscriptions;
+using QLN.Common.Infrastructure.Utilities;
+using System.Text.Json;
+using System.Text.RegularExpressions;
+
+
+namespace QLN.Classified.MS.Service.Services
+{
+    public class InternalServicesService : IServices
+    {
+        public readonly QLClassifiedContext _dbContext;
+        public readonly DaprClient _dapr;
+        public readonly AuditLogger _auditLogger;
+        public readonly QLSubscriptionContext _qLSubscriptionContext;
+        public InternalServicesService(DaprClient dapr, AuditLogger auditLogger, QLClassifiedContext dbContext, QLSubscriptionContext qLSubscriptionContext)
+        {
+            _dapr = dapr;
+            _auditLogger = auditLogger;
+            _dbContext = dbContext;
+            _qLSubscriptionContext = qLSubscriptionContext;
+        }
+        public async Task<List<CategoryDto>> GetAllCategories(
+            string? vertical,
+            string? subVertical,
+            CancellationToken cancellationToken = default)
+        {
+            var query = _dbContext.CategoryDropdowns.AsNoTracking().AsQueryable();
+
+            if (!string.IsNullOrEmpty(vertical))
+            {
+                if (!Enum.TryParse<Vertical>(vertical, true, out var verticalEnum))
+                    return new List<CategoryDto>();
+
+                query = query.Where(c => c.Vertical == verticalEnum);
+            }
+
+            if (!string.IsNullOrEmpty(subVertical))
+            {
+                if (!Enum.TryParse<SubVertical>(subVertical, true, out var subVerticalEnum))
+                    return new List<CategoryDto>();
+
+                query = query.Where(c => c.SubVertical == subVerticalEnum);
+            }
+
+            var categories = await query
+                .OrderBy(c => c.Id)
+                .ToListAsync(cancellationToken);
+
+            var result = categories.Select(c => new CategoryDto
+            {
+                Id = c.Id,
+                CategoryName = c.CategoryName,
+                Vertical = c.Vertical.ToString(),
+                SubVertical = c.SubVertical?.ToString() ?? string.Empty,
+                ParentId = c.ParentId,
+                Fields = c.Fields ?? new List<FieldDto>()
+            }).ToList();
+
+            return result;
+        }
+        private List<FieldDto> FlattenFields(List<FieldDto>? fields)
+        {
+            var list = new List<FieldDto>();
+            if (fields == null) return list;
+
+            foreach (var field in fields)
+            {
+                list.Add(field);
+                if (field.Fields != null)
+                    list.AddRange(FlattenFields(field.Fields));
+            }
+
+            return list;
+        }
+        public async Task<string> CreateCategory(CategoryDto dto, CancellationToken cancellationToken)
+        {
+            try
+            {
+                if (!Enum.TryParse<Vertical>(dto.Vertical, true, out var verticalEnum))
+                    return "Invalid vertical value";
+
+                SubVertical? subVerticalEnum = null;
+                if (!string.IsNullOrWhiteSpace(dto.SubVertical))
+                {
+                    if (Enum.TryParse<SubVertical>(dto.SubVertical, true, out var parsedSubVertical))
+                        subVerticalEnum = parsedSubVertical;
+                    else
+                        return "Invalid sub-vertical value";
+                }
+
+                long lastUsedId = await GetLastIdFromJsonFieldsAsync();
+                long nextCategoryId = dto.Id ?? (lastUsedId + 1);
+                long currentFieldId = nextCategoryId;
+                AssignIds(dto.Fields, ref currentFieldId);
+
+                var category = new CategoryDropdown
+                {
+                    Id = nextCategoryId,
+                    CategoryName = dto.CategoryName,
+                    ParentId = dto.ParentId,
+                    Vertical = verticalEnum,
+                    SubVertical = subVerticalEnum,
+                    Fields = dto.Fields
+                };
+
+                _dbContext.CategoryDropdowns.Add(category);
+                await _dbContext.SaveChangesAsync(cancellationToken);
+
+                return "Category created successfully";
+            }
+            catch (Exception ex)
+            {
+                return $"Error: {ex.Message}";
+            }
+        }
+        private async Task<long> GetLastIdFromJsonFieldsAsync()
+        {
+            var allCategories = await _dbContext.CategoryDropdowns
+                .AsNoTracking()
+                .ToListAsync();
+
+            long maxId = 0;
+            if (allCategories.Any())
+                maxId = allCategories.Max(c => c.Id);
+
+            foreach (var category in allCategories)
+            {
+                if (category.Fields != null)
+                {
+                    var fieldIds = ExtractAllFieldIds(category.Fields);
+                    if (fieldIds.Any())
+                        maxId = Math.Max(maxId, fieldIds.Max());
+                }
+            }
+
+            return maxId;
+        }
+        private List<long> ExtractAllFieldIds(List<FieldDto> fields)
+        {
+            var ids = new List<long>();
+
+            foreach (var field in fields)
+            {
+                if (field.Id.HasValue && field.Id > 0)
+                    ids.Add(field.Id.Value);
+
+                if (field.Fields != null && field.Fields.Any())
+                    ids.AddRange(ExtractAllFieldIds(field.Fields));
+            }
+
+            return ids;
+        }
+        private void AssignIds(List<FieldDto>? fields, ref long lastFieldId)
+        {
+            if (fields == null) return;
+
+            foreach (var field in fields)
+            {
+                if (field.Id == null || field.Id <= 0)
+                    field.Id = ++lastFieldId;
+
+                if (field.Fields != null && field.Fields.Any())
+                    AssignIds(field.Fields, ref lastFieldId);
+            }
+        }
+
+        public async Task<ResponseDto> CreateServiceAd(string uid, string userName, Guid? subscriptionId, ServiceDto dto, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var hasActiveAd = await _dbContext.Services
+                    .AnyAsync(s =>
+                        s.CreatedBy == uid &&
+                        s.L2CategoryId == dto.L2CategoryId &&
+                        s.IsActive &&
+                        s.Status == ServiceStatus.Published,
+                        cancellationToken);
+
+                if (hasActiveAd)
+                {
+                    throw new ConflictException("You already have an active ad in this category. Please unpublish or remove it before posting another.");
+                }
+                dto.Status = GetAdStatus(dto.L1CategoryName, dto.AdType);
+                var slug = SlugHelper.GenerateSlug(dto.Title, dto.CategoryName, "Services", Guid.NewGuid());
+                var entity = new Common.Infrastructure.Model.Services
+                {
+                    Slug = slug,
+                    CategoryId = dto.CategoryId,
+                    L1CategoryId = dto.L1CategoryId,
+                    L2CategoryId = dto.L2CategoryId,
+                    CategoryName = dto.CategoryName,
+                    L1CategoryName = dto.L1CategoryName,
+                    L2CategoryName = dto.L2CategoryName,
+                    IsPriceOnRequest = dto.IsPriceOnRequest,
+                    Price = dto.Price,
+                    Title = dto.Title,
+                    Description = dto.Description,
+                    PhoneNumberCountryCode = dto.PhoneNumberCountryCode,
+                    PhoneNumber = dto.PhoneNumber,
+                    WhatsappNumberCountryCode = dto.WhatsappNumberCountryCode,
+                    WhatsappNumber = dto.WhatsappNumber,
+                    EmailAddress = dto.EmailAddress,
+                    Location = dto.Location,
+                    LocationId = dto.LocationId,
+                    StreetNumber = dto.StreetNumber,
+                    BuildingNumber = dto.BuildingNumber,
+                    LicenseCertificate = dto.LicenseCertificate,
+                    Comments = dto.Comments,
+                    Availability = dto.Availability,
+                    Duration = dto.Duration,
+                    Reservation = dto.Reservation,
+                    SubscriptionId = subscriptionId,
+                    ZoneId = dto.ZoneId,
+                    Longitude = dto.Longitude,
+                    Lattitude = dto.Lattitude,
+                    PhotoUpload = dto.PhotoUpload,
+                    UserName = userName,
+                    Status = dto.Status,
+                    PublishedDate = dto.AdType == ServiceAdType.Subscription ? DateTime.UtcNow : null,
+                    IsActive = true,
+                    CreatedBy = uid,
+                    CreatedAt = DateTime.UtcNow,
+                    AdType = dto.AdType,
+                };
+
+                ValidateCommon(entity);
+
+                await _dbContext.Services.AddAsync(entity, cancellationToken);
+                await _dbContext.SaveChangesAsync(cancellationToken);
+                var upsertRequest = await IndexServiceToAzureSearch(entity, cancellationToken);
+                if (upsertRequest != null)
+                {
+                    var message = new IndexMessage
+                    {
+                        Action = "Upsert",
+                        Vertical = ConstantValues.IndexNames.ServicesIndex,
+                        UpsertRequest = upsertRequest
+                    };
+
+                    await _dapr.PublishEventAsync(
+                        pubsubName: ConstantValues.PubSubName,
+                        topicName: ConstantValues.PubSubTopics.IndexUpdates,
+                        data: message,
+                        cancellationToken: cancellationToken
+                    );
+                }
+                return new ResponseDto
+                {
+                    AdId = entity.Id,
+                    Title = entity.Title,
+                    Message = "Service Ad Created Successfully"
+                };
+            }
+            catch (ConflictException)
+            {
+                throw;
+            }
+            catch (ArgumentException ex)
+            {
+                throw new InvalidDataException(ex.Message, ex);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error creating service ad", ex);
+            }
+        }
+        private ServiceStatus GetAdStatus(string l1CategoryName, ServiceAdType adType)
+        {
+            if (string.Equals(l1CategoryName, "Therapeutic Services", StringComparison.OrdinalIgnoreCase) && adType == ServiceAdType.PayToPublish)
+                return ServiceStatus.Draft;
+
+            if (string.Equals(l1CategoryName, "Therapeutic Services", StringComparison.OrdinalIgnoreCase) && adType == ServiceAdType.Subscription)
+                return ServiceStatus.PendingApproval;
+
+            if (adType == ServiceAdType.PayToPublish)
+                return ServiceStatus.Draft;
+
+            if (adType == ServiceAdType.Subscription)
+                return ServiceStatus.Published;
+
+            throw new ArgumentException("Invalid ServiceAdType.");
+        }
+        private static void ValidateCommon(Common.Infrastructure.Model.Services dto)
+        {
+            if (string.IsNullOrWhiteSpace(dto.Title))
+                throw new ArgumentException("Title is required.");
+            if (dto.Title.Length < 5 || dto.Title.Length > 70)
+                throw new ArgumentException("Title must be between 5 and 70 characters.");
+
+            if (string.IsNullOrWhiteSpace(dto.Description))
+                throw new ArgumentException("Description is required.");
+            if (dto.Description.Length < 20)
+                throw new ArgumentException("Description must be at least 20 characters.");
+
+            if (string.IsNullOrWhiteSpace(dto.PhoneNumberCountryCode) || string.IsNullOrWhiteSpace(dto.PhoneNumber))
+                throw new ArgumentException("Phone number with country code is required.");
+            if (string.IsNullOrWhiteSpace(dto.WhatsappNumberCountryCode) || string.IsNullOrWhiteSpace(dto.WhatsappNumber))
+                throw new ArgumentException("WhatsApp number with country code is required.");
+
+            if (dto.CategoryId <= 0 || dto.L1CategoryId <= 0 || dto.L2CategoryId <= 0)
+                throw new ArgumentException("All category IDs must be provided and greater than zero.");
+
+            var phoneRegex = new Regex(@"^\d{6,15}$");
+
+            if (!phoneRegex.IsMatch(dto.PhoneNumber))
+                throw new ArgumentException("Invalid phone number format.");
+
+            if (!string.IsNullOrWhiteSpace(dto.WhatsappNumber) && !phoneRegex.IsMatch(dto.WhatsappNumber))
+                throw new ArgumentException("Invalid WhatsApp number format.");
+
+            if (!string.IsNullOrWhiteSpace(dto.EmailAddress) && !IsValidEmail(dto.EmailAddress))
+                throw new ArgumentException("Invalid email format.");
+
+            if (!string.IsNullOrWhiteSpace(dto.L1CategoryName) &&
+                    dto.L1CategoryName.Trim().Equals("therapeutic services", StringComparison.OrdinalIgnoreCase) &&
+                    string.IsNullOrWhiteSpace(dto.LicenseCertificate))
+            {
+                throw new ArgumentException("License certificate is required for therapeutic services.");
+            }
+        }
+        public async Task<string> UpdateServiceAd(string userId, Common.Infrastructure.Model.Services dto, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                if (dto.Id == 0)
+                    throw new ArgumentException("Service Ad ID is required for update.");
+
+                var existing = await _dbContext.Services
+                    .FirstOrDefaultAsync(s => s.Id == dto.Id && s.IsActive, cancellationToken);
+
+                if (existing == null)
+                    throw new ArgumentException("Service Ad not found for update.");
+
+                var hasActiveAd = await _dbContext.Services.AnyAsync(ad =>
+                    ad.CreatedBy == userId &&
+                    ad.L2CategoryId == dto.L2CategoryId &&
+                    ad.IsActive &&
+                    ad.Status == ServiceStatus.Published &&
+                    ad.Id != dto.Id,
+                    cancellationToken);
+
+                if (hasActiveAd)
+                    throw new ConflictException("You already have an active ad in this category. Please unpublish or remove it before posting another.");
+                dto.Status = GetAdStatus(dto.L1CategoryName, dto.AdType);
+                var slug = SlugHelper.GenerateSlug(dto.Title, dto.CategoryName, "Services", Guid.NewGuid());
+                ValidateCommon(dto);
+
+                dto.UpdatedAt = DateTime.UtcNow;
+                dto.UpdatedBy = userId;
+                dto.Slug = slug;
+                AdUpdateHelper.ApplySelectiveUpdates(existing, dto);
+
+                _dbContext.Services.Update(existing);
+                await _dbContext.SaveChangesAsync(cancellationToken);
+
+                var upsertRequest = await IndexServiceToAzureSearch(existing, cancellationToken);
+
+                if (upsertRequest != null)
+                {
+                    var message = new IndexMessage
+                    {
+                        Action = "Upsert",
+                        Vertical = ConstantValues.IndexNames.ServicesIndex,
+                        UpsertRequest = upsertRequest
+                    };
+
+                    await _dapr.PublishEventAsync(
+                        pubsubName: ConstantValues.PubSubName,
+                        topicName: ConstantValues.PubSubTopics.IndexUpdates,
+                        data: message,
+                        cancellationToken: cancellationToken
+                    );
+                }
+
+                return "Service Ad updated successfully.";
+            }
+            catch (ConflictException)
+            {
+                throw;
+            }
+            catch (ArgumentException ex)
+            {
+                throw new InvalidDataException(ex.Message, ex);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error updating service ad", ex);
+            }
+        }
+        private async Task<CommonIndexRequest> IndexServiceToAzureSearch(Common.Infrastructure.Model.Services dto, CancellationToken cancellationToken)
+        {
+
+            var indexDoc = new ServicesIndex
+            {
+                Id = dto.Id.ToString(),
+                CategoryId = dto.CategoryId.ToString(),
+                L1CategoryId = dto.L1CategoryId.ToString(),
+                L2CategoryId = dto.L2CategoryId.ToString(),
+                CategoryName = dto.CategoryName,
+                L1CategoryName = dto.L1CategoryName,
+                L2CategoryName = dto.L2CategoryName,
+                Price = (double)dto.Price,
+                IsPriceOnRequest = dto.IsPriceOnRequest,
+                Title = dto.Title,
+                Description = dto.Description,
+                PhoneNumberCountryCode = dto.PhoneNumberCountryCode,
+                PhoneNumber = dto.PhoneNumber,
+                WhatsappNumberCountryCode = dto.WhatsappNumberCountryCode,
+                WhatsappNumber = dto.WhatsappNumber,
+                EmailAddress = dto.EmailAddress,
+                Location = dto.Location,
+                LocationId = dto.LocationId,
+                StreetNumber = dto.StreetNumber,
+                BuildingNumber = dto.BuildingNumber,
+                LicenseCertificate = dto.LicenseCertificate,
+                ZoneId = dto.ZoneId,
+                SubscriptionId = dto.SubscriptionId.ToString(),
+                Comments = dto.Comments,
+                Longitude = (double)dto.Longitude,
+                Lattitude = (double)dto.Lattitude,
+                AdType = dto.AdType.ToString(),
+                IsFeatured = dto.IsFeatured,
+                IsPromoted = dto.IsPromoted,
+                Status = dto.Status.ToString(),
+                FeaturedExpiryDate = dto.FeaturedExpiryDate,
+                PromotedExpiryDate = dto.PromotedExpiryDate,
+                LastRefreshedOn = dto.LastRefreshedOn,
+                IsRefreshed = dto.IsRefreshed,
+                PublishedDate = dto.PublishedDate,
+                ExpiryDate = dto.ExpiryDate,
+                Availability = dto.Availability,
+                Duration = dto.Duration,
+                Reservation = dto.Reservation,
+                UserName = dto.UserName,
+                IsActive = dto.IsActive,
+                CreatedBy = dto.CreatedBy,
+                CreatedAt = dto.CreatedAt,
+                UpdatedAt = dto.UpdatedAt,
+                UpdatedBy = dto.UpdatedBy,
+                Slug = dto.Slug,
+                Images = dto.PhotoUpload.Select(i => new ImageInfo
+                {
+                    Url = i.Url,
+                    Order = i.Order
+                }).ToList()
+            };
+            var indexRequest = new CommonIndexRequest
+            {
+                IndexName = ConstantValues.IndexNames.ServicesIndex,
+                ServicesItem = indexDoc
+            };
+            return indexRequest;
+
+        }
+        private static bool IsValidEmail(string email)
+        {
+            return !string.IsNullOrWhiteSpace(email) &&
+                   Regex.IsMatch(email, @"^[^@\s]+@[^@\s]+\.[^@\s]+$", RegexOptions.IgnoreCase);
+        }
+        public async Task<Common.Infrastructure.Model.Services?> GetServiceAdById(long id, CancellationToken cancellationToken = default)
+        {
+            var ad = await _dbContext.Services
+                .AsNoTracking()
+                .FirstOrDefaultAsync(s => s.Id == id && s.IsActive, cancellationToken);
+
+            return ad;
+        }
+        public async Task<Common.Infrastructure.Model.Services?> GetServiceAdBySlug(string? slug, CancellationToken cancellationToken = default)
+        {
+            var ad = await _dbContext.Services
+                .AsNoTracking()
+                .FirstOrDefaultAsync(s => s.Slug == slug && s.IsActive, cancellationToken);
+
+            return ad;
+        }
+        public async Task<string> DeleteServiceAdById(string userId, long id, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var ad = await _dbContext.Services
+                    .FirstOrDefaultAsync(s => s.Id == id && s.IsActive, cancellationToken);
+
+                if (ad == null)
+                    throw new InvalidDataException("Active Service Ad not found.");
+
+                ad.IsActive = false;
+                ad.UpdatedAt = DateTime.UtcNow;
+                ad.UpdatedBy = userId;
+
+                await _dbContext.SaveChangesAsync(cancellationToken);
+
+                var upsertRequest = await IndexServiceToAzureSearch(ad, cancellationToken);
+                if (upsertRequest != null)
+                {
+                    var message = new IndexMessage
+                    {
+                        Action = "Upsert",
+                        Vertical = ConstantValues.IndexNames.ServicesIndex,
+                        UpsertRequest = upsertRequest
+                    };
+
+                    await _dapr.PublishEventAsync(
+                        pubsubName: ConstantValues.PubSubName,
+                        topicName: ConstantValues.PubSubTopics.IndexUpdates,
+                        data: message,
+                        cancellationToken: cancellationToken
+                    );
+                }
+
+                return "Service Ad soft-deleted successfully.";
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
+        }
+        public async Task<ServicesPagedResponse<Common.Infrastructure.Model.Services>> GetAllServicesWithPagination(BasePaginationQuery? dto, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var query = _dbContext.Services
+                    .Where(s => s.IsActive && s.Status != ServiceStatus.Draft);
+
+                if (!string.IsNullOrWhiteSpace(dto?.Title))
+                {
+                    string searchTerm = dto.Title.Trim().ToLower();
+                    query = query.Where(s => s.Title.ToLower().Contains(searchTerm));
+                }
+                if (dto?.Filters != null)
+                {
+                    foreach (var filter in dto.Filters)
+                    {
+                        string key = filter.Key.ToLower();
+                        var valueElement = filter.Value;
+
+                        if (key == "categoryname")
+                        {
+                            if (valueElement.ValueKind == JsonValueKind.String)
+                                query = query.Where(s => s.CategoryName == valueElement.GetString());
+                        }
+                        else if (key == "l1categoryname")
+                        {
+                            if (valueElement.ValueKind == JsonValueKind.String)
+                                query = query.Where(s => s.L1CategoryName == valueElement.GetString());
+                        }
+                        else if (key == "l2categoryname")
+                        {
+                            if (valueElement.ValueKind == JsonValueKind.String)
+                                query = query.Where(s => s.L2CategoryName == valueElement.GetString());
+                        }
+                        else if (key == "minprice")
+                        {
+                            if (valueElement.TryGetDecimal(out var minPrice))
+                            {
+                                query = query.Where(s => s.Price >= minPrice);
+                            }
+                        }
+                        else if (key == "maxprice")
+                        {
+                            if (valueElement.TryGetDecimal(out var maxPrice))
+                            {
+                                query = query.Where(s => s.Price <= maxPrice);
+                            }
+                        }
+                        else if (key == "isfeatured")
+                        {
+                            if (valueElement.ValueKind == JsonValueKind.True || valueElement.ValueKind == JsonValueKind.False)
+                            {
+                                bool isFeatured = valueElement.GetBoolean();
+                                query = query.Where(s => s.IsFeatured == isFeatured);
+                            }
+                        }
+                        else if (key == "ispromoted")
+                        {
+                            if (valueElement.ValueKind == JsonValueKind.True || valueElement.ValueKind == JsonValueKind.False)
+                            {
+                                bool isPromoted = valueElement.GetBoolean();
+                                query = query.Where(s => s.IsPromoted == isPromoted);
+                            }
+                        }
+                        else if (key == "isrefreshed")
+                        {
+                            if (valueElement.ValueKind == JsonValueKind.True || valueElement.ValueKind == JsonValueKind.False)
+                            {
+                                bool isRefreshed = valueElement.GetBoolean();
+                                query = query.Where(s => s.IsRefreshed == isRefreshed);
+                            }
+                        }
+                        else if (key == "adtype")
+                        {
+                            if (valueElement.ValueKind == JsonValueKind.String &&
+                                Enum.TryParse<ServiceAdType>(valueElement.GetString(), true, out var adType))
+                            {
+                                query = query.Where(s => s.AdType == adType);
+                            }
+                        }
+                        else if (key == "status")
+                        {
+                            if (valueElement.ValueKind == JsonValueKind.String &&
+                                Enum.TryParse<ServiceStatus>(valueElement.GetString(), true, out var status))
+                            {
+                                query = query.Where(s => s.Status == status);
+                            }
+                        }
+                        else if (key == "location")
+                        {
+                            if (valueElement.ValueKind == JsonValueKind.String)
+                            {
+                                string location = valueElement.GetString().ToLower();
+                                query = query.Where(s => s.Location.ToLower().Contains(location));
+                            }
+                        }
+                        else if (key == "createdby")
+                        {
+                            if (valueElement.ValueKind == JsonValueKind.String)
+                            {
+                                string createdBy = valueElement.GetString();
+                                query = query.Where(s => s.CreatedBy == createdBy);
+                            }
+                        }
+                    }
+                }
+                query = dto?.SortBy?.ToLower() switch
+                {
+                    "asc" => query.OrderBy(s => s.CreatedAt),
+                    "desc" => query.OrderByDescending(s => s.CreatedAt),
+                    _ => query.OrderByDescending(s => s.CreatedAt)
+                };
+                var pageNumber = dto?.PageNumber ?? 1;
+                var perPage = dto?.PerPage ?? 10;
+
+                var totalCount = await query.CountAsync(cancellationToken);
+                var publishedCount = await query.CountAsync(s => s.Status == ServiceStatus.Published, cancellationToken);
+                var unpublishedCount = await query.CountAsync(s => s.Status == ServiceStatus.Unpublished, cancellationToken);
+
+                var skip = (pageNumber - 1) * perPage;
+
+                var pagedItems = await query
+                    .Skip(skip)
+                    .Take(perPage)
+                    .AsNoTracking()
+                    .ToListAsync(cancellationToken);
+
+                return new ServicesPagedResponse<QLN.Common.Infrastructure.Model.Services>
+                {
+                    TotalCount = totalCount,
+                    PublishedCount = publishedCount,
+                    UnpublishedCount = unpublishedCount,
+                    PageNumber = pageNumber,
+                    PerPage = perPage,
+                    Items = pagedItems
+                };
+            }
+            catch (InvalidDataException ex)
+            {
+                throw new InvalidDataException($"Error fetching all services: {ex.Message}", ex);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("An error occurred while fetching all services.", ex);
+            }
+        }
+        public async Task<Common.Infrastructure.Model.Services> PromoteService(PromoteServiceRequest request, string uid, Guid? subscriptionId, CancellationToken ct)
+        {
+            var serviceAd = await _dbContext.Services
+                .FirstOrDefaultAsync(s => s.Id == request.ServiceId && s.IsActive, ct);
+
+            if (serviceAd == null)
+                throw new KeyNotFoundException("Service Ad not found.");
+
+            serviceAd.IsPromoted = request.IsPromoted;
+            if (request.IsPromoted)
+            {
+                var subscription = await _qLSubscriptionContext.Subscriptions
+                    .FirstOrDefaultAsync(sub => sub.SubscriptionId == serviceAd.SubscriptionId && (int)sub.Status == (int)SubscriptionStatus.Active, ct);
+
+                if (subscription == null)
+                    throw new InvalidOperationException("Active subscription not found for this service.");
+
+                serviceAd.PromotedExpiryDate = subscription.EndDate;
+                serviceAd.IsPromoted = true;
+            }
+            else
+            {
+                serviceAd.PromotedExpiryDate = null;
+                serviceAd.IsPromoted = false;
+            }
+            serviceAd.UpdatedBy = uid;
+            serviceAd.UpdatedAt = DateTime.UtcNow;
+
+            await _dbContext.SaveChangesAsync(ct);
+            var upsertRequest = await IndexServiceToAzureSearch(serviceAd, ct);
+
+            if (upsertRequest != null)
+            {
+                var message = new IndexMessage
+                {
+                    Action = "Upsert",
+                    Vertical = ConstantValues.IndexNames.ServicesIndex,
+                    UpsertRequest = upsertRequest
+                };
+
+                await _dapr.PublishEventAsync(
+                    pubsubName: ConstantValues.PubSubName,
+                    topicName: ConstantValues.PubSubTopics.IndexUpdates,
+                    data: message,
+                    cancellationToken: ct
+                );
+            }
+
+            return serviceAd;
+        }
+        public async Task<Common.Infrastructure.Model.Services> FeatureService(FeatureServiceRequest request, string uid, Guid? subscriptionId, CancellationToken ct)
+        {
+            var serviceAd = await _dbContext.Services
+                .FirstOrDefaultAsync(s => s.Id == request.ServiceId && s.IsActive, ct);
+
+            if (serviceAd == null)
+                throw new KeyNotFoundException("Service Ad not found.");
+
+            serviceAd.IsFeatured = request.IsFeature;
+            if (request.IsFeature)
+            {
+                var subscription = await _qLSubscriptionContext.Subscriptions
+                    .FirstOrDefaultAsync(sub => sub.SubscriptionId == serviceAd.SubscriptionId && (int)sub.Status == (int)SubscriptionStatus.Active, ct);
+
+                if (subscription == null)
+                    throw new InvalidOperationException("Active subscription not found for this service.");
+
+                serviceAd.FeaturedExpiryDate = subscription.EndDate;
+                serviceAd.IsFeatured = true;
+            }
+            else
+            {
+                serviceAd.FeaturedExpiryDate = null;
+                serviceAd.IsFeatured = false;
+            }
+            serviceAd.UpdatedBy = uid;
+            serviceAd.UpdatedAt = DateTime.UtcNow;
+
+            _dbContext.Services.Update(serviceAd);
+            await _dbContext.SaveChangesAsync(ct);
+
+            var upsertRequest = await IndexServiceToAzureSearch(serviceAd, ct);
+
+            if (upsertRequest != null)
+            {
+                var message = new IndexMessage
+                {
+                    Action = "Upsert",
+                    Vertical = ConstantValues.IndexNames.ServicesIndex,
+                    UpsertRequest = upsertRequest
+                };
+
+                await _dapr.PublishEventAsync(
+                    pubsubName: ConstantValues.PubSubName,
+                    topicName: ConstantValues.PubSubTopics.IndexUpdates,
+                    data: message,
+                    cancellationToken: ct
+                );
+            }
+
+            return serviceAd;
+        }
+        public async Task<Common.Infrastructure.Model.Services> RefreshService(RefreshServiceRequest request, string uid, Guid? subscriptionId, CancellationToken ct)
+        {
+            var serviceAd = await _dbContext.Services
+                .FirstOrDefaultAsync(s => s.Id == request.ServiceId && s.IsActive, ct);
+
+            if (serviceAd == null)
+                throw new KeyNotFoundException("Service Ad not found.");
+
+            if (request.IsRefreshed)
+            {
+                var subscription = await _qLSubscriptionContext.Subscriptions
+                    .Where(s => s.UserId == uid && (int)s.Status == (int)SubscriptionStatus.Active && s.EndDate > DateTime.UtcNow)
+                    .OrderByDescending(s => s.EndDate)
+                    .FirstOrDefaultAsync(ct);
+
+                if (subscription == null)
+                    throw new InvalidDataException("No active subscription found for refresh.");
+
+                serviceAd.LastRefreshedOn = DateTime.UtcNow;
+                serviceAd.IsRefreshed = true;
+            }
+            else
+            {
+                serviceAd.LastRefreshedOn = null;
+                serviceAd.IsRefreshed = false;
+            }
+            serviceAd.IsRefreshed = serviceAd.LastRefreshedOn.HasValue && serviceAd.LastRefreshedOn.Value > DateTime.UtcNow;
+            serviceAd.CreatedAt = DateTime.UtcNow;
+            serviceAd.UpdatedBy = uid;
+            serviceAd.UpdatedAt = DateTime.UtcNow;
+
+            _dbContext.Services.Update(serviceAd);
+            await _dbContext.SaveChangesAsync(ct);
+
+            var upsertRequest = await IndexServiceToAzureSearch(serviceAd, ct);
+
+            if (upsertRequest != null)
+            {
+                var message = new IndexMessage
+                {
+                    Action = "Upsert",
+                    Vertical = ConstantValues.IndexNames.ServicesIndex,
+                    UpsertRequest = upsertRequest
+                };
+
+                await _dapr.PublishEventAsync(
+                    pubsubName: ConstantValues.PubSubName,
+                    topicName: ConstantValues.PubSubTopics.IndexUpdates,
+                    data: message,
+                    cancellationToken: ct
+                );
+            }
+
+            return serviceAd;
+        }
+        public async Task<Common.Infrastructure.Model.Services> PublishService(PublishServiceRequest request, string uid, Guid? subscriptionId, CancellationToken ct)
+        {
+            var serviceAd = await _dbContext.Services
+                .FirstOrDefaultAsync(s => s.Id == request.ServiceId && s.IsActive, ct);
+
+            if (serviceAd == null)
+                throw new KeyNotFoundException("Service Ad not found.");
+
+            if (serviceAd.Status == ServiceStatus.Draft)
+                throw new InvalidDataException("Draft services cannot be published/unpublished directly.");
+
+            if (request.Status == ServiceStatus.Published)
+            {
+                if (serviceAd.Status == ServiceStatus.Published)
+                    throw new InvalidDataException("Service is already published.");
+
+                var conflictExists = await _dbContext.Services.AnyAsync(s =>
+                    s.Id != request.ServiceId &&
+                    s.CreatedBy == serviceAd.CreatedBy &&
+                    s.L2CategoryId == serviceAd.L2CategoryId &&
+                    s.IsActive &&
+                    s.Status == ServiceStatus.Published, ct);
+
+                if (conflictExists)
+                {
+                    throw new ConflictException(
+                        "You already have an active ad in this category. Please unpublish or remove it before posting another."
+                    );
+                }
+
+                var subscription = await _qLSubscriptionContext.Subscriptions
+                .FirstOrDefaultAsync(sub =>
+                sub.SubscriptionId == (Guid)subscriptionId &&
+                (int)sub.Status == (int)SubscriptionStatus.Active, ct);
+
+                if (subscription == null)
+                    throw new InvalidOperationException("Active subscription not found for this service.");
+                var effectiveExpiryDate = subscription.EndDate;
+                serviceAd.Status = ServiceStatus.Published;
+                serviceAd.PublishedDate = DateTime.UtcNow;
+            }
+            else if (request.Status == ServiceStatus.Unpublished)
+            {
+                if (serviceAd.Status == ServiceStatus.Unpublished)
+                    throw new InvalidDataException("Service is already unpublished.");
+                serviceAd.Status = ServiceStatus.Unpublished;
+                serviceAd.PublishedDate = null;
+            }
+            else
+            {
+                throw new InvalidDataException("Invalid status. Only Published (3) or Unpublished (4) are allowed.");
+            }
+
+            serviceAd.UpdatedBy = uid;
+            serviceAd.UpdatedAt = DateTime.UtcNow;
+
+            await _dbContext.SaveChangesAsync(ct);
+
+            var upsertRequest = await IndexServiceToAzureSearch(serviceAd, ct);
+
+            if (upsertRequest != null)
+            {
+                var message = new IndexMessage
+                {
+                    Action = "Upsert",
+                    Vertical = ConstantValues.IndexNames.ServicesIndex,
+                    UpsertRequest = upsertRequest
+                };
+
+                await _dapr.PublishEventAsync(
+                    pubsubName: ConstantValues.PubSubName,
+                    topicName: ConstantValues.PubSubTopics.IndexUpdates,
+                    data: message,
+                    cancellationToken: ct
+                );
+            }
+
+            return serviceAd;
+        }
+        public async Task<BulkAdActionResponseitems> ModerateBulkService(BulkModerationRequest request, string userId, Guid? subscriptionId, DateTime? expiryDate, CancellationToken ct)
+        {
+            var ads = await _dbContext.Services
+                .Where(s => request.AdIds.Contains(s.Id))
+                .ToListAsync(ct);
+            var succeeded = new ResultGroup
+            {
+                Count = 0,
+                Ids = new List<long>(),
+                Reason = string.Empty
+            };
+
+            var failed = new ResultGroup
+            {
+                Count = 0,
+                Ids = new List<long>(),
+                Reason = string.Empty
+            };
+            var subscription = await _qLSubscriptionContext.Subscriptions
+            .FirstOrDefaultAsync(sub =>
+            sub.SubscriptionId == (Guid)subscriptionId &&
+            (int)sub.Status == (int)SubscriptionStatus.Active, ct);
+
+            if (subscription == null)
+                throw new InvalidOperationException("Active subscription not found for this service.");
+            var effectiveExpiryDate = subscription.EndDate;
+
+            var updatedAds = new List<Common.Infrastructure.Model.Services>();
+
+            foreach (var ad in ads)
+            {
+                bool shouldUpdate = false;
+                string failReason = string.Empty;
+
+                try
+                {
+                    string actionReason = string.Empty;
+                    string actionComment = request.Comments ?? string.Empty;
+                    string reason = request.Reason ?? string.Empty;
+                    string userid = ad.CreatedBy;
+                    string username = ad.UserName;
+                    switch (request.Action)
+                    {
+                        case BulkModerationAction.Approve:
+                            if (ad.Status == ServiceStatus.PendingApproval)
+                            {
+                                ad.Status = ServiceStatus.Published;
+                                ad.PublishedDate = DateTime.UtcNow;
+                                shouldUpdate = true;
+                            }
+                            else failReason = $"Cannot approve ad with status '{ad.Status}'.";
+                            break;
+
+                        case BulkModerationAction.Publish:
+                            if (ad.Status == ServiceStatus.Unpublished)
+                            {
+                                ad.Status = ServiceStatus.Published;
+                                ad.PublishedDate = DateTime.UtcNow;
+                                shouldUpdate = true;
+                            }
+                            else failReason = $"Cannot publish ad with status '{ad.Status}'.";
+                            break;
+
+                        case BulkModerationAction.Unpublish:
+                            if (ad.Status == ServiceStatus.Published)
+                            {
+                                ad.Status = ServiceStatus.Unpublished;
+                                ad.PublishedDate = null;
+                                shouldUpdate = true;
+                            }
+                            else failReason = $"Cannot unpublish ad with status '{ad.Status}'.";
+                            break;
+
+                        case BulkModerationAction.UnPromote:
+                            if (ad.IsPromoted)
+                            {
+                                ad.IsPromoted = false;
+                                ad.PromotedExpiryDate = null;
+                                shouldUpdate = true;
+                            }
+                            else failReason = "Cannot unpromote an ad that is not promoted.";
+                            break;
+
+                        case BulkModerationAction.UnFeature:
+                            if (ad.IsFeatured)
+                            {
+                                ad.IsFeatured = false;
+                                ad.FeaturedExpiryDate = null;
+                                shouldUpdate = true;
+                            }
+                            else failReason = "Cannot unfeature an ad that is not featured.";
+                            break;
+
+                        case BulkModerationAction.Promote:
+                            if (!ad.IsPromoted)
+                            {
+                                ad.IsPromoted = true;
+                                ad.PromotedExpiryDate = effectiveExpiryDate;
+                                shouldUpdate = true;
+                            }
+                            else failReason = "Cannot promote an ad that is already promoted.";
+                            break;
+
+                        case BulkModerationAction.Feature:
+                            if (!ad.IsFeatured)
+                            {
+                                ad.IsFeatured = true;
+                                ad.FeaturedExpiryDate = effectiveExpiryDate;
+                                shouldUpdate = true;
+                            }
+                            else failReason = "Cannot feature an ad that is already featured.";
+                            break;
+
+                        case BulkModerationAction.IsRefreshed:
+                            ad.IsRefreshed = true;
+                            ad.LastRefreshedOn = DateTime.UtcNow;
+                            ad.CreatedAt = DateTime.UtcNow;
+                            ad.CreatedBy = userId;
+                            shouldUpdate = true;
+                            break;
+
+                        case BulkModerationAction.Remove:
+                            ad.Status = ServiceStatus.Removed;
+                            ad.IsActive = false;
+                            actionReason = "Ad Removed (Removed)";
+                            reason = "Ad Removed.";
+                            shouldUpdate = true;
+                            break;
+
+                        case BulkModerationAction.NeedChanges:
+                            if (ad.Status == ServiceStatus.PendingApproval)
+                            {
+                                ad.Status = ServiceStatus.NeedsModification;
+                                shouldUpdate = true;
+                                ad.UpdatedAt = DateTime.UtcNow;
+                                actionReason = "Ad Needs Changes";
+                            }
+                            else
+                            {
+                                failReason = $"Cannot mark ad as NeedsModification with status '{ad.Status}'.";
+                            }
+                            break;
+
+                        case BulkModerationAction.Hold:
+                            if (ad.Status == ServiceStatus.Draft)
+                                failReason = "Cannot hold an ad that is in draft status.";
+                            else if (ad.Status != ServiceStatus.Hold)
+                            {
+                                ad.Status = ServiceStatus.Hold;
+                                shouldUpdate = true;
+                                ad.UpdatedAt = DateTime.UtcNow;
+                                actionReason = "Ad On Hold";
+                                reason = "Ad placed on hold by admin.";
+                            }
+                            else
+                            {
+                                failReason = "Ad is already on hold.";
+                            }
+                            break;
+
+                        case BulkModerationAction.Onhold:
+                            ad.Status = ServiceStatus.Onhold;
+                            shouldUpdate = true;
+                            break;
+
+                        default:
+                            failReason = "Invalid action.";
+                            break;
+                    }
+                    if (shouldUpdate)
+                    {
+                        ad.UpdatedAt = DateTime.UtcNow;
+                        ad.UpdatedBy = userId;
+                        updatedAds.Add(ad);
+
+                        if (request.Action == BulkModerationAction.Hold || request.Action == BulkModerationAction.Remove || request.Action == BulkModerationAction.NeedChanges)
+                        {
+                            var actionCommentEntity = new Comment
+                            {
+                                AdId = ad.Id,
+                                Action = actionReason,
+                                Reason = reason ?? string.Empty,
+                                Comments = actionComment,
+                                Vertical = Vertical.Services,
+                                SubVertical = 0,
+                                CreatedAt = DateTime.UtcNow,
+                                CreatedUserId = userid,
+                                CreatedUserName = username,
+                                UpdatedUserId = userId,
+                                UpdatedUserName = username,
+                            };
+
+                            await _dbContext.Comments.AddAsync(actionCommentEntity, ct);
+                            _dbContext.Services.Update(ad);
+
+                            await _dapr.PublishEventAsync("pubsub", "notifications-email", new NotificationEntity
+                            {
+                                Destinations = new List<string> { "email" },
+                                Recipients = new List<RecipientDto>
+                                {
+                                    new RecipientDto
+                                    {
+                                        Name = username,
+                                        Email = ad.EmailAddress
+                                    }
+                                },
+                                Subject = $"Service '{ad.Title} was updated",
+                                Plaintext = $"Hello,\n\nYour ad titled '{ad.Title}' has been updated.\n\nStatus: {ad.Status}\n\nThanks,\nQL Team",
+                                Html = $@"
+                                <p>Hi,</p>
+                                <p>Your ad titled '<b>{ad.Title}</b>' has been updated.</p>
+                                <p>Status: <b>{ad.Status}</b></p>
+                                <p>Thanks,<br/>QL Team</p>"
+                            }, ct);
+
+                            succeeded.Count++;
+                            succeeded.Ids.Add(ad.Id);
+                        }
+                    }
+                    else
+                    {
+                        failed.Count++;
+                        failed.Ids.Add(ad.Id);
+                        failed.Reason += $"Ad {ad.Id}: {failReason} ";
+                    }
+                }
+                catch (Exception ex)
+                {
+                    failed.Count++;
+                    failed.Ids.Add(ad.Id);
+                    failed.Reason += $"Ad {ad.Id}: {ex.Message} ";
+                }
+            }
+
+            if (updatedAds.Any())
+            {
+                _dbContext.Services.UpdateRange(updatedAds);
+                await _dbContext.SaveChangesAsync(ct);
+
+                foreach (var ad in updatedAds)
+                {
+                    var upsertRequest = await IndexServiceToAzureSearch(ad, ct);
+                    if (upsertRequest != null)
+                    {
+                        var message = new IndexMessage
+                        {
+                            Action = "Upsert",
+                            Vertical = ConstantValues.IndexNames.ServicesIndex,
+                            UpsertRequest = upsertRequest
+                        };
+
+                        await _dapr.PublishEventAsync(
+                            ConstantValues.PubSubName,
+                            ConstantValues.PubSubTopics.IndexUpdates,
+                            message,
+                            ct
+                        );
+                    }
+                }
+            }
+
+            return new BulkAdActionResponseitems
+            {
+                Succeeded = succeeded,
+                Failed = failed
+            };
+        }
+        public async Task<SubscriptionBudgetDto> GetSubscriptionBudgetsAsyncBySubVertical(Guid subscriptionIdFromToken, Vertical verticalId, SubVertical? subverticalId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var subscription = await _qLSubscriptionContext.Subscriptions
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(s =>
+                        s.SubscriptionId == subscriptionIdFromToken &&
+                        s.Vertical == verticalId &&
+                        (subverticalId == null || s.SubVertical == subverticalId),
+                        cancellationToken);
+
+                if (subscription == null)
+                {
+                    throw new ArgumentException(
+                        subverticalId == null
+                            ? $"No subscription found with Id {subscriptionIdFromToken} for vertical {verticalId}."
+                            : $"No subscription found with Id {subscriptionIdFromToken} for vertical {verticalId} and subvertical {subverticalId}.");
+                }
+
+                if (subscription.Quota == null)
+                {
+                    throw new InvalidDataException("Subscription quota is empty.");
+                }
+
+                var quota = subscription.Quota;
+
+                return new SubscriptionBudgetDto
+                {
+                    TotalAdsAllowed = quota.TotalAdsAllowed,
+                    TotalPromotionsAllowed = quota.TotalPromotionsAllowed,
+                    TotalFeaturesAllowed = quota.TotalFeaturesAllowed,
+                    DailyRefreshesAllowed = quota.DailyRefreshesAllowed,
+                    RefreshesPerAdAllowed = quota.RefreshesPerAdAllowed,
+                    SocialMediaPostsAllowed = quota.SocialMediaPostsAllowed,
+                    AdsUsed = quota.AdsUsed,
+                    PromotionsUsed = quota.PromotionsUsed,
+                    FeaturesUsed = quota.FeaturesUsed,
+                    DailyRefreshesUsed = quota.DailyRefreshesUsed,
+                    RefreshesPerAdUsed = quota.RefreshesPerAdUsed,
+                    SocialMediaPostsUsed = quota.SocialMediaPostsUsed
+                };
+            }
+            catch (ArgumentException)
+            {
+                throw;
+            }
+            catch (InvalidDataException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error fetching subscription budgets", ex);
+            }
+        }
+        public async Task<List<CategoryAdCountDto>> GetCategoryAdCount(CancellationToken ct = default)
+        {
+            return await _dbContext.Services
+                .Where(s => s.Status == ServiceStatus.Published && s.IsActive)
+                .GroupBy(s => s.CategoryId)
+                .Select(g => new CategoryAdCountDto
+                {
+                    CategoryId = (int)g.Key,
+                    CategoryName = _dbContext.CategoryDropdowns
+                                              .Where(c => c.Id == g.Key)
+                                              .Select(c => c.CategoryName)
+                                              .FirstOrDefault(),
+                    Count = g.Count()
+                })
+                .ToListAsync(ct);
+        }
+        public async Task<string> MigrateServiceAd(Common.Infrastructure.Model.Services dto, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                if (dto.Id == 0)
+                    throw new ArgumentException("Service Ad ID is required for update.");
+
+                var existing = await _dbContext.Services.FirstOrDefaultAsync(s => s.Id == dto.Id, cancellationToken);
+
+                var slug = SlugHelper.GenerateSlug(dto.Title, dto.CategoryName, "Services", Guid.NewGuid()); // leave this here for now - not sure if required ?
+
+                dto.Slug = slug;
+
+                if (existing != null)
+                {
+                    existing = dto;
+                    _dbContext.Services.Update(existing);
+                }
+                else
+                {
+                    _dbContext.Services.Add(dto);
+                }
+
+                await _dbContext.SaveChangesAsync(cancellationToken);
+
+                var upsertRequest = await IndexServiceToAzureSearch(existing, cancellationToken);
+
+                if (upsertRequest != null)
+                {
+                    var message = new IndexMessage
+                    {
+                        Action = "Upsert",
+                        Vertical = ConstantValues.IndexNames.ServicesIndex,
+                        UpsertRequest = upsertRequest
+                    };
+
+                    await _dapr.PublishEventAsync(
+                        pubsubName: ConstantValues.PubSubName,
+                        topicName: ConstantValues.PubSubTopics.IndexUpdates,
+                        data: message,
+                        cancellationToken: cancellationToken
+                    );
+                }
+
+                return "Service Ad updated successfully.";
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error updating service ad", ex);
+            }
+        }
+        public async Task<Common.Infrastructure.Model.Services> P2PromoteService(PayToPromote request, string uid, Guid addonId, CancellationToken ct)
+        {
+            var serviceAd = await _dbContext.Services
+                .FirstOrDefaultAsync(s => s.Id == request.ServiceId && s.IsActive, ct);
+
+            if (serviceAd == null)
+                throw new KeyNotFoundException("Service Ad not found.");
+
+            var subscription = await _qLSubscriptionContext.Subscriptions
+                .FirstOrDefaultAsync();
+            serviceAd.IsPromoted = true;
+            serviceAd.PromotedExpiryDate = subscription.EndDate;
+            serviceAd.UpdatedBy = uid;
+            serviceAd.UpdatedAt = DateTime.UtcNow;
+
+            await _dbContext.SaveChangesAsync(ct);
+
+            var upsertRequest = await IndexServiceToAzureSearch(serviceAd, ct);
+
+            if (upsertRequest != null)
+            {
+                var message = new IndexMessage
+                {
+                    Action = "Upsert",
+                    Vertical = ConstantValues.IndexNames.ServicesIndex,
+                    UpsertRequest = upsertRequest
+                };
+
+                await _dapr.PublishEventAsync(
+                    pubsubName: ConstantValues.PubSubName,
+                    topicName: ConstantValues.PubSubTopics.IndexUpdates,
+                    data: message,
+                    cancellationToken: ct
+                );
+            }
+
+            return serviceAd;
+        }
+        public async Task<Common.Infrastructure.Model.Services> P2FeatureService(PayToFeature request, string uid, Guid addonId, CancellationToken ct)
+        {
+            var serviceAd = await _dbContext.Services
+                .FirstOrDefaultAsync(s => s.Id == request.ServiceId && s.IsActive, ct);
+
+            if (serviceAd == null)
+                throw new KeyNotFoundException("Service Ad not found.");
+
+            var subscription = await _qLSubscriptionContext.Subscriptions
+                .FirstOrDefaultAsync();
+            serviceAd.IsFeatured = true;
+            serviceAd.FeaturedExpiryDate = subscription.EndDate;
+            serviceAd.UpdatedBy = uid;
+            serviceAd.UpdatedAt = DateTime.UtcNow;
+
+            await _dbContext.SaveChangesAsync(ct);
+
+            var upsertRequest = await IndexServiceToAzureSearch(serviceAd, ct);
+
+            if (upsertRequest != null)
+            {
+                var message = new IndexMessage
+                {
+                    Action = "Upsert",
+                    Vertical = ConstantValues.IndexNames.ServicesIndex,
+                    UpsertRequest = upsertRequest
+                };
+
+                await _dapr.PublishEventAsync(
+                    pubsubName: ConstantValues.PubSubName,
+                    topicName: ConstantValues.PubSubTopics.IndexUpdates,
+                    data: message,
+                    cancellationToken: ct
+                );
+            }
+
+            return serviceAd;
+        }
+        public async Task<Common.Infrastructure.Model.Services> P2PublishService(PayToPublish request, string uid, Guid subscriptionId, CancellationToken ct)
+        {
+            var serviceAd = await _dbContext.Services
+                .FirstOrDefaultAsync(s => s.Id == request.ServiceId && s.IsActive, ct);
+
+            if (serviceAd == null)
+                throw new KeyNotFoundException("Service Ad not found.");
+            serviceAd.Status = ServiceStatus.PendingApproval;
+            serviceAd.SubscriptionId = request.SubscriptionId;
+            serviceAd.AdType = ServiceAdType.PayToPublish;
+            serviceAd.UpdatedBy = uid;
+            serviceAd.UpdatedAt = DateTime.UtcNow;
+
+            await _dbContext.SaveChangesAsync(ct);
+
+            var upsertRequest = await IndexServiceToAzureSearch(serviceAd, ct);
+
+            if (upsertRequest != null)
+            {
+                var message = new IndexMessage
+                {
+                    Action = "Upsert",
+                    Vertical = ConstantValues.IndexNames.ServicesIndex,
+                    UpsertRequest = upsertRequest
+                };
+
+                await _dapr.PublishEventAsync(
+                    pubsubName: ConstantValues.PubSubName,
+                    topicName: ConstantValues.PubSubTopics.IndexUpdates,
+                    data: message,
+                    cancellationToken: ct
+                );
+            }
+
+            return serviceAd;
+        }
+    }
+}

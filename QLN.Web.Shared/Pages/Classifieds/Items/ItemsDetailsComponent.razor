@@ -1,0 +1,36 @@
+@page "/qln/classifieds/items/details/{*Id}"
+@using QLN.Web.Shared.Services
+@using System.Text.Json
+@using Microsoft.AspNetCore.WebUtilities
+@using QLN.Web.Shared.Pages.Classifieds.Items.Components
+@using QLN.Web.Shared.Pages.Classifieds.Skeletons
+@using QLN.Web.Shared.Components.Classifieds.PromotedItemCards
+@using QLN.Web.Shared.Components.EmptyCard
+@inject NavigationManager NavigationManager
+@layout ClassifiedsLayout
+@inherits ItemsDetailsComponentBase
+
+<div style="width: 100%; background-color: var(--color-secondary-background);">
+    <div class="max-container">
+        <div class="category-banner-wrapper">
+            <img src="/qln-images/banner_image.svg" alt="Category Banner" class="category-banner-image" />
+        </div>
+
+        @if (IsLoading)
+        {
+              <div class="loading-container">
+                <IteamDetailsSkeletons />
+            </div>
+        }
+       else if (ItemsDetails is not null)
+        {
+            <ItemDetailsSection Item="ItemsDetails" Simler="ItemsDetailsSimler" />
+        }
+        else
+        {
+            <EmptyCard Title="Item details not found."
+                Subtitle="Please try again later or explore other available events." />
+        }
+    </div>
+</div>
+

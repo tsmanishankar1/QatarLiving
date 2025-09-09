@@ -1,0 +1,20 @@
+@page "/qln/classifieds/stores"
+@using MudBlazor
+@using QLN.Web.Shared.Pages.Classifieds.Stores.Components
+@layout ClassifiedsLayout
+
+<div style="width: 100%; background-color: var(--color-secondary-background);">
+ <div class="search-section-container">
+    <div class="max-container">
+    <SearchSectionStores />
+</div></div>
+   <div class="max-container">
+        <div class="category-banner-wrapper">
+            <img src="/qln-images/banner_image.svg" alt="Category Banner" class="category-banner-image" />
+        </div>
+
+        <IteamListStores />
+
+    </div>
+</div>
+

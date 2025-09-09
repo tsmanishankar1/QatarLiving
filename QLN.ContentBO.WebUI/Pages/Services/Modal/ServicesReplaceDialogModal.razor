@@ -1,0 +1,73 @@
+@inherits ServicesReplaceDialogModalBase
+@using static QLN.ContentBO.WebUI.Models.ClassifiedLanding;
+<MudDialog Class="pa-2 custom-dialog">
+    <DialogContent>
+        <div class="d-flex justify-center">
+            <img class="icon-circle" src="/qln-images/search.svg" alt="search" />
+        </div>
+        <MudText Align="Align.Center" Class="mt-4 mb-2 title-style ">
+            @Title
+        </MudText>
+        <MudAutocomplete T="SeasonalPickDto"
+                         Label="@Placeholder"
+                         Variant="Variant.Outlined"
+                         @bind-Value="SelectedPick.Seasonal"
+                         @bind-SearchText="_searchText"
+                         Adornment="Adornment.None"
+                         SearchFunc="SearchEventTitles"
+                         ToStringFunc="@(e => e?.Title ?? string.Empty)"
+                         ResetValueOnEmptyText="true"
+                         CoerceText="true"
+                         Clearable="true"
+                         OnSearchTextChanged="ValidateTypedText">
+            <ItemTemplate Context="eventItem">
+                <MudText>@eventItem.Title</MudText>
+            </ItemTemplate>
+        </MudAutocomplete>
+        @if (!string.IsNullOrEmpty(_autocompleteError))
+        {
+            <div class="mud-error-text">@_autocompleteError</div>
+        }
+        <div class="mt-4 d-flex flex-column gap-2">
+            <MudButton Variant="Variant.Filled" Class="mt-4 custom-add-btn" OnClick="AddClicked">
+                Add
+            </MudButton>
+            <MudButton Variant="Variant.Outlined" OnClick="Cancel" Class="mt-2 custom-close-btn">
+                Close
+            </MudButton>
+        </div>
+    </DialogContent>
+</MudDialog>
+
+<style>
+    .title-style {
+        font-family: 'Public Sans', sans-serif;
+        font-size: 18px;
+        font-weight: 600;
+        color: #242424;
+    }
+
+    .icon-circle {
+        width: 50px;
+        height: 50px;
+    }
+
+    .custom-add-btn {
+        background-color: #FF7F38;
+        font-size: 16px;
+        font-weight: 600;
+        color: white;
+        text-transform: none;
+    }
+
+    .custom-close-btn {
+        border-color: #D5D7DA;
+        color: #242424;
+        text-transform: none;
+    }
+
+    .custom-dialog {
+        width: 400px;
+        max-width: 90vw;
+    }
+</style>

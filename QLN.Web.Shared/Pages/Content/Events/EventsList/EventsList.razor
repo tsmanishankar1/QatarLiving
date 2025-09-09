@@ -1,0 +1,120 @@
+@inherits EventListBase
+@using QLN.Web.Shared.Components.EventListCard
+@using QLN.Web.Shared.Components.PriceSelect
+@using QLN.Web.Shared.Components.PaginationFooter
+@using QLN.Web.Shared.Pages.Content.Events.EventsList
+@using QLN.Web.Shared.Components.EmptyCard
+
+<div class="header-event-list">
+    <div class="event-header">
+        <h1 class="event-title">Events in Qatar (@TotalItems results)</h1>
+        @* <div class="sort-section">
+            <label class="sort-label">Sort by:</label>
+            <div class="sort-dropdown">
+                <PriceSelect Label="" Placeholder="Default" Items="SortOptions" SelectedId="@SelectedSort"
+                    SelectedIdChanged="OnSortChanged" GetId="option => option.Id" GetLabel="option => option.Label" />
+            </div>
+        </div> *@
+    </div>
+
+    <MudGrid GutterSize="3">
+        @if (Loading)
+        {
+            @for (int i = 0; i < PageSize; i++)
+            {
+                <MudItem xs="12" sm="6" md="4">
+                    <EventSkeletonCard />
+                </MudItem>
+            }
+        }
+        else if (Items == null || !Items.Any())
+        {
+            <MudItem xs="12">
+                <EmptyCard Title="No items found for the selected filters."
+                    Subtitle="Try adjusting the filters or explore different categories." />
+            </MudItem>
+        }
+        else
+        {
+             <MudVirtualize Context="eventItem" Items="Items">
+                <MudItem xs="12" sm="6" md="4">
+                    <EventListCard Item="@eventItem" OnClick="HandleCardClick" />
+                </MudItem>
+            </MudVirtualize>
+        }
+    </MudGrid>
+    @if (Items?.Any() == true)
+    {
+        <PaginationFooter TotalItems="@TotalItems" CurrentPage="@CurrentPage" PageSize="@PageSize"
+            OnPageChange="HandlePageChange" OnPageSizeChange="HandlePageSizeChange" />
+    }
+</div>
+
+<style>
+    .header-event-list {
+        padding: 1rem 3rem;
+        font-family: 'Public Sans', sans-serif;
+    }
+
+    .event-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+        margin-bottom: 1rem;
+    }
+
+    .event-title {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 500;
+        color: #242424;
+    }
+
+    .sort-section {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .sort-label {
+        font-weight: 500;
+        font-size: 13px;
+        color: #242424;
+    }
+
+    .sort-dropdown {
+        min-width: 180px;
+    }
+
+    .sort-section {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .sort-dropdown {
+        min-width: 155px;
+    }
+
+    @@media (max-width: 770px) {
+        .header-event-list {
+            padding: 0.5rem 1rem;
+        }
+
+        .event-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+        }
+
+        .event-title {
+            font-size: 14px;
+        }
+
+        .sort-label {
+            display: none;
+        }
+    }
+</style>

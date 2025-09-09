@@ -1,0 +1,22 @@
+﻿using QLN.Common.DTO_s;
+using QLN.Common.DTOs;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace QLN.Common.Infrastructure.IService.ISearchService
+{
+    public interface ISearchService
+    {
+        Task<CommonSearchResponse> SearchAsync(string indexName, CommonSearchRequest request);
+        Task<CommonSearchResponse> GetAllAsync(string indexName, CommonSearchRequest request);
+        Task<string> UploadAsync(CommonIndexRequest request);
+        Task<T?> GetByIdAsync<T>(string indexName, string key);
+        Task DeleteAsync(string indexName, string key);
+        Task<GetWithSimilarResponse<T>> GetBySlugWithSimilarAsync<T>(string indexName, string slug, int similarPageSize = 10) where T : class;
+        Task<AzureSearchResults<T>> SearchRawAsync<T>(string indexName, RawSearchRequest request, CancellationToken ct = default) where T : class;
+        Task<List<string>> GetSearchSuggestionsAsync(string indexName, string searchText, int maxSuggestions = 10);
+    }
+}

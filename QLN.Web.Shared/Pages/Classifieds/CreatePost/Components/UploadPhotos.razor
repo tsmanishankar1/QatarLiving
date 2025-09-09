@@ -1,0 +1,174 @@
+@using MudBlazor
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.Extensions.Logging;
+@inject IJSRuntime JS
+
+<h3 class="Upload-heder">Upload Photos</h3>
+
+<div class="Upload-container">
+    <div class="d-flex align-items-center mb-2">
+        <MudIcon Icon="@Icons.Material.Filled.Info" Class="mr-2 info-icon" />
+        <span class="photo-guidelines">
+             @if (selectedVertical == "deals")
+        {
+            <span class="photo-guidelines">
+                Upload a high quality cover for the flyer to attract shoppers to your offer. Use portrait orientation (vertical) for optimal photo display.
+            </span>
+        }
+         else
+        {
+            <span class="photo-guidelines">
+            Upload at least 4 photos (maximum 9 photos) to attract shoppers to your offer. Use landscape orientation (horizontal) for optimal photo display.
+            <MudLink href="#">View Photo Suggestions</MudLink>
+            </span>
+            }
+        </span>
+    </div>
+  @if (selectedVertical != "deals")
+    {
+    <MudText Typo="Typo.body2" Class="mb-3">Hold and drag to reorder.</MudText>
+    }
+
+ @if (selectedVertical == "deals")
+    {
+        <div class="photo-grid single-photo-grid">
+        <div class="photo-box add-box @(string.IsNullOrEmpty(PhotoUrls[0]) ? "" : "has-image")" style="height: 180px;">
+            @if (!string.IsNullOrEmpty(PhotoUrls[0]))
+            {
+                <div>
+                    <img src="@PhotoUrls[0]" class="uploaded-image" style="height: 100%; object-fit: cover;" />
+                    <MudIconButton Icon="@Icons.Material.Rounded.DeleteOutline" Class="delete-icon"
+                                   OnClick="@(() => RemovePhoto(0))" />
+                </div>
+            }
+            else
+            {
+                <label class="upload-label">
+                    <InputFile OnChange="@(e => OnInputFileChanged(e, 0))" accept="image/*" class="file-input" />
+                    <div class="upload-content">
+                        <div class="upload-icon-box">
+                            <MudIcon Icon="@Icons.Material.Filled.Add" Class="upload-icon" />
+                        </div>
+                        <div class="upload-text">Upload Cover Photo</div>
+                    </div>
+                </label>
+            }
+
+            <div class="cover-label">Cover Photo</div>
+        </div>
+        </div>
+    }
+    else
+    {
+    <div id="sortable-grid" class="photo-grid">
+        @for (int i = 0; i < PhotoUrls.Count; i++)
+        {
+            var currentIndex = i;
+            <div class="photo-box @(string.IsNullOrEmpty(PhotoUrls[currentIndex]) ? "" : "has-image")">
+                @if (!string.IsNullOrEmpty(PhotoUrls[currentIndex]))
+                {
+                    <div>
+                    <img src="@PhotoUrls[currentIndex]" class="uploaded-image" />
+                    <MudIconButton Icon="@Icons.Material.Rounded.DeleteOutline" Class="delete-icon"
+                                   OnClick="@(() => RemovePhoto(currentIndex))" />
+                                   </div>
+                }
+                else
+                {
+                    <label class="upload-label">
+                        <InputFile OnChange="@(e => OnInputFileChanged(e, currentIndex))" accept="image/*" class="file-input" />
+                        <div class="upload-content">
+                            <div class="upload-icon-box">
+                                <MudIcon Icon="@Icons.Material.Filled.Add" Class="upload-icon" />
+                            </div>
+                            <div class="upload-text">Upload</div>
+                        </div>
+                    </label>
+                }
+
+                  @if (i == 0)
+                {
+                    <div class="cover-label">Cover Photo</div>
+                }
+            </div>
+        }
+
+        @if (PhotoUrls.Count < 9)
+        {
+            <div class="photo-box add-box" @onclick="AddPhoto">
+                <div class="add-box-content">
+                    <div class="upload-icon-box">
+                        <MudIcon Icon="@Icons.Material.Filled.Add" Class="upload-icon" />
+                    </div>
+                    <div class="upload-text">Add More<br />Photos</div>
+                </div>
+            </div>
+        }
+    </div>
+    }
+</div>
+ <ValidationMessage For="@(() => adPostModel.PhotoUrls)" />
+
+@code {
+    [Parameter]
+    public List<string> PhotoUrls { get; set; } = new() { "", "", "", "", "", "" };
+ [Parameter] public AdPost adPostModel { get; set; }
+        [Parameter] public string selectedVertical { get; set; } = "default";
+  protected override async Task OnAfterRenderAsync(bool firstRender)
+{
+    if (firstRender)
+    {
+        await JS.InvokeVoidAsync("initSortable", "sortable-grid", DotNetObjectReference.Create(this));
+    }
+}
+
+    private async Task OnInputFileChanged(InputFileChangeEventArgs e, int index)
+    {
+        var imageFile = e.File;
+        if (imageFile != null)
+        {
+            try
+            {
+                var resizedImageFile = await imageFile.RequestImageFileAsync("image/png", 600, 600);
+                using var stream = resizedImageFile.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024);
+                using var memoryStream = new MemoryStream();
+                await stream.CopyToAsync(memoryStream);
+                var base64 = Convert.ToBase64String(memoryStream.ToArray());
+                PhotoUrls[index] = $"data:image/png;base64,{base64}";
+                StateHasChanged();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error uploading image: {ex.Message}");
+            }
+        }
+    }
+  
+    private void AddPhoto()
+    {
+        if (PhotoUrls.Count < 9)
+        {
+            PhotoUrls.Add("");
+            StateHasChanged();
+        }
+    }
+
+    private void RemovePhoto(int index)
+    {
+        PhotoUrls[index] = "";
+        StateHasChanged();
+    }
+
+    [JSInvokable]
+    public void OnReorder(int oldIndex, int newIndex)
+    {
+        if (oldIndex == newIndex || oldIndex < 0 || newIndex < 0 || oldIndex >= PhotoUrls.Count || newIndex >= PhotoUrls.Count)
+            return;
+
+        var temp = PhotoUrls[oldIndex];
+        PhotoUrls[oldIndex] = PhotoUrls[newIndex];
+        PhotoUrls[newIndex] = temp;
+
+        StateHasChanged();
+    }
+}

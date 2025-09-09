@@ -1,0 +1,20 @@
+@page "/manage/classified/stores/view/stores"
+@using QLN.ContentBO.WebUI.Models;
+@layout StoresLayout
+@inherits ViewStoresBase
+
+<MudGrid Style="padding-top: 18px">
+    <MudItem xs="12" md="12">
+        <StoresSearchSortBar OnSearch="HandleSearch" OnSort="HandleSort" OnDateFilterChanged="HandleDateFiltersChanged" OnTypeChange="HandleTypeChange"/>
+        <div class="community-table">
+            <ViewStoreTable Listings="StoreItems"
+            TotalCount="@TotalCount"
+            CurrentPage="@currentPage"
+            PageSize="@pageSize"
+            OnPageChange="HandlePageChange"
+            OnPageSizeChange="HandlePageSizeChange"
+            OnViewClicked="OnViewClicked" 
+            />
+        </div>
+    </MudItem>
+</MudGrid>

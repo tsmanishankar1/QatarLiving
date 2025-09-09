@@ -1,0 +1,77 @@
+﻿@inherits ClassifiedsDashboardBase
+@using MudBlazor
+@using QLN.Web.Shared.Components.BreadCrumb
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="classified-dashboard-container">
+    <div class="classified-dashboard-header">
+        <div class="classified-breadcrumb">
+            <Breadcrumb Items="breadcrumbItems" />
+        </div>
+
+        <div class="classified-dashboard-menu">
+            <MudMenu Class="classified-menu-selector"
+                     Label="Dashboard"
+                     Variant="Variant.Text"
+                     DisableElevation="true"
+                     DisableRipple="true"
+                     Icon="@Icons.Material.Filled.ArrowDropDown"
+                     AnchorOrigin="Origin.BottomCenter"
+                     TransformOrigin="Origin.TopCenter">
+                <ActivatorContent>
+                    <div class="classified-dashboard-option">
+                        <span class="dashboard-text">Dashboard: @GetDashboardName(SelectedDashboard)</span>
+                        <MudIcon Icon="@Icons.Material.Filled.ArrowDropDown" Class="dropdown-icon" />
+                    </div>
+                </ActivatorContent>
+                <ChildContent>
+                    @foreach (var dashboard in DashboardOptions)
+                    {
+                        <div style="display: flex; align-items: center; gap: 2px;margin-left:10px">
+
+                            <img src=@($"/qln-images/classifieds/dashboard/{dashboard.ToString().ToLower().Trim()}.svg")
+                                 alt="@dashboard"
+                                 style="width: 24px; height: 24px; margin-right: 8px;" />
+                            <MudMenuItem OnClick="() => SwitchDashboard(dashboard)">
+                                @GetDashboardName(dashboard)
+                            </MudMenuItem>
+                        </div>
+                    }
+                </ChildContent>
+            </MudMenu>
+        </div>
+    </div>
+</MudContainer>
+<style>
+    .classified-dashboard-container {
+        padding: 4px 0px;
+        background-color: #F2F4F7;
+    }
+
+    .classified-dashboard-header {
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        align-items: flex-start;
+        gap: 4px;
+        width: 100%;
+    }
+
+    .classified-breadcrumb {
+        flex-shrink: 0;
+    }
+
+    .classified-dashboard-menu {
+        flex-shrink: 0;
+    }
+
+    .classified-dashboard-option {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 12px;
+    }
+
+    .dropdown-icon {
+        margin-left: 4px;
+    }
+</style>

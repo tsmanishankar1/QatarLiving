@@ -1,0 +1,34 @@
+@page "/qln/classifieds/deals/details"
+
+@using MudBlazor
+@using QLN.Web.Shared.Pages.Classifieds.Deals.Components
+@using QLN.Web.Shared.Pages.Classifieds.Deals.Components
+@layout ClassifiedsLayout
+
+<div style="width: 100%; background-color: var(--color-secondary-background);">
+     <div class="search-section-container">
+    <div class="max-container">
+    <SearchSectionDeals />
+    </div></div>
+      <div class="max-container">
+        <div class="logo-category-banner-wrapper"> 
+            <img src="qln-images/stores/hypermarket.svg" class="blurred-banner" alt="banner" />
+        </div> 
+
+
+        <!-- OVERLAY using translateY -->
+        <div class="item-card-wrapper">
+            <ItemCard />
+        </div>
+           <a href="/qln/classifieds/deals" class="back-link">
+                <MudIcon Icon="@Icons.Material.Filled.KeyboardArrowLeft"
+                                Class="back-to-login-icon" />
+                <span class="back-text">Back to Deals</span>
+            </a>
+
+        <div class="item-list-container">
+            <ItemListDeals />
+        </div>
+    </div>
+</div>
+

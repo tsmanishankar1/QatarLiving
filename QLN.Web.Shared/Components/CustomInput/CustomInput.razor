@@ -1,0 +1,277 @@
+@typeparam TItem
+@using Microsoft.AspNetCore.Components.Forms
+@using System.Linq.Expressions
+@inject IJSRuntime JS
+
+<div class="custom-input-wrapper @(IsDisabled ? "disabled" : "") @(HasValidationError ? "error-border" : "") @(IsFocused ? "focused-border" : "")"
+     style="padding:@Padding; border-radius:@BorderRadius; height:@Height;"
+     @onfocusin="() => IsFocused = true"
+     @onfocusout="() => IsFocused = false">
+
+    @if (!string.IsNullOrEmpty(Icon) || !string.IsNullOrEmpty(ImageUrl))
+    {
+        <div class="input-icon">
+            @if (!string.IsNullOrEmpty(Icon))
+            {
+                <MudIcon Icon="@Icon" Class="icon-symbol" />
+            }
+            else if (!string.IsNullOrEmpty(ImageUrl))
+            {
+                <img src="@ImageUrl" class="input-image" />
+            }
+        </div>
+    }
+
+   <input class="custom-input"
+       placeholder="@Placeholder"
+       disabled="@IsDisabled"
+       type="@InputHtmlType"
+       maxlength="@MaxLength"
+       value="@InternalValue"
+       @oninput="OnInputChanged" />
+
+
+
+    @if (!string.IsNullOrEmpty(TextRight))
+    {
+        <div class="input-text-right">@TextRight</div>
+    }
+</div>
+
+@if (HasValidationError)
+{
+    <div class="error-text">@ValidationMessage</div>
+}
+
+@code {
+    [Parameter] public TItem Value { get; set; }
+    [Parameter] public EventCallback<TItem> ValueChanged { get; set; }
+
+    [Parameter] public string Placeholder { get; set; } = string.Empty;
+    [Parameter] public string Icon { get; set; }
+    [Parameter] public string ImageUrl { get; set; }
+    [Parameter] public string TextRight { get; set; }
+    [Parameter] public int MaxLength { get; set; } = 10;
+    [Parameter] public string InputHtmlType { get; set; } = "text";
+    [Parameter] public string Height { get; set; } = "auto";
+    [Parameter] public string Padding { get; set; } = "14px 12px";
+    [Parameter] public string BorderRadius { get; set; } = "6px";
+    [Parameter] public bool IsDisabled { get; set; } = false;
+
+    [Parameter] public Expression<Func<TItem>> For { get; set; }
+    [CascadingParameter] private EditContext CascadedEditContext { get; set; }
+
+    private bool IsFocused;
+        private FieldIdentifier _fieldIdentifier; 
+ private bool HasValidationError => 
+    For != null && CascadedEditContext != null && ValidationMessage != null;
+
+private string ValidationMessage =>
+    (For != null && CascadedEditContext != null)
+        ? CascadedEditContext.GetValidationMessages(_fieldIdentifier).FirstOrDefault()
+        : null;
+
+
+  private string _internalValue = string.Empty;
+private string InternalValue
+{
+    get => _internalValue;
+    set
+    {
+        if (value.Length > MaxLength)
+            value = value.Substring(0, MaxLength);
+
+        _internalValue = value;
+
+        if (typeof(TItem) == typeof(int) || typeof(TItem) == typeof(int?))
+        {
+            if (int.TryParse(value, out var number))
+            {
+                Value = (TItem)Convert.ChangeType(number, Nullable.GetUnderlyingType(typeof(TItem)) ?? typeof(TItem));
+                _internalValue = number.ToString();
+            }
+            else
+            {
+                Value = default;
+            }
+        }
+        else
+        {
+            Value = (TItem)(object)value;
+        }
+
+        ValueChanged.InvokeAsync(Value);
+        NotifyValidation();
+    }
+}
+
+
+protected override async Task OnParametersSetAsync()
+{
+    if (typeof(TItem) == typeof(int) && Value?.ToString() == "0")
+    {
+        _internalValue = string.Empty;
+    }
+    else
+    {
+        _internalValue = Value?.ToString() ?? string.Empty;
+    }
+}
+
+private async Task OnInputChanged(ChangeEventArgs e)
+{
+    var input = e.Value?.ToString() ?? string.Empty;
+
+    if (input.Length > MaxLength)
+    {
+        input = input.Substring(0, MaxLength);
+    }
+
+    if (typeof(TItem) == typeof(int) || typeof(TItem) == typeof(int?))
+    {
+        if (!input.All(char.IsDigit))
+        {
+            Value = default;
+            _internalValue = string.Empty;
+            await ValueChanged.InvokeAsync(Value);
+            NotifyValidation();
+            return;
+        }
+
+        input = input.TrimStart('0');
+
+        if (int.TryParse(input, out var number))
+        {
+            var converted = (TItem)Convert.ChangeType(number, Nullable.GetUnderlyingType(typeof(TItem)) ?? typeof(TItem));
+            Value = converted;
+            _internalValue = number.ToString();
+        }
+        else
+        {
+            Value = default;
+            _internalValue = string.Empty;
+        }
+
+        await ValueChanged.InvokeAsync(Value);
+        NotifyValidation();
+    }
+    else
+    {
+        Value = (TItem)(object)input;
+        _internalValue = input;
+        await ValueChanged.InvokeAsync(Value);
+        NotifyValidation();
+    }
+}
+
+
+protected override void OnInitialized()
+{
+    if (CascadedEditContext == null)
+    {
+        Console.WriteLine("⚠️ EditContext not found. CustomInput should be inside an EditForm.");
+        return;
+    }
+
+    if (For == null)
+    {
+        Console.WriteLine("⚠️ 'For' parameter is required for validation to work.");
+        return;
+    }
+
+    try
+    {
+        _fieldIdentifier = FieldIdentifier.Create(For);
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"❌ Error creating FieldIdentifier: {ex.Message}");
+    }
+}
+
+ 
+private void NotifyValidation()
+{
+    if (_fieldIdentifier.Model != null && !string.IsNullOrEmpty(_fieldIdentifier.FieldName))
+    {
+        CascadedEditContext?.NotifyFieldChanged(_fieldIdentifier);
+        CascadedEditContext?.Validate();
+    }
+}
+
+
+}
+
+<style>
+    .custom-input-wrapper {
+        display: flex;
+        align-items: center;
+        border: 1px solid var(--color-captcha-box);
+        background: var(--color-background);
+        color: var(--color-text-heading);
+        width: 100%;
+        height: 60px
+        font-family: 'Public Sans', sans-serif;
+        transition: border 0.2s;
+    }
+
+  .custom-input-wrapper.focused-border {
+    border: 1px solid #FF7F38 !important;
+}
+
+.custom-input-wrapper.error-border {
+    border: 1px solid red !important;
+    box-shadow: 0 0 0 1px rgba(255, 0, 0, 0.15);
+}
+
+.custom-input-wrapper.disabled {
+    opacity: 0.6;
+    pointer-events: none;
+    background-color: var(--color-background-secondary-grey-light);
+}
+    .custom-input {
+        flex: 1;
+        border: none;
+        background: transparent;
+        font-size: 14px;
+        outline: none;
+        color: inherit;
+    }
+
+    .input-icon,
+    .input-image {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-left: 8px;
+    }
+
+    .icon-symbol {
+        font-size: 18px;
+        color: var(--color-accent);
+    }
+
+    .input-image {
+        width: 20px;
+        height: 20px;
+        object-fit: contain;
+    }
+
+    .input-text-right {
+        font-size: 15px;
+        margin-right: 8px;
+        color: var(--color-text-secondary);
+    }
+
+    .custom-input-wrapper.error-border {
+        border: 1px solid red;
+        box-shadow: 0 0 0 1px rgba(255, 0, 0, 0.15);
+    }
+
+    .error-text {
+        color: red;
+        font-size: 12px;
+        margin-top: 4px;
+        padding-left: 4px;
+    }
+</style>

@@ -1,0 +1,240 @@
+@using MudBlazor
+@using QLN.Web.Shared.Components.NewCustomSelect
+@using QLN.Web.Shared.Components.PhoneNumberInput
+@using QLN.Web.Shared.Components.CustomInput
+@using QLN.Web.Shared.Pages.Classifieds.CreatePost.Components
+@using QLN.Common.DTO_s;
+@using MudExRichTextEditor
+@inherits CreateFormListbase
+@typeparam TItem
+
+<div class="form-section">
+    <h3 class="form-heading">Ad Category</h3>
+    <div class="form-group">
+        <NewCustomSelect TItem="OptionItem"
+                         Items="@categoryOptions"
+                         SelectedId="@adPostModel.SelectedVertical"
+                         SelectedIdChanged="OnVerticalChanged"
+                         GetId="x => x.Id"
+                         GetLabel="x => x.Label"
+                         Label="Subvertical"
+                         Placeholder="Choose" />
+    </div>
+</div>
+
+@if (!string.IsNullOrEmpty(adPostModel.SelectedVertical))
+{
+    var selectedCategory = CategoryTrees.FirstOrDefault(x => x.Id.ToString() == adPostModel.SelectedCategoryId);
+    var selectedSubcategory = selectedCategory?.Children?.FirstOrDefault(x => x.Id.ToString() == adPostModel.SelectedSubcategoryId);
+    var selectedSubSubcategory = selectedSubcategory?.Children?.FirstOrDefault(x => x.Id.ToString() == adPostModel.SelectedSubSubcategoryId);
+    var fields = selectedSubSubcategory?.Fields ?? selectedSubcategory?.Fields ?? selectedCategory?.Fields;
+
+    var allowedFields = new[] { "Condition", "Ram", "Model", "Capacity", "Processor", "Brand", "Storage", "Colour", "Gender", "Resolution", "Coverage" };
+    @if (adPostModel.SelectedVertical != "deals")
+    {
+        <div class="form-section">
+            <h6 class="form-heading">Ad Information</h6>
+
+            <div class="form-group">
+                <NewCustomSelect TItem="CategoryTreeDto"
+                                 Items="@CategoryTrees"
+                                 GetId="x => x.Id.ToString()"
+                                 GetLabel="x => x.Name"
+                                 Label="Category"
+                                 Placeholder="Choose"
+                                 For="@(() => adPostModel.SelectedCategoryId)"
+                                 SelectedId="@adPostModel.SelectedCategoryId"
+                                 SelectedIdChanged="OnCategoryChanged" />
+            </div>
+            @if (selectedCategory?.Children?.Any() == true)
+            {
+                <div class="form-group">
+                    <NewCustomSelect TItem="CategoryTreeDto"
+                                     Items="@selectedCategory.Children"
+                                     GetId="x => x.Id.ToString()"
+                                     GetLabel="x => x.Name"
+                                     Label="Subcategory"
+                                     Placeholder="Choose"
+                                     For="@(() => adPostModel.SelectedSubcategoryId)"
+                                     SelectedId="@adPostModel.SelectedSubcategoryId"
+                                     SelectedIdChanged="OnSubcategoryChanged" />
+                </div>
+            }
+
+            @if (selectedSubcategory?.Children?.Any() == true)
+            {
+                <div class="form-group">
+                    <NewCustomSelect TItem="CategoryTreeDto"
+                                     Items="@selectedSubcategory.Children"
+                                     GetId="x => x.Id.ToString()"
+                                     GetLabel="x => x.Name"
+                                     Label="Sub Subcategory"
+                                     Placeholder="Choose"
+                                     For="@(() => adPostModel.SelectedSubSubcategoryId)"
+                                     SelectedId="@adPostModel.SelectedSubSubcategoryId"
+                                     SelectedIdChanged="OnSubSubcategoryChanged" />
+                </div>
+            }
+
+            @if (fields != null)
+            {
+               @foreach (var field in fields)
+{
+    if (allowedFields.Contains(field.Name))
+    {
+        var key = field.Name;
+        var selected = adPostModel.DynamicFields.ContainsKey(key) ? adPostModel.DynamicFields[key] : null;
+
+        <div class="form-group">
+            <NewCustomSelect TItem="OptionItem"
+                             Items="field.Options.Select(opt => new OptionItem { Id = opt, Label = opt }).ToList()"
+                             GetId="x => x.Id"
+                             GetLabel="x => x.Label"
+                             Label="@field.Name"
+                             Placeholder="Choose"
+                             SelectedId="@selected"
+                             SelectedIdChanged="@(val => OnDynamicFieldChanged(field.Name, val))" />
+
+            @if (GetDynamicFieldErrors(field.Name).Any())
+            {
+                    @foreach (var message in GetDynamicFieldErrors(field.Name))
+                    {
+                        <div class="error-text">@message</div>
+                    }
+            }
+        </div>
+    }
+}
+
+                }
+                <div class="form-group">
+                    <CustomInput TItem="int" MaxLength="50"   InputHtmlType="text" For="@(() => adPostModel.Price)" Placeholder="Price" @bind-Value="adPostModel.Price" TextRight="QAR" />
+                </div>
+        </div>
+    }
+
+
+    <div class="form-section">
+        <h6 class="form-heading">Description and Features</h6>
+        <div class="form-group">
+            <CustomInput TItem="string" MaxLength="50"   InputHtmlType="text" For="@(() => adPostModel.Title)" Placeholder="@(adPostModel.SelectedVertical == "deals" ? "Offer Title" : "Title")" @bind-Value="adPostModel.Title" />
+        </div>
+        @if (adPostModel.SelectedVertical != "deals")
+        {
+            <div class="form-group">
+                <MudExRichTextEdit @bind-Value="adPostModel.ItemDescription"
+                                   Height="246"
+                                   Class="description-input-create-ad"
+                                   Placeholder="Description*" />
+              <ValidationMessage For="@(() => adPostModel.ItemDescription)" />
+                                 
+            </div>
+
+        }
+        @if (adPostModel.SelectedVertical == "items")
+        {
+            <div class="form-group">
+                <CustomInput TItem="int"  MaxLength="3"   InputHtmlType="number" For="@(() => adPostModel.BatteryPercentage)"Placeholder="Battery Percentage" @bind-Value="adPostModel.BatteryPercentage" TextRight="%" />
+            </div>
+        }
+
+        <div class="form-group">
+            <FileUploader OnFileUploadedWithMeta="HandleUpload"  For="@(() => adPostModel.Certificate)" Value="@adPostModel.Certificate"
+    ValueChanged="@((val) => adPostModel.Certificate = val)" LabelText="@(adPostModel.SelectedVertical == "deals" ? "Flyer File" : "Certificate / Warranty*")" />
+        </div>
+        @if (adPostModel.SelectedVertical == "deals")
+        {
+            <div class="form-group">
+                <CustomInput TItem="string" Placeholder="XML Link" @bind-Value="adPostModel.XmlLink" />
+            </div>
+        }
+    </div>
+
+
+    <div class="form-section">
+        <h6 class="form-heading">Contact Details</h6>
+        <div class="form-group">
+           <!-- Phone -->
+            <PhoneNumberInput
+                SelectedCountry="@SelectedPhoneCountry"
+                Placeholder="Phone Number*"
+                For="@(() => adPostModel.PhoneNumber)"
+                SelectedCountryChanged="@OnPhoneCountryChanged"
+                PhoneNumber="@adPostModel.PhoneNumber"
+                PhoneNumberChanged="@OnPhoneChanged" />
+        </div>
+        <div class="form-group">
+            <!-- WhatsApp -->
+            <PhoneNumberInput
+                SelectedCountry="@SelectedWhatsappCountry"
+                Placeholder="WhatsApp Number"
+                For="@(() => adPostModel.WhatsappNumber)"
+                SelectedCountryChanged="@OnWhatsappCountryChanged"
+                PhoneNumber="@adPostModel.WhatsappNumber"
+                PhoneNumberChanged="@OnWhatsappChanged" />
+        </div>
+    </div>
+
+    <div class="form-section">
+        <h6 class="form-heading">Location</h6>
+        
+        @if (adPostModel.SelectedVertical == "deals")
+        {
+            <div class="form-group">
+                <CustomInput TItem="string" Placeholder="Location*" @bind-Value="adPostModel.FlyerLocation" />
+            </div>
+        }
+        @if (adPostModel.SelectedVertical != "deals")
+        {
+            <div class="form-group">
+                <NewCustomSelect TItem="LocationDto.LocationZoneDto"
+                     Items="@Zones"
+                     GetId="x => x.Id.ToString()"
+                     GetLabel="x => x.Name"
+                     Label="Zone"
+                     Placeholder="Choose"
+                     For="@(() => adPostModel.Zone)"
+                     SelectedId="@adPostModel.Zone"
+                     SelectedIdChanged="@(val => OnZoneChanged(val))"  />
+            </div>
+           <div class="form-group">
+            <CustomInput TItem="int?" MaxLength="50" InputHtmlType="number"
+                For="@(() => adPostModel.StreetNumber)"
+                Placeholder="Street Number"
+                Value="adPostModel.StreetNumber"
+                ValueChanged="@(val => OnAddressChanged(val, nameof(adPostModel.StreetNumber)))" />
+        </div>
+
+        <div class="form-group">
+            <CustomInput TItem="int?" MaxLength="50" InputHtmlType="number"
+                For="@(() => adPostModel.BuildingNumber)"
+                Placeholder="Building Number"
+                Value="adPostModel.BuildingNumber"
+                ValueChanged="@(val => OnAddressChanged(val, nameof(adPostModel.BuildingNumber)))" />
+        </div>
+
+            <div class="form-group">
+                <div @ref="mapDiv" id="map" style="height: 300px; width: 100%;"></div>
+            </div>
+        }
+
+
+        <div class="checkbox-section">
+            <div class="checkbox-left">
+                <MudCheckBox @bind-Value="adPostModel.IsAgreed" Color="Color.Primary" />
+            </div>
+            <div class="checkbox-right">
+                <span>
+                    I agree to the
+                    <a href="https://www.qatarliving.com/rules-advertising" target="_blank">Rules for Advertising</a>
+                    and the
+                    <a href="https://www.qatarliving.com/terms-of-use" target="_blank">Terms of Use</a>.
+                </span>
+            </div>
+        </div>
+        <ValidationMessage For="@(() => adPostModel.IsAgreed)" />
+    </div>
+}
+
+
+

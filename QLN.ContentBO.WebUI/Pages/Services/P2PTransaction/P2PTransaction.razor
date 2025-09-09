@@ -1,0 +1,16 @@
+@page "/manage/services/listing/transactions"
+@inherits P2PTransactionBase
+@using QLN.ContentBO.WebUI.Models;
+@layout ServicesLayout
+
+<MudGrid Style="padding-top: 18px">
+    <!-- Left Form Section -->
+    <MudItem xs="12" md="12">
+             <SearchSortBar OnSearch="HandleSearch" OnSort="HandleSort" OnDateFilterChanged="HandleDateFiltersChanged" OnClearFilters="HandleClearFilters" Items="Listings"/>
+              <div class="community-table">
+                    <P2PTransactionTable Listings="Listings" OnPageChange="HandlePageChange"
+                OnPageSizeChange="HandlePageSizeChange" />
+             </div> 
+    </MudItem>
+</MudGrid>
+

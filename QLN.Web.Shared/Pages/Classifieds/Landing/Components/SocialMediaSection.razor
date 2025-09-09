@@ -1,0 +1,95 @@
+@using MudBlazor
+@inherits SocialMediaSectionBase
+
+<div class="store-media-section">
+    <MudGrid>
+       <MudItem xs="12" md="6">
+         @if (Loading)
+            {
+                <div class="media-store-header">
+                    <MudSkeleton Height="34px" Width="60%" Style="margin-bottom: 1rem;" />
+                    <MudSkeleton Height="20px" Width="80%" Style="margin-bottom: 10px;" />
+                    <MudSkeleton Height="20px" Width="80%" Style="margin-bottom: 10px;" />
+                    <MudSkeleton Height="18px" Width="40%" />
+                </div>
+            }
+              else
+            {
+            <div class="media-store-header">
+                    <h3 class="header-title">@Title</h3>
+                    <h4 class="header-description">@Description</h4>
+
+                    <div class="social-icons">
+                            @foreach (var link in SocialLinks)
+                            {
+                                var imageUrl = !string.IsNullOrWhiteSpace(link.ImageUrl) ? link.ImageUrl : link.Title == "Facebook" ? "/qln-images/classifieds/social_Facebook.svg": link.Title == "Instagram"
+                                    ? "/qln-images/classifieds/social_Instagram.svg"
+                                    : link.Title == "Youtube"
+                                    ? "/qln-images/classifieds/social_Youtube.svg"
+                                    : "/qln-images/classifieds/social_Youtube.svg";
+                                <a href="@link.RediectUrl"
+                                target="_blank"
+                                class="social-icon" style="@(string.IsNullOrWhiteSpace(link.ImageUrl) ? "width: 50px; height: 50px;" : null)">
+                                    <img src="@(string.IsNullOrWhiteSpace(link.ImageUrl) ? imageUrl : link.ImageUrl)" alt="@link.Title" />
+                                </a>
+                            }
+                    </div>
+                </div>
+                }
+        </MudItem>
+        <MudItem xs="12" md="6">
+           <div class="video-scroll-wrapper">
+              @if (Loading)
+                {
+                    @for (int i = 0; i < 3; i++)
+                    {
+                        <div class="video-card">
+                            <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="100%" Width="100%" Style="border-radius: 12px;" />
+                        </div>
+                    }
+                }
+                else
+                {
+                @foreach (var video in VideoCards)
+                {
+               <div class="video-card"
+                    style="position: relative; border-radius: 12px; overflow: hidden; cursor: pointer;"
+                    @onclick="() => ToggleVideoPlay(video)"
+                    @onmouseenter="() => ShowPlayButton(video)"
+                    @onmouseleave="() => HidePlayButton(video)">
+                 
+                    <!-- Video -->
+                    <video width="100%" height="100%" 
+                        muted loop
+                        style="object-fit: cover;"
+                        src="@video.VideoUrl"
+                        @ref="video.VideoElement">
+                    </video>
+                      
+                    <!-- Play button -->
+                    @if (video.ShowPlayButton)
+                    {
+                       <div class="play-overlay">
+                        <MudIcon Icon="@Icons.Material.Filled.PlayArrow" Class="play-icon"   />
+                    </div>
+
+                    }
+
+                    <!-- Hover-only info -->
+                    <div class="video-info">
+                        <img src="@AvatarUrl" class="avatar" />
+                        <div class="info-text">
+                            <span class="source">@SourceName</span>
+                            <span class="time">@video.TimeAgo</span>
+                        </div>
+                    </div>
+                </div>
+                } 
+                }
+            </div>
+        </MudItem>
+    </MudGrid>
+</div>
+
+
+

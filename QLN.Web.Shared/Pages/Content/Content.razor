@@ -1,0 +1,20 @@
+@page "/"
+@using Microsoft.Extensions.Options
+@using QLN.Web.Shared.Pages.Content.Daily
+@using QLN.Web.Shared.Pages.Content.DailyV2
+@using QLN.Web.Shared.Services
+@layout ContentLayout
+@inject IOptions<NavigationPath> options
+
+@if (ShouldRenderV2Component)
+{
+    <DailyComponentV2 />
+}
+else
+{
+    <DailyComponent />
+}
+
+@code {
+    private bool ShouldRenderV2Component => options.Value.ContentDaily.Contains("v2", StringComparison.OrdinalIgnoreCase);
+}

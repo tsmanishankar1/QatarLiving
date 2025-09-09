@@ -1,0 +1,57 @@
+@using MudBlazor
+@using MudBlazor.Components
+@using QLN.Common.DTO_s
+@using QLN.Web.Shared.Components.Classifieds.FeaturedItemCard
+@using QLN.Web.Shared.Components.EmptyCard
+@using QLN.Web.Shared.Pages.Classifieds.Skeletons
+@inject NavigationManager Navigation
+@inherits FeaturedItemsBase
+
+<div class="featured-cards-section">
+    <div class="featured-header">
+        <h3 class="featured-title">Featured Items</h3>
+        <h4 class="featured-title-one">Don’t miss out on these deals</h4>
+    </div>
+
+    @if (Loading)
+    {
+         <div class="featured-skeleton-wrapper">
+        @for (int i = 0; i < 4; i++)
+        {
+            <div class="skeleton-slide">
+                <FeaturedItemSkeletonCard />
+            </div>
+        }
+    </div>
+    }
+    else if (FeaturedItems?.Any() != true)
+    {
+        <EmptyCard Title="No featured items found." Subtitle="Please check back later or explore other categories." />
+    }
+    else
+    {
+        <div class="swiper-featured-container">
+            <div class="swiper-featured swiper">
+                <!-- Navigation arrows -->
+                <div class="swiper-featured-button-prev arrow-button left">
+                    <MudIcon Icon="@Icons.Material.Filled.ChevronLeft" />
+                </div>
+                <div class="swiper-featured-button-next arrow-button right">
+                    <MudIcon Icon="@Icons.Material.Filled.ChevronRight" />
+                </div>
+
+                <div class="swiper-wrapper">
+                         <MudVirtualize Context="item" Items="FeaturedItems">
+                        <div class="swiper-slide swiper-slide-Card">
+                            <FeaturedItemCard Item="item" OnHeartClick="HandleHeartClick" OnSelect="HandleSelect" />
+                        </div>
+                        </MudVirtualize>
+                </div>
+
+                <div class="swiper-featured-pagination"></div>
+            </div>
+
+        </div>
+    }
+</div>
+

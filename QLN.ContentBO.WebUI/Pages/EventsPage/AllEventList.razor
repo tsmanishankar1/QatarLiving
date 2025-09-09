@@ -1,0 +1,105 @@
+@using QLN.ContentBO.WebUI.Extensions
+@using QLN.ContentBO.WebUI.Models
+@using MudBlazor
+@namespace QLN.ContentBO.WebUI.Pages.EventsPage
+@using QLN.ContentBO.WebUI.Components.PaginationFooter
+@using QLN.ContentBO.WebUI.Components.TableSkeleton
+@using QLN.ContentBO.WebUI.Components.ToggleTabs
+@using QLN.ContentBO.WebUI.Components.EmptyCard
+@inherits AllEventsListBase
+
+@if (IsLoading)
+{
+    <TableSkeleton Rows="PageSize" />
+}
+
+else
+{
+    var filteredEvents = Events
+        .Where(e => string.IsNullOrWhiteSpace(SearchText) || e.EventTitle.Contains(SearchText, StringComparison.OrdinalIgnoreCase))
+        .Select((e, i) => new { Event = e, Index = i + 1 })
+        .ToList();
+
+    <SearchBarWithAdd AddEventCallback="AddEventCallback"
+                      OnSearch="HandleSearch"
+                      OnSort="HandleSortToggle" />
+    <div class="custom-table-events">
+        <div class="toggle-tabs-events">
+            <ToggleTabs Options="@tabOptions"
+                        ActiveValue="@selectedTab"
+                        OnChange="@OnTabChanged" />
+        </div>
+        @if (filteredEvents.Count == 0)
+        {
+            <div>
+                <EmptyCard Title="@GetEmptyTitle()" Subtitle="Please check back later or explore other categories." />
+            </div>
+        }
+        else
+        {
+            <MudTable Items="filteredEvents" Hover="true" Class="event-custom-table">
+                <HeaderContent>
+                    <MudTh class="header-cell">Number</MudTh>
+                    <MudTh class="header-cell">Title</MudTh>
+                    <MudTh class="header-cell">Category</MudTh>
+                    <MudTh class="header-cell">Creation Date</MudTh>
+                    <MudTh class="header-cell">Expiry Date</MudTh>
+                    <MudTh class="header-cell">Live for</MudTh>
+                    <MudTh class="header-cell">Actions</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd Class="number-cell">@context.Index</MudTd>
+                    <MudTd>
+                    <MudLink Href="@($"{EventDetailBaseURL}{context.Event.Slug}")" Target="_blank" Class="post-title">
+                     @context.Event.EventTitle
+                    </MudLink>
+                    </MudTd>
+                    <MudTd>@Categories.FirstOrDefault(c => c.Id == context.Event.CategoryId)?.CategoryName</MudTd>
+                    <MudTd>@context.Event.CreatedAt.ToQatarTime("dd-MM-yyyy")</MudTd>
+                    <MudTd>@context.Event.EventSchedule?.EndDate.ToString("dd-MM-yyyy")</MudTd>
+                    <MudTd>
+                        @if (context.Event?.PublishedDate is not null)
+                        {
+                            @GetTimeDifferenceFromNowUtc(context.Event?.PublishedDate ?? new())
+                        }
+                        else
+                        {
+                            @("-")
+                        }
+                    </MudTd>
+
+                    <MudTd>
+                        <MudMenu Icon="@Icons.Material.Filled.MoreVert" Dense="true">
+                            <MudMenuItem OnClick="() => NavigateToEditPage(context.Event.Id)"><MudIcon Icon="@Icons.Material.Outlined.Edit" /> Edit</MudMenuItem>
+                           @if (context.Event.Status == EventStatus.Published)
+                            {                
+                                <MudMenuItem OnClick="@(() => ShowConfirmation("Unpublish this event?", "Are you sure you want to unpublish this event?", "Unpublish", () => EventStatusChanged.InvokeAsync((context.Event, EventStatus.UnPublished))))">
+                                    <img src="/qln-images/eye_close_icon.svg" class="menu-icon-style" alt="Ignore" />
+                                    <span class="menu-text">Unpublish</span>
+                                </MudMenuItem>
+                            }
+                            else if (context.Event.Status == EventStatus.UnPublished)
+                            {
+                                <MudMenuItem OnClick="@(() => ShowConfirmation("Publish this event?", "Are you sure you want to Publish this event?", "Publish", () => EventStatusChanged.InvokeAsync((context.Event, EventStatus.Published))))">
+                                    <img src="/qln-images/eye_icon.svg" class="menu-icon-style" alt="Ignore" />
+                                    <span class="menu-text">Publish</span>
+                                </MudMenuItem>
+                            }
+
+                            <MudMenuItem OnClick="@(() => ShowConfirmation("Delete this event?", "Do you want to delete this event permanently?", "Delete", () => OnDelete.InvokeAsync(context.Event.Id.ToString())))" Class="mud-error-text">
+                                 <img src="/qln-images/red_delete_icon.svg" class="menu-icon-style" alt="Ignore" />
+                                    <span class="menu-text">Delete</span>
+                            </MudMenuItem>
+                        </MudMenu>
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        }
+    </div>
+    @if (filteredEvents.Count > 0)
+    {
+        <PaginationFooter TotalItems="@PaginatedData.TotalCount" CurrentPage="@CurrentPage" PageSize="@PageSize"
+                          OnPageChange="@HandlePageChange" OnPageSizeChange="@HandlePageSizeChange" />
+    }
+}
+

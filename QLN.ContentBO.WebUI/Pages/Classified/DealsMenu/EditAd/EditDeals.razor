@@ -1,0 +1,396 @@
+@page "/manage/classified/deals/edit/ad/{AdId:long}"
+@using QLN.ContentBO.WebUI.Models
+@using QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
+@using QLN.ContentBO.WebUI.Components.EmptyCard
+@using QLN.ContentBO.WebUI.Components.PhoneNumberInput;
+@inherits EditDealsBase
+
+<button class="back-button" @onclick="GoBack">
+    <MudIcon Icon="@Icons.Material.Rounded.KeyboardArrowLeft" Class="back-icon" />
+    Back
+</button>
+@if (IsLoading)
+{
+    <MudGrid GutterSize="24px">
+        <MudItem xs="12" md="5">
+            <MudSkeleton Height="50px" Width="100%" Animation="Animation.Pulse" />
+            <MudSkeleton Height="50px" Width="100%" Animation="Animation.Pulse" />
+            <MudSkeleton Height="50px" Width="100%" Animation="Animation.Pulse" />
+            <MudSkeleton Height="50px" Width="100%" Animation="Animation.Pulse" />
+            <MudSkeleton Height="50px" Width="100%" Animation="Animation.Pulse" />
+
+        </MudItem>
+        <MudItem xs="12" md="7">
+            <MudSkeleton Height="500px" Width="100%" Animation="Animation.Pulse" />
+        </MudItem>
+    </MudGrid>
+}
+else if (adPostModel != null)
+{
+    <EditDealsAction AdModel="@adPostModel" />
+    <div class="create-form-container">
+        <MudGrid GutterSize="24px">
+            <MudItem xs="12" md="5">
+                <EditForm Model="@adPostModel" OnValidSubmit="HandleValidSubmit">
+                    <DataAnnotationsValidator />
+
+                    <div class="create-form-list">
+                        <h3 class="form-heading">Ad Category</h3>
+                        <MudTextField Label="Sub Vertical"
+                                      Variant="Variant.Outlined"
+                                      Class="white-bg"
+                                      Value="adPostModel.Subvertical"
+                                      FullWidth="true"
+                                      Disabled="true">
+                        </MudTextField>
+
+                        <h3 class="form-heading">Description and Features</h3>
+                        <MudTextField Class="white-bg" Variant="Variant.Outlined" T="string" Label="Offer Title"
+                                      @bind-Value="adPostModel.OfferTitle" For="@(() => adPostModel.OfferTitle)" FullWidth="true" />
+
+                        <MudPaper Class="d-flex align-center mt-2 p-2 doc-input no-underline">
+                            <MudText Typo="Typo.body1">
+                                Flyer File
+                                @if (!string.IsNullOrEmpty(adPostModel.FlyerFileName))
+                                {
+
+                                    <MudText Typo="Typo.caption" Class="ml-2">@adPostModel.FlyerFileName</MudText>
+                                    <MudIconButton Icon="@Icons.Material.Outlined.Close"
+                                                   Size="Size.Small"
+                                                   Color="Color.Error"
+                                                   OnClick="ClearFile" />
+                                }
+                            </MudText>
+                            <MudSpacer />
+                            <MudFileUpload T="IBrowserFile"
+                                           Accept=".pdf"
+                                           MaximumFileCount="1"
+                                           OnFilesChanged="HandlePdfFileChanged"
+                                           @ref="_pdfFileUploadRef">
+                                <ActivatorContent>
+                                    <MudButton Variant="Variant.Filled"
+                                               Color="Color.Primary"
+                                               Class="upload-button">
+                                        Upload
+                                        <img src="/qln-images/upload_white_icon.svg" width="20" height="20" />
+                                    </MudButton>
+                                </ActivatorContent>
+                            </MudFileUpload>
+
+                        </MudPaper>
+                        <MudText Typo="Typo.caption">Supported file formats: PDF . Max: 10MB</MudText>
+
+
+
+                        <MudTextField Class="white-bg" Variant="Variant.Outlined" T="string" Label="XML Link"
+                                      @bind-Value="adPostModel.XmlLink" For="@(() => adPostModel.XmlLink)" FullWidth="true" />
+
+                        <MudDatePicker Label="Expiry Date"
+                                       T="DateTime?"
+                                       @bind-Date="adPostModel.ExpiryDate"
+                                       Adornment="Adornment.End"
+                                       AdornmentIcon="@Icons.Material.Filled.Event"
+                                       Class="white-bg"
+                                       Variant="Variant.Outlined" />
+                        <h3 class="form-heading">Contact Details</h3>
+                        <div class="form-group">
+                            <!-- Phone -->
+                            <PhoneNumberInput SelectedCountry="@SelectedPhoneCountry"
+                                              Placeholder="Phone Number"
+                                              SelectedCountryChanged="@OnPhoneCountryChanged"
+                                              PhoneNumber="@adPostModel.ContactNumber"
+                                              PhoneNumberChanged="@OnPhoneChanged" />
+                            <ValidationMessage For="@(() => adPostModel.ContactNumber)" />
+                        </div>
+                        <div class="form-group">
+                            <!-- WhatsApp -->
+                            <PhoneNumberInput SelectedCountry="@SelectedWhatsappCountry"
+                                              Placeholder="WhatsApp Number"
+                                              SelectedCountryChanged="@OnWhatsappCountryChanged"
+                                              PhoneNumber="@adPostModel.WhatsappNumber"
+                                              PhoneNumberChanged="@OnWhatsappChanged" />
+                            <ValidationMessage For="@(() => adPostModel.WhatsappNumber)" />
+                        </div>
+
+                        <h3 class="form-heading">Location</h3>
+                        <MudTextField Class="white-bg"
+                                      Variant="Variant.Outlined"
+                                      Label="Locations "
+                                      @bind-Value="LocationsString"
+                                      For="@(() => LocationsString)"
+                                      FullWidth="true" />
+
+                        <MudCheckBox Color="Color.Primary" T="bool" Label="I agree to terms"
+                                     @bind-Value="adPostModel.IsAgreed" For="@(() => adPostModel.IsAgreed)" />
+
+                        <div class="custom-button-group">
+                            <MudButton Class="custom-button" Variant="Variant.Outlined">Cancel</MudButton>
+                            <MudButton Class="custom-button" Variant="Variant.Filled" Color="Color.Primary" ButtonType="ButtonType.Submit" Disabled="IsBtnDisabled">Submit</MudButton>
+                        </div>
+                    </div>
+                </EditForm>
+
+            </MudItem>
+
+            <MudItem xs="12" md="7">
+                <h3 class="Upload-header">Upload Cover</h3>
+
+                <div class="Upload-container">
+                    <div class="d-flex align-items-center mb-2">
+                        <MudIcon Icon="@Icons.Material.Filled.Info" Class="mr-2 info-icon" />
+                        <span class="photo-guidelines">
+                            Upload a high quality cover for the flyer to attract shoppers to your offer. Use portrait orientation (vertical) for optimal photo display.
+                        </span>
+                    </div>
+
+                    <div id="image-upload-container" class="image-grid">
+                        <div class="deals-upload-box">
+                            <label class="upload-label">
+
+                                <MudFileUpload T="IBrowserFile"
+                                               Accept="image/*"
+                                               MaximumFileCount="1"
+                                               OnFilesChanged="HandleImageFileChanged"
+                                               @ref="_coverImageFileUploadRef"
+                                               Class="file-input">
+                                    <ActivatorContent>
+                                        @if (string.IsNullOrEmpty(adPostModel.ImageUrl))
+                                        {
+                                            <div class="upload-content">
+                                                <div class="upload-icon-box">
+                                                    <MudIcon Icon="@Icons.Material.Filled.Add" Class="upload-icon" />
+                                                </div>
+                                                <div class="upload-text">Upload</div>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <img src="@adPostModel.ImageUrl" alt="Cover Image" class="preview-image" />
+
+                                            <MudIconButton Icon="@Icons.Material.Rounded.DeleteOutline"
+                                                           Class="delete-icon"
+                                                           OnClick="RemoveImage" />
+                                        }
+
+                                        <div class="cover-photo-label">Flyer Cover</div>
+                                    </ActivatorContent>
+                                </MudFileUpload>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </MudItem>
+        </MudGrid>
+    </div>
+}
+else
+{
+    <div class="empty-card-wrapper">
+        <EmptyCard Title="Data Could not be loaded" Subtitle="Please check back later " />
+    </div>
+}
+
+<style>
+    .create-form-container {
+        padding: 20px 0;
+    }
+
+    .back-button {
+        display: flex;
+        align-items: center;
+        border: 1px solid var(--color-accent);
+        color: var(--color-accent);
+        background-color: transparent;
+        border-radius: 8px;
+        padding: 6px 10px;
+        font-weight: 500;
+        font-size: 14px;
+        cursor: pointer;
+        transition: background-color 0.2s ease-in-out;
+    }
+
+    .back-icon {
+        margin-right: 6px;
+    }
+
+    .white-bg input,
+    .white-bg textarea,
+    .white-bg .mud-input,
+    .white-bg .mud-select,
+    .white-bg .mud-select-input,
+    .white-bg .mud-input-slot {
+        background-color: white !important;
+    }
+
+    .Upload-header {
+        font-size: 18px;
+        font-weight: 600;
+        font-family: 'Public Sans', sans-serif;
+        color: var(--color-primary);
+    }
+
+    .Upload-container {
+        padding: 20px;
+        background-color: var(--color-background);
+        border-radius: 6px;
+        margin-top: 10px;
+        font-family: 'Public Sans', sans-serif;
+        boder: 1px solid var(--color-background-secondary-grey-medium);
+    }
+
+    .photo-guidelines {
+        font-size: 12px;
+        font-weight: 400;
+        color: var(--color-text-secondary);
+        /* slate-700 */
+    }
+
+        .photo-guidelines a {
+            color: var(--color-accent);
+            /* Material Indigo */
+            font-weight: 400;
+            margin-left: 4px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+    .inline-drag-icon {
+        font-size: 16px;
+        vertical-align: middle;
+        margin: 0 4px;
+        color: var(--color-text-secondary);
+        cursor: grab;
+    }
+
+    .drag-instruction-text {
+        font-size: 14px;
+        font-weight: 400;
+        color: var(--color-text-secondary);
+    }
+
+
+    .add-more-box {
+        border: 1px dashed #d1d5db;
+        background-color: var(--color-secondary-background);
+        aspect-ratio: 4/3;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+    }
+
+    .image-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+    }
+
+    .deals-upload-box {
+        position: relative;
+        border: 1px dashed #d1d5db;
+        border-radius: 2px;
+        background-color: var(--color-secondary-background);
+        overflow: hidden;
+        aspect-ratio: 4/3;
+        /* Landscape ratio */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 180px;
+        width: 120px;
+    }
+
+    .upload-label {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+    }
+
+    .cover-photo-label {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background-color: var(--color-accent);
+        color: white;
+        font-size: 12px;
+        padding: 4px 0;
+        text-align: center;
+        font-weight: 500;
+    }
+
+    .plus-icon {
+        font-size: 24px;
+        color: orange;
+    }
+
+    .add-more-text {
+        font-size: 12px;
+        color: #555;
+        text-align: center;
+        margin-top: 5px;
+    }
+
+    .preview-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        position: absolute;
+        top: 0;
+        left: 0;
+    }
+
+    .delete-icon {
+        position: absolute !important;
+        top: 8px !important;
+        right: 8px !important;
+        background-color: var(--color-accent) !important;
+        border-radius: 50% !important;
+        color: white !important;
+        width: 28px !important;
+        height: 28px !important;
+        z-index: 10 !important;
+    }
+
+    .upload-content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+    }
+
+
+    .upload-icon-box {
+        position: absolute;
+        top: 6px;
+        right: 6px;
+    }
+
+    .upload-icon {
+        color: var(--color-accent);
+        font-size: 24px;
+    }
+
+    .upload-text {
+        color: var(--color-text-heading);
+        font-weight: 500;
+        font-size: 11px;
+    }
+
+    .file-input {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+        cursor: pointer;
+        z-index: 10;
+    }
+</style>

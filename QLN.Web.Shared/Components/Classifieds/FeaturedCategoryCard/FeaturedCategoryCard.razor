@@ -1,0 +1,97 @@
+@using MudBlazor
+@inherits FeaturedCategoryCardBase
+@using QLN.Web.Shared.Components.EmptyCard
+
+<div class="category-card-section" @onclick="() => OnClick.InvokeAsync(Item)">
+    <div class="card-contents">
+           @if (ShowEmptyCard)
+            {
+                <EmptyCard Title="No image found." Subtitle="Please check back later for updates." />
+            }
+            else
+            {
+                @if (!imageLoaded)
+                {
+                    <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="100%" Height="260px" />
+                }
+
+                <img src="@Item.ImageUrl" alt="@Item.Title" class="category-image"
+                    style="@(imageLoaded ? "display: block;" : "display: none;")" @onload="OnImageLoaded"
+                    @onerror="OnImageError" key="@Item.ImageUrl" />
+            }
+
+        <h4 class="category-card-title">@Item.Title</h4>
+    </div>
+</div>
+
+
+<style>
+    .category-card-section {
+        margin-right: 1rem;
+        border-radius: 12px;
+        transition: transform 0.3s ease;
+        cursor: pointer;
+        padding: 0;
+        width: 181px;
+        height: 290px;
+        font-family: 'Public Sans', sans-serif;
+
+    }
+
+    .category-card-section:hover {
+        transform: scale(1.03);
+    }
+
+    .card-contents {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .category-image {
+        width: 100%;
+        height: 260px;
+        object-fit: cover;
+        border-radius: 8px;
+        margin-bottom: 8px;
+    }
+
+    .category-card-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: #242424;
+    }
+
+    @@media (max-width: 768px) {
+
+
+        .category-card-section {
+            flex: 0 0 auto;
+            width: 120px;
+            border-radius: 12px;
+            scroll-snap-align: start;
+            margin-right: 0.5rem;
+        }
+
+        .category-image {
+            max-height: 250px;
+            object-fit: cover;
+        }
+
+        .card-contents {
+            align-items: flex-start;
+            text-align: left;
+        }
+
+        .category-card-title {
+            font-size: 0.85rem;
+            color: #242424;
+            text-align: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            width: 100%;
+        }
+
+    }
+</style>

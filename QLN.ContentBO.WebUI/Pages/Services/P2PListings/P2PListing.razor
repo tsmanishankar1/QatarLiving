@@ -1,0 +1,17 @@
+@page "/manage/services/listing/p2p/listing"
+@inherits P2PListingBase
+@using QLN.ContentBO.WebUI.Models;
+@layout ServicesLayout
+
+<MudGrid Style="padding-top: 18px">
+    <!-- Left Form Section -->
+    <MudItem xs="12" md="12">
+             <SearchSortBar OnSearch="HandleSearch" OnSort="HandleSort" OnDateFilterChanged="HandleDateFiltersChanged" OnClearFilters="HandleClearFilters" Items="Listings" />
+              <div class="community-table">
+                <P2PListingTable Listings="Listings" OnPageChange="HandlePageChange"
+                OnPageSizeChange="HandlePageSizeChange"
+                OnStatusChanged="HandleStatusChange" OnListReload="ReLoadP2PListingsAsync"/>
+             </div> 
+    </MudItem>
+</MudGrid>
+

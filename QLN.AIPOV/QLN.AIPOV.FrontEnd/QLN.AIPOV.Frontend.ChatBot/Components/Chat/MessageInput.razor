@@ -1,0 +1,17 @@
+﻿<MudPaper Class="pa-2 d-flex align-center" Elevation="1">
+    <MudTextField @bind-Value="Message"
+                  Placeholder="Type a Career to get Exciting, Professional and Corporate examples of the Job Description"
+                  Variant="Variant.Outlined"
+                  Class="flex-grow-1"
+                  Adornment="Adornment.Start"
+                  AdornmentIcon="@Icons.Material.Filled.Message"
+                  OnKeyDown="HandleKeyDown"
+                  Disabled="DisableChatInput"/>
+    <MudButton Color="Color.Secondary"
+               Variant="Variant.Filled"
+               Disabled="@string.IsNullOrWhiteSpace(Message)"
+               OnClick="Send"
+               Class="ml-2">
+        <MudIcon Icon="@Icons.Material.Filled.Send" />
+    </MudButton>
+</MudPaper>

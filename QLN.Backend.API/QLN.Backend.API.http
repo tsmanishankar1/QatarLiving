@@ -1,0 +1,283 @@
+@QLN.Backend.API_HostAddress = http://localhost:5200
+# @QLN.Backend.API_HostAddress = https://localhost:7161
+# @QLN.Backend.API_HostAddress = https://qlc-bo-dev.qatarliving.com
+# @QLN.Backend.API_HostAddress = https://qlc-bo-qa.qatarliving.com
+# @QLN.Backend.API_HostAddress = https://qlm-bo.qatarliving.com
+
+###
+POST {{QLN.Backend.API_HostAddress}}/api/pay/d365
+Accept: application/json
+X-Api-Key: <replace_me>
+Content-Type: application/json
+{
+  "order": [
+    {
+      "QLUserId": "10047515",
+      "QLUsername": "ramez@qatarliving.com",
+      "Classification": "",
+      "SubClassification": "",
+      "D365CustId": "C027550",
+      "OrderId": "SO-0024618",
+      "Mobile": "",
+      "Email": "",
+      "D365Itemid": "QLC-SUB-6MO-006",
+      "Price": "6000.00",
+      "Qty": "1.00",
+      "start_date": "2025-08-21",
+      "end_date": "2025-08-21",
+      "SalesType": "New",
+      "AdId": 0
+    }
+  ]
+}
+
+###
+GET {{QLN.Backend.API_HostAddress}}/auth/sync
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL3Rlc3QucWF0YXJsaXZpbmcuY29tIiwiYXVkIjoiaHR0cHM6Ly90ZXN0LnFhdGFybGl2aW5nLmNvbSIsImlhdCI6MTc1NDQ5NjE0OCwiZXhwIjoxNzU2NDgzMzQ4LCJ1c2VyIjp7InN0YXR1cyI6IjEiLCJsYW5ndWFnZSI6IiIsImNyZWF0ZWQiOiIxNTQxMTQ3ODQ5IiwiYWNjZXNzIjoiMTc1NDQ4MDYyMCIsImxvZ2luIjoxNzU0NDk2MTQ4LCJpbml0IjoibWlsb25ob3Nzc2luMjU3QGdtYWlsLmNvbSIsInRpbWV6b25lIjpudWxsLCJ1aWQiOiI4MzUzMDI2IiwicWxuZXh0X3VzZXJfaWQiOiIzMjUxOCIsIm5hbWUiOiJNaWxvbiBGdXJuaXR1cmUiLCJhbGlhcyI6Im1pbG9uLWZ1cm5pdHVyZSIsImVtYWlsIjoibWlsb25ob3Nzc2luMjU3QGdtYWlsLmNvbSIsInBob25lIjoiKzk3NDMzODkwMzY0IiwicGF0aCI6InVzZXIvbWlsb24tZnVybml0dXJlIiwiaW1hZ2UiOiJodHRwczovL2ZpbGVzLnFhdGFybGl2aW5nLmNvbS9kZWZhdWx0X2ltYWdlcy9NaXNzaW5nLUF2YXRhci5wbmciLCJpc19hZG1pbiI6ZmFsc2UsInBlcm1pc3Npb25zIjpbImFjY2VzcyBieXBhc3MgZnJlZXogaW1hZ2UiXSwicm9sZXMiOlsidmVyaWZpZWRfdXNlciIsInN1YnNjcmlwdGlvbiIsImJ1c2luZXNzX2FjY291bnQiXSwic2hvd3Jvb21faW5mbyI6W10sInN1YnNjcmlwdGlvbiI6eyJyZWZlcmVuY2VfaWQiOiIxNzA0NzkyMDMxIiwic3RhcnRfZGF0ZSI6IjE3NDQ0NDkzMDAiLCJleHBpcmVfZGF0ZSI6IjE3NTIzMDcyMDAiLCJ1aWQiOiI4MzUzMDI2IiwicHJvZHVjdF90eXBlIjoiY2xhc3NpZmllZCIsImFjY2Vzc19kYXNoYm9hcmQiOiIxIiwicHJvZHVjdF9jbGFzcyI6Iml0ZW0iLCJjYXRlZ29yaWVzIjpbIjEwMzE2MSIsIjEwMzE1NiIsIjEwMzE1MSIsIjEwMzExMSIsIjEwMzEyNiIsIjEwMzM5NiIsIjEwMzE0MSIsIjEwMzE2NiIsIjEwMzIxMSJdLCJzdWJzY3JpcHRpb25fY2F0ZWdvcmllcyI6WyI3MjE2IiwiNzIzMCIsIjcyMzEiLCI3MjMyIiwiNzIzMyIsIjcyMzQiLCI3MjM1IiwiNzIzNyIsIjcyMzkiLCI3MjQwIiwiNzI0MSJdLCJzbmlkIjoiNDY0Mzc1NjEiLCJzdGF0dXMiOiJzdWNjZXNzIn19fQ.nxVWQ7YLjaUl28Fj966yJe9_T-IT8rpQLY5qjtpbJsE
+
+###
+# @name login1
+POST {{QLN.Backend.API_HostAddress}}/auth/login
+Accept: application/json
+Content-Type: application/json
+{
+  "usernameOrEmailOrPhone": "Madhumitha",
+  "password": "Test@1234"
+}
+
+###
+POST {{QLN.Backend.API_HostAddress}}/api/subscriptions/add
+Accept: application/json
+Authorization: Bearer {{login1.response.body.$.accessToken}}
+Content-Type: application/json
+{
+  "subscriptionName": "Flyer 1",
+  "durationId": 4,
+  "price": 0,
+  "adsbudget": 0,
+  "promotebudget": 0,
+  "refreshbudget": 0,
+  "description": "string",
+  "currency": "string",
+  "categoryId": 1,
+  "statusId": 0,
+  "verticalTypeId": 3
+}
+
+###
+# @name subscription
+GET {{QLN.Backend.API_HostAddress}}/api/subscriptions/getAll
+Authorization: Bearer {{login1.response.body.$.accessToken}}
+Content-Type: application/json
+
+
+###
+# @name login2
+POST {{QLN.Backend.API_HostAddress}}/auth/login
+Accept: application/json
+Content-Type: application/json
+{
+  "usernameOrEmailOrPhone": "MUJAY",
+  "password": "Mujaymujay@1234"
+}
+
+
+###
+POST {{QLN.Backend.API_HostAddress}}/api/payments/subscribe
+Accept: application/json
+Authorization: Bearer {{login2.response.body.$.accessToken}}
+Content-Type: application/json
+
+{
+  "subscriptionId": "{{subscription.response.body.$.id}}",
+  "verticalId": 3,
+  "categoryId": 1,
+  "cardDetails": {
+    "cardNumber": "string",
+    "expiryMonth": "string",
+    "expiryYear": "string",
+    "cvv": "string",
+    "cardHolderName": "string"
+  }
+}
+
+
+
+##########
+
+
+@DrupalQueue = qln_news_news_qatar
+
+GET {{QLN.Backend.API_HostAddress}}/api/content/{{DrupalQueue}}/landing
+Accept: application/json
+
+###
+GET {{QLN.Backend.API_HostAddress}}/api/content/event/events/fifa-arab-cup-qatar-2021
+Accept: application/json
+
+###
+GET {{QLN.Backend.API_HostAddress}}/api/content/post/forum/news/akram-afif-scores-twice-qatar-beat-lebanon-afc-asian-cup-opener
+Accept: application/json
+
+###
+GET {{QLN.Backend.API_HostAddress}}/api/content/news/forum/press-releases/posts/commercial-bank-partnered-manchester-united
+Accept: application/json
+
+###
+
+GET {{QLN.Backend.API_HostAddress}}/api/content/events?category_id=126206&date=2026-01-02
+Accept: application/json
+Cache-Control: no-cache
+
+###
+
+GET {{QLN.Backend.API_HostAddress}}/api/content/events?from=20240101&to=20250101
+Accept: application/json
+Cache-Control: no-cache
+
+
+###
+
+GET {{QLN.Backend.API_HostAddress}}/api/content/categories
+Accept: application/json
+
+###
+GET {{QLN.Backend.API_HostAddress}}/api/content/community
+Accept: application/json
+
+###
+GET {{QLN.Backend.API_HostAddress}}/api/content/community?forum_id=20000006&page=1&page_size=1
+Accept: application/json
+
+###
+GET {{QLN.Backend.API_HostAddress}}/api/content/comments/46438975?page=1&page_size=10
+Accept: application/json
+
+###
+POST {{QLN.Backend.API_HostAddress}}/api/content/comment/save
+Accept: application/json
+Content-Type: application/json
+{
+  "nid": 46438698,
+  "uid": 5834086,
+  "comment": "Great article! 3"
+}
+
+###
+POST {{QLN.Backend.API_HostAddress}}/api/content/post/save
+Accept: application/json
+Content-Type: application/json
+{
+  "type": "post",
+  "forum_id": 20000006,
+  "uid": 5834086,
+  "title": "Posted from Crayon",
+  "description": "This is description"
+}
+
+###
+Get {{QLN.Backend.API_HostAddress}}/api/content/like/post/46438975/5834086/like
+Accept: application/json
+
+###
+Get {{QLN.Backend.API_HostAddress}}/api/content/like/comment/46438975/5834086/like
+Accept: application/json
+
+###################################
+
+@QLN.Drupal.API_HostAddress = https://test.qatarliving.com
+# @QLN.Drupal.API_HostAddress = https://qa.qatarliving.com
+# @QLN.Drupal.API_HostAddress = https://www.qatarliving.com
+
+### Drupal Login
+# curl --location 'https://test.qatarliving.com/api/v4/login' \
+# --header 'Content-Type: application/x-www-form-urlencoded' \
+# --data-urlencode 'username=USERNAME' \
+# --data-urlencode 'device_type=ios' \
+# --data-urlencode 'password=PASSWORD'
+
+@QLN.Drupal.Username = QLN Crayon
+@QLN.Drupal.Password = crayon123
+
+POST {{QLN.Drupal.API_HostAddress}}/api/v4/login
+Content-Type: application/x-www-form-urlencoded
+
+username={{QLN.Drupal.Username}}&password={{QLN.Drupal.Password}}&device_type=web
+
+###
+GET {{QLN.Drupal.API_HostAddress}}/qlnapi/categories
+Accept: application/json
+
+###
+GET {{QLN.Drupal.API_HostAddress}}/qlnapi/events?page=1&page_size=10&order=asc&category_id=126206
+Accept: application/json
+
+###
+GET {{QLN.Drupal.API_HostAddress}}/qlnapi/events?to=20250101
+Accept: application/json
+
+###
+GET {{QLN.Drupal.API_HostAddress}}/qlnapi/landing/{{DrupalQueue}}
+Accept: application/json
+
+###
+GET {{QLN.Drupal.API_HostAddress}}/qlnapi/node?slug=forum/news/akram-afif-scores-twice-qatar-beat-lebanon-afc-asian-cup-opener
+Accept: application/json
+
+###
+GET {{QLN.Drupal.API_HostAddress}}/qlnapi/node?slug=events/fifa-arab-cup-qatar-2021
+Accept: application/json
+
+###
+GET {{QLN.Drupal.API_HostAddress}}/qlnapi/community?page=1&page_size=10&order=asc&forum_id=20000006
+Accept: application/json
+
+###
+GET {{QLN.Drupal.API_HostAddress}}/qlnapi/community?page=1&page_size=10&order=asc
+Accept: application/json
+
+###
+GET {{QLN.Drupal.API_HostAddress}}/q/api/rest-points/banners/qln_banners
+Accept: application/json
+
+###
+GET {{QLN.Drupal.API_HostAddress}}/api/v4/user?email=khurramfraz%40gmail.com
+Accept: application/json
+
+###
+GET {{QLN.Drupal.API_HostAddress}}/qlnapi/comments/46438975?page=1&page_size=10
+Accept: application/json
+
+###
+POST {{QLN.Drupal.API_HostAddress}}/qlnapi/comment/save
+Accept: application/json
+Content-Type: application/json
+{
+  "nid": 46438698,
+  "uid": 5834086,
+  "comment": "Great article! 3"
+}
+
+###
+POST {{QLN.Drupal.API_HostAddress}}/qlnapi/node/save
+Accept: application/json
+Content-Type: application/json
+{
+  "type": "post",
+  "forum_id": 20000006,
+  "uid": 5834086,
+  "title": "Posted from Crayon",
+  "description": "This is description"
+}
+
+###
+POST {{QLN.Drupal.API_HostAddress}}/qlnapi/node/like
+Accept: application/json
+Content-Type: application/json
+{
+  "nid": 46438975,
+  "uid": 5834086,
+  "action": "like"
+}

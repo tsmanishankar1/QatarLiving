@@ -1,0 +1,116 @@
+@using MudBlazor
+
+<div class="main-layout">
+           <MudSkeleton Height="40px" Width="280px" />
+            <div class="row-container">
+                <div>
+                <MudSkeleton Height="40px" Width="310px" />
+                </div>
+                <div class="icon-label-container d-flex gap-2">
+                    <MudSkeleton Height="40px" Width="60px" />
+                    <MudSkeleton Height="40px" Width="60px" />
+                </div>
+            </div>
+
+            <MudGrid Class="py-4" GutterSize="16px" >
+                <!-- Left Side: Large Skeleton -->
+                <MudItem xs="12" md="7">
+                    <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="100%" Height="490px"
+                        Style="border-radius: 4px;" />
+                          <div class="carousel-container mt-4 d-flex align-center">
+                        @for (int i = 0; i < 5; i++)
+                        {
+                            <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="135px" Height="90px" Class="me-2" />
+                        }
+                    </div>
+                    <div  class="mobile-sleteton-card">
+                        <MudSkeleton Width="80px" Height="16px" />
+                        <MudSkeleton Width="100%" Height="28px" />
+                        <MudSkeleton Width="80px" Height="24px" />
+                        <MudSkeleton Width="100%" Height="28px" />
+                        <MudSkeleton Width="80px" Height="24px" />
+                    </div>
+                       <MudSkeleton Width="100px" Height="26px" />
+                        <div class="over-view-sleteton" Style="background-color:#f7f8fa;">
+                        <MudGrid GutterSize="16px">
+                            @for (int i = 0; i < 8; i++)
+                            {
+                                <MudItem xs="6" sm="6" md="4">
+                                    <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="100%" Height="48px" Style="border-radius: 4px;" />
+                                </MudItem>
+                            }
+                    </MudGrid>
+                </div>
+                </MudItem>
+
+                <!-- Right Side: Details Card -->
+                <MudItem xs="12" md="5">
+                    <div  Width="300px" class="custom-card-skeleton">
+                        <MudSkeleton Width="80px" Height="16px" />
+                        <MudSkeleton Width="100%" Height="28px" />
+                        <MudSkeleton Width="80px" Height="24px" />
+
+                        <div class="button-group-sleteton">
+                            <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="100%" Height="40px" Style="border-radius: 4px;"  />
+                            <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="100%" Height="40px" Style="border-radius: 4px;"  />
+                        </div>
+
+                        <MudSkeleton Width="100%" Height="28px" />
+                        <MudSkeleton Width="80px" Height="24px" />
+                        <MudSkeleton Width="100%" Height="28px" />
+                        <MudSkeleton Width="80px" Height="24px" />
+                    </div>
+                    <div class="mt-4">
+                        <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="300px" Height="350px"
+                             />
+                    </div>
+                </MudItem>
+            </MudGrid>
+          
+        
+        </div>
+<style>
+     .row-container {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 10px;
+        width: 100%;
+        max-width: 960px;
+    }
+
+    .button-group-sleteton{
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 5px 0;
+    }
+    .custom-card-skeleton{
+        padding: 16px;
+        background: var(--color-background);
+        width: 100%;
+        max-width: 300px;
+    }
+    .mobile-sleteton-card {
+        display: none;
+    }
+    .over-view-sleteton{
+        padding: 10px;
+    }
+     @@media (max-width: 770px) {
+        .over-view-sleteton {
+            padding: 5px;
+        }
+        .custom-card-skeleton {
+            display: none;
+        }
+         .mobile-sleteton-card {
+            background: var( --color-background);
+            padding: 5px 0;
+            display: block;
+            width: 100%;
+        }
+        }
+</style>

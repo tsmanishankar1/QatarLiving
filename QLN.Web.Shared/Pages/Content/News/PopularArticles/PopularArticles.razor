@@ -1,0 +1,177 @@
+@using System.Globalization
+@using MudBlazor
+@using QLN.Web.Shared.Components.EmptyCard
+@inherits PopularArticlesBase
+<div class="popular-articles">
+    <h3 class="title">Most Popular Articles</h3>
+    @if(loading){
+                    @for (int i = 0; i < 4; i++)
+{
+    <div class="d-flex mb-4" style="gap: 16px;">
+        <div>
+            <MudSkeleton 
+                SkeletonType="SkeletonType.Rectangle" 
+                Height="100px" 
+                Width="200px" 
+                Animation="Animation.Wave" 
+                Class="rounded" />
+        </div>
+        <div class="d-flex flex-column justify-center" style="gap: 8px;">
+            <MudSkeleton 
+                SkeletonType="SkeletonType.Text" 
+                Height="20px" 
+                Width="200px" 
+                Animation="Animation.Wave" />
+            <MudSkeleton 
+                SkeletonType="SkeletonType.Text" 
+                Height="20px" 
+                Width="200px" 
+                Animation="Animation.Wave" />
+        </div>
+    </div>
+}
+    }
+     else if (Articles != null && Articles.Any()){
+     @foreach (var article in Articles.Take(5))
+
+    {
+            <MudLink Href="@($"/content/article/details/{article.Slug}?category={selectedMainTab}&subcategory={selectedTab}")" class="article-content" Style="display:flex !important">
+        <div class="article-item" @onclick="@(() => onclick(article))">
+             @if (string.IsNullOrWhiteSpace(article.ImageUrl)){
+                <div class="image-placeholder">
+                    No image available
+                </div>
+             }
+             else{
+                 @if (!imageLoaded)
+                {
+                    <MudSkeleton SkeletonType="SkeletonType.Rectangle"  />
+                    }
+                    <div class="image-container popular-articles-image-container">
+                <img src="@article.ImageUrl" alt="News Image" class="article-image"
+                style="@(imageLoaded ? "display: block;" : "display: none;")" @onload="OnImageLoaded"
+                @onerror="OnImageError" key="@article.ImageUrl"/>  
+                </div>
+             }
+            <div class="article-text">@article.Title</div>
+        </div>
+        </MudLink>
+    }
+    }
+    else{
+        <EmptyCard Title="No article found" Subtitle="Please check back later or explore other categories." />
+    }
+</div>
+
+<style>
+    .popular-articles {
+    font-family: 'Public Sans', sans-serif;
+        max-width: 658px;
+        @* margin: 0 auto;    *@
+    padding: 16px;
+    border-radius: 8px;
+    gap: 16px;
+    }
+    .article-item{
+        display:flex;
+        flex-direction: row;
+        align-items: flex-start;
+        gap: 16px;
+        padding-bottom: 16px;
+    }
+    .image-placeholder {
+    width: 177px;
+    height: 100px;
+    border-radius: 6px;
+     display: flex;
+    font-family: 'Public Sans', sans-serif;
+    background-color: #FAFAFA;
+    border-radius: 6px;
+    align-items: center;
+    justify-content: center;
+    color: #555;
+    font-size: 1rem;
+}
+
+    .popular-articles-image-container {
+        aspect-ratio: 16 / 9;
+        width: 100%;
+        max-width: 177px;
+        border-radius: 6px;
+        overflow: hidden;
+        background-color: #f0f0f0;
+        flex-shrink: 0;
+        position: relative;
+    }
+
+
+    .title {
+        color: var(--color-primary);
+        font-size: 25px;
+        font-weight: 600;
+        margin-bottom: 16px;
+        border-left: 4px solid #004374;
+        padding-left: 8px;
+    }
+
+    .article-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+}
+
+    .circle {
+        background-color: #FF7F38;
+        color: white;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        text-align: center;
+        line-height: 28px;
+        font-weight: bold;
+        margin-right: 12px;
+    }
+
+    .article-text {
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--color-text-heading);
+    }
+    .article-text:hover {
+    text-decoration: underline;
+    color: var(--color-primary);
+    cursor: pointer;
+}
+
+     .article-title {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;              
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: normal;
+
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--color-text-heading);
+    line-height: 1.4;
+    max-height: calc(1.4em * 3);    
+         
+}
+@@media (max-width: 768px) {
+    .article-text {
+        display: -webkit-box;
+        -webkit-line-clamp: 3; /* up to 3 lines */
+        -webkit-box-orient: vertical;
+         font-size: 18px;
+        font-weight: 600;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: normal;
+        line-height: 1.4;
+        max-height: calc(1.4em * 3); /* ~3 lines */
+    }
+}
+</style>
+

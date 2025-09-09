@@ -1,0 +1,65 @@
+@using MudBlazor
+@using System.Collections.Generic
+
+<MudCarousel Class="mud-width-full responsive-carousel" ShowArrows="@ShowArrows"
+    @onmouseover="() => OnHoverChanged(true)" @onmouseout="() => OnHoverChanged(false)"
+    EnableSwipeGesture="@EnableSwipeGesture" AutoCycle="@AutoCycle" ShowBullets="false" TData="string">
+
+    @if (ImageUrls != null)
+    {
+        @foreach (var image in ImageUrls)
+        {
+            <MudCarouselItem Transition="@Transition">
+                <div class="carousel-image-container">
+                    <img src="@image" class="carousel-image" />
+                </div>
+            </MudCarouselItem>
+        }
+    }
+
+</MudCarousel>
+
+@code {
+    [Parameter]
+    public List<string> ImageUrls { get; set; } = new();
+
+    [Parameter]
+    public bool ShowArrows { get; set; } = true;
+
+    [Parameter]
+    public bool EnableSwipeGesture { get; set; } = true;
+
+    [Parameter]
+    public bool AutoCycle { get; set; } = true;
+
+    [Parameter]
+    public Transition Transition { get; set; } = Transition.Slide;
+    private void OnHoverChanged(bool hoverState)
+    {
+        AutoCycle = !hoverState;
+    }
+}
+
+<style>
+    .responsive-carousel {
+        height: 250px;
+    }
+
+    .carousel-image-container {
+        width: 100%;
+        height: 250px;
+    }
+
+    .carousel-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+
+    @@media (max-width: 770px) {
+        .responsive-carousel {
+            height: 150px;
+        }
+    }
+</style>

@@ -1,0 +1,55 @@
+@using MudBlazor
+@inherits SeasonalCardBase
+@using QLN.Web.Shared.Components.EmptyCard
+
+<div class="seasonal-card" @onclick="() => OnClick.InvokeAsync(Item)">
+    @if (ShowEmptyCard)
+    {
+        <div class="category-image">
+        <EmptyCard Title="No image found." Subtitle="Please check back later for updates." />
+        </div>
+    }
+    else
+    {
+        @if (!imageLoaded)
+        {
+            <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="100%" Height="200px" />
+        }
+
+        <img src="@Item.ImageUrl"
+             alt="@Item.Title"
+             class="category-image"
+             style="@(imageLoaded ? "display: block;" : "display: none;")"
+             @onload="OnImageLoaded"
+             @onerror="OnImageError"
+             key="@Item.ImageUrl" />
+    }
+</div>
+
+<style>
+    .seasonal-card {
+    max-width: 350px;
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+.seasonal-card .category-image {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    display: block;
+    transform: scaleX(1);
+    image-orientation: from-image;
+}
+  @@media (max-width: 435px) {
+    .seasonal-card {
+        max-width: 350px;
+    }
+
+    .seasonal-card .category-image {
+        max-height: 200px;
+    }
+    }
+
+</style>

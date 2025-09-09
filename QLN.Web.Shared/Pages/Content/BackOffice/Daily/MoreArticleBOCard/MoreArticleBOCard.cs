@@ -1,0 +1,22 @@
+using Microsoft.AspNetCore.Components;
+using QLN.Common.Infrastructure.DTO_s;
+public class MoreArticleBOCardBase : ComponentBase
+{
+    [Inject] NavigationManager NavigationManager { get; set; }
+    [Parameter]
+    public List<ContentEvent> Items { get; set; } = [];
+
+    [Parameter]
+    public bool isLoading { get; set; } = false;
+
+    protected void NavigatetoArticle()
+    {
+        NavigationManager.NavigateTo("content/events");
+    }
+
+    protected void NavigatetoArticle(ContentEvent article)
+    {
+        NavigationManager.NavigateTo($"/content/article/details/{article.Slug}");
+    }
+
+}

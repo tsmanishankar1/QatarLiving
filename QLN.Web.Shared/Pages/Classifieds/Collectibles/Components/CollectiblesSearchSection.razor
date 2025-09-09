@@ -1,0 +1,143 @@
+@inherits CollectiblesSearchSectionBase
+@using MudBlazor
+@using QLN.Web.Shared.Components.ViewToggleButtons
+@using QLN.Web.Shared.Components.NewCustomSelect
+@using QLN.Web.Shared.Components.SaveSearchPopup
+@using QLN.Web.Shared.Components.CustomSelectCategory
+@using QLN.Web.Shared.Components.PriceRangeSelect
+@using QLN.Web.Shared.Pages.Classifieds.Collectibles.Components
+@using QLN.Web.Shared.Helpers
+@using QLN.Common.DTO_s;
+
+<div class="collectibles-search-container">
+    <div class="collectibles-search-row">
+
+        <!-- FIRST ROW: Search + Category -->
+        <div class="@($"collectibles-first-row {(_isSearchFocused ? "search-focused" : "")}")">
+            <!-- Search Input -->
+            <div class="collectibles-search-section-bar" @onfocusin="() => _isSearchFocused = true" @onfocusout="() => _isSearchFocused = false">
+                @if (!_isSearchFocused)
+                {
+                    <div class="collectibles-search-icon-left">
+                        <img src="/qln-images/classifieds/iteam_search_icon.svg" alt="Search-left" class="collectibles-action-icon-img-left" />
+                    </div>
+                }
+
+                <input id="itemSearch" type="text" class="collectibles-search-input" placeholder="Search..." @bind="SearchState.CollectiblesSearchText" @bind:event="oninput" />
+
+                @if (!string.IsNullOrWhiteSpace(SearchState.CollectiblesSearchText))
+                {
+                    <div class="collectibles-search-actions">
+                        <MudIconButton OnClick="PerformSearch" Class="collectibles-search-action-btn collectibles-search-btn">
+                            <div class="collectibles-search-icon-container">
+                                @if (Loading)
+                                {
+                                    <MudProgressCircular Indeterminate="true" Style="color: white;width: 20px; height: 20px;" />
+                                }
+                                else
+                                {
+                                    <img src="/qln-images/classifieds/search_icon.svg" alt="Search" class="collectibles-action-icon-img" />
+                                }
+                            </div>
+                        </MudIconButton>
+                        <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small" OnClick="ClearSearch" Class="collectibles-search-action-btn" />
+                    </div>
+                }
+            </div>
+  @if (!_isSearchFocused)
+        {
+            <!-- Category -->
+            <div class="collectibles-short-select">
+                <CustomSelectCategory TItem="CategoryTreeDto"
+                    Items="@CategoryTrees"
+                    SelectedId="@SearchState.CollectiblesCategory"
+                    SelectedIdChanged="v => OnCategorySelected(v)"
+                    GetId="x => x.Id.ToString()"
+                    GetLabel="x => x.Name"
+                    Placeholder="Category"
+                    BorderRadius="4px"
+                    Padding="13px 10px" />
+            </div>
+            }
+        </div>
+
+        @if (!_isSearchFocused)
+        {
+            <!-- SECOND ROW: Brand + Price + More + Save Search -->
+            <div class="collectibles-second-row">
+                <div class="collectibles-short-select">
+                    <CustomSelectCategory TItem="CategoryTreeDto"
+                        Items="@SelectedCategory.Children"
+                        SelectedId="@SearchState.CollectiblesSubCategory"
+                        SelectedIdChanged="v => OnSubCategorySelected(v)"
+                        GetId="x => x.Id.ToString()"
+                        GetLabel="x => x.Name"
+                        BorderRadius="4px"
+                        IsDisabled="@(!(SelectedCategory?.Children?.Any() ?? false))" 
+                        Padding="13px 10px" 
+                        Placeholder="Subcategory" />
+            </div>
+
+                <!-- Brand -->
+                <div class="collectibles-brand-select">              
+                <CustomSelectCategory TItem="CategoryTreeDto"
+                    Items="@SelectedSubCategory.Children"
+                    SelectedId="@SearchState.CollectiblesSubSubCategory"
+                    SelectedIdChanged="v => OnSubSubCategorySelected(v)"
+                    GetId="x => x.Id.ToString()"
+                    GetLabel="x => x.Name"
+                    BorderRadius="4px"
+                    Padding="13px 10px" 
+                    IsDisabled="@(!(SelectedSubCategory?.Children?.Any() ?? false))"
+                    Placeholder="Sub subcategory" />
+                </div>
+             </div>
+                
+                <!-- Price -->
+                 <div class="collectibles-second-row">
+                <div class="collectibles-price-short-select">
+                   <PriceRangeSelect SelectedMin="SearchState.CollectiblesMinPrice"
+                        SelectedMax="SearchState.CollectiblesMaxPrice"
+                        SelectedMinChanged="v => SearchState.CollectiblesMinPrice = v"
+                        SelectedMaxChanged="v => SearchState.CollectiblesMaxPrice = v"
+                        OnApplyClicked="PerformSearch"
+                        IsDisabled="@string.IsNullOrWhiteSpace(SearchState.CollectiblesCategory)"
+                        OnResetClicked="() => { SearchState.CollectiblesMinPrice = null; SearchState.CollectiblesMaxPrice = null; PerformSearch(); }" />
+                </div>
+
+                <!-- More -->
+                <div class="short-select">
+                        <MoreFiltersList SelectedFields="SelectedFields" OnFiltersChanged="PerformSearch" />
+                </div>
+
+                <!-- Save Search -->
+                <div class="collectibles-save-search">
+                    <button class="save-search-btn" @onclick="() => ShowSaveSearchPopup = true">Save Search</button>
+                </div>
+                </div>
+        }
+
+        <!-- View Toggle Buttons (Hidden on Mobile) -->
+        <div class="collectibles-right-actions">
+            <ViewToggleButtons Items="@_viewOptions" Height="48px" SelectedValue="@SearchState.CollectiblesViewMode" OnSelected="SetViewMode" />
+        </div>
+
+    </div>
+    @if (ShowSaveSearchPopup)
+{
+   <SaveSearchPopup 
+        Title="Save this Search"
+        Description="Give a name to your search and access it anytime"
+        PrimaryButtonText="@(IsSaveSearch ? "Close" : "Save Search")"
+        SecondaryButtonText="@(IsSaveSearch ? "View Saved Searches" : "Cancel")"
+        ShowTextField="IsSaveSearch"
+        IsVisible="ShowSaveSearchPopup"
+        Loading="IsLoadingSaveSearch"
+        OnPrimaryClick="HandlePrimaryClick"
+        OnSecondaryClick="HandleSecondaryClick"
+        />
+}
+
+</div>
+
+

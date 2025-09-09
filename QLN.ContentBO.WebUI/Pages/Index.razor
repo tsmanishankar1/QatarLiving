@@ -1,0 +1,10 @@
+﻿@page "/"
+@inject NavigationManager Nav
+<PageTitle>Qatar Living Back Office</PageTitle>
+
+@code {
+    protected override void OnInitialized()
+    {
+        Nav.NavigateTo("/dashboard", true);
+    }
+}

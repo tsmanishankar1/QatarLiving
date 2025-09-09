@@ -1,0 +1,262 @@
+@page "/qln/login"
+@using QLN.Web.Shared.Services
+@using QLN.Web.Shared.Helpers
+@using MudBlazor
+@using QLN.Web.Shared.Models
+@using Microsoft.AspNetCore.Http;
+@using QLN.Web.Shared.Components.CustomButton
+@using QLN.Web.Shared.Components.ModalDialog
+@using static QLN.Web.Shared.Helpers.HttpErrorHelper
+@using System.Text.RegularExpressions;
+@using System.Security.Claims;
+@using Microsoft.AspNetCore.Authentication.Cookies;
+@using Microsoft.AspNetCore.Authentication;
+@using QLN.Common.DTO_s;
+@inject ApiService Api
+@inject ISnackbar Snackbar
+@inject NavigationManager NavManager
+@inject CustomAuthStateProvider CustomAuthenticationStateProvider;
+@inject IJSRuntime JS
+
+<MudThemeProvider Theme="@CustomPaletteTheme" /> 
+<div id="login-container" style="width: 100%; background-color: var(--color-secondary-background); padding: 100px 16px;">
+    <div style="max-width: 400px; margin: 0 auto;">
+        <MudText Align="Align.Center" Class="mt-4 login-heading">Log in to your account</MudText>
+        <MudStack AlignItems="AlignItems.Center"  Class="mb-4">
+            <MudText  Align="Align.Center" Class="login-description">
+                Welcome back! Please enter your details.
+            </MudText>
+        </MudStack>
+        <MudText Typo="Typo.body1" Class="email-text">
+            Email or Phone number </MudText>
+        <MudTextField id="loginEmailInput" T="string" Placeholder="Email or Phone number" Variant="Variant.Outlined" FullWidth="true"
+            InputType="InputType.Text" style="background-color: var(--color-background)" MaxLength="50" Required="true" Class="mt-4"
+            Error="@(!string.IsNullOrEmpty(_usernameError))" ErrorText="@_usernameError" Immediate="true"
+            ValueChanged="OnEmailChanged" ValueExpression="(() => _username)" OnBlur="@ValidateUsername"/>
+        <MudText Typo="Typo.body1" Class="label-text">
+            Password
+        </MudText>
+        <MudTextField id="loginPasswordInput" T="string" Placeholder="Password" MaxLength="50" Variant="Variant.Outlined"
+            InputType="@(_showPassword? InputType.Text: InputType.Password)" FullWidth="true" Class="mt-4"
+            style="background-color: var(--color-background)" Required="true" Adornment="Adornment.End"
+            AdornmentIcon="@(_showPassword? Icons.Material.Filled.Visibility : Icons.Material.Filled.VisibilityOff)"
+            OnAdornmentClick="TogglePasswordVisibility" AdornmentColor="Color.Default"
+            Error="@(!string.IsNullOrEmpty(_passwordError))" ErrorText="@_passwordError" Immediate="true"
+            ValueChanged="OnPasswordChanged" ValueExpression="(() => _password)" OnBlur="ValidatePassword"/>
+
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin: 8px 0;">
+            <MudCheckBox T="bool" Label="Remember me" DisableMargins="true" id="rememberMeCheckBox"/>
+            <NavLink id="forgetPasswordLink" href="/forgot-password" class="link-style"> Forgot Password?</NavLink>
+        </div>
+
+        <CustomButton id="signInButton" BackgroundColor="var(--color-accent)" TextColor="#FFFFFF" Text="Sign In" Disabled="_isLoading"
+            Loading="_isLoading" OnClick="@PerformLogin" Class="mt-4 pt-3 pb-3" Height="50px"/>
+
+
+        <div class="d-flex align-center my-4">
+            <div style="flex-grow: 1; height: 1px; background-color: var(--color-secondary-grey-container)"></div>
+            <MudText Typo="Typo.caption" Class="mx-2">Or continue with</MudText>
+            <div style="flex-grow: 1; height: 1px; background-color: var(--color-secondary-grey-container)"></div>
+        </div>
+
+        <MudGrid Class="social-buttons-container">
+    <MudItem xs="2">
+                <MudButton id="googleLoginButton" Variant="Variant.Outlined" Class="social-login-button">
+            <img src="/qln-images/google.svg" alt="Google" style="height: 24px;" />
+        </MudButton>
+    </MudItem>
+    <MudItem xs="2">
+                <MudButton id="appleLoginButton" Variant="Variant.Outlined" Class="social-login-button">
+            <img src="/qln-images/apple.svg" alt="Google" style="height: 24px;" />
+        </MudButton>
+    </MudItem>
+    <MudItem xs="2">
+                <MudButton id="microsoftLoginButton" Variant="Variant.Outlined" Class="social-login-button">
+            <img src="/qln-images/microsoft.svg" alt="Microsoft" style="height: 24px;" />
+        </MudButton>
+    </MudItem>
+    <MudItem xs="2">
+                <MudButton id="facebookLoginButton" Variant="Variant.Outlined" Class="social-login-button" >
+ 
+            <img src="/qln-images/facebook.svg" alt="Facebook" />
+        </MudButton>
+    </MudItem>
+    </MudGrid>
+        <MudStack AlignItems="AlignItems.Center" Spacing="1" Class="mb-4">
+            <MudText Align="Align.Start" Class="mt-4 label-text">
+                Don't have an account?
+                <NavLink href="/signup" id="signUpLink" class="link-style">Sign Up</NavLink>
+            </MudText>
+        </MudStack>
+    </div>
+</div>
+
+@code {
+    private MudTheme CustomPaletteTheme = new CustomTheme();
+    public string Name{ get; set; }
+    private string _username = string.Empty;
+    private string _password = string.Empty;
+    private bool _isLoading = false;
+    private bool _showPassword = false;
+    private ModalData modalData = new();
+    private bool loginSucesss = false;
+    private string _usernameError = string.Empty;
+    private string _passwordError = string.Empty;
+
+    private async Task OnEmailChanged(string value)
+    {
+        _username = value;
+        ValidateUsername();
+    }
+
+    private void TogglePasswordVisibility()
+    {
+        _showPassword = !_showPassword;
+    }
+
+    private void ValidateUsername()
+    {
+        _usernameError = string.Empty;
+        if (string.IsNullOrWhiteSpace(_username))
+        {
+            _usernameError = "Please enter your email or phone number";
+        }
+        if (_username.Contains("@"))
+        {
+            if (!ValidationHelper.IsValidEmail(_username))
+                _usernameError = "Enter valid email address.";
+        }
+        else if (_username.Any(char.IsDigit))
+        {
+            if (!ValidationHelper.IsValidPhoneNumber(_username))
+                _usernameError = "Enter valid phone number";
+        }
+        StateHasChanged();
+    }
+    private async Task OnPasswordChanged(string value)
+    {
+        _password = value;
+        ValidatePassword();
+    }
+
+    private void ValidatePassword()
+    {
+        _passwordError = ValidationHelper.ValidatePassword(_password);
+        StateHasChanged();
+    }
+    private async Task PerformLogin()
+    {
+        _usernameError = string.Empty;
+        _passwordError = string.Empty;
+        bool hasError = false;
+        if (string.IsNullOrWhiteSpace(_username))
+        {
+            _usernameError = "Please enter your email or phone number.";
+            hasError = true;
+        }
+        else if (!ValidationHelper.IsValidEmail(_username) && !ValidationHelper.IsValidPhoneNumber(_username))
+        {
+            _usernameError = "Please enter a valid email or phone number.";
+            hasError = true;
+        }
+        _passwordError = ValidationHelper.ValidatePassword(_password);
+        if (!string.IsNullOrEmpty(_passwordError))
+        {
+            hasError = true;
+        }
+        if (hasError)
+        {
+            StateHasChanged();
+            return;
+        }
+        _isLoading = true;
+        var payload = new { usernameOrEmailOrPhone = _username, password = _password };
+        try
+        {
+             await CustomAuthenticationStateProvider.AuthenticateUser(_username, _password);
+             StateHasChanged(); 
+              var authState = await CustomAuthenticationStateProvider.GetAuthenticationStateAsync();
+            if (authState != null){
+                var user = authState.User;
+                if (user.Identity != null && user.Identity.IsAuthenticated)
+                {
+                    var is2FAString = user.FindFirst("IsTwoFactorEnabled")?.Value;
+                    bool isTwoFactorEnabled = bool.TryParse(is2FAString, out var result) && result;
+                    if (isTwoFactorEnabled)
+                    {
+                        NavManager.NavigateTo("/select-verification");
+                    }
+                    else{
+                        Snackbar.Add($"Logged in as {user.FindFirst(ClaimTypes.Email)?.Value}", Severity.Success);
+                        NavManager.NavigateTo("/classifieds");
+                    }
+                }
+            }
+             else{
+                NavManager.NavigateTo("/login");
+            } 
+        }
+        catch (HttpRequestException ex)
+        {
+            HttpErrorHelper.HandleHttpException(ex, Snackbar);
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+}
+
+
+
+<style>
+    .login-heading {
+        font-weight: 600;
+        font-size: 30px;
+        font-family: 'Public Sans', sans-serif;
+        margin-bottom: 1.5rem;
+        text-align: center;
+        color: var(--color-text-heading);
+    }
+
+    .login-description {
+        font-weight: 400;
+        font-size: 16px;
+        font-family: 'Public Sans', sans-serif;
+        text-align: center;
+        color: var(--color-text-descripton);
+    }
+
+    .label-text {
+        font-family: 'Public Sans', sans-serif;
+        font-weight: 400;
+        font-size: 14px;
+        color: var(--color-text-heading);
+        margin-top: 30px;
+    }
+
+    .email-text {
+        font-family: 'Public Sans', sans-serif;
+        font-weight: 400;
+        font-size: 14px;
+        color: var(--color-text-heading);
+        margin-top: 22px;
+    }
+
+    .link-style {
+        font-family: 'Public Sans', sans-serif;
+        font-weight: 600;
+        font-size: 14px;
+        color: var(--color-accent); 
+    }
+
+    .social-buttons-container
+    {
+        gap: 20px;
+        width: 524px;
+        display: flex;
+        flex-direction: row;
+    }
+
+</style>

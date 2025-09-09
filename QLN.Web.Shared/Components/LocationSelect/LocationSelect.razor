@@ -1,0 +1,82 @@
+@typeparam TItem
+
+<MudSelectExtended T="TItem"
+                   @ref="selectRef"
+                   ItemCollection="Items"
+                   Placeholder="Location"
+                   ToStringFunc="@(item => GetLabel(item))"
+                   Variant="Variant.Outlined"
+                   ValuePresenter="ValuePresenter.Chip"
+                   Virtualize="true"
+                   ChipCloseable="true"
+                   ChipVariant="Variant.Filled"
+                   ChipSize="Size.Small"
+                   MultiSelection="@(!IsSingleLocation)"
+                   SearchBox="true"
+                   NoWrap="@NoWrap"
+                   AnchorOrigin="Origin.BottomCenter"
+                   AdornmentIcon="@Icons.Material.Filled.LocationOn"
+                   AdornmentColor="Color.Primary"
+                   ChipClass="mud-select-chip"
+                   InputClass="mud-select-input"
+                   InputStyle="@(CustomStyle)"
+                   SelectedValues="SelectedItems"
+                   SelectedValuesChanged="@OnSelectedValuesChanged" />
+
+@code {
+    [Parameter] public List<TItem> Items { get; set; } = new();
+    [Parameter] public EventCallback<List<TItem>> SelectedItemsChanged { get; set; }
+    [Parameter] public Func<TItem, string> GetLabel { get; set; }
+    [Parameter] public Func<TItem, string> GetId { get; set; }
+    [Parameter] public EventCallback<string> OnSearch { get; set; }
+    [Parameter] public EventCallback<List<TItem>> OnLocationUpdated { get; set; }
+    [Parameter] public string CustomStyle { get; set; } = string.Empty;
+    [Parameter] public bool IsSingleLocation { get; set; } = false;
+    [Parameter] public bool NoWrap { get; set; } = true;
+
+    private IEnumerable<TItem> SelectedItems { get; set; } = Enumerable.Empty<TItem>();
+    private MudSelectExtended<TItem> selectRef;
+
+    public async Task ClearSelection()
+    {
+        if (selectRef != null)
+        {
+            await selectRef.Clear();
+        }
+    }
+
+    private async Task OnSelectedValuesChanged(IEnumerable<TItem> selectedItems)
+    {
+        SelectedItems = selectedItems;
+        await SelectedItemsChanged.InvokeAsync(SelectedItems.ToList());
+        await OnLocationUpdated.InvokeAsync(SelectedItems.ToList());
+    }
+}
+
+<style>
+    .mud-select-chip {
+        background-color: #f0f0f0 !important;
+        border-radius: 6px !important;
+        padding: 4px 8px !important;
+        display: flex !important;
+        align-items: center;
+        color: var(--color-text-descripton) !important;
+        font-weight: 400 !important;
+        font-size: 14px !important;
+        white-space: nowrap !important;
+    }
+    .mud-select-input {
+        background-color: #fff !important;
+    }
+    div.mud-input-slot.mud-input-root-outlined {
+        padding: 14.5px 14px !important;
+        border: none !important;
+         border-radius: 0 !important;
+        box-shadow: none !important; 
+    }
+    .mud-input-root-outlined.mud-focused {
+        border: none !important;
+        box-shadow: none !important;
+    }
+
+</style>

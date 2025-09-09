@@ -1,0 +1,88 @@
+@inherits UserProfileTableBase
+@using QLN.ContentBO.WebUI.Components.ToggleTabs
+@using MudBlazor
+@using QLN.ContentBO.WebUI.Components.PaginationFooter
+@using QLN.ContentBO.WebUI.Components.EmptyCard
+@using QLN.ContentBO.WebUI.Models;
+
+<MudPaper Class="pa-4">
+   @if (!Listings.Any())
+    {
+        <div class="empty-card-wrapper">
+            <EmptyCard Title="No User Profiles found" Subtitle="Please check back later. " />
+        </div>
+    }
+    else
+    {
+        <MudDataGrid T="CompanyProfileItem"
+                     Items="@Listings"
+                     Hover="true"
+                     Bordered="true"
+                     Dense="true"
+                     Filterable="true"
+                     Class="mud-table event-custom-table">
+
+            <Columns>
+                <!-- Business Name -->
+                <PropertyColumn Property="x => x.CompanyName" Title="Company Name">
+                    <CellTemplate>
+                        @(string.IsNullOrWhiteSpace(context.Item.CompanyName) ? "-" : context.Item.CompanyName)
+                    </CellTemplate>
+                </PropertyColumn>
+
+                <!-- User Name -->
+                <PropertyColumn Property="x => x.UserName" Title="User Name">
+                    <CellTemplate>
+                        @(string.IsNullOrWhiteSpace(context.Item.UserName) ? "-" : context.Item.UserName)
+                    </CellTemplate>
+                </PropertyColumn>
+
+                <!-- CR File -->
+                <PropertyColumn Property="x => x.CrDocument" Title="CR File">
+                    <CellTemplate>
+                        @(string.IsNullOrWhiteSpace(context.Item.CrDocument) ? "-" : context.Item.CrDocument)
+                    </CellTemplate>
+                </PropertyColumn>
+
+                <!-- CR License -->
+                <PropertyColumn Property="x => x.LicenseNumber" Title="CR License">
+                    <CellTemplate>
+                        @(string.IsNullOrWhiteSpace(context.Item.LicenseNumber) ? "-" : context.Item.LicenseNumber)
+                    </CellTemplate>
+                </PropertyColumn>
+
+                <!-- End Date -->
+                <PropertyColumn Property="x => x.CrExpiryDate" Title="End Date">
+                    <CellTemplate>
+                         @(context.Item.CrExpiryDate.HasValue 
+                        ? context.Item.CrExpiryDate.Value.ToString("dd-MM-yyyy") 
+                        : "")
+                    </CellTemplate>
+                </PropertyColumn>
+
+                <!-- Actions -->
+                <TemplateColumn Title="Actions">
+                    <CellTemplate>
+                        <MudMenu Class="mud-table-menu"
+                                 Icon="@Icons.Material.Filled.MoreVert"
+                                 Dense="true"
+                                 AnchorOrigin="Origin.BottomLeft"
+                                 TransformOrigin="Origin.TopRight">
+                            <MudMenuItem OnClick="@(() => ShowPreview(context.Item.Id))">
+                                <img src="/qln-images/eye_icon.svg" class="menu-icon-style" alt="Ignore" />
+                                <span class="menu-text">View</span>
+                            </MudMenuItem>
+                        </MudMenu>
+                    </CellTemplate>
+                </TemplateColumn>
+            </Columns>
+        </MudDataGrid>
+        <PaginationFooter TotalItems="@TotalCount"
+                          CurrentPage="@currentPage"
+                          PageSize="@pageSize"
+                          OnPageChange="@HandlePageChange"
+                          OnPageSizeChange="@HandlePageSizeChange" />
+        
+    }
+  
+</MudPaper>

@@ -1,0 +1,133 @@
+﻿@namespace QLN.Web.Shared.Components.BreadCrumb
+@using Microsoft.AspNetCore.Components
+@using System.Collections.Generic
+
+<div class="breadcrumb-wrapper">
+
+    <div class="breadcrumb-trail">
+        <MudLink href="/" class="breadcrumb-link home-link">
+            <img src="/qln-images/components/Home.svg" class="home-icon" alt="Home" />
+        </MudLink> <span class="breadcrumb-separator">></span>
+
+        @foreach (var item in Items.Select((value, index) => new { value, index }))
+        {
+            @if (!string.IsNullOrEmpty(item.value.Url) && !item.value.IsLast)
+            {
+                <MudLink href="@item.value.Url" class="breadcrumb-link">
+                    <span class="breadcrumb-label">@item.value.Label</span>
+                </MudLink>
+
+            }
+            else
+            {
+                <span class="breadcrumb-text">
+                    <span class="breadcrumb-label">@item.value.Label</span>
+                </span>
+
+            }
+
+            @if (!item.value.IsLast)
+            {
+                <span class="breadcrumb-separator">></span>
+            }
+        }
+    </div>
+    @*  <div class="back-link">
+        <MudLink href="@BackLinkUrl"> <span class="breadcrumb-text">Back to</span> @BackLinkText</MudLink>
+    </div> *@
+</div>
+
+@code {
+    [Parameter]
+    public List<BreadcrumbItem> Items { get; set; } = new();
+
+    [Parameter]
+    public string BackLinkUrl { get; set; } = "#";
+
+    [Parameter]
+    public string BackLinkText { get; set; } = "Living Rewards";
+}
+
+<style>
+    .breadcrumb-wrapper {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 0.5rem;
+        padding: 1rem 0;
+        font-family: 'Public Sans', sans-serif;
+    }
+
+    .back-link {
+        align-self: flex-start;
+        margin-top: 2
+    }
+
+    .back-link a {
+        color: #1d3557;
+        text-decoration: none;
+        font-weight: bold;
+        font-size: 0.9rem;
+    }
+
+    .back-link a:hover {
+        text-decoration: underline;
+    }
+
+    .breadcrumb-trail {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        font-size: 0.9rem;
+        color: #1d3557;
+        flex-wrap: wrap !important;
+    }
+
+    .fa-home {
+        margin-right: 0.25rem;
+    }
+
+    .breadcrumb-label {
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: normal;
+    }
+
+
+    .breadcrumb-link {
+        color: #475467 !important;
+        padding: 0 2px;
+        text-decoration: none;
+        font-weight: 500;
+        font-size: 14px;
+
+    }
+
+    .breadcrumb-text {
+        color: #00426D;
+        padding: 0 2px;
+        text-decoration: none;
+        font-weight: 500;
+        font-size: 14px;
+
+    }
+
+
+    .breadcrumb-link:hover {
+        text-decoration: underline;
+    }
+
+    .breadcrumb-separator {
+        color: inherit;
+        padding: 0 0.1rem;
+    }
+
+    .home-icon {
+        width: 24px;
+        height: 24px;
+        color: #475467
+    }
+</style>

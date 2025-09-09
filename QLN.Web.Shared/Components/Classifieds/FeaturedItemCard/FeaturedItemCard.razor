@@ -1,0 +1,168 @@
+@inherits FeaturedItemCardBase
+@using QLN.Web.Shared.Components.EmptyCard
+@using MudBlazor
+
+<div class="card">
+    @if (Item.IsFeatured == true)
+    {
+        <div class="featured-badge">
+            <MudIcon Icon="@Icons.Material.Filled.FlashOn" Size="Size.Small" Class="featured-icon" />
+            <span>Featured</span>
+        </div>
+    }
+
+    <MudIconButton Icon="@(IsFavorite ? Icons.Material.Filled.Favorite : Icons.Material.Outlined.FavoriteBorder)"
+                   Color="@(IsFavorite ? Color.Error : Color.Inherit)"
+                   OnClick="@(() => HandleHeartClick(Item))"
+                   Class="@HeartIconClass" />
+
+      @if (ShowEmptyCard)
+            {
+                <div style="max-height:180px ;">
+                <EmptyCard Title="No image found." Subtitle="Please check back later for updates." />
+                </div>
+            }
+            else
+            {
+                @if (!imageLoaded)
+                {
+                    <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="100%" Height="170px" />
+                }
+
+                <img src="@Item.ImageURLs.First().Url" alt="@Item.Title" class="card-image"
+                    style="@(imageLoaded ? "display: block;" : "display: none;")" @onload="OnImageLoaded"
+                    @onerror="OnImageError" key="@Item.ImageURLs.First().Url" />
+            }
+
+
+    <div class="card-content" @onclick="() => OnSelect.InvokeAsync(Item)">
+        <div class="category">@Item.Category</div>
+        <div class="price">@((Item.Price ?? 0).ToString("N0")) QAR</div>
+        <h3 class="title">@Item.Title</h3>
+        @if (!string.IsNullOrWhiteSpace(Item.Location))
+        {
+            <div class="location">
+                <MudIcon Icon="@Icons.Material.Filled.LocationOn" Size="Size.Small" />
+                @Item.Location
+            </div>
+        }
+    </div>
+</div>
+
+<style>
+    .card {
+        position: relative;
+        border-radius: 6px;
+        overflow: hidden;
+        background: #fff;
+        font-family: 'Public Sans', sans-serif;
+        transition: transform 0.3s ease;
+        width: 274px;
+        height: 318px;
+    }
+
+    .card:hover {
+        transform: translateY(-5px);
+    }
+
+    .featured-badge {
+        position: absolute;
+        top: 10px;
+        left: 0px;
+        background-color: #FF7F38;
+        color: white;
+        padding: 4px 6px;
+        border-radius: 2px;
+        font-size: 11px;
+        font-weight: 500;
+        z-index: 2;
+        display: flex;
+        align-items: center;
+        gap: 2px;
+    }
+
+    .featured-icon {
+        font-size: 14px;
+    }
+
+    .heart-icon {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: white;
+        border: none;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        z-index: 2;
+        padding: 0;
+        transition: all 0.2s ease;
+        color: #FF7F38;
+        /* Default gray color for unfavorited */
+    }
+
+
+    .heart-icon.filled {
+        color: #FF7F38 !important;
+        background: white !important;
+    }
+
+    .heart-icon.outlined {
+        color: #FF7F38 !important;
+        background: white !important;
+    }
+
+    .card-image {
+        width: 100%;
+        height: 170px;
+        object-fit: cover;
+    }
+
+    .card-content {
+        display: flex;
+        flex-direction: column;
+        cursor: pointer;
+        justify-content: space-between;
+        padding: 16px;
+        gap: 8px
+    }
+
+    .category {
+        font-size: 11px;
+        color: #646464;
+        font-weight: 500;
+    }
+
+    .price {
+        font-weight: 600;
+        font-size: 20px;
+    }
+
+    .title {
+        font-size: 14px;
+        font-weight: 500;
+        color: #242424;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-line-clamp: 1;
+        -webkit-box-orient: vertical;
+    }
+
+    .title:hover {
+        color: #00426D;
+    }
+
+    .location {
+        font-size: 12px;
+        font-weight: 500;
+        color: ##646464;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+</style>
