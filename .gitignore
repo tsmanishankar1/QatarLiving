@@ -367,3 +367,7 @@ FodyWeavers.xsd
 **/appsettings.Development.json
 /QLN.ContentBO.WebUI/qln-content-bo-web-internal.txt
 /QLN.ContentBO.WebUI/qln-content-bo-web-internal.txt
+
+QLN.AIPOV/QLN.AIPOV.Backend/QLN.AIPOV.Backend.API/appsettings.json
+QLN.SearchService/appsettings.json
+Components/companystatestore.yaml
